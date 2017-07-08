@@ -1,0 +1,33 @@
+{
+    "files.associations": {
+        "*.ipp": "cpp",
+        "inflate.c": "cpp",
+        "http_parser.c": "cpp",
+        "fullbench.c": "cpp",
+        "lz4cli.c": "cpp",
+        "sqlite3.c": "cpp",
+        "type_traits": "cpp",
+        "array": "cpp",
+        "initializer_list": "cpp",
+        "utility": "cpp",
+        "untgz.c": "cpp",
+        "deflate.c": "cpp",
+        "enough.c": "cpp",
+        "gzappend.c": "cpp",
+        "zran.c": "cpp",
+        "gzlib.c": "cpp",
+        "infcover.c": "cpp",
+        "zutil.c": "cpp",
+        "gzlog.c": "cpp",
+        "cmath": "cpp",
+        "*.tcc": "cpp",
+        "slist": "cpp",
+        "minigzip.c": "cpp",
+        "blast.c": "cpp",
+        "infback9.c": "cpp",
+        "inffas8664.c": "cpp",
+        "puff.c": "cpp",
+        "gun.c": "cpp",
+        "infback.c": "cpp"
+    }
+}

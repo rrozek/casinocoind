@@ -1,0 +1,9 @@
+sudo mkdir /var/log/casinocoind
+sudo mkdir /etc/casinocoind
+sudo mkdir -p /var/lib/casinocoind/db/rocksdb
+sudo chown casinocoin:casinocoin /var/log/casinocoind
+sudo chown -R casinocoin:casinocoin /var/lib/casinocoind
+sudo chown casinocoin:casinocoin /var/log/casinocoind
+sudo cp casinocoind-example.cfg /etc/casinocoind/casinocoind.cfg
+sudo cp validators-example.cfg /etc/casinocoind/validators.cfg
+sudo cp casinocoind-example.service /etc/systemd/system/casinocoind.service
