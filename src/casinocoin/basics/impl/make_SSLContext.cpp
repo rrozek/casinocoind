@@ -83,8 +83,21 @@ using rsa_ptr = custom_delete_unique_ptr <RSA>;
 
 static rsa_ptr rsa_generate_key (int n_bits)
 {
-    RSA* rsa = RSA_generate_key (n_bits, RSA_F4, nullptr, nullptr);
+#if OPENSSL_VERSION_NUMBER >= 0x00908000L
+    BIGNUM *bn = BN_new();
+    BN_set_word(bn, RSA_F4);
 
+    RSA* rsa = RSA_new();
+    if (RSA_generate_key_ex(rsa, n_bits, bn, nullptr) != 1)
+    {
+        RSA_free(rsa);
+        rsa = nullptr;
+    }
+
+    BN_free(bn);
+#else
+    RSA* rsa = RSA_generate_key (n_bits, RSA_F4, nullptr, nullptr);
+#endif
     if (rsa == nullptr)
         LogicError ("RSA_generate_key failed");
 
@@ -158,6 +171,7 @@ static void ssl_ctx_use_privatekey (SSL_CTX* const ctx, evp_pkey_ptr& key)
         LogicError ("SSL_CTX_use_PrivateKey failed");
 }
 
+#ifdef SSL_FLAGS_NO_RENEGOTIATE_CIPHERS
 static
 bool
 disallowRenegotiation (SSL const* ssl, bool isNew)
@@ -217,6 +231,7 @@ info_handler (SSL const* ssl, int event, int)
             ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
     }
 }
+#endif
 
 static
 std::string
@@ -401,7 +416,10 @@ get_context (std::string cipherList)
         LogicError ("d2i_DHparams returned nullptr.");
 
     SSL_CTX_set_tmp_dh (c->native_handle (), dh);
+
+#ifdef SSL_FLAGS_NO_RENEGOTIATE_CIPHERS
     SSL_CTX_set_info_callback (c->native_handle (), info_handler);
+#endif
 
     return c;
 }
