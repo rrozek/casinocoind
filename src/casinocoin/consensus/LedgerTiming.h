@@ -59,7 +59,7 @@ auto constexpr increaseLedgerTimeResolutionEvery = 8;
 auto constexpr decreaseLedgerTimeResolutionEvery = 1;
 
 //! The number of seconds a ledger may remain idle before closing
-auto constexpr LEDGER_IDLE_INTERVAL = 15s;
+auto constexpr LEDGER_IDLE_INTERVAL = 1min;
 
 /** The number of seconds a validation remains current after its ledger's close
     time.

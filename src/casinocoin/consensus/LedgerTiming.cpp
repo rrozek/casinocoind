@@ -45,28 +45,49 @@ shouldCloseLedger(
     beast::Journal j)
 {
     using namespace std::chrono_literals;
+
+    JLOG(j.debug()) << "shouldCloseLedger Trans="
+                       << (anyTransactions ? "yes" : "no")
+                       << " Proposers: " << prevProposers << "/" << proposersClosed
+                       << " Elapsed Secs: " << timeSincePrevClose.count()
+                       << " (last: " << prevRoundTime.count() << ")"
+                       << " Idle Interval: " << idleInterval.count();
+    
+    // Extreme outer limits for closing the ledger
     if ((prevRoundTime < -1s) || (prevRoundTime > 10min) || (timeSincePrevClose > 10min))
     {
         // These are unexpected cases, we just close the ledger
-        JLOG(j.warn()) << "shouldCloseLedger Trans="
-                       << (anyTransactions ? "yes" : "no")
-                       << " Prop: " << prevProposers << "/" << proposersClosed
-                       << " Secs: " << timeSincePrevClose.count()
-                       << " (last: " << prevRoundTime.count() << ")";
-        return true;
-    }
-
-    if ((proposersClosed + proposersValidated) > (prevProposers / 2))
-    {
-        // If more than half of the network has closed, we close
-        JLOG(j.trace()) << "Others have closed";
+        JLOG(j.debug()) << "Extreme limits exceeded";
         return true;
     }
 
     if (!anyTransactions)
     {
+        bool closeLedger = false;
         // Only close at the end of the idle interval
-        return timeSincePrevClose >= idleInterval;  // normal idle
+        if(timeSincePrevClose >= idleInterval)
+        {
+            closeLedger = true;
+        }
+        else
+        {
+            // No transactions and not the idle interval yet
+            // check if others have closed anyway ....
+            if ((proposersClosed + proposersValidated) > (prevProposers / 2))
+            {
+                // If more than half of the network has closed, we close
+                JLOG(j.debug()) << "Others have closed";
+                closeLedger = true;
+            }
+        }
+        return closeLedger;
+    }
+
+    if ((proposersClosed + proposersValidated) > (prevProposers / 2))
+    {
+        // If more than half of the network has closed, we close
+        JLOG(j.debug()) << "Others have closed";
+        return true;
     }
 
     // Preserve minimum ledger open time
