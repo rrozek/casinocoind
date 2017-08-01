@@ -48,10 +48,11 @@ shouldCloseLedger(
 
     JLOG(j.debug()) << "shouldCloseLedger Trans="
                        << (anyTransactions ? "yes" : "no")
-                       << " Proposers: " << prevProposers << "/" << proposersClosed
-                       << " Elapsed Secs: " << timeSincePrevClose.count()
-                       << " (last: " << prevRoundTime.count() << ")"
-                       << " Idle Interval: " << idleInterval.count();
+                       << " Proposers - Previous: " << prevProposers << " Validated: " 
+                       << proposersValidated << " Closed: " << proposersClosed
+                       << " Elapsed (msec): " << timeSincePrevClose.count()
+                       << " (last (msec): " << prevRoundTime.count() << ")"
+                       << " Idle Interval (sec): " << idleInterval.count();
     
     // Extreme outer limits for closing the ledger
     if ((prevRoundTime < -1s) || (prevRoundTime > 10min) || (timeSincePrevClose > 10min))
