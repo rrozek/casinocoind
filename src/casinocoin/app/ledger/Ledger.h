@@ -223,7 +223,11 @@ public:
     void
     rawDestroyCSC (CSCAmount const& fee) override
     {
-        info_.drops -= fee;
+        // for now we don't destroy the drops as ripple does
+        // in the future we will divide the fee over the validating nodes!
+
+        // info_.drops -= fee;
+        
     }
 
     //
