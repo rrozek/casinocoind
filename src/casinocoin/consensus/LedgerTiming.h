@@ -59,9 +59,9 @@ auto constexpr increaseLedgerTimeResolutionEvery = 8;
 auto constexpr decreaseLedgerTimeResolutionEvery = 1;
 
 //! The number of seconds a ledger may remain idle without any transactions before closing
-//! We increase this number from 15 to 300 (5 minutes) to prevent an enormous empty blockchain
+//! We increase this number from 15 to 120 (2 minutes) to prevent an enormous empty blockchain
 //!  if there are little transactions
-auto constexpr LEDGER_IDLE_INTERVAL = 300s;
+auto constexpr LEDGER_IDLE_INTERVAL = 120s;
 
 /** The number of seconds a validation remains current after its ledger's close
     time.
@@ -69,7 +69,7 @@ auto constexpr LEDGER_IDLE_INTERVAL = 300s;
     This is a safety to protect against very old validations and the time
     it takes to adjust the close time accuracy window.
 */
-auto constexpr VALIDATION_VALID_WALL = 10min;
+auto constexpr VALIDATION_VALID_WALL = 5min;
 
 /** Duration a validation remains current after first observed.
 
@@ -77,14 +77,14 @@ auto constexpr VALIDATION_VALID_WALL = 10min;
     saw it. This provides faster recovery in very rare cases where the number
     of validations produced by the network is lower than normal
 */
-auto constexpr VALIDATION_VALID_LOCAL = 3min;
+auto constexpr VALIDATION_VALID_LOCAL = 2min;
 
 /**  Duration pre-close in which validations are acceptable.
 
     The number of seconds before a close time that we consider a validation
     acceptable. This protects against extreme clock errors
 */
-auto constexpr VALIDATION_VALID_EARLY = 3min;
+auto constexpr VALIDATION_VALID_EARLY = 2min;
 
 //! The number of seconds we wait minimum to ensure participation
 auto constexpr LEDGER_MIN_CONSENSUS = 1950ms;
