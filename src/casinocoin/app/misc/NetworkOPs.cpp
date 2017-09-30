@@ -2291,23 +2291,14 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
         {
             l[jss::base_fee] = Json::Value::UInt (baseFee);
             l[jss::reserve_base] = Json::Value::UInt (lpClosed->fees().accountReserve(0).drops());
-            l[jss::reserve_inc] =
-                    Json::Value::UInt (lpClosed->fees().increment);
-            l[jss::close_time] =
-                    Json::Value::UInt (lpClosed->info().closeTime.time_since_epoch().count());
+            l[jss::reserve_inc] = Json::Value::UInt (lpClosed->fees().increment);
+            l[jss::close_time] = Json::Value::UInt (lpClosed->info().closeTime.time_since_epoch().count());
         }
         else
         {
-            l[jss::base_fee_csc] = static_cast<double> (baseFee) /
-                    SYSTEM_CURRENCY_PARTS;
-            l[jss::reserve_base_csc]   =
-                static_cast<double> (Json::UInt (
-                    lpClosed->fees().accountReserve(0).drops() * baseFee / baseRef))
-                    / SYSTEM_CURRENCY_PARTS;
-            l[jss::reserve_inc_csc]    =
-                static_cast<double> (Json::UInt (
-                    lpClosed->fees().increment * baseFee / baseRef))
-                    / SYSTEM_CURRENCY_PARTS;
+            l[jss::base_fee_csc] = static_cast<double> (baseFee) / SYSTEM_CURRENCY_PARTS;
+            l[jss::reserve_base_csc] = static_cast<double> (Json::UInt (lpClosed->fees().accountReserve(0).drops() * baseFee / baseRef)) / SYSTEM_CURRENCY_PARTS;
+            l[jss::reserve_inc_csc] = static_cast<double> (Json::UInt (lpClosed->fees().increment * baseFee / baseRef)) / SYSTEM_CURRENCY_PARTS;
 
             auto const nowOffset = app_.timeKeeper().nowOffset();
             if (std::abs (nowOffset.count()) >= 60)
