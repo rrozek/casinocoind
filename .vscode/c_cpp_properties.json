@@ -15,7 +15,8 @@
                 "path": [
                     "/usr/include/c++/4.2.1",
                     "/usr/local/include",
-                    "/usr/include"
+                    "/usr/include",
+                    "${workspaceRoot}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -33,7 +34,8 @@
             "browse": {
                 "path": [
                     "/usr/include",
-                    "/usr/local/include"
+                    "/usr/local/include",
+                    "${workspaceRoot}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -57,12 +59,14 @@
                     "${workspaceRoot}/src/*",
                     "C:/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/5.1.0/include/c++/*",
                     "C:/deps/boost_1_63_0",
-                    "C:/deps/openssl-1.0.2d/include"
+                    "C:/deps/openssl-1.0.2d/include",
+                    "${workspaceRoot}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
             },
             "intelliSenseMode": "msvc-x64"
         }
-    ]
+    ],
+    "version": 2
 }

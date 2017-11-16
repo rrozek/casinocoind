@@ -223,7 +223,12 @@ public:
     void
     rawDestroyCSC (CSCAmount const& fee) override
     {
+        // HERE ARE DROPS DESTROYED
+        // 
+        // in the future we will divide the fee over the validating nodes!
+
         info_.drops -= fee;
+        
     }
 
     //

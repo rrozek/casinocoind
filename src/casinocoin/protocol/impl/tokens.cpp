@@ -20,7 +20,7 @@
 //==============================================================================
 /*
     2017-06-30  ajochems        Refactored for casinocoin
-    2017-07-06  ajochems        Updated the alphabet tu support addresses
+    2017-07-06  ajochems        Updated the alphabet to support addresses
                                 starting with 'c' 
 */
 //==============================================================================

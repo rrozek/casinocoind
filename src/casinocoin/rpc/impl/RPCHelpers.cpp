@@ -32,6 +32,7 @@
 #include <casinocoin/rpc/Context.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <casinocoin/basics/Log.h>
 
 namespace casinocoin {
 namespace RPC {
@@ -237,14 +238,16 @@ ledgerFromRequest(T& ledger, Context& context)
     else
     {
         if (isValidatedOld (ledgerMaster, context.app.config().standalone()))
-            return {rpcNO_NETWORK, "InsufficientNetworkMode"};
+            return {rpcNO_NETWORK, ""};
 
         auto const index = indexValue.asString ();
         if (index == "validated")
         {
             ledger = ledgerMaster.getValidatedLedger ();
             if (ledger == nullptr)
+            {
                 return {rpcNO_NETWORK, "InsufficientNetworkMode"};
+            }
 
             assert (! ledger->open());
         }
@@ -266,7 +269,9 @@ ledgerFromRequest(T& ledger, Context& context)
             }
 
             if (ledger == nullptr)
+            {
                 return {rpcNO_NETWORK, "InsufficientNetworkMode"};
+            }
 
             if (ledger->info().seq + minSequenceGap <
                 ledgerMaster.getValidLedgerIndex ())

@@ -5,7 +5,7 @@ Description=Casinocoin Peer-to-Peer Network Daemon
 Type=simple
 User=casinocoin
 LimitNOFILE=65535
-ExecStart=/usr/bin/casinocoind --conf=/etc/casinocoind/casinocoind.cfg
+ExecStart=/usr/bin/casinocoind --conf=/etc/casinocoind/casinocoind.cfg --net
  
 [Install]
 WantedBy=multi-user.target
