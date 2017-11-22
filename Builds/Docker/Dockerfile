@@ -2,7 +2,7 @@
 
 # use the ubuntu base image
 FROM ubuntu
-MAINTAINER Roberto Catini roberto.catini@gmail.com
+MAINTAINER Andre Jochems andre@casinocoin.org
 
 # make sure the package repository is up to date
 RUN apt-get update
@@ -12,19 +12,19 @@ RUN apt-get -y upgrade
 RUN apt-get -y install git scons pkg-config protobuf-compiler libprotobuf-dev libssl-dev libboost1.55-all-dev
 
 # download source code from official repository
-RUN git clone https://github.com/ripple/rippled.git src; cd src/; git checkout master
+RUN git clone https://github.com/casinocoin/casinocoind.git src; cd src/; git checkout master
 
 # compile
-RUN cd src/; scons build/rippled
+RUN cd src/; scons build/casinocoind
 
 # move to root directory and strip
-RUN cp src/build/rippled rippled; strip rippled
+RUN cp src/build/casinocoind casinocoind; strip casinocoind
 
 # copy default config
-RUN cp src/doc/rippled-example.cfg rippled.cfg
+RUN cp src/doc/casinocoind-example.cfg casinocoind.cfg
 
 # clean source
 RUN rm -r src
 
 # launch rippled when launching the container
-ENTRYPOINT ./rippled
+ENTRYPOINT ./casinocoind
