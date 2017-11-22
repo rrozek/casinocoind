@@ -4,20 +4,18 @@
 Casinocoin is an open source, peer-to-peer Internet currency specifically designed for online casino gaming. It is a network of computers which use the [Casinocoin consensus algorithm](https://www.youtube.com/watch?v=pj1QVb1vlC0) to atomically settle and record
 transactions on a secure distributed database, the Casinocoin Consensus Ledger (CCL).
 Because of its distributed nature, the CCL offers transaction immutability
-without a central operator. The CCL contains a built-in currency exchange and its
-path-finding algorithm finds competitive exchange rates across order books and currency pairs.
+without a central operator.
 
 ### Key Features
 - **Distributed**
   - Direct account-to-account settlement with no central operator
-  - Decentralized global market for competitive CSC exchange
 - **Secure**
   - Transactions are cryptographically signed using ECDSA or Ed25519
   - Multi-signing capabilities
   - Master nodes are verified and certified by the Casinocoin Foundation
 - **Scalable**
   - Capacity to process the world’s online casino transactions volume
-  - Easy access to liquidity through a competitive CSC exchange
+  - Speed to accommodate the worldś online casino requirements
 
 # casinocoind - Casinocoin server
 `casinocoind` is the reference server implementation of the Casinocoin
@@ -32,11 +30,11 @@ ISC license. See the LICENSE file for more details.
 
 | Folder  | Contents |
 |---------|----------|
-| ./bin   | Scripts and data files for Ripple integrators. |
-| ./build | Intermediate and final build outputs.          |
-| ./Builds| Platform or IDE-specific project files.        |
-| ./doc   | Documentation and example configuration files. |
-| ./src   | Source code.                                   |
+| ./bin   | Scripts and data files for Casinocoin integrators. |
+| ./build | Intermediate and final build outputs.              |
+| ./Builds| Platform or IDE-specific project files.            |
+| ./doc   | Documentation and example configuration files.     |
+| ./src   | Source code.                                       |
 
 Some of the directories under `src` are external repositories inlined via
 git-subtree. See the corresponding README for more details.
