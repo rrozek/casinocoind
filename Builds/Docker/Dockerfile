@@ -15,7 +15,7 @@ RUN apt-get -y install python-software-properties curl git scons ctags cmake pkg
 RUN git clone https://github.com/casinocoin/casinocoind.git src; cd src/; git checkout master
 
 # compile
-RUN cd src/; scons build/casinocoind
+RUN cd src/; scons
 
 # move to root directory and strip
 RUN cp src/build/casinocoind casinocoind; strip casinocoind
@@ -34,7 +34,8 @@ RUN cp src/doc/validators-example.txt /etc/casinocoind/validators.txt
 RUN rm -r src
 
 # set server Timezone to UTC
-RUN timedatectl set-timezone Etc/UTC
+RUN apt-get -y install tzdata
+RUN ln -fs /usr/share/zoneinfo/UTC /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
 
 # expose ports
 EXPOSE 17771/udp
