@@ -64,7 +64,7 @@ using namespace std::chrono_literals;
 #define MAX_LEDGER_GAP          100
 
 // Don't acquire history if ledger is too old
-auto constexpr MAX_LEDGER_AGE_ACQUIRE = 1min;
+auto constexpr MAX_LEDGER_AGE_ACQUIRE = 10min;
 
 LedgerMaster::LedgerMaster (Application& app, Stopwatch& stopwatch,
     Stoppable& parent,
@@ -178,7 +178,7 @@ LedgerMaster::getValidatedLedgerAge()
 bool
 LedgerMaster::isCaughtUp(std::string& reason)
 {
-    if (getPublishedLedgerAge() > 3min)
+    if (getPublishedLedgerAge() > 10min)
     {
         reason = "No recently-published ledger";
         return false;
@@ -1778,7 +1778,7 @@ LedgerMaster::makeFetchPack (
     }
 
     if (app_.getFeeTrack ().isLoadedLocal () ||
-        (getValidatedLedgerAge() > 40s))
+        (getValidatedLedgerAge() > 10min))
     {
         JLOG(m_journal.info()) << "Too busy to make fetch pack";
         return;

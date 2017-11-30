@@ -1112,7 +1112,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
         {
             JLOG(p_journal_.info()) << "Transaction queue is full";
         }
-        else if (app_.getLedgerMaster().getValidatedLedgerAge() > 4min)
+        else if (app_.getLedgerMaster().getValidatedLedgerAge() > 10min)
         {
             JLOG(p_journal_.trace()) << "No new transactions until synchronized";
         }
@@ -1369,7 +1369,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMStatusChange> const& m)
     }
 
     if (m->has_ledgerseq() &&
-        app_.getLedgerMaster().getValidatedLedgerAge() < 2min)
+        app_.getLedgerMaster().getValidatedLedgerAge() < 10min)
     {
         checkSanity (m->ledgerseq(), app_.getLedgerMaster().getValidLedgerIndex());
     }
@@ -1787,7 +1787,7 @@ PeerImp::doFetchPack (const std::shared_ptr<protocol::TMGetObjectByHash>& packet
     // Don't queue fetch pack jobs if we're under load or we already have
     // some queued.
     if (app_.getFeeTrack ().isLoadedLocal () ||
-        (app_.getLedgerMaster().getValidatedLedgerAge() > 40s) ||
+        (app_.getLedgerMaster().getValidatedLedgerAge() > 6min) ||
         (app_.getJobQueue().getJobCount(jtPACK) > 10))
     {
         JLOG(p_journal_.info()) << "Too busy to make fetch pack";
