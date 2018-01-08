@@ -248,6 +248,7 @@ SField const sfSignerEntry         = make::one(&sfSignerEntry,         STI_OBJEC
 SField const sfSigner              = make::one(&sfSigner,              STI_OBJECT, 16, "Signer");
 //                                                                                 17 has not been used yet...
 SField const sfMajority            = make::one(&sfMajority,            STI_OBJECT, 18, "Majority");
+SField const sfKYC                 = make::one(&sfKYC,                 STI_OBJECT, 19, "KYC");
 
 // array of objects
 // ARRAY/1 is reserved for end of array
@@ -259,6 +260,10 @@ SField const sfNecessary       = make::one(&sfNecessary,       STI_ARRAY, 6, "Ne
 SField const sfSufficient      = make::one(&sfSufficient,      STI_ARRAY, 7, "Sufficient");
 SField const sfAffectedNodes   = make::one(&sfAffectedNodes,   STI_ARRAY, 8, "AffectedNodes");
 SField const sfMemos           = make::one(&sfMemos,           STI_ARRAY, 9, "Memos");
+
+// array of strings
+// ARRAY/1 is reserved for end of array
+SField const sfVerifications      = make::one(&sfVerifications,     STI_VECTORSTRING, 2, "verifications");
 
 // array of objects (uncommon)
 SField const sfMajorities      = make::one(&sfMajorities,      STI_ARRAY, 16, "Majorities");
@@ -340,6 +345,7 @@ SField::getField (int code)
     case STI_HASH160:
     case STI_PATHSET:
     case STI_VECTOR256:
+    case STI_VECTOR128:
         break;
 
     default:

@@ -33,6 +33,7 @@
 #include <casinocoin/protocol/STAmount.h>
 #include <casinocoin/protocol/STPathSet.h>
 #include <casinocoin/protocol/STVector256.h>
+#include <casinocoin/protocol/STVector128.h>
 #include <casinocoin/protocol/SOTemplate.h>
 #include <casinocoin/protocol/impl/STVar.h>
 #include <boost/iterator/transform_iterator.hpp>
@@ -442,6 +443,7 @@ public:
     STAmount const& getFieldAmount (SField const& field) const;
     STPathSet const& getFieldPathSet (SField const& field) const;
     const STVector256& getFieldV256 (SField const& field) const;
+    const STVector128& getFieldV128 (SField const& field) const;
     const STArray& getFieldArray (SField const& field) const;
 
     /** Return the value of a field.
@@ -502,6 +504,7 @@ public:
 
     void setFieldAmount (SField const& field, STAmount const&);
     void setFieldV256 (SField const& field, STVector256 const& v);
+    void setFieldV128 (SField const& field, STVector128 const& v);
     void setFieldArray (SField const& field, STArray const& v);
 
     template <class Tag>

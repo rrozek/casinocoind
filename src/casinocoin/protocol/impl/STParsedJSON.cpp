@@ -526,6 +526,32 @@ static boost::optional<detail::STVar> parseLeaf (
 
         break;
 
+        case STI_VECTOR128:
+        if (! value.isArray ())
+        {
+            error = array_expected (json_name, fieldName);
+            return ret;
+        }
+
+        try
+        {
+            STVector128 tail (field);
+            for (Json::UInt i = 0; value.isValidIndex (i); ++i)
+            {
+                uint128 s;
+                s.SetHex (value[i].asString ());
+                tail.push_back (s);
+            }
+            ret = detail::make_stvar <STVector128> (std::move (tail));
+        }
+        catch (std::exception const&)
+        {
+            error = invalid_data (json_name, fieldName);
+            return ret;
+        }
+
+        break;
+
     case STI_PATHSET:
         if (!value.isArray ())
         {

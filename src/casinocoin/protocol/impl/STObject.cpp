@@ -553,6 +553,12 @@ const STVector256& STObject::getFieldV256 (SField const& field) const
     return getFieldByConstRef <STVector256> (field, empty);
 }
 
+const STVector128& STObject::getFieldV128 (SField const& field) const
+{
+    static STVector256 const empty{};
+    return getFieldByConstRef <STVector128> (field, empty);
+}
+
 const STArray& STObject::getFieldArray (SField const& field) const
 {
     static STArray const empty{};
@@ -610,6 +616,11 @@ void STObject::setFieldH256 (SField const& field, uint256 const& v)
 void STObject::setFieldV256 (SField const& field, STVector256 const& v)
 {
     setFieldUsingSetValue <STVector256> (field, v);
+}
+
+void STObject::setFieldV128 (SField const& field, STVector128 const& v)
+{
+    setFieldUsingSetValue <STVector128> (field, v);
 }
 
 void STObject::setAccountID (SField const& field, AccountID const& v)
