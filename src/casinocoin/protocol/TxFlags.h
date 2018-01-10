@@ -74,6 +74,7 @@ const std::uint32_t asfAccountTxnID        = 5;
 const std::uint32_t asfNoFreeze            = 6;
 const std::uint32_t asfGlobalFreeze        = 7;
 const std::uint32_t asfDefaultCasinocoin   = 8;
+const std::uint32_t asfKYCValidated        = 9;
 
 // OfferCreate flags:
 const std::uint32_t tfPassive              = 0x00010000;

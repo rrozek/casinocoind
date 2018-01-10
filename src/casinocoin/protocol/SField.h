@@ -479,6 +479,9 @@ extern SF_Vec256 const sfIndexes;
 extern SF_Vec256 const sfHashes;
 extern SF_Vec256 const sfAmendments;
 
+// vector of 128-bit
+extern SF_Vec128 const sfKYCVerifications;
+
 // inner object
 // OBJECT/1 is reserved for end of object
 extern SField const sfTransactionMetaData;
@@ -506,7 +509,6 @@ extern SField const sfSufficient;
 extern SField const sfAffectedNodes;
 extern SField const sfMemos;
 extern SField const sfMajorities;
-extern SField const sfKYCVerifications;
 
 //------------------------------------------------------------------------------
 

@@ -552,7 +552,7 @@ static boost::optional<detail::STVar> parseLeaf (
 
         break;
 
-    case STI_PATHSET:
+        case STI_PATHSET:
         if (!value.isArray ())
         {
             error = array_expected (json_name, fieldName);

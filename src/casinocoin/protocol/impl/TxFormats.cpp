@@ -40,6 +40,7 @@ TxFormats::TxFormats ()
         << SOElement (sfSetFlag,             SOE_OPTIONAL)
         << SOElement (sfClearFlag,           SOE_OPTIONAL)
         << SOElement (sfTickSize,            SOE_OPTIONAL)
+        << SOElement (sfKYCVerification,     SOE_OPTIONAL)
         ;
 
     add ("TrustSet", ttTRUST_SET)
