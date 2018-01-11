@@ -41,5 +41,6 @@
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/protocol/STVector256.h>
+#include <casinocoin/protocol/STVector128.h>
 
 #endif

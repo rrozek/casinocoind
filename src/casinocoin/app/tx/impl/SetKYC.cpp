@@ -46,14 +46,14 @@ SetKYC::preflight (PreflightContext const& ctx)
     auto& j = ctx.j;
 
     // SetKYC transaction can only be issued with Multi-sign
-    if (!rules.enabled (featureMultiSign))
+    if (!ctx.rules.enabled (featureMultiSign))
     {
         JLOG(j.trace()) << "KYC Set transaction can only be Multi-signed. "
                            "This feature is disabled";
         return temINVALID;
     }
 
-    Blob const& signingPubKey = getFieldVL (sfSigningPubKey);
+    Blob const& signingPubKey = tx.getFieldVL (sfSigningPubKey);
     if (!signingPubKey.empty ())
     {
         JLOG(j.trace()) << "KYC Set transaction can only be Multi-signed.";
@@ -112,7 +112,7 @@ SetKYC::doApply ()
         JLOG(j_.trace()) << "set KYC Validated";
         uFlagsOut   |= lsfKYCValidated;
     }
-    else if (uClearFlag == asfKYCValidated)
+    else if (uClearFlag == kycfValidated)
     {
         JLOG(j_.trace()) << "unset KYC Validated";
         uFlagsOut   &= ~lsfKYCValidated;
@@ -133,12 +133,12 @@ SetKYC::doApply ()
         if (newVerifications.size() == 0)
         {
             JLOG(j_.trace()) << "clear verifications array";
-            KYCObject->makeFieldAbsent (sfKYCVerifications);
+            KYCObject.makeFieldAbsent (sfKYCVerifications);
         }
         else
         {
             JLOG(j_.trace()) << "set verifications array";
-            KYCObject->setFieldV128 (sfKYCVerifications, newVerifications);
+            KYCObject.setFieldV128 (sfKYCVerifications, newVerifications);
         }
     }
 

@@ -35,6 +35,7 @@
 #include <casinocoin/protocol/STObject.h>
 #include <casinocoin/protocol/STPathSet.h>
 #include <casinocoin/protocol/STVector256.h>
+#include <casinocoin/protocol/STVector128.h>
 #include <casinocoin/protocol/impl/STVar.h>
 
 namespace casinocoin {

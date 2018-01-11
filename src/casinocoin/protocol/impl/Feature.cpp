@@ -69,5 +69,6 @@ uint256 const featureEscrow = feature("Escrow");
 uint256 const featureCryptoConditionsSuite = feature("CryptoConditionsSuite");
 uint256 const fix1373 = feature("fix1373");
 uint256 const featureEnforceInvariants = feature("EnforceInvariants");
+uint256 const featureKYC = feature("KYC");
 
 } // casinocoin

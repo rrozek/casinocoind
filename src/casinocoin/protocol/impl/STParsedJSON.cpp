@@ -34,6 +34,7 @@
 #include <casinocoin/protocol/STBitString.h>
 #include <casinocoin/protocol/STBlob.h>
 #include <casinocoin/protocol/STVector256.h>
+#include <casinocoin/protocol/STVector128.h>
 #include <casinocoin/protocol/STInteger.h>
 #include <casinocoin/protocol/STParsedJSON.h>
 #include <casinocoin/protocol/STPathSet.h>
