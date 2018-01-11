@@ -555,7 +555,7 @@ const STVector256& STObject::getFieldV256 (SField const& field) const
 
 const STVector128& STObject::getFieldV128 (SField const& field) const
 {
-    static STVector256 const empty{};
+    static STVector128 const empty{};
     return getFieldByConstRef <STVector128> (field, empty);
 }
 

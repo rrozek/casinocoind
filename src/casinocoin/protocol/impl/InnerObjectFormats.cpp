@@ -40,6 +40,12 @@ InnerObjectFormats::InnerObjectFormats ()
         << SOElement (sfSigningPubKey,        SOE_REQUIRED)
         << SOElement (sfTxnSignature,         SOE_REQUIRED)
         ;
+
+    add (sfKYC.getJsonName ().c_str (), sfKYC.getCode ())
+        << SOElement (sfFlags,                SOE_REQUIRED)
+        << SOElement (sfKYCTime,              SOE_REQUIRED)
+        << SOElement (sfKYCVerifications,     SOE_REQUIRED)
+        ;
 }
 
 void InnerObjectFormats::addCommonFields (Item& item)

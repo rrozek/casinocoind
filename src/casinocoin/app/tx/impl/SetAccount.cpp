@@ -147,20 +147,6 @@ SetAccount::preflight (PreflightContext const& ctx)
         }
     }
 
-    // KYC Validation flag
-
-    if (uSetFlag == asfKYCValidated || uClearFlag == asfKYCValidated)
-    {
-        if (!ctx.rules.enabled(featureKYC))
-            return temDISABLED;
-    }
-    // KYC Verification
-    if (tx.isFieldPresent (sfKYCVerifications))
-    {
-        if (!ctx.rules.enabled(featureKYC))
-            return temDISABLED;
-    }
-
     if (auto const mk = tx[~sfMessageKey])
     {
         if (mk->size() && ! publicKeyType ({mk->data(), mk->size()}))
@@ -498,47 +484,6 @@ SetAccount::doApply ()
             sle->setFieldU8 (sfTickSize, uTickSize);
         }
     }
-
-    //
-    // KYC Validated
-    //
-    if (uSetFlag == asfKYCValidated)
-    {
-        JLOG(j_.trace()) << "set KYC Validated";
-        uFlagsOut   |= lsfKYCValidated;
-    }
-    else if (uClearFlag == asfKYCValidated)
-    {
-        JLOG(j_.trace()) << "unset KYC Validated";
-        uFlagsOut   &= ~lsfKYCValidated;
-    }
-
-    //
-    // KYC Verification
-    //
-    if (ctx_.tx.isFieldPresent (sfKYCVerifications))
-    {
-        // get acc object from ledger, figure out unique list, setfieldv128(sfKYCVerifications, verifications);
-        STVector128 newVerifications = ctx_.tx.getFieldV128 (sfKYCVerifications);
-
-        auto KYCObject = sle->peekFieldObject(sfKYC);
-
-        // STVector128 existingVerifications = KYCObject.getFieldV128(sfKYCVerifications);
-
-        if (newVerifications.size() == 0)
-        {
-            JLOG(j_.trace()) << "clear verifications array";
-            KYCObject->makeFieldAbsent (sfKYCVerifications);
-        }
-        else
-        {
-            JLOG(j_.trace()) << "set verifications array";
-            KYCObject->setFieldV128 (sfKYCVerifications, newVerifications);
-        }
-    }
-
-    // TODO jrojek:
-    // still need to handle KYC.date somehow. both here and possibly in preflight()
 
     if (uFlagsIn != uFlagsOut)
         sle->setFieldU32 (sfFlags, uFlagsOut);

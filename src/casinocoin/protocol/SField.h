@@ -360,6 +360,7 @@ extern SF_U32 const sfTransferRate;
 extern SF_U32 const sfWalletSize;
 extern SF_U32 const sfOwnerCount;
 extern SF_U32 const sfDestinationTag;
+extern SF_U32 const sfKYCTime;
 
 // 32-bit integers (uncommon)
 extern SF_U32 const sfHighQualityIn;
