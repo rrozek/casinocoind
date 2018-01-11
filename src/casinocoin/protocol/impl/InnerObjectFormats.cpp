@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-30  ajochems        Refactored for casinocoin
+    2018-01-11  jrojek          KYC object added
 */
 //==============================================================================
 
@@ -41,6 +42,7 @@ InnerObjectFormats::InnerObjectFormats ()
         << SOElement (sfTxnSignature,         SOE_REQUIRED)
         ;
 
+    // TODO jrojek: Need to check what is that and is it needed here?
     add (sfKYC.getJsonName ().c_str (), sfKYC.getCode ())
         << SOElement (sfFlags,                SOE_REQUIRED)
         << SOElement (sfKYCTime,              SOE_REQUIRED)
