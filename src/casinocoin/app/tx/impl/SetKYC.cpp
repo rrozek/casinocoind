@@ -104,6 +104,7 @@ SetKYC::doApply ()
     std::uint32_t const uSetFlag = ctx_.tx.getFieldU32 (sfSetFlag);
     std::uint32_t const uClearFlag = ctx_.tx.getFieldU32 (sfClearFlag);
 
+    JLOG(j_.trace()) << "SetKYC doApply!";
     //
     // KYC Validated
     //
@@ -118,16 +119,15 @@ SetKYC::doApply ()
         uFlagsOut   &= ~lsfKYCValidated;
     }
 
+    auto KYCObject = sle->peekFieldObject(sfKYC);
+
     //
     // KYC Verification
     //
     if (ctx_.tx.isFieldPresent (sfKYCVerifications))
     {
-        // get acc object from ledger, figure out unique list, setfieldv128(sfKYCVerifications, verifications);
+        // TODO jrojek: get acc object from ledger, figure out unique list, setfieldv128(sfKYCVerifications, verifications);
         STVector128 newVerifications = ctx_.tx.getFieldV128 (sfKYCVerifications);
-
-        auto KYCObject = sle->peekFieldObject(sfKYC);
-
         // STVector128 existingVerifications = KYCObject.getFieldV128(sfKYCVerifications);
 
         if (newVerifications.size() == 0)
@@ -140,11 +140,11 @@ SetKYC::doApply ()
             JLOG(j_.trace()) << "set verifications array";
             KYCObject.setFieldV128 (sfKYCVerifications, newVerifications);
         }
+
     }
 
-    // TODO jrojek:
-    // still need to handle KYC.date somehow. date is not in interface, but needs to land in ledger entry
-    //
+    KYCObject.setFieldU32 (sfKYCTime, view().parentCloseTime().time_since_epoch().count());
+    sle->setFieldObject (sfKYC, KYCObject);
 
     if (uFlagsIn != uFlagsOut)
         sle->setFieldU32 (sfFlags, uFlagsOut);

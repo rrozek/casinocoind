@@ -649,6 +649,11 @@ void STObject::setFieldArray (SField const& field, STArray const& v)
     setFieldUsingAssignment (field, v);
 }
 
+void STObject::setFieldObject(const SField &field, const STObject &v)
+{
+    setFieldUsingAssignment (field, v);
+}
+
 Json::Value STObject::getJson (int options) const
 {
     Json::Value ret (Json::objectValue);

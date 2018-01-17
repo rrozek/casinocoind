@@ -232,7 +232,7 @@ SF_Vec256 const sfIndexes    = make::one<SF_Vec256::type>(&sfIndexes,    STI_VEC
 SF_Vec256 const sfHashes     = make::one<SF_Vec256::type>(&sfHashes,     STI_VECTOR256, 2, "Hashes");
 SF_Vec256 const sfAmendments = make::one<SF_Vec256::type>(&sfAmendments, STI_VECTOR256, 3, "Amendments");
 
-SF_Vec128 const sfKYCVerifications = make::one<SF_Vec128::type>(&sfKYCVerifications, STI_VECTOR256, 1, "Verifications");
+SF_Vec128 const sfKYCVerifications = make::one<SF_Vec128::type>(&sfKYCVerifications, STI_VECTOR128, 1, "Verifications");
 
 // inner object
 // OBJECT/1 is reserved for end of object

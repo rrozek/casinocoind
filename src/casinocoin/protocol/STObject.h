@@ -506,6 +506,7 @@ public:
     void setFieldV256 (SField const& field, STVector256 const& v);
     void setFieldV128 (SField const& field, STVector128 const& v);
     void setFieldArray (SField const& field, STArray const& v);
+    void setFieldObject (SField const& field, STObject const& v);
 
     template <class Tag>
     void setFieldH160 (SField const& field, base_uint<160, Tag> const& v)
