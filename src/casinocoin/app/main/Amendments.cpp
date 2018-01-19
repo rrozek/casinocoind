@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-26  ajochems        Refactored for casinocoin
+    2018-01-11  jrojek          added KYC
 */
 //==============================================================================
 
@@ -60,7 +61,8 @@ supportedAmendments ()
         { "86E83A7D2ECE3AD5FA87AB2195AE015C950469ABF0B72EAACED318F74886AE90 CryptoConditionsSuite" },
         { "42EEA5E28A97824821D4EF97081FE36A54E9593C6E4F20CBAE098C69D2E072DC fix1373" },
         { "DC9CA96AEA1DCF83E527D1AFC916EFAF5D27388ECA4060A88817C1238CAEE0BF EnforceInvariants" },
-        { "3012E8230864E95A58C60FD61430D7E1B4D3353195F2981DC12B0C7C0950FFAC FlowCross" }
+        { "3012E8230864E95A58C60FD61430D7E1B4D3353195F2981DC12B0C7C0950FFAC FlowCross" },
+        { "9B84F266A5C412EBAC91FAF30CD9E70BE5B04E0EF94E89FC605DF4068307B1E8 KYC" }
     };
 }
 

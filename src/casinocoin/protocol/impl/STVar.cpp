@@ -35,6 +35,7 @@
 #include <casinocoin/protocol/STObject.h>
 #include <casinocoin/protocol/STPathSet.h>
 #include <casinocoin/protocol/STVector256.h>
+#include <casinocoin/protocol/STVector128.h>
 #include <casinocoin/protocol/impl/STVar.h>
 
 namespace casinocoin {
@@ -128,6 +129,7 @@ STVar::STVar (SerialIter& sit, SField const& name)
     case STI_HASH160:       construct<STHash160>(sit, name); return;
     case STI_HASH256:       construct<STHash256>(sit, name); return;
     case STI_VECTOR256:     construct<STVector256>(sit, name); return;
+    case STI_VECTOR128:     construct<STVector128>(sit, name); return;
     case STI_VL:            construct<STBlob>(sit, name); return;
     case STI_ACCOUNT:       construct<STAccount>(sit, name); return;
     case STI_PATHSET:       construct<STPathSet>(sit, name); return;
@@ -153,6 +155,7 @@ STVar::STVar (SerializedTypeID id, SField const& name)
     case STI_HASH160:       construct<STHash160>(name); return;
     case STI_HASH256:       construct<STHash256>(name); return;
     case STI_VECTOR256:     construct<STVector256>(name); return;
+    case STI_VECTOR128:     construct<STVector128>(name); return;
     case STI_VL:            construct<STBlob>(name); return;
     case STI_ACCOUNT:       construct<STAccount>(name); return;
     case STI_PATHSET:       construct<STPathSet>(name); return;

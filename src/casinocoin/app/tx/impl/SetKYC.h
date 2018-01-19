@@ -1,7 +1,6 @@
 //------------------------------------------------------------------------------
 /*
-    This file is part of rippled: https://github.com/ripple/rippled
-    Copyright (c) 2012, 2013 Ripple Labs Inc.
+    This file is part of casinocoind: https://github.com/casinocoin/casinocoind
 
     Permission to use, copy, modify, and/or distribute this software for any
     purpose  with  or without fee is hereby granted, provided that the above
@@ -19,28 +18,38 @@
 
 //==============================================================================
 /*
-    2017-06-30  ajochems        Refactored for casinocoin
+    2018-01-11  jrojek        created
 */
 //==============================================================================
 
-#ifndef CASINOCOIN_PROTOCOL_ST_H_INCLUDED
-#define CASINOCOIN_PROTOCOL_ST_H_INCLUDED
+#ifndef CASINOCOIN_TX_SETKYC_H_INCLUDED
+#define CASINOCOIN_TX_SETKYC_H_INCLUDED
 
-#include <casinocoin/protocol/SField.h>
-#include <casinocoin/protocol/STAccount.h>
-#include <casinocoin/protocol/STAmount.h>
-#include <casinocoin/protocol/STArray.h>
-#include <casinocoin/protocol/STBase.h>
-#include <casinocoin/protocol/STBitString.h>
-#include <casinocoin/protocol/STBlob.h>
-#include <casinocoin/protocol/STInteger.h>
-#include <casinocoin/protocol/STLedgerEntry.h>
-#include <casinocoin/protocol/STObject.h>
-#include <casinocoin/protocol/STParsedJSON.h>
-#include <casinocoin/protocol/STPathSet.h>
-#include <casinocoin/protocol/STTx.h>
-#include <casinocoin/protocol/STValidation.h>
-#include <casinocoin/protocol/STVector256.h>
-#include <casinocoin/protocol/STVector128.h>
+#include <casinocoin/app/tx/impl/Transactor.h>
+#include <casinocoin/basics/Log.h>
+#include <casinocoin/core/Config.h>
+#include <casinocoin/protocol/Indexes.h>
+#include <casinocoin/protocol/Quality.h>
+#include <casinocoin/protocol/TxFlags.h>
+
+namespace casinocoin {
+
+class SetKYC
+    : public Transactor
+{
+public:
+    SetKYC (ApplyContext& ctx)
+        : Transactor(ctx)
+    {
+    }
+
+    static
+    TER
+    preflight (PreflightContext const& ctx);
+
+    TER doApply () override;
+};
+
+} // casinocoin
 
 #endif

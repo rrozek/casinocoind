@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-30  ajochems        Refactored for casinocoin
+    2018-01-11  jrojek          Added KYC
 */
 //==============================================================================
 
@@ -74,6 +75,9 @@ const std::uint32_t asfAccountTxnID        = 5;
 const std::uint32_t asfNoFreeze            = 6;
 const std::uint32_t asfGlobalFreeze        = 7;
 const std::uint32_t asfDefaultCasinocoin   = 8;
+
+// KYCSet SetFlag/ClearFlag values
+const std::uint32_t kycfValidated          = 1;
 
 // OfferCreate flags:
 const std::uint32_t tfPassive              = 0x00010000;

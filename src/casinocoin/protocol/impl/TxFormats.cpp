@@ -139,6 +139,12 @@ TxFormats::TxFormats ()
             SOElement (sfBalance,           SOE_OPTIONAL) <<
             SOElement (sfSignature,         SOE_OPTIONAL) <<
             SOElement (sfPublicKey,         SOE_OPTIONAL);
+
+    add ("KYCSet", ttKYC_SET)
+        << SOElement (sfKYCVerifications,   SOE_OPTIONAL)
+        << SOElement (sfSetFlag,            SOE_OPTIONAL)
+        << SOElement (sfClearFlag,          SOE_OPTIONAL)
+        ;
 }
 
 void TxFormats::addCommonFields (Item& item)

@@ -66,6 +66,7 @@
 #include <casinocoin/protocol/impl/STValidation.cpp>
 #include <casinocoin/protocol/impl/STVar.cpp>
 #include <casinocoin/protocol/impl/STVector256.cpp>
+#include <casinocoin/protocol/impl/STVector128.cpp>
 #include <casinocoin/protocol/impl/IOUAmount.cpp>
 
 #if DOXYGEN

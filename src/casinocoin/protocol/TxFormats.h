@@ -59,6 +59,8 @@ enum TxType
 
     ttTRUST_SET         = 20,
 
+    ttKYC_SET           = 30,
+
     ttAMENDMENT         = 100,
     ttFEE               = 101,
 };

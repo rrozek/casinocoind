@@ -52,6 +52,7 @@ class STBitString;
 template <class>
 class STInteger;
 class STVector256;
+class STVector128;
 
 enum SerializedTypeID
 {
@@ -78,6 +79,7 @@ enum SerializedTypeID
     STI_HASH160 = 17,
     STI_PATHSET = 18,
     STI_VECTOR256 = 19,
+    STI_VECTOR128 = 20,
 
     // high level types
     // cannot be serialized inside other types
@@ -322,6 +324,7 @@ using SF_Account = TypedField<STAccount>;
 using SF_Amount = TypedField<STAmount>;
 using SF_Blob = TypedField<STBlob>;
 using SF_Vec256 = TypedField<STVector256>;
+using SF_Vec128 = TypedField<STVector128>;
 
 //------------------------------------------------------------------------------
 
@@ -357,6 +360,7 @@ extern SF_U32 const sfTransferRate;
 extern SF_U32 const sfWalletSize;
 extern SF_U32 const sfOwnerCount;
 extern SF_U32 const sfDestinationTag;
+extern SF_U32 const sfKYCTime;
 
 // 32-bit integers (uncommon)
 extern SF_U32 const sfHighQualityIn;
@@ -476,6 +480,9 @@ extern SF_Vec256 const sfIndexes;
 extern SF_Vec256 const sfHashes;
 extern SF_Vec256 const sfAmendments;
 
+// vector of 128-bit
+extern SF_Vec128 const sfKYCVerifications;
+
 // inner object
 // OBJECT/1 is reserved for end of object
 extern SField const sfTransactionMetaData;
@@ -490,6 +497,7 @@ extern SField const sfMemo;
 extern SField const sfSignerEntry;
 extern SField const sfSigner;
 extern SField const sfMajority;
+extern SField const sfKYC;
 
 // array of objects
 // ARRAY/1 is reserved for end of array
