@@ -243,9 +243,9 @@ nodeobject_decompress (void const* in,
     {
         auto const hs =
             field<std::uint16_t>::size; // Mask size
-        if (in_size < hs + 65)
-            Throw<std::runtime_error> (
-                "nodeobject codec: short inner node");
+//        if (in_size < hs + 65)
+//            Throw<std::runtime_error> (
+//                "nodeobject codec: short inner node");
         istream is(p, in_size);
         std::uint16_t mask;
         read<std::uint16_t>(is, mask);  // Mask

@@ -723,7 +723,7 @@ void NetworkOPsImp::processClusterTimer ()
     bool const update = app_.cluster().update(
         app_.nodeIdentity().first,
         "",
-        (m_ledgerMaster.getValidatedLedgerAge() <= 4min)
+        (m_ledgerMaster.getValidatedLedgerAge() <= 10min)
             ? app_.getFeeTrack().getLocalFee()
             : 0,
         app_.timeKeeper().now());
@@ -1821,12 +1821,12 @@ void NetworkOPsImp::setMode (OperatingMode om)
 {
     if (om == omCONNECTED)
     {
-        if (app_.getLedgerMaster ().getValidatedLedgerAge () < 1min)
+        if (app_.getLedgerMaster ().getValidatedLedgerAge () < 6min)
             om = omSYNCING;
     }
     else if (om == omSYNCING)
     {
-        if (app_.getLedgerMaster ().getValidatedLedgerAge () >= 1min)
+        if (app_.getLedgerMaster ().getValidatedLedgerAge () >= 6min)
             om = omCONNECTED;
     }
 

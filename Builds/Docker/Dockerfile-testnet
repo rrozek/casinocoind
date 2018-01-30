@@ -1,23 +1,46 @@
-FROM ubuntu
-MAINTAINER Torrie Fischer <torrie@ripple.com>
+# casinocoind
 
-RUN apt-get update -qq &&\
-    apt-get install -qq software-properties-common &&\
-    apt-add-repository -y ppa:ubuntu-toolchain-r/test &&\
-    apt-add-repository -y ppa:afrank/boost &&\
-    apt-get update -qq
+# use the ubuntu base image
+FROM ubuntu:xenial
+MAINTAINER Andre Jochems andre@casinocoin.org
 
-RUN apt-get purge -qq libboost1.48-dev &&\
-    apt-get install -qq libprotobuf8 libboost1.57-all-dev
+# make sure the package repository is up to date
+RUN apt-get update
+RUN apt-get -y upgrade
 
-RUN mkdir -p /srv/rippled/data
+# install the dependencies
+RUN apt-get -y install python-software-properties curl git scons ctags cmake pkg-config protobuf-compiler libprotobuf-dev libssl-dev python-software-properties libboost-all-dev
 
-VOLUME /srv/rippled/data/
+# download source code from official repository
+RUN git clone https://github.com/casinocoin/casinocoind.git src; cd src/; git checkout master
 
-ENTRYPOINT ["/srv/rippled/bin/rippled"]
-CMD ["--conf", "/srv/rippled/data/rippled.cfg"]
-EXPOSE 51235/udp
+# compile
+RUN cd src/; scons
+
+# move to root directory and strip
+RUN cp src/build/casinocoind casinocoind; strip casinocoind
+
+# make paths
+RUN mkdir -p /var/lib/casinocoind/db/nudb
+RUN mkdir -p /var/log/casinocoind
+RUN mkdir -p /etc/casinocoind
+VOLUME /var/lib/casinocoind/
+
+# copy default config
+RUN cp src/doc/casinocoind-example-testnet.cfg /etc/casinocoind/casinocoind.cfg
+RUN cp src/doc/validators-example-testnet.txt /etc/casinocoind/validators.txt
+
+# clean source
+RUN rm -r src
+
+# set server Timezone to UTC
+RUN apt-get -y install tzdata
+RUN ln -fs /usr/share/zoneinfo/UTC /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
+
+# expose ports
+EXPOSE 7777/udp
 EXPOSE 5005/tcp
+EXPOSE 7007/tcp
 
-ADD ./rippled.cfg /srv/rippled/data/rippled.cfg
-ADD ./rippled /srv/rippled/bin/
+# launch casinocoind when launching the container
+ENTRYPOINT ./casinocoind --conf=/etc/casinocoind/casinocoind.cfg
