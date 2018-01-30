@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-30  ajochems        Refactored for casinocoin
+    2018-01-11  jrojek          added KYC
 */
 //==============================================================================
 
@@ -58,6 +59,7 @@ extern uint256 const featureEscrow;
 extern uint256 const featureCryptoConditionsSuite;
 extern uint256 const fix1373;
 extern uint256 const featureEnforceInvariants;
+extern uint256 const featureKYC;
 
 } // casinocoin
 

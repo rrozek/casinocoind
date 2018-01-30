@@ -110,6 +110,7 @@ SF_U32 const sfTransferRate      = make::one<SF_U32::type>(&sfTransferRate,     
 SF_U32 const sfWalletSize        = make::one<SF_U32::type>(&sfWalletSize,        STI_UINT32, 12, "WalletSize");
 SF_U32 const sfOwnerCount        = make::one<SF_U32::type>(&sfOwnerCount,        STI_UINT32, 13, "OwnerCount");
 SF_U32 const sfDestinationTag    = make::one<SF_U32::type>(&sfDestinationTag,    STI_UINT32, 14, "DestinationTag");
+SF_U32 const sfKYCTime           = make::one<SF_U32::type>(&sfKYCTime,           STI_UINT32, 15, "Date");
 
 // 32-bit integers (uncommon)
 SF_U32 const sfHighQualityIn       = make::one<SF_U32::type>(&sfHighQualityIn,       STI_UINT32, 16, "HighQualityIn");
@@ -231,6 +232,8 @@ SF_Vec256 const sfIndexes    = make::one<SF_Vec256::type>(&sfIndexes,    STI_VEC
 SF_Vec256 const sfHashes     = make::one<SF_Vec256::type>(&sfHashes,     STI_VECTOR256, 2, "Hashes");
 SF_Vec256 const sfAmendments = make::one<SF_Vec256::type>(&sfAmendments, STI_VECTOR256, 3, "Amendments");
 
+SF_Vec128 const sfKYCVerifications = make::one<SF_Vec128::type>(&sfKYCVerifications, STI_VECTOR128, 1, "Verifications");
+
 // inner object
 // OBJECT/1 is reserved for end of object
 SField const sfTransactionMetaData = make::one(&sfTransactionMetaData, STI_OBJECT,  2, "TransactionMetaData");
@@ -248,6 +251,7 @@ SField const sfSignerEntry         = make::one(&sfSignerEntry,         STI_OBJEC
 SField const sfSigner              = make::one(&sfSigner,              STI_OBJECT, 16, "Signer");
 //                                                                                 17 has not been used yet...
 SField const sfMajority            = make::one(&sfMajority,            STI_OBJECT, 18, "Majority");
+SField const sfKYC                 = make::one(&sfKYC,                 STI_OBJECT, 19, "KYC");
 
 // array of objects
 // ARRAY/1 is reserved for end of array
@@ -340,6 +344,7 @@ SField::getField (int code)
     case STI_HASH160:
     case STI_PATHSET:
     case STI_VECTOR256:
+    case STI_VECTOR128:
         break;
 
     default:
