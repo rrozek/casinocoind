@@ -141,6 +141,7 @@ TxFormats::TxFormats ()
             SOElement (sfPublicKey,         SOE_OPTIONAL);
 
     add ("KYCSet", ttKYC_SET)
+        << SOElement (sfDestination,        SOE_REQUIRED)
         << SOElement (sfKYCVerifications,   SOE_OPTIONAL)
         << SOElement (sfSetFlag,            SOE_OPTIONAL)
         << SOElement (sfClearFlag,          SOE_OPTIONAL)

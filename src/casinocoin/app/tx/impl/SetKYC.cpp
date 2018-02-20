@@ -45,19 +45,19 @@ SetKYC::preflight (PreflightContext const& ctx)
     auto& tx = ctx.tx;
     auto& j = ctx.j;
 
-    // SetKYC transaction can only be issued with Multi-sign
-    if (!ctx.rules.enabled (featureMultiSign))
+    // KYCSet transaction is enabled via amendment
+    if (!ctx.rules.enabled(featureKYC))
     {
-        JLOG(j.trace()) << "KYC Set transaction can only be Multi-signed. "
-                           "This feature is disabled";
-        return temINVALID;
+        JLOG(j.info()) << "Feature KYC disabled.";
+        return temDISABLED;
     }
 
-    Blob const& signingPubKey = tx.getFieldVL (sfSigningPubKey);
-    if (!signingPubKey.empty ())
+    auto const uDstAccountID = tx.getAccountID (sfDestination);
+    if (!uDstAccountID)
     {
-        JLOG(j.trace()) << "KYC Set transaction can only be Multi-signed.";
-        return temINVALID;
+        JLOG(j.trace()) << "Malformed transaction: " <<
+            "Destination account not specified.";
+        return temDST_NEEDED;
     }
 
     std::uint32_t const uSetFlag = tx.getFieldU32 (sfSetFlag);
@@ -65,28 +65,34 @@ SetKYC::preflight (PreflightContext const& ctx)
 
     if ((uSetFlag != 0) && (uSetFlag == uClearFlag))
     {
-        JLOG(j.trace()) << "Malformed transaction: Set and clear same flag.";
+        JLOG(j.info()) << "Malformed transaction: Set and clear same flag.";
         return temINVALID_FLAG;
     }
 
-    // KYC Validation flag
-    if (uSetFlag == kycfValidated || uClearFlag == kycfValidated)
+    auto const id = tx.getAccountID(sfAccount);
+    if (id == zero)
+        return temBAD_SRC_ACCOUNT;
+
+    bool bIsTrusted = false;
+    for ( const std::string& entry : ctx.app.config().KYCTrustedAccounts )
     {
-        if (!ctx.rules.enabled(featureKYC))
+        JLOG(j.info()) << "address: " << entry << " read from config";
+        auto trustedAccountID = parseBase58<AccountID>(entry);
+        if (!trustedAccountID)
         {
-            JLOG(j.trace()) << "Feature KYC disabled.";
-            return temDISABLED;
+            JLOG(j.info()) << "address: " << entry << " seems to be invalid";
+            continue;
+        }
+        if (id == trustedAccountID)
+        {
+            bIsTrusted = true;
+            break;
         }
     }
-
-    // KYC Verification
-    if (tx.isFieldPresent (sfKYCVerifications))
+    if (!bIsTrusted)
     {
-        if (!ctx.rules.enabled(featureKYC))
-        {
-            JLOG(j.trace()) << "Feature KYC disabled.";
-            return temDISABLED;
-        }
+        JLOG(j.info()) << "KYCSet tx can be only issued from trusted address";
+        return temBAD_SRC_ACCOUNT;
     }
 
     return preflight2(ctx);
@@ -95,31 +101,46 @@ SetKYC::preflight (PreflightContext const& ctx)
 TER
 SetKYC::doApply ()
 {
-    auto const sle = view().peek(
-        keylet::account(account_));
+    JLOG(j_.info()) << "SetKYC doApply!";
+    AccountID const uDstAccountID (ctx_.tx.getAccountID (sfDestination));
 
-    std::uint32_t const uFlagsIn = sle->getFieldU32 (sfFlags);
+    // Open a ledger for editing.
+    SLE::pointer sleDst = view().peek (keylet::account(uDstAccountID));
+
+    if (!sleDst)
+    {
+        JLOG(j_.warn()) << "Destination account does not exist.";
+        return temDST_NEEDED;
+    }
+    else
+    {
+        // Tell the engine that we are intending to change the destination
+        // account.  The source account gets always charged a fee so it's always
+        // marked as modified.
+        view().update (sleDst);
+    }
+
+    std::uint32_t const uFlagsIn = sleDst->getFieldU32 (sfFlags);
     std::uint32_t uFlagsOut = uFlagsIn;
 
     std::uint32_t const uSetFlag = ctx_.tx.getFieldU32 (sfSetFlag);
     std::uint32_t const uClearFlag = ctx_.tx.getFieldU32 (sfClearFlag);
 
-    JLOG(j_.trace()) << "SetKYC doApply!";
     //
     // KYC Validated
     //
     if (uSetFlag == kycfValidated)
     {
-        JLOG(j_.trace()) << "set KYC Validated";
+        JLOG(j_.info()) << "set KYC Validated";
         uFlagsOut   |= lsfKYCValidated;
     }
     else if (uClearFlag == kycfValidated)
     {
-        JLOG(j_.trace()) << "unset KYC Validated";
+        JLOG(j_.info()) << "unset KYC Validated";
         uFlagsOut   &= ~lsfKYCValidated;
     }
 
-    auto KYCObject = sle->peekFieldObject(sfKYC);
+    auto KYCObject = sleDst->peekFieldObject(sfKYC);
 
     //
     // KYC Verification
@@ -132,22 +153,22 @@ SetKYC::doApply ()
 
         if (newVerifications.size() == 0)
         {
-            JLOG(j_.trace()) << "clear verifications array";
+            JLOG(j_.info()) << "clear verifications array";
             KYCObject.makeFieldAbsent (sfKYCVerifications);
         }
         else
         {
-            JLOG(j_.trace()) << "set verifications array";
+            JLOG(j_.info()) << "set verifications array";
             KYCObject.setFieldV128 (sfKYCVerifications, newVerifications);
         }
 
     }
 
     KYCObject.setFieldU32 (sfKYCTime, view().parentCloseTime().time_since_epoch().count());
-    sle->setFieldObject (sfKYC, KYCObject);
+    sleDst->setFieldObject (sfKYC, KYCObject);
 
     if (uFlagsIn != uFlagsOut)
-        sle->setFieldU32 (sfFlags, uFlagsOut);
+        sleDst->setFieldU32 (sfFlags, uFlagsOut);
 
     return tesSUCCESS;
 }
