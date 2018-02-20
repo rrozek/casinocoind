@@ -49,13 +49,19 @@ class SetSignerList : public Transactor
 private:
     // Values determined during preCompute for use later.
     enum Operation {unknown, set, destroy};
+    // jrojek 12.02.2018 KYC list fixed to 7 to not cause interference with (yet to come) multiple lists
     Operation do_ {unknown};
+    uint32_t listId_;
     std::uint32_t quorum_ {0};
     std::vector<SignerEntries::SignerEntry> signers_;
 
+
 public:
+    enum ListId {eDefaultId = 0, eKYCId = STTx::maxMultiSignerUserListsCount};
+
     SetSignerList (ApplyContext& ctx)
         : Transactor(ctx)
+        , listId_(eDefaultId)
     {
     }
 
@@ -77,7 +83,8 @@ private:
     static
     std::tuple<TER, std::uint32_t,
         std::vector<SignerEntries::SignerEntry>,
-            Operation>
+            Operation,
+                uint32_t>
     determineOperation(STTx const& tx,
         ApplyFlags flags, beast::Journal j);
 

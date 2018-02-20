@@ -290,16 +290,24 @@ SetAccount::doApply ()
             return tecNEED_MASTER_KEY;
         }
 
-        if ((!sle->isFieldPresent (sfRegularKey)) &&
-            (!view().peek (keylet::signers (account_))))
+        if ((!sle->isFieldPresent (sfRegularKey)))
         {
-            // Account has no regular key or multi-signer signer list.
-
             // Prevent transaction changes until we're ready.
-            if (view().rules().enabled(featureMultiSign))
-                return tecNO_ALTERNATIVE_KEY;
+            if (!view().rules().enabled(featureMultiSign))
+                return tecNO_REGULAR_KEY;
 
-            return tecNO_REGULAR_KEY;
+            bool multiSignersAvailable = false;
+            for ( uint32_t i = 0; i < STTx::maxMultiSignerUserListsCount; i++)
+            {
+                if (view().peek (keylet::signers (account_,i)))
+                {
+                    multiSignersAvailable = true;
+                    break;
+                }
+            }
+            // Account has no regular key or multi-signer signer list.
+            if (!multiSignersAvailable)
+                return tecNO_ALTERNATIVE_KEY;
         }
 
         JLOG(j_.trace()) << "Set lsfDisableMaster.";

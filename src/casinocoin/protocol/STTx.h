@@ -53,6 +53,9 @@ public:
 
     static std::size_t const minMultiSigners = 1;
     static std::size_t const maxMultiSigners = 8;
+    static std::size_t const maxMultiSignerListsCount = 8;
+    static constexpr std::size_t maxMultiSignerUserListsCount = STTx::maxMultiSignerListsCount - 1;
+
 
 public:
     STTx () = delete;

@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-30  ajochems        Refactored for casinocoin
+    2018-01-18  jrojek          Added KYCSigners section
 */
 //==============================================================================
 
@@ -421,6 +422,9 @@ void Config::loadFromString (std::string const& fileContents)
 
     if (getSingleSection (secConfig, SECTION_WORKERS, strTemp, j_))
         WORKERS      = beast::lexicalCastThrow <std::size_t> (strTemp);
+
+    if (auto s = getIniFileSection (secConfig, SECTION_KYC_SIGNERS))
+        KYCSigners = *s;
 
     // Do not load trusted validator configuration for standalone mode
     if (! RUN_STANDALONE)

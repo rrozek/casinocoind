@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-29  ajochems        Refactored for casinocoin
+    2018-02-13  jrojek          adding multiple SignerLists support
 */
 //==============================================================================
 
@@ -40,11 +41,12 @@ namespace casinocoin {
 // We're prepared for there to be multiple signer lists in the future,
 // but we don't need them yet.  So for the time being we're manually
 // setting the sfSignerListID to zero in all cases.
-static std::uint32_t const defaultSignerListID_ = 0;
+//static std::uint32_t const defaultSignerListID_ = SetSignerList::eDefaultId;
 
 std::tuple<TER, std::uint32_t,
     std::vector<SignerEntries::SignerEntry>,
-        SetSignerList::Operation>
+        SetSignerList::Operation,
+            std::uint32_t>
 SetSignerList::determineOperation(STTx const& tx,
     ApplyFlags flags, beast::Journal j)
 {
@@ -53,6 +55,7 @@ SetSignerList::determineOperation(STTx const& tx,
     auto const quorum = tx[sfSignerQuorum];
     std::vector<SignerEntries::SignerEntry> sign;
     Operation op = unknown;
+    uint32_t listID = SetSignerList::eDefaultId;
 
     bool const hasSignerEntries(tx.isFieldPresent(sfSignerEntries));
     if (quorum && hasSignerEntries)
@@ -60,7 +63,7 @@ SetSignerList::determineOperation(STTx const& tx,
         auto signers = SignerEntries::deserialize(tx, j, "transaction");
 
         if (signers.second != tesSUCCESS)
-            return std::make_tuple(signers.second, quorum, sign, op);
+            return std::make_tuple(signers.second, quorum, sign, op, listID);
 
         std::sort(signers.first.begin(), signers.first.end());
 
@@ -73,7 +76,12 @@ SetSignerList::determineOperation(STTx const& tx,
         op = destroy;
     }
 
-    return std::make_tuple(tesSUCCESS, quorum, sign, op);
+    if (tx.isFieldPresent(sfSignerListID))
+    {
+        listID = tx[sfSignerListID];
+    }
+
+    return std::make_tuple(tesSUCCESS, quorum, sign, op, listID);
 }
 
 TER
@@ -96,6 +104,17 @@ SetSignerList::preflight (PreflightContext const& ctx)
         JLOG(ctx.j.trace()) <<
             "Malformed transaction: Invalid signer set list format.";
         return temMALFORMED;
+    }
+
+    if (std::get<4>(result) == ListId::eKYCId)
+    {
+        if (! ctx.rules.enabled(featureKYC))
+        {
+            // identified KYC-reserved SignerListId, but KYC not enabled
+            JLOG(ctx.j.trace()) <<
+                "SetSignerList KYC-reserved list selected, but KYC feature is not enabled";
+            return temDISABLED;
+        }
     }
 
     if (std::get<3>(result) == set)
@@ -121,6 +140,8 @@ SetSignerList::doApply ()
     switch (do_)
     {
     case set:
+        // TODO: jrojek 12.02.2018
+        // need to set at given list Id, not necessarily 'replace'
         return replaceSignerList ();
 
     case destroy:
@@ -144,6 +165,7 @@ SetSignerList::preCompute()
     quorum_ = std::get<1>(result);
     signers_ = std::get<2>(result);
     do_ = std::get<3>(result);
+    listId_ = std::get<4>(result);
 
     return Transactor::preCompute();
 }
@@ -211,7 +233,7 @@ SetSignerList::replaceSignerList ()
 {
     auto const accountKeylet = keylet::account (account_);
     auto const ownerDirKeylet = keylet::ownerDir (account_);
-    auto const signerListKeylet = keylet::signers (account_);
+    auto const signerListKeylet = keylet::signers (account_, listId_);
 
     // This may be either a create or a replace.  Preemptively remove any
     // old signer list.  May reduce the reserve, so this is done before
@@ -274,7 +296,7 @@ SetSignerList::destroySignerList ()
             return tecNO_ALTERNATIVE_KEY;
 
     auto const ownerDirKeylet = keylet::ownerDir (account_);
-    auto const signerListKeylet = keylet::signers (account_);
+    auto const signerListKeylet = keylet::signers (account_, listId_);
     return removeSignersFromLedger(
         accountKeylet, ownerDirKeylet, signerListKeylet);
 }
@@ -316,8 +338,7 @@ SetSignerList::writeSignersToSLE (SLE::pointer const& ledgerEntry) const
     // Assign the quorum.
     ledgerEntry->setFieldU32 (sfSignerQuorum, quorum_);
 
-    // For now, assign the default SignerListID.
-    ledgerEntry->setFieldU32 (sfSignerListID, defaultSignerListID_);
+    ledgerEntry->setFieldU32 (sfSignerListID, listId_);
 
     // Create the SignerListArray one SignerEntry at a time.
     STArray toLedger (signers_.size ());

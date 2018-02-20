@@ -399,9 +399,22 @@ Transactor::checkSingleSign (PreclaimContext const& ctx)
 TER Transactor::checkMultiSign (PreclaimContext const& ctx)
 {
     auto const id = ctx.tx.getAccountID(sfAccount);
+    std::uint32_t listId = 0;
+    if (ctx.tx.isFieldPresent(sfSignerListID))
+    {
+        listId = ctx.tx.getFieldU32(sfSignerListID);
+        JLOG(ctx.j.trace()) <<
+            "listId field present: " << listId;
+    }
+    else
+    {
+        JLOG(ctx.j.trace()) <<
+            "listId field not present. defaulting to 0";
+    }
+
     // Get mTxnAccountID's SignerList and Quorum.
     std::shared_ptr<STLedgerEntry const> sleAccountSigners =
-        ctx.view.read (keylet::signers(id));
+        ctx.view.read (keylet::signers(id,listId));
     // If the signer list doesn't exist the account is not multi-signing.
     if (!sleAccountSigners)
     {
@@ -413,7 +426,8 @@ TER Transactor::checkMultiSign (PreclaimContext const& ctx)
     // We have plans to support multiple SignerLists in the future.  The
     // presence and defaulted value of the SignerListID field will enable that.
     assert (sleAccountSigners->isFieldPresent (sfSignerListID));
-    assert (sleAccountSigners->getFieldU32 (sfSignerListID) == 0);
+    // jrojek 13.02.2018 disabled defaulted value of SignerListID (enabling multiple SignerLists support)
+    // assert (sleAccountSigners->getFieldU32 (sfSignerListID) == 0);
 
     auto accountSigners =
         SignerEntries::deserialize (*sleAccountSigners, ctx.j, "ledger");

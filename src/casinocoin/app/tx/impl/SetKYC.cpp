@@ -50,14 +50,14 @@ SetKYC::preflight (PreflightContext const& ctx)
     {
         JLOG(j.trace()) << "KYC Set transaction can only be Multi-signed. "
                            "This feature is disabled";
-        return temINVALID;
+        return temDISABLED;
     }
 
     Blob const& signingPubKey = tx.getFieldVL (sfSigningPubKey);
     if (!signingPubKey.empty ())
     {
         JLOG(j.trace()) << "KYC Set transaction can only be Multi-signed.";
-        return temINVALID;
+        return temMALFORMED;
     }
 
     std::uint32_t const uSetFlag = tx.getFieldU32 (sfSetFlag);

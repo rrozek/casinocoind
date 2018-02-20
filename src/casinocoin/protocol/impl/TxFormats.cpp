@@ -118,6 +118,7 @@ TxFormats::TxFormats ()
     add ("SignerListSet", ttSIGNER_LIST_SET)
         << SOElement (sfSignerQuorum,        SOE_REQUIRED)
         << SOElement (sfSignerEntries,       SOE_OPTIONAL)
+        << SOElement (sfSignerListID,        SOE_OPTIONAL)
         ;
 
     add ("PaymentChannelCreate", ttPAYCHAN_CREATE) <<

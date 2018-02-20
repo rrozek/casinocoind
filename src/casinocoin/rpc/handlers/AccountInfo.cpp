@@ -108,9 +108,14 @@ Json::Value doAccountInfo (RPC::Context& context)
 
             // This code will need to be revisited if in the future we support
             // multiple SignerLists on one account.
-            auto const sleSigners = ledger->read (keylet::signers (accountID));
-            if (sleSigners)
-                jvSignerList.append (sleSigners->getJson (0));
+
+            // jrojek TODO 14.02.2018 well, the time is now, need to fix that
+            for ( uint32_t i = 0; i < STTx::maxMultiSignerListsCount; i++)
+            {
+                auto const sleSigners = ledger->read (keylet::signers (accountID, i));
+                if (sleSigners)
+                    jvSignerList.append (sleSigners->getJson (0));
+            }
 
             result[jss::account_data][jss::signer_lists] =
                 std::move(jvSignerList);

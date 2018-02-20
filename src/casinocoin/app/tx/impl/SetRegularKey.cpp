@@ -91,10 +91,25 @@ SetRegularKey::doApply ()
     }
     else
     {
-        if (sle->isFlag (lsfDisableMaster) &&
-            !view().peek (keylet::signers (account_)))
-            // Account has disabled master key and no multi-signer signer list.
-            return tecNO_ALTERNATIVE_KEY;
+        if (sle->isFlag (lsfDisableMaster))
+        {
+            // Prevent transaction changes until we're ready.
+            if (!view().rules().enabled(featureMultiSign))
+                return tecNO_REGULAR_KEY;
+
+            bool multiSignersAvailable = false;
+            for ( uint32_t i = 0; i < STTx::maxMultiSignerUserListsCount; i++)
+            {
+                if (view().peek (keylet::signers (account_,i)))
+                {
+                    multiSignersAvailable = true;
+                    break;
+                }
+            }
+            // Account has no regular key or multi-signer signer list.
+            if (!multiSignersAvailable)
+                return tecNO_ALTERNATIVE_KEY;
+        }
 
         sle->makeFieldAbsent (sfRegularKey);
     }

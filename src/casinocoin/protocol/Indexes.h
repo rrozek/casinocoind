@@ -94,7 +94,7 @@ uint256
 getCasinocoinStateIndex (AccountID const& a, Issue const& issue);
 
 uint256
-getSignerListIndex (AccountID const& account);
+getSignerListIndex (AccountID const& account, const uint32_t &listId);
 
 //------------------------------------------------------------------------------
 
@@ -210,7 +210,7 @@ static ticket_t const ticket {};
 /** A SignerList */
 struct signers_t
 {
-    Keylet operator()(AccountID const& id) const;
+    Keylet operator()(AccountID const& id, const std::uint32_t& listId) const;
 
     Keylet operator()(uint256 const& key) const
     {

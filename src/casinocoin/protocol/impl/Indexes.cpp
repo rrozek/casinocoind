@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-30  ajochems        Refactored for casinocoin
+    2018-02-13  jrojek          adding multiple SignerLists support
 */
 //==============================================================================
 
@@ -184,16 +185,18 @@ getCasinocoinStateIndex (AccountID const& a, Issue const& issue)
 }
 
 uint256
-getSignerListIndex (AccountID const& account)
+getSignerListIndex (AccountID const& account, const std::uint32_t& listId)
 {
     // We are prepared for there to be multiple SignerLists in the future,
     // but we don't have them yet.  In anticipation of multiple SignerLists
     // We supply a 32-bit ID to locate the SignerList.  Until we actually
     // *have* multiple signer lists, we can default that ID to zero.
+
+    // jrojek 13.02.2018 - adding multiple SignerLists support.
     return sha512Half(
         std::uint16_t(spaceSignerList),
         account,
-        std::uint32_t (0));  // 0 == default SignerList ID.
+        listId);
 }
 
 //------------------------------------------------------------------------------
@@ -285,10 +288,10 @@ Keylet ticket_t::operator()(AccountID const& id,
         getTicketIndex(id, seq) };
 }
 
-Keylet signers_t::operator()(AccountID const& id) const
+Keylet signers_t::operator()(AccountID const& id, const std::uint32_t& listId) const
 {
     return { ltSIGNER_LIST,
-        getSignerListIndex(id) };
+        getSignerListIndex(id, listId) };
 }
 
 //------------------------------------------------------------------------------
