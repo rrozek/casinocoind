@@ -190,9 +190,9 @@ SF_Amount const sfSendMax     = make::one<SF_Amount::type>(&sfSendMax,     STI_A
 SF_Amount const sfDeliverMin  = make::one<SF_Amount::type>(&sfDeliverMin,  STI_AMOUNT, 10, "DeliverMin");
 
 // currency amount (uncommon)
-SF_Amount const sfMinimumOffer    = make::one<SF_Amount::type>(&sfMinimumOffer,    STI_AMOUNT, 16, "MinimumOffer");
-SF_Amount const sfCasinocoinEscrow    = make::one<SF_Amount::type>(&sfCasinocoinEscrow,    STI_AMOUNT, 17, "CasinocoinEscrow");
-SF_Amount const sfDeliveredAmount = make::one<SF_Amount::type>(&sfDeliveredAmount, STI_AMOUNT, 18, "DeliveredAmount");
+SF_Amount const sfMinimumOffer      = make::one<SF_Amount::type>(&sfMinimumOffer,       STI_AMOUNT, 16, "MinimumOffer");
+SF_Amount const sfCasinocoinEscrow  = make::one<SF_Amount::type>(&sfCasinocoinEscrow,   STI_AMOUNT, 17, "CasinocoinEscrow");
+SF_Amount const sfDeliveredAmount   = make::one<SF_Amount::type>(&sfDeliveredAmount,    STI_AMOUNT, 18, "DeliveredAmount");
 
 // variable length (common)
 SF_Blob const sfPublicKey       = make::one<SF_Blob::type>(&sfPublicKey,     STI_VL,  1, "PublicKey");
@@ -208,7 +208,7 @@ SF_Blob const sfCreateCode      = make::one<SF_Blob::type>(&sfCreateCode,    STI
 SF_Blob const sfMemoType        = make::one<SF_Blob::type>(&sfMemoType,      STI_VL, 12, "MemoType");
 SF_Blob const sfMemoData        = make::one<SF_Blob::type>(&sfMemoData,      STI_VL, 13, "MemoData");
 SF_Blob const sfMemoFormat      = make::one<SF_Blob::type>(&sfMemoFormat,    STI_VL, 14, "MemoFormat");
-
+SF_Blob const sfClientIP        = make::one<SF_Blob::type>(&sfClientIP,      STI_VL, 15, "ClientIP");
 
 // variable length (uncommon)
 SF_Blob const sfFulfillment     = make::one<SF_Blob::type>(&sfFulfillment,     STI_VL, 16, "Fulfillment");

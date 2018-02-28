@@ -65,6 +65,7 @@ JSS ( TakerGets );                  // field.
 JSS ( TakerPays );                  // field.
 JSS ( TxnSignature );               // field
 JSS ( TransactionType );            // in: TransactionSign
+JSS ( ClientIP );                   // in/out: TransactionSign; field
 JSS ( aborted );                    // out: InboundLedger
 JSS ( accepted );                   // out: LedgerToJson, OwnerInfo
 JSS ( account );                    // in/out: many

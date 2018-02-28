@@ -55,6 +55,14 @@ Json::Value doSubmit (RPC::Context& context)
     {
         auto const failType = getFailHard (context);
 
+        // jrojek 28.02.2018 enrich tx_json with clientIP
+        if (context.params.isMember (jss::tx_json))
+        {
+            std::string clientIPStr = context.clientAddress.address().to_string();
+            Json::Value ipAddress(strHex(clientIPStr.begin(), clientIPStr.size()));
+            context.params[jss::tx_json][jss::ClientIP] = ipAddress;
+        }
+
         return RPC::transactionSubmit (
         context.params,
         failType,
@@ -87,6 +95,17 @@ Json::Value doSubmit (RPC::Context& context)
         return jvResult;
     }
 
+    // jrojek 28.02.2018 enrich decoded tx_blob with clientIP
+    std::string clientIPStr = context.clientAddress.address().to_string();
+    std::string clientIPHex = strHex(clientIPStr.begin(), clientIPStr.size());
+    auto clientIPHexIter = clientIPHex.begin();
+    auto clientIPStrIter = clientIPStr.begin();
+    Blob ipAddress;
+    while (clientIPStrIter != clientIPStr.end())
+        ipAddress.push_back(*clientIPStrIter++);
+
+    STTx* stpTransUnconsted = const_cast<STTx*>(stpTrans.get());
+    stpTransUnconsted->setFieldVL(sfClientIP, ipAddress);
 
     {
         if (!context.app.checkSigs())
@@ -149,6 +168,7 @@ Json::Value doSubmit (RPC::Context& context)
             jvResult[jss::engine_result_message]   = sHuman;
         }
 
+        JLOG(context.app.journal("RPC Submit").debug()) << "Decoded tx from blob: " << jvResult;
         return jvResult;
     }
     catch (std::exception& e)

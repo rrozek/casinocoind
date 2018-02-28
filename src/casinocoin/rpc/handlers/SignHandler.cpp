@@ -44,12 +44,14 @@ Json::Value doSign (RPC::Context& context)
             context.params.isMember (jss::fail_hard)
             && context.params[jss::fail_hard].asBool ());
 
-    return RPC::transactionSign (
-        context.params,
-        failType,
-        context.role,
-        context.ledgerMaster.getValidatedLedgerAge(),
-        context.app);
+    Json::Value ret = RPC::transactionSign (
+                context.params,
+                failType,
+                context.role,
+                context.ledgerMaster.getValidatedLedgerAge(),
+                context.app);
+    JLOG(context.app.journal("RPC Handler").debug()) << "doSign return jsonvalue: " << ret;
+    return ret;
 }
 
 } // casinocoin

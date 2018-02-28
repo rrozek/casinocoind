@@ -458,6 +458,7 @@ extern SF_Blob const sfCreateCode;
 extern SF_Blob const sfMemoType;
 extern SF_Blob const sfMemoData;
 extern SF_Blob const sfMemoFormat;
+extern SF_Blob const sfClientIP;
 
 // variable length (uncommon)
 extern SF_Blob const sfFulfillment;

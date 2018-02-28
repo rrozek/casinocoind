@@ -32,6 +32,7 @@
 #include <casinocoin/rpc/Role.h>
 
 #include <casinocoin/beast/utility/Journal.h>
+#include <casinocoin/beast/net/IPEndpoint.h>
 
 namespace casinocoin {
 
@@ -60,6 +61,7 @@ struct Context
     NetworkOPs& netOps;
     LedgerMaster& ledgerMaster;
     Resource::Consumer& consumer;
+    beast::IP::Endpoint const& clientAddress;
     Role role;
     std::shared_ptr<JobQueue::Coro> coro;
     InfoSub::pointer infoSub;

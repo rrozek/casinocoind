@@ -50,6 +50,14 @@ Json::Value doSubmitMultiSigned (RPC::Context& context)
     auto const failHard = context.params[jss::fail_hard].asBool();
     auto const failType = NetworkOPs::doFailHard (failHard);
 
+    // jrojek 28.02.2018 enrich tx_json with clientIP
+    if (context.params.isMember (jss::tx_json))
+    {
+        std::string clientIPStr = context.clientAddress.address().to_string();
+        Json::Value ipAddress(strHex(clientIPStr.begin(), clientIPStr.size()));
+        context.params[jss::tx_json][jss::ClientIP] = ipAddress;
+    }
+
     return RPC::transactionSubmitMultiSigned (
         context.params,
         failType,
