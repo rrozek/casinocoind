@@ -363,7 +363,7 @@ ServerHandlerImp::onWSMessage(
         return;
     }
 
-    JLOG(m_journal.warn())
+    JLOG(m_journal.trace())
         << "Websocket received '" << jv << "'";
 
     m_jobQueue.postCoro(jtCLIENT, "WS-Client",
