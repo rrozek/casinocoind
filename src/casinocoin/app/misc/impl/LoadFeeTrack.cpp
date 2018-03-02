@@ -26,7 +26,6 @@
 #include <BeastConfig.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/basics/contract.h>
-#include <casinocoin/basics/Log.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/ledger/ReadView.h>
 #include <casinocoin/protocol/STAmount.h>
@@ -43,6 +42,12 @@ LoadFeeTrack::raiseLocalFee ()
 
     if (++raiseCount_ < 2)
         return false;
+
+    JLOG(j_.debug()) << "Load-related fee escalation is disabled.";
+    return false;
+    // ####################
+    // jrojek 02.03.2018 - code below never executes
+    // ####################
 
     std::uint32_t origFee = localTxnLoadFee_;
 
@@ -68,9 +73,15 @@ bool
 LoadFeeTrack::lowerLocalFee ()
 {
     std::lock_guard <std::mutex> sl (lock_);
-    std::uint32_t origFee = localTxnLoadFee_;
     raiseCount_ = 0;
 
+    JLOG(j_.debug()) << "Load-related fee escalation is disabled.";
+    return false;
+    // ####################
+    // jrojek 02.03.2018 - code below never executes
+    // ####################
+
+    std::uint32_t origFee = localTxnLoadFee_;
     // Reduce slowly
     localTxnLoadFee_ -= (localTxnLoadFee_ / lftFeeDecFraction );
 
