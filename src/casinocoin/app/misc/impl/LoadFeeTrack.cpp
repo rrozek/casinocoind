@@ -75,7 +75,6 @@ LoadFeeTrack::lowerLocalFee ()
     std::lock_guard <std::mutex> sl (lock_);
     raiseCount_ = 0;
 
-    JLOG(j_.debug()) << "Load-related fee escalation is disabled.";
     return false;
     // ####################
     // jrojek 02.03.2018 - code below never executes
