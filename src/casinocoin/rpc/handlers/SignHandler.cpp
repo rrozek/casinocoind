@@ -45,11 +45,11 @@ Json::Value doSign (RPC::Context& context)
             && context.params[jss::fail_hard].asBool ());
 
     return RPC::transactionSign (
-        context.params,
-        failType,
-        context.role,
-        context.ledgerMaster.getValidatedLedgerAge(),
-        context.app);
+                context.params,
+                failType,
+                context.role,
+                context.ledgerMaster.getValidatedLedgerAge(),
+                context.app);
 }
 
 } // casinocoin

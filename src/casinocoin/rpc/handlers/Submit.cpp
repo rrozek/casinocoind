@@ -55,6 +55,19 @@ Json::Value doSubmit (RPC::Context& context)
     {
         auto const failType = getFailHard (context);
 
+        // jrojek 28.02.2018 enrich tx_json with clientIP
+        if (context.params.isMember (jss::tx_json))
+        {
+            // only add it if KYC feature is enabled
+            if (context.app.getLedgerMaster().getValidatedRules().
+                enabled (featureKYC))
+            {
+                std::string clientIPStr = context.clientAddress.address().to_string();
+                Json::Value ipAddress(strHex(clientIPStr.begin(), clientIPStr.size()));
+                context.params[jss::tx_json][jss::ClientIP] = ipAddress;
+            }
+        }
+
         return RPC::transactionSubmit (
         context.params,
         failType,
@@ -87,6 +100,20 @@ Json::Value doSubmit (RPC::Context& context)
         return jvResult;
     }
 
+    // jrojek 28.02.2018 enrich decoded tx_blob with clientIP
+    // only add it if KYC feature is enabled
+    if (context.app.getLedgerMaster().getValidatedRules().
+        enabled (featureKYC))
+    {
+        std::string clientIPStr = context.clientAddress.address().to_string();
+        auto clientIPStrIter = clientIPStr.begin();
+        Blob ipAddress;
+        while (clientIPStrIter != clientIPStr.end())
+            ipAddress.push_back(*clientIPStrIter++);
+
+        STTx* stpTransUnconsted = const_cast<STTx*>(stpTrans.get());
+        stpTransUnconsted->setFieldVL(sfClientIP, ipAddress);
+    }
 
     {
         if (!context.app.checkSigs())

@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-29  ajochems        Refactored for casinocoin
+    2018-01-18  jrojek          Added KYCSigners section
 */
 //==============================================================================
 
@@ -180,6 +181,8 @@ public:
     boost::optional<std::uint16_t> rpc_port;
 
     std::unordered_set<uint256, beast::uhash<>> features;
+
+    std::vector<std::string> KYCTrustedAccounts;
 
 public:
     Config() = default;
