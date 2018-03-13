@@ -63,6 +63,7 @@
 #include <casinocoin/beast/utility/rngfill.h>
 #include <casinocoin/basics/make_lock.h>
 #include <beast/core/detail/base64.hpp>
+#include <casinocoin/basics/mulDiv.h>
 
 namespace casinocoin {
 
@@ -2297,8 +2298,8 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
         else
         {
             l[jss::base_fee_csc] = static_cast<double> (baseFee) / SYSTEM_CURRENCY_PARTS;
-            l[jss::reserve_base_csc] = static_cast<double> (Json::UInt (lpClosed->fees().accountReserve(0).drops() * baseFee / baseRef)) / SYSTEM_CURRENCY_PARTS;
-            l[jss::reserve_inc_csc] = static_cast<double> (Json::UInt (lpClosed->fees().increment * baseFee / baseRef)) / SYSTEM_CURRENCY_PARTS;
+            l[jss::reserve_base_csc] = static_cast<double> (mulDiv (lpClosed->fees().accountReserve(0).drops(), baseFee, baseRef).second / SYSTEM_CURRENCY_PARTS);
+            l[jss::reserve_inc_csc] = static_cast<double> (mulDiv (lpClosed->fees().increment, baseFee, baseRef).second / SYSTEM_CURRENCY_PARTS);
 
             auto const nowOffset = app_.timeKeeper().nowOffset();
             if (std::abs (nowOffset.count()) >= 60)
