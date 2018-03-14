@@ -141,9 +141,11 @@ public:
     enum class IsSigning : unsigned char
     {
         no,
-        yes
+        yes,
+        noAndNotHashed
     };
     static IsSigning const notSigning = IsSigning::no;
+    static IsSigning const notSigningNotHashed = IsSigning::noAndNotHashed;
 
     int const               fieldCode;      // (type<<16)|index
     SerializedTypeID const  fieldType;      // STI_*
@@ -245,10 +247,11 @@ public:
         fieldMeta = c;
     }
 
-    bool shouldInclude (bool withSigningField) const
+    bool shouldInclude (bool withSigningField, bool withNotHashedField = true) const
     {
-        return (fieldValue < 256) &&
-            (withSigningField || (signingField == IsSigning::yes));
+        return (fieldValue < 256 &&
+            (withSigningField || (signingField == IsSigning::yes)) &&
+            (withNotHashedField || (signingField != IsSigning::noAndNotHashed)));
     }
 
     bool operator== (const SField& f) const

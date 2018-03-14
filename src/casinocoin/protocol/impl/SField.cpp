@@ -44,6 +44,7 @@ static std::map<int, std::unique_ptr<SField const>> unknownCodeToField;
 
 // Storage for static const member.
 SField::IsSigning const SField::notSigning;
+SField::IsSigning const SField::notSigningNotHashed;
 
 int SField::num = 0;
 
@@ -208,7 +209,7 @@ SF_Blob const sfCreateCode      = make::one<SF_Blob::type>(&sfCreateCode,    STI
 SF_Blob const sfMemoType        = make::one<SF_Blob::type>(&sfMemoType,      STI_VL, 12, "MemoType");
 SF_Blob const sfMemoData        = make::one<SF_Blob::type>(&sfMemoData,      STI_VL, 13, "MemoData");
 SF_Blob const sfMemoFormat      = make::one<SF_Blob::type>(&sfMemoFormat,    STI_VL, 14, "MemoFormat");
-SF_Blob const sfClientIP        = make::one<SF_Blob::type>(&sfClientIP,      STI_VL, 15, "ClientIP", SField::sMD_Default, SField::notSigning);
+SF_Blob const sfClientIP        = make::one<SF_Blob::type>(&sfClientIP,      STI_VL, 15, "ClientIP", SField::sMD_Default, SField::notSigningNotHashed);
 
 // variable length (uncommon)
 SF_Blob const sfFulfillment     = make::one<SF_Blob::type>(&sfFulfillment,     STI_VL, 16, "Fulfillment");
