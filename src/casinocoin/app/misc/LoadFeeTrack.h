@@ -28,6 +28,7 @@
 
 #include <casinocoin/json/json_value.h>
 #include <casinocoin/beast/utility/Journal.h>
+#include <casinocoin/basics/Log.h>
 #include <algorithm>
 #include <cstdint>
 #include <mutex>
@@ -61,26 +62,29 @@ public:
 
     void setRemoteFee (std::uint32_t f)
     {
+        JLOG(j_.debug()) << "Load-related fee escalation is disabled.";
+        return;
+        // ####################
+        // jrojek 02.03.2018 - code below never executes
+        // ####################
+
         std::lock_guard <std::mutex> sl (lock_);
         remoteTxnLoadFee_ = f;
     }
 
     std::uint32_t getRemoteFee () const
     {
-        std::lock_guard <std::mutex> sl (lock_);
-        return remoteTxnLoadFee_;
+        return getLoadBase();
     }
 
     std::uint32_t getLocalFee () const
     {
-        std::lock_guard <std::mutex> sl (lock_);
-        return localTxnLoadFee_;
+        return getLoadBase();
     }
 
     std::uint32_t getClusterFee () const
     {
-        std::lock_guard <std::mutex> sl (lock_);
-        return clusterTxnLoadFee_;
+        return getLoadBase();
     }
 
     std::uint32_t getLoadBase () const
@@ -107,6 +111,12 @@ public:
 
     void setClusterFee (std::uint32_t fee)
     {
+        JLOG(j_.debug()) << "Load-related fee escalation is disabled.";
+        return;
+        // ####################
+        // jrojek 02.03.2018 - code below never executes
+        // ####################
+
         std::lock_guard <std::mutex> sl (lock_);
         clusterTxnLoadFee_ = fee;
     }

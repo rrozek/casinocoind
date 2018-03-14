@@ -139,7 +139,7 @@ public:
     std::string                 START_LEDGER;
 
     // Network parameters
-    int const                   TRANSACTION_FEE_BASE = 1000;   // The number of fee units a reference transaction costs
+    int const                   TRANSACTION_FEE_BASE = 1000000;   // The number of fee units a reference transaction costs
 
     // Note: The following parameters do not relate to the UNL or trust at all
     std::size_t                 NETWORK_QUORUM = 0;         // Minimum number of nodes to consider the network present
@@ -162,7 +162,7 @@ public:
     std::uint64_t                      FEE_DEFAULT = 1000000;
     std::uint64_t                      FEE_ACCOUNT_RESERVE = 10 * SYSTEM_CURRENCY_PARTS;
     std::uint64_t                      FEE_OWNER_RESERVE = 5 * SYSTEM_CURRENCY_PARTS;
-    std::uint64_t                      FEE_OFFER = 10000;
+    std::uint64_t                      FEE_OFFER = 1000000;
 
     // Node storage configuration
     std::uint32_t                      LEDGER_HISTORY = 256;
