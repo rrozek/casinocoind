@@ -115,6 +115,7 @@ Json::Value doSubmit (RPC::Context& context)
         stpTransUnconsted->setFieldVL(sfClientIP, ipAddress);
     }
 
+
     {
         if (!context.app.checkSigs())
             forceValidity(context.app.getHashRouter(),
