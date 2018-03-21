@@ -103,10 +103,9 @@ private:
 
     void load ();
     bool
-    loadSectionFromExternalPath(IniFileSections& secConfig,
-                               const std::string& sectionName,
+    loadSectionFromExternalPath(const std::string& sectionName,
                                boost::filesystem::path& filePath,
-                               std::string& data);
+                               std::string& data, const std::__cxx11::string &defaultFilePath);
     beast::Journal j_;
 
     bool QUIET = false;          // Minimize logging verbosity.

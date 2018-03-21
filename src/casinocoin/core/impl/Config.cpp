@@ -168,9 +168,9 @@ void Config::setupControl(bool bQuiet,
 
 bool Config::reloadFeeVoteParams()
 {
-    std::string data;
+    std::string data, strTemp;
     boost::filesystem::path votingFile;
-    if (loadSectionFromExternalPath (secConfig, SECTION_VOTING_FILE, votingFile, data))
+    if (loadSectionFromExternalPath (SECTION_VOTING_FILE, votingFile, data, votingFileName))
     {
         auto votingIniFile = parseIniFile (data, true);
         if (getSingleSection (votingIniFile, SECTION_FEE_ACCOUNT_RESERVE, strTemp, j_))
@@ -196,21 +196,9 @@ bool Config::reloadFeeVoteParams()
             FEE_DEFAULT         = beast::lexicalCastThrow <int> (strTemp);
             section(SECTION_VOTING).set(SECTION_FEE_DEFAULT, strTemp);
         }
+        return true;
     }
-    else
-    {
-        if (getSingleSection (secConfig, SECTION_FEE_ACCOUNT_RESERVE, strTemp, j_))
-            FEE_ACCOUNT_RESERVE = beast::lexicalCastThrow <std::uint64_t> (strTemp);
-
-        if (getSingleSection (secConfig, SECTION_FEE_OWNER_RESERVE, strTemp, j_))
-            FEE_OWNER_RESERVE   = beast::lexicalCastThrow <std::uint64_t> (strTemp);
-
-        if (getSingleSection (secConfig, SECTION_FEE_OFFER, strTemp, j_))
-            FEE_OFFER           = beast::lexicalCastThrow <int> (strTemp);
-
-        if (getSingleSection (secConfig, SECTION_FEE_DEFAULT, strTemp, j_))
-            FEE_DEFAULT         = beast::lexicalCastThrow <int> (strTemp);
-    }
+    return false;
 }
 
 void Config::setup (std::string const& strConf, bool bQuiet,
@@ -345,7 +333,7 @@ void Config::load ()
     loadFromString (fileContents);
 }
 
-bool Config::loadSectionFromExternalPath(IniFileSections& secConfig, const std::string& sectionName, boost::filesystem::path& filePath, std::string& data)
+bool Config::loadSectionFromExternalPath(const std::string& sectionName, boost::filesystem::path& filePath, std::string& data, const std::string& defaultFilePath)
 {
     // If a file was explicitly specified, then throw if the
     // path is malformed or if the file does not exist or is
@@ -355,9 +343,9 @@ bool Config::loadSectionFromExternalPath(IniFileSections& secConfig, const std::
     // If no path was specified, then look for voting.cfg
     // in the same directory as the config file, but don't complain
     // if we can't find it.
-    if (getSingleSection (secConfig, sectionName, strTemp, j_))
+    if (section(sectionName).values().size() == 1)
     {
-        filePath = strTemp;
+        filePath = section(sectionName).values()[0];
 
         if (filePath.empty ())
             Throw<std::runtime_error> (
@@ -379,7 +367,7 @@ bool Config::loadSectionFromExternalPath(IniFileSections& secConfig, const std::
     }
     else if (!CONFIG_DIR.empty())
     {
-        filePath = CONFIG_DIR / filePathName;
+        filePath = CONFIG_DIR / defaultFilePath;
 
         if (!filePath.empty ())
         {
@@ -481,49 +469,30 @@ void Config::loadFromString (std::string const& fileContents)
     if (getSingleSection (secConfig, SECTION_NETWORK_QUORUM, strTemp, j_))
         NETWORK_QUORUM      = beast::lexicalCastThrow <std::size_t> (strTemp);
 
+    if (!reloadFeeVoteParams())
     {
-        std::string data;
-        boost::filesystem::path votingFile;
-        if (loadSectionFromExternalPath (secConfig, SECTION_VOTING_FILE, votingFile, data))
+        if (getSingleSection (secConfig, SECTION_FEE_ACCOUNT_RESERVE, strTemp, j_))
         {
-            auto votingIniFile = parseIniFile (data, true);
-            if (getSingleSection (votingIniFile, SECTION_FEE_ACCOUNT_RESERVE, strTemp, j_))
-            {
-                FEE_ACCOUNT_RESERVE = beast::lexicalCastThrow <std::uint64_t> (strTemp);
-                section(SECTION_VOTING).set(SECTION_FEE_ACCOUNT_RESERVE, strTemp);
-            }
-
-            if (getSingleSection (votingIniFile, SECTION_FEE_OWNER_RESERVE, strTemp, j_))
-            {
-                FEE_OWNER_RESERVE   = beast::lexicalCastThrow <std::uint64_t> (strTemp);
-                section(SECTION_VOTING).set(SECTION_FEE_OWNER_RESERVE, strTemp);
-            }
-
-            if (getSingleSection (votingIniFile, SECTION_FEE_OFFER, strTemp, j_))
-            {
-                FEE_OFFER           = beast::lexicalCastThrow <int> (strTemp);
-                section(SECTION_VOTING).set(SECTION_FEE_OFFER, strTemp);
-            }
-
-            if (getSingleSection (votingIniFile, SECTION_FEE_DEFAULT, strTemp, j_))
-            {
-                FEE_DEFAULT         = beast::lexicalCastThrow <int> (strTemp);
-                section(SECTION_VOTING).set(SECTION_FEE_DEFAULT, strTemp);
-            }
+            FEE_ACCOUNT_RESERVE = beast::lexicalCastThrow <std::uint64_t> (strTemp);
+            section(SECTION_VOTING).set(SECTION_FEE_ACCOUNT_RESERVE, strTemp);
         }
-        else
+
+        if (getSingleSection (secConfig, SECTION_FEE_OWNER_RESERVE, strTemp, j_))
         {
-            if (getSingleSection (secConfig, SECTION_FEE_ACCOUNT_RESERVE, strTemp, j_))
-                FEE_ACCOUNT_RESERVE = beast::lexicalCastThrow <std::uint64_t> (strTemp);
+            FEE_OWNER_RESERVE   = beast::lexicalCastThrow <std::uint64_t> (strTemp);
+            section(SECTION_VOTING).set(SECTION_FEE_OWNER_RESERVE, strTemp);
+        }
 
-            if (getSingleSection (secConfig, SECTION_FEE_OWNER_RESERVE, strTemp, j_))
-                FEE_OWNER_RESERVE   = beast::lexicalCastThrow <std::uint64_t> (strTemp);
+        if (getSingleSection (secConfig, SECTION_FEE_OFFER, strTemp, j_))
+        {
+            FEE_OFFER           = beast::lexicalCastThrow <int> (strTemp);
+            section(SECTION_VOTING).set(SECTION_FEE_OFFER, strTemp);
+        }
 
-            if (getSingleSection (secConfig, SECTION_FEE_OFFER, strTemp, j_))
-                FEE_OFFER           = beast::lexicalCastThrow <int> (strTemp);
-
-            if (getSingleSection (secConfig, SECTION_FEE_DEFAULT, strTemp, j_))
-                FEE_DEFAULT         = beast::lexicalCastThrow <int> (strTemp);
+        if (getSingleSection (secConfig, SECTION_FEE_DEFAULT, strTemp, j_))
+        {
+            FEE_DEFAULT         = beast::lexicalCastThrow <int> (strTemp);
+            section(SECTION_VOTING).set(SECTION_FEE_DEFAULT, strTemp);
         }
     }
 
@@ -582,7 +551,7 @@ void Config::loadFromString (std::string const& fileContents)
         boost::filesystem::path validatorsFile;
         std::string data;
 
-        if (loadSectionFromExternalPath (secConfig, SECTION_VALIDATORS_FILE, validatorsFile, data))
+        if (loadSectionFromExternalPath (SECTION_VALIDATORS_FILE, validatorsFile, data, validatorsFileName))
         {
             auto iniFile = parseIniFile (data, true);
 
