@@ -21,6 +21,7 @@
 /*
     2017-06-29  ajochems        Refactored for casinocoin
     2018-01-18  jrojek          Added KYCSigners section
+    2018-03-19  jrojek          Voting section moved to separate file
 */
 //==============================================================================
 
@@ -87,6 +88,7 @@ public:
     static char const* const configFileName;
     static char const* const databaseDirName;
     static char const* const validatorsFileName;
+    static char const* const votingFileName;
 
     /** Returns the full path and filename of the debug log file. */
     boost::filesystem::path getDebugLogFile () const;
@@ -100,6 +102,11 @@ private:
     boost::filesystem::path DEBUG_LOGFILE;
 
     void load ();
+    bool
+    loadSectionFromExternalPath(IniFileSections& secConfig,
+                               const std::string& sectionName,
+                               boost::filesystem::path& filePath,
+                               std::string& data);
     beast::Journal j_;
 
     bool QUIET = false;          // Minimize logging verbosity.
@@ -195,6 +202,7 @@ public:
     void setupControl (bool bQuiet,
         bool bSilent, bool bStandalone);
 
+    bool reloadFeeVoteParams();
     /**
      *  Load the config from the contents of the string.
      *
