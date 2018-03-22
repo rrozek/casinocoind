@@ -169,6 +169,7 @@ void Config::setupControl(bool bQuiet,
 bool Config::reloadFeeVoteParams()
 {
     boost::filesystem::path votingFile;
+    std::string data;
     if (loadSectionFromExternalPath (SECTION_VOTING_FILE, votingFile, data, votingFileName))
     {
         auto votingIniFile = parseIniFile (data, true);
