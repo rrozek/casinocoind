@@ -168,34 +168,16 @@ void Config::setupControl(bool bQuiet,
 
 bool Config::reloadFeeVoteParams()
 {
-    std::string data, strTemp;
     boost::filesystem::path votingFile;
     if (loadSectionFromExternalPath (SECTION_VOTING_FILE, votingFile, data, votingFileName))
     {
         auto votingIniFile = parseIniFile (data, true);
-        if (getSingleSection (votingIniFile, SECTION_FEE_ACCOUNT_RESERVE, strTemp, j_))
-        {
-            FEE_ACCOUNT_RESERVE = beast::lexicalCastThrow <std::uint64_t> (strTemp);
-            section(SECTION_VOTING).set(SECTION_FEE_ACCOUNT_RESERVE, strTemp);
-        }
+        auto entries = getIniFileSection (
+            votingIniFile,
+            SECTION_VOTING);
 
-        if (getSingleSection (votingIniFile, SECTION_FEE_OWNER_RESERVE, strTemp, j_))
-        {
-            FEE_OWNER_RESERVE   = beast::lexicalCastThrow <std::uint64_t> (strTemp);
-            section(SECTION_VOTING).set(SECTION_FEE_OWNER_RESERVE, strTemp);
-        }
-
-        if (getSingleSection (votingIniFile, SECTION_FEE_OFFER, strTemp, j_))
-        {
-            FEE_OFFER           = beast::lexicalCastThrow <int> (strTemp);
-            section(SECTION_VOTING).set(SECTION_FEE_OFFER, strTemp);
-        }
-
-        if (getSingleSection (votingIniFile, SECTION_FEE_DEFAULT, strTemp, j_))
-        {
-            FEE_DEFAULT         = beast::lexicalCastThrow <int> (strTemp);
-            section(SECTION_VOTING).set(SECTION_FEE_DEFAULT, strTemp);
-        }
+        if (entries)
+            section (SECTION_VOTING).append (*entries);
         return true;
     }
     return false;
