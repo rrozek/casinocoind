@@ -1770,10 +1770,10 @@ void NetworkOPsImp::pubValidation (STValidation::ref val)
             jvObj [jss::base_fee] = static_cast<double> (*baseFee);
 
         if (auto const reserveBase = (*val)[~sfReserveBase])
-            jvObj [jss::reserve_base] = *reserveBase;
+            jvObj [jss::reserve_base] = static_cast<double> (*reserveBase);
 
         if (auto const reserveInc = (*val)[~sfReserveIncrement])
-            jvObj [jss::reserve_inc] = *reserveInc;
+            jvObj [jss::reserve_inc] = static_cast<double> (*reserveInc);
 
         for (auto i = mSubValidations.begin (); i != mSubValidations.end (); )
         {

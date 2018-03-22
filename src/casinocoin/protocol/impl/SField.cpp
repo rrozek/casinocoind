@@ -128,9 +128,6 @@ SF_U32 const sfFirstLedgerSequence = make::one<SF_U32::type>(&sfFirstLedgerSeque
 SF_U32 const sfLastLedgerSequence  = make::one<SF_U32::type>(&sfLastLedgerSequence,  STI_UINT32, 27, "LastLedgerSequence");
 SF_U32 const sfTransactionIndex    = make::one<SF_U32::type>(&sfTransactionIndex,    STI_UINT32, 28, "TransactionIndex");
 SF_U32 const sfOperationLimit      = make::one<SF_U32::type>(&sfOperationLimit,      STI_UINT32, 29, "OperationLimit");
-SF_U32 const sfReferenceFeeUnits   = make::one<SF_U32::type>(&sfReferenceFeeUnits,   STI_UINT32, 30, "ReferenceFeeUnits");
-SF_U32 const sfReserveBase         = make::one<SF_U32::type>(&sfReserveBase,         STI_UINT32, 31, "ReserveBase");
-SF_U32 const sfReserveIncrement    = make::one<SF_U32::type>(&sfReserveIncrement,    STI_UINT32, 32, "ReserveIncrement");
 SF_U32 const sfSetFlag             = make::one<SF_U32::type>(&sfSetFlag,             STI_UINT32, 33, "SetFlag");
 SF_U32 const sfClearFlag           = make::one<SF_U32::type>(&sfClearFlag,           STI_UINT32, 34, "ClearFlag");
 SF_U32 const sfSignerQuorum        = make::one<SF_U32::type>(&sfSignerQuorum,        STI_UINT32, 35, "SignerQuorum");
@@ -140,14 +137,17 @@ SF_U32 const sfSignerListID        = make::one<SF_U32::type>(&sfSignerListID,   
 SF_U32 const sfSettleDelay         = make::one<SF_U32::type>(&sfSettleDelay,         STI_UINT32, 39, "SettleDelay");
 
 // 64-bit integers
-SF_U64 const sfIndexNext     = make::one<SF_U64::type>(&sfIndexNext,     STI_UINT64, 1, "IndexNext");
-SF_U64 const sfIndexPrevious = make::one<SF_U64::type>(&sfIndexPrevious, STI_UINT64, 2, "IndexPrevious");
-SF_U64 const sfBookNode      = make::one<SF_U64::type>(&sfBookNode,      STI_UINT64, 3, "BookNode");
-SF_U64 const sfOwnerNode     = make::one<SF_U64::type>(&sfOwnerNode,     STI_UINT64, 4, "OwnerNode");
-SF_U64 const sfBaseFee       = make::one<SF_U64::type>(&sfBaseFee,       STI_UINT64, 5, "BaseFee");
-SF_U64 const sfExchangeRate  = make::one<SF_U64::type>(&sfExchangeRate,  STI_UINT64, 6, "ExchangeRate");
-SF_U64 const sfLowNode       = make::one<SF_U64::type>(&sfLowNode,       STI_UINT64, 7, "LowNode");
-SF_U64 const sfHighNode      = make::one<SF_U64::type>(&sfHighNode,      STI_UINT64, 8, "HighNode");
+SF_U64 const sfIndexNext            = make::one<SF_U64::type>(&sfIndexNext,         STI_UINT64, 1, "IndexNext");
+SF_U64 const sfIndexPrevious        = make::one<SF_U64::type>(&sfIndexPrevious,     STI_UINT64, 2, "IndexPrevious");
+SF_U64 const sfBookNode             = make::one<SF_U64::type>(&sfBookNode,          STI_UINT64, 3, "BookNode");
+SF_U64 const sfOwnerNode            = make::one<SF_U64::type>(&sfOwnerNode,         STI_UINT64, 4, "OwnerNode");
+SF_U64 const sfBaseFee              = make::one<SF_U64::type>(&sfBaseFee,           STI_UINT64, 5, "BaseFee");
+SF_U64 const sfExchangeRate         = make::one<SF_U64::type>(&sfExchangeRate,      STI_UINT64, 6, "ExchangeRate");
+SF_U64 const sfLowNode              = make::one<SF_U64::type>(&sfLowNode,           STI_UINT64, 7, "LowNode");
+SF_U64 const sfHighNode             = make::one<SF_U64::type>(&sfHighNode,          STI_UINT64, 8, "HighNode");
+SF_U64 const sfReferenceFeeUnits    = make::one<SF_U64::type>(&sfReferenceFeeUnits, STI_UINT64, 9, "ReferenceFeeUnits");
+SF_U64 const sfReserveBase          = make::one<SF_U64::type>(&sfReserveBase,       STI_UINT64, 10, "ReserveBase");
+SF_U64 const sfReserveIncrement     = make::one<SF_U64::type>(&sfReserveIncrement,  STI_UINT64, 11, "ReserveIncrement");
 
 // 128-bit
 SF_U128 const sfEmailHash = make::one<SF_U128::type>(&sfEmailHash, STI_HASH128, 1, "EmailHash");
