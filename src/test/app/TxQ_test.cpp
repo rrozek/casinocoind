@@ -135,8 +135,8 @@ class TxQ_test : public beast::unit_test::suite
     }
 
     void
-    initFee(jtx::Env& env, std::size_t expectedInLedger, std::uint32_t base,
-        std::uint32_t units, std::uint32_t reserve, std::uint32_t increment)
+    initFee(jtx::Env& env, std::size_t expectedInLedger, std::uint64_t base,
+        std::uint64_t units, std::uint64_t reserve, std::uint64_t increment)
     {
         // Run past the flag ledger so that a Fee change vote occurs and
         // lowers the reserve fee.  This will allow creating accounts with lower
