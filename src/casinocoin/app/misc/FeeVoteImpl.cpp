@@ -111,6 +111,9 @@ public:
     doVoting (std::shared_ptr<ReadView const> const& lastClosedLedger,
         ValidationSet const& parentValidations,
         std::shared_ptr<SHAMap> const& initialPosition) override;
+
+    void
+    updatePosition(Setup const& setup) override;
 };
 
 //--------------------------------------------------------------------------
@@ -249,6 +252,12 @@ FeeVoteImpl::doVoting(
                 "Ledger already had fee change";
         }
     }
+}
+
+void
+FeeVoteImpl::updatePosition(Setup const& setup)
+{
+    target_ = setup;
 }
 
 //------------------------------------------------------------------------------
