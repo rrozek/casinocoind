@@ -142,7 +142,7 @@ FeeVoteImpl::doValidation(
         JLOG(journal_.info()) <<
             "Voting for base resrve of " << target_.account_reserve;
 
-        baseValidation.setFieldU32(sfReserveBase, target_.account_reserve);
+        baseValidation.setFieldU64(sfReserveBase, target_.account_reserve);
     }
 
     if (lastClosedLedger->fees().increment != target_.owner_reserve)
@@ -150,7 +150,7 @@ FeeVoteImpl::doValidation(
         JLOG(journal_.info()) <<
             "Voting for reserve increment of " << target_.owner_reserve;
 
-        baseValidation.setFieldU32 (sfReserveIncrement,
+        baseValidation.setFieldU64 (sfReserveIncrement,
             target_.owner_reserve);
     }
 }
