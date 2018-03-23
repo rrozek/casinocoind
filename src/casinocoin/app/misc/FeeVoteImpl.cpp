@@ -167,10 +167,10 @@ FeeVoteImpl::doVoting(
     detail::VotableInteger<std::uint64_t> baseFeeVote (
         lastClosedLedger->fees().base, target_.reference_fee);
 
-    detail::VotableInteger<std::uint64_t> baseReserveVote (
+    detail::VotableInteger<std::uint32_t> baseReserveVote (
         lastClosedLedger->fees().accountReserve(0).drops(), target_.account_reserve);
 
-    detail::VotableInteger<std::uint64_t> incReserveVote (
+    detail::VotableInteger<std::uint32_t> incReserveVote (
         lastClosedLedger->fees().increment, target_.owner_reserve);
 
     for (auto const& e : set)
@@ -190,7 +190,7 @@ FeeVoteImpl::doVoting(
 
             if (val.isFieldPresent (sfReserveBase))
             {
-                baseReserveVote.addVote (val.getFieldU64 (sfReserveBase));
+                baseReserveVote.addVote (val.getFieldU32 (sfReserveBase));
             }
             else
             {
@@ -199,7 +199,7 @@ FeeVoteImpl::doVoting(
 
             if (val.isFieldPresent (sfReserveIncrement))
             {
-                incReserveVote.addVote (val.getFieldU64 (sfReserveIncrement));
+                incReserveVote.addVote (val.getFieldU32 (sfReserveIncrement));
             }
             else
             {
@@ -210,9 +210,9 @@ FeeVoteImpl::doVoting(
 
     // choose our positions
     std::uint64_t const baseFee = baseFeeVote.getVotes ();
-    std::uint64_t const baseReserve = baseReserveVote.getVotes ();
-    std::uint64_t const incReserve = incReserveVote.getVotes ();
-    std::uint64_t const feeUnits = target_.reference_fee_units;
+    std::uint32_t const baseReserve = baseReserveVote.getVotes ();
+    std::uint32_t const incReserve = incReserveVote.getVotes ();
+    std::uint32_t const feeUnits = target_.reference_fee_units;
     auto const seq = lastClosedLedger->info().seq + 1;
 
     // add transactions to our position
