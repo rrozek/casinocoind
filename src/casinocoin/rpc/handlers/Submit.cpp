@@ -30,6 +30,7 @@
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/net/RPCErr.h>
 #include <casinocoin/protocol/ErrorCodes.h>
+#include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/resource/Fees.h>
 #include <casinocoin/rpc/Context.h>
 #include <casinocoin/rpc/impl/TransactionSign.h>
@@ -55,16 +56,26 @@ Json::Value doSubmit (RPC::Context& context)
     {
         auto const failType = getFailHard (context);
 
-        // jrojek 28.02.2018 enrich tx_json with clientIP
         if (context.params.isMember (jss::tx_json))
         {
             // only add it if KYC feature is enabled
             if (context.app.getLedgerMaster().getValidatedRules().
                 enabled (featureKYC))
             {
-                std::string clientIPStr = context.clientAddress.address().to_string();
-                Json::Value ipAddress(strHex(clientIPStr.begin(), clientIPStr.size()));
-                context.params[jss::tx_json][jss::ClientIP] = ipAddress;
+                // jrojek 15.03.2018 only add if account is KYC-validated
+                AccountID uCallerAccount;
+                if (to_issuer(uCallerAccount, context.params[jss::tx_json][jss::Account].asString()))
+                {
+                    auto const callerAccountKeylet = keylet::account (uCallerAccount);
+                    std::shared_ptr<const casinocoin::STLedgerEntry> sleCaller = context.app.getLedgerMaster().getValidatedLedger()->read(callerAccountKeylet);
+                    if (sleCaller && (sleCaller->isFlag(lsfKYCValidated)))
+                    {
+                        // jrojek 28.02.2018 enrich tx_json with clientIP
+                        std::string clientIPStr = context.clientAddress.address().to_string();
+                        Json::Value ipAddress(strHex(clientIPStr.begin(), clientIPStr.size()));
+                        context.params[jss::tx_json][jss::ClientIP] = ipAddress;
+                    }
+                }
             }
         }
 
@@ -105,14 +116,21 @@ Json::Value doSubmit (RPC::Context& context)
     if (context.app.getLedgerMaster().getValidatedRules().
         enabled (featureKYC))
     {
-        std::string clientIPStr = context.clientAddress.address().to_string();
-        auto clientIPStrIter = clientIPStr.begin();
-        Blob ipAddress;
-        while (clientIPStrIter != clientIPStr.end())
-            ipAddress.push_back(*clientIPStrIter++);
+        // jrojek 15.03.2018 only add if account is KYC-validated
+        AccountID const uCallerAccount (stpTrans->getAccountID(sfAccount));
+        auto const callerAccountKeylet = keylet::account (uCallerAccount);
+        std::shared_ptr<const casinocoin::STLedgerEntry> sleCaller = context.app.getLedgerMaster().getValidatedLedger()->read(callerAccountKeylet);
+        if (sleCaller && (sleCaller->isFlag(lsfKYCValidated)))
+        {
+            std::string clientIPStr = context.clientAddress.address().to_string();
+            auto clientIPStrIter = clientIPStr.begin();
+            Blob ipAddress;
+            while (clientIPStrIter != clientIPStr.end())
+                ipAddress.push_back(*clientIPStrIter++);
 
-        STTx* stpTransUnconsted = const_cast<STTx*>(stpTrans.get());
-        stpTransUnconsted->setFieldVL(sfClientIP, ipAddress);
+            STTx* stpTransUnconsted = const_cast<STTx*>(stpTrans.get());
+            stpTransUnconsted->setFieldVL(sfClientIP, ipAddress);
+        }
     }
 
 
