@@ -147,7 +147,6 @@ Handler handlerArray[] {
     {   "sign",                 byRef (&doSign),                Role::USER,  NO_CONDITION               },
     {   "sign_for",             byRef (&doSignFor),             Role::USER,  NO_CONDITION               },
     {   "sign_msg",             byRef (&doSignMsg),             Role::USER,  NO_CONDITION               },
-    {   "verify_msg",           byRef (&doVerifyMsg),           Role::USER,  NO_CONDITION               },
     {   "submit",               byRef (&doSubmit),              Role::USER,  NEEDS_CURRENT_LEDGER       },
     {   "submit_multisigned",   byRef (&doSubmitMultiSigned),   Role::USER,  NEEDS_CURRENT_LEDGER       },
     {   "server_info",          byRef (&doServerInfo),          Role::USER,  NO_CONDITION               },
@@ -159,6 +158,7 @@ Handler handlerArray[] {
     {   "unl_list",             byRef (&doUnlList),             Role::ADMIN, NO_CONDITION               },
     {   "validation_create",    byRef (&doValidationCreate),    Role::ADMIN, NO_CONDITION               },
     {   "validation_seed",      byRef (&doValidationSeed),      Role::ADMIN, NO_CONDITION               },
+    {   "verify_msg",           byRef (&doVerifyMsg),           Role::USER,  NO_CONDITION               },
     {   "wallet_propose",       byRef (&doWalletPropose),       Role::ADMIN, NO_CONDITION               },
     {   "wallet_seed",          byRef (&doWalletSeed),          Role::ADMIN, NO_CONDITION               },
 

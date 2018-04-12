@@ -30,38 +30,50 @@
 #include <casinocoin/rpc/Context.h>
 
 #include <casinocoin/rpc/impl/RPCHelpers.h>
+#include <casinocoin/basics/StringUtilities.h>
 
 namespace casinocoin {
 
 // {
 //   message: <string>,
-//   secret: <secret>
+//   signature: <sign>,
+//   public_key_hex: <pub_key>
 // }
 Json::Value doVerifyMsg (RPC::Context& context)
 {
-    context.loadType = Resource::feeHighBurdenRPC;
-    NetworkOPs::FailHard const failType =
-        NetworkOPs::doFailHard (
-            context.params.isMember (jss::fail_hard)
-            && context.params[jss::fail_hard].asBool ());
-
     auto j = context.app.journal("RPCHandler");
 
     Json::Value jvResult;
-//    auto keypair = RPC::keypairForSignature(context.params, jvResult);
-//    if (RPC::contains_error (jvResult))
-//        return std::move (jvResult);
 
-//    if (! context.params.isMember (jss::message))
-//        return RPC::missing_field_error (jss::message);
+    if (! context.params.isMember (jss::message))
+        return RPC::missing_field_error (jss::message);
+    if (! context.params.isMember (jss::public_key_hex))
+        return RPC::missing_field_error (jss::public_key_hex);
+    if (! context.params.isMember (jss::signature))
+        return RPC::missing_field_error (jss::signature);
 
+    bool validSignature = false;
+    auto unHexedPubKey = strUnHex(context.params[jss::public_key_hex].asString());
+    if (!unHexedPubKey.second)
+        return RPC::make_param_error("public_key_hex is malformed");
+
+    if (publicKeyType(makeSlice(unHexedPubKey.first)))
+    {
+        auto unHexedSignature = strUnHex(context.params[jss::signature].asString());
+        if (!unHexedSignature.second)
+            return RPC::make_param_error("signature is malformed");
+
+        validSignature = verify(
+          PublicKey(makeSlice(unHexedPubKey.first)),
+          makeSlice(strHex(context.params[jss::message].asString())),
+          makeSlice(unHexedSignature.first));
+    }
+
+    if (!validSignature)
+        return RPC::make_param_error("invalid signature");
+
+    jvResult[jss::message] = context.params[jss::message];
     return jvResult;
-//    return RPC::transactionSign (
-//                context.params,
-//                failType,
-//                context.role,
-//                context.ledgerMaster.getValidatedLedgerAge(),
-//                context.app);
 }
 
 } // casinocoin

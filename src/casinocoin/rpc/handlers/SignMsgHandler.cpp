@@ -30,6 +30,7 @@
 #include <casinocoin/rpc/Context.h>
 
 #include <casinocoin/rpc/impl/RPCHelpers.h>
+#include <casinocoin/basics/StringUtilities.h>
 
 namespace casinocoin {
 
@@ -39,12 +40,6 @@ namespace casinocoin {
 // }
 Json::Value doSignMsg (RPC::Context& context)
 {
-    context.loadType = Resource::feeHighBurdenRPC;
-    NetworkOPs::FailHard const failType =
-        NetworkOPs::doFailHard (
-            context.params.isMember (jss::fail_hard)
-            && context.params[jss::fail_hard].asBool ());
-
     auto j = context.app.journal("RPCHandler");
 
     Json::Value jvResult;
@@ -55,13 +50,16 @@ Json::Value doSignMsg (RPC::Context& context)
     if (! context.params.isMember (jss::message))
         return RPC::missing_field_error (jss::message);
 
+    auto const signature = sign(
+                keypair.first,
+                keypair.second,
+                makeSlice(strHex(context.params[jss::message].asString())));
+    Slice pubKeySlice = keypair.first.slice();
+    jvResult[jss::signature] = Json::Value(strHex(signature.data(), signature.size()));
+    jvResult[jss::public_key_hex] = Json::Value(strHex(pubKeySlice.data(), pubKeySlice.size()));
+    jvResult[jss::message] = context.params[jss::message];
+
     return jvResult;
-//    return RPC::transactionSign (
-//                context.params,
-//                failType,
-//                context.role,
-//                context.ledgerMaster.getValidatedLedgerAge(),
-//                context.app);
 }
 
 } // casinocoin
