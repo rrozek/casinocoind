@@ -125,21 +125,8 @@ TxQ::FeeMetrics::update(Application& app,
             feeLevels.size();
     }
 
-    if (feeLevels.empty())
-    {
-        escalationMultiplier_ = minimumMultiplier_;
-    }
-    else
-    {
-        // In the case of an odd number of elements, this
-        // evaluates to the middle element; for an even
-        // number of elements, it will add the two elements
-        // on either side of the "middle" and average them.
-        escalationMultiplier_ = (feeLevels[size / 2] +
-            feeLevels[(size - 1) / 2] + 1) / 2;
-        escalationMultiplier_ = std::max(escalationMultiplier_,
-            minimumMultiplier_);
-    }
+    JLOG(j_.debug()) << "Escalation multiplication disabled";
+    escalationMultiplier_ = minimumMultiplier_;
     JLOG(j_.debug()) << "Expected transactions updated to " <<
         txnsExpected_ << " and multiplier updated to " <<
         escalationMultiplier_;
@@ -148,9 +135,13 @@ TxQ::FeeMetrics::update(Application& app,
 }
 
 std::uint64_t
-TxQ::FeeMetrics::scaleFeeLevel(Snapshot const& snapshot,
-    OpenView const& view, std::uint32_t txCountPadding)
+TxQ::FeeMetrics::scaleFeeLevel(beast::Journal const& journal,
+    Snapshot const& snapshot, OpenView const& view,
+    std::uint32_t txCountPadding)
 {
+    JLOG(journal.debug()) << "scaleFeeLevel escalation is disabled.";
+    return baseLevel;
+    // CODE BELOW IS NEVER EXECUTED
     // Transactions in the open ledger so far
     auto const current = view.txCount() + txCountPadding;
 
@@ -620,7 +611,7 @@ TxQ::apply(Application& app, OpenView& view,
     auto const feeLevelPaid = getFeeLevelPaid(*tx,
         baseLevel, baseFee, setup_);
     auto const requiredFeeLevel = FeeMetrics::scaleFeeLevel(
-        metricsSnapshot, view);
+        j_, metricsSnapshot, view);
 
     auto accountIter = byAccount_.find(account);
     bool const accountExists = accountIter != byAccount_.end();
@@ -1210,7 +1201,7 @@ TxQ::accept(Application& app,
             continue;
         }
         auto const requiredFeeLevel = FeeMetrics::scaleFeeLevel(
-            metricSnapshot, view);
+            j_, metricSnapshot, view);
         auto const feeLevelPaid = candidateIter->feeLevel;
         JLOG(j_.trace()) << "Queued transaction " <<
             candidateIter->txID << " from account " <<
@@ -1319,8 +1310,8 @@ TxQ::getMetrics(OpenView const& view, std::uint32_t txCountPadding) const
     result.minFeeLevel = isFull() ? byFee_.rbegin()->feeLevel + 1 :
         baseLevel;
     result.medFeeLevel = snapshot.escalationMultiplier;
-    result.expFeeLevel = FeeMetrics::scaleFeeLevel(snapshot, view,
-        txCountPadding);
+    result.expFeeLevel = FeeMetrics::scaleFeeLevel(
+        j_,snapshot, view, txCountPadding);
 
     return result;
 }
