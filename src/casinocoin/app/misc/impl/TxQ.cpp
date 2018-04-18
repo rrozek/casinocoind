@@ -671,7 +671,8 @@ TxQ::apply(Application& app, OpenView& view,
                         {
                             // Can't replace a normal transaction in the
                             // middle of the queue with a blocker.
-                            JLOG(j_.trace()) <<
+                            JLOG(j_.warn()) <<
+                                "[jrojek: originally was TRACE]" <<
                                 "Ignoring blocker transaction " <<
                                 transactionID <<
                                 " in favor of normal queued " <<
@@ -702,7 +703,8 @@ TxQ::apply(Application& app, OpenView& view,
             else
             {
                 // Drop the current transaction
-                JLOG(j_.trace()) <<
+                JLOG(j_.warn()) <<
+                    "[jrojek: originally was TRACE]" <<
                     "Ignoring transaction " <<
                     transactionID <<
                     " in favor of queued " <<
@@ -765,7 +767,8 @@ TxQ::apply(Application& app, OpenView& view,
                         if (feeLevelPaid <= requiredMultiLevel)
                         {
                             // Drop the current transaction
-                            JLOG(j_.trace()) <<
+                            JLOG(j_.warn()) <<
+                                "[jrojek: originally was TRACE]" <<
                                 "Ignoring transaction " <<
                                 transactionID <<
                                 ". Needs fee level of " <<
@@ -891,7 +894,7 @@ TxQ::apply(Application& app, OpenView& view,
     // Too low of a fee should get caught by preclaim
     assert(feeLevelPaid >= baseLevel);
 
-    JLOG(j_.trace()) << "Transaction " <<
+    JLOG(j_.warn()) << "[jrojek: originally log is TRACE]Transaction " <<
         transactionID <<
         " from account " << account <<
         " has fee level of " << feeLevelPaid <<
@@ -925,6 +928,7 @@ TxQ::apply(Application& app, OpenView& view,
         auto result = tryClearAccountQueue(app, sandbox, *tx, accountIter,
             multiTxn->nextTxIter, feeLevelPaid, pfresult, view.txCount(),
                 flags, metricsSnapshot, j);
+
         if (result.second)
         {
             sandbox.apply(view);
@@ -932,6 +936,10 @@ TxQ::apply(Application& app, OpenView& view,
                 implies that it has already been deleted.
             */
             return result;
+        }
+        else
+        {
+            JLOG(j_.warn()) << "[jrojek: originally log is TRACE] tryClearAccountQueue returned: " << result.first;
         }
     }
 
@@ -964,7 +972,7 @@ TxQ::apply(Application& app, OpenView& view,
         ! canBeHeld(*tx, view, accountIter, replacedItemDeleteIter))
     {
         // Bail, transaction cannot be held
-        JLOG(j_.trace()) << "Transaction " <<
+        JLOG(j_.warn()) << "[jrojek: originally was TRACE]" << "Transaction " <<
             transactionID <<
             " can not be held";
         return { feeLevelPaid >= requiredFeeLevel ?
@@ -1061,7 +1069,7 @@ TxQ::apply(Application& app, OpenView& view,
         candidate.consequences.emplace(*consequences);
     // Then index it into the byFee lookup.
     byFee_.insert(candidate);
-    JLOG(j_.debug()) << "Added transaction " << candidate.txID <<
+    JLOG(j_.warn()) << "[jrojek: originally log is DEBUG] Added transaction " << candidate.txID <<
         " from " << (accountExists ? "existing" : "new") <<
             " account " << candidate.account << " to queue.";
 
