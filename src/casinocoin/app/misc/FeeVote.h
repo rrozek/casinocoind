@@ -49,13 +49,30 @@ public:
         std::uint64_t reference_fee = 1000000;
 
         /** The cost of a reference transaction in fee units. */
-        std::uint32_t const reference_fee_units = 1000000;
+        std::uint64_t const reference_fee_units = 1000000;
 
         /** The account reserve requirement in drops. */
         std::uint64_t account_reserve = 10 * SYSTEM_CURRENCY_PARTS;
 
         /** The per-owned item reserve requirement in drops. */
         std::uint64_t owner_reserve = 1 * SYSTEM_CURRENCY_PARTS;
+
+        Setup(){}
+        ~Setup(){}
+        Setup(const Setup& other)
+            : reference_fee(other.reference_fee)
+            , reference_fee_units(other.reference_fee_units)
+            , account_reserve(other.account_reserve)
+            , owner_reserve(other.owner_reserve)
+        {}
+        Setup& operator=(const Setup& other)
+        {
+            reference_fee = other.reference_fee;
+            // reference_fee_units omitted
+            account_reserve = other.account_reserve;
+            owner_reserve = other.owner_reserve;
+            return *this;
+        }
     };
 
     virtual ~FeeVote () = default;
@@ -80,6 +97,10 @@ public:
     doVoting (std::shared_ptr<ReadView const> const& lastClosedLedger,
         ValidationSet const& parentValidations,
             std::shared_ptr<SHAMap> const& initialPosition) = 0;
+
+    virtual
+    void
+    updatePosition(Setup const& setup) = 0;
 };
 
 /** Build FeeVote::Setup from a config section. */
