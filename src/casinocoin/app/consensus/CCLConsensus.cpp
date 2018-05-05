@@ -332,6 +332,8 @@ CCLConsensus::onClose(
 
         if (count >= app_.validators().quorum())
         {
+            app_.config().reloadFeeVoteParams();
+            feeVote_->updatePosition(setup_FeeVote(app_.config().section ("voting")));
             feeVote_->doVoting(prevLedger, validations, initialSet);
             app_.getAmendmentTable().doVoting(
                 prevLedger, validations, initialSet);

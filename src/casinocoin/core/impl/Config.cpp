@@ -142,6 +142,7 @@ bool getSingleSection (IniFileSections& secSource,
 char const* const Config::configFileName = "casinocoind.cfg";
 char const* const Config::databaseDirName = "db";
 char const* const Config::validatorsFileName = "validators.txt";
+char const* const Config::votingFileName = "voting.cfg";
 
 static
 std::string
@@ -163,6 +164,24 @@ void Config::setupControl(bool bQuiet,
     QUIET = bQuiet || bSilent;
     SILENT = bSilent;
     RUN_STANDALONE = bStandalone;
+}
+
+bool Config::reloadFeeVoteParams()
+{
+    boost::filesystem::path votingFile;
+    std::string data;
+    if (loadSectionFromExternalPath (SECTION_VOTING_FILE, votingFile, data, votingFileName))
+    {
+        auto votingIniFile = parseIniFile (data, true);
+        auto entries = getIniFileSection (
+            votingIniFile,
+            SECTION_VOTING);
+
+        if (entries)
+            section (SECTION_VOTING).append (*entries);
+        return true;
+    }
+    return false;
 }
 
 void Config::setup (std::string const& strConf, bool bQuiet,
@@ -297,6 +316,66 @@ void Config::load ()
     loadFromString (fileContents);
 }
 
+bool Config::loadSectionFromExternalPath(const std::string& sectionName, boost::filesystem::path& filePath, std::string& data, const std::string& defaultFilePath)
+{
+    // If a file was explicitly specified, then throw if the
+    // path is malformed or if the file does not exist or is
+    // not a file.
+    // If the specified file is not an absolute path, then look
+    // for it in the same directory as the config file.
+    // If no path was specified, then look for voting.cfg
+    // in the same directory as the config file, but don't complain
+    // if we can't find it.
+    if (section(sectionName).values().size() == 1)
+    {
+        filePath = section(sectionName).values()[0];
+
+        if (filePath.empty ())
+            Throw<std::runtime_error> (
+                "Invalid path specified in [" + sectionName + "]");
+
+        if (!filePath.is_absolute() && !CONFIG_DIR.empty())
+            filePath = CONFIG_DIR / filePath;
+
+        if (!boost::filesystem::exists (filePath))
+            Throw<std::runtime_error> (
+                "The file specified in [" + sectionName + "] "
+                "does not exist: " + filePath.string());
+
+        else if (!boost::filesystem::is_regular_file (filePath) &&
+                !boost::filesystem::is_symlink (filePath))
+            Throw<std::runtime_error> (
+                "Invalid file specified in [" + sectionName + "]: " +
+                filePath.string());
+    }
+    else if (!CONFIG_DIR.empty())
+    {
+        filePath = CONFIG_DIR / defaultFilePath;
+
+        if (!filePath.empty ())
+        {
+            if(!boost::filesystem::exists (filePath))
+                filePath.clear();
+            else if (!boost::filesystem::is_regular_file (filePath) &&
+                    !boost::filesystem::is_symlink (filePath))
+                filePath.clear();
+        }
+    }
+
+    if (!filePath.empty () &&
+            boost::filesystem::exists (filePath) &&
+            (boost::filesystem::is_regular_file (filePath) ||
+            boost::filesystem::is_symlink (filePath)))
+    {
+        std::ifstream ifsDefault (filePath.native().c_str());
+        data.assign (
+            std::istreambuf_iterator<char>(ifsDefault),
+            std::istreambuf_iterator<char>());
+        return true;
+    }
+    return false;
+}
+
 void Config::loadFromString (std::string const& fileContents)
 {
     IniFileSections secConfig = parseIniFile (fileContents, true);
@@ -373,17 +452,32 @@ void Config::loadFromString (std::string const& fileContents)
     if (getSingleSection (secConfig, SECTION_NETWORK_QUORUM, strTemp, j_))
         NETWORK_QUORUM      = beast::lexicalCastThrow <std::size_t> (strTemp);
 
-    if (getSingleSection (secConfig, SECTION_FEE_ACCOUNT_RESERVE, strTemp, j_))
-        FEE_ACCOUNT_RESERVE = beast::lexicalCastThrow <std::uint64_t> (strTemp);
+    if (!reloadFeeVoteParams())
+    {
+        if (getSingleSection (secConfig, SECTION_FEE_ACCOUNT_RESERVE, strTemp, j_))
+        {
+            FEE_ACCOUNT_RESERVE = beast::lexicalCastThrow <std::uint64_t> (strTemp);
+            section(SECTION_VOTING).set(SECTION_FEE_ACCOUNT_RESERVE, strTemp);
+        }
 
-    if (getSingleSection (secConfig, SECTION_FEE_OWNER_RESERVE, strTemp, j_))
-        FEE_OWNER_RESERVE   = beast::lexicalCastThrow <std::uint64_t> (strTemp);
+        if (getSingleSection (secConfig, SECTION_FEE_OWNER_RESERVE, strTemp, j_))
+        {
+            FEE_OWNER_RESERVE   = beast::lexicalCastThrow <std::uint64_t> (strTemp);
+            section(SECTION_VOTING).set(SECTION_FEE_OWNER_RESERVE, strTemp);
+        }
 
-    if (getSingleSection (secConfig, SECTION_FEE_OFFER, strTemp, j_))
-        FEE_OFFER           = beast::lexicalCastThrow <int> (strTemp);
+        if (getSingleSection (secConfig, SECTION_FEE_OFFER, strTemp, j_))
+        {
+            FEE_OFFER           = beast::lexicalCastThrow <int> (strTemp);
+            section(SECTION_VOTING).set(SECTION_FEE_OFFER, strTemp);
+        }
 
-    if (getSingleSection (secConfig, SECTION_FEE_DEFAULT, strTemp, j_))
-        FEE_DEFAULT         = beast::lexicalCastThrow <int> (strTemp);
+        if (getSingleSection (secConfig, SECTION_FEE_DEFAULT, strTemp, j_))
+        {
+            FEE_DEFAULT         = beast::lexicalCastThrow <int> (strTemp);
+            section(SECTION_VOTING).set(SECTION_FEE_DEFAULT, strTemp);
+        }
+    }
 
     if (getSingleSection (secConfig, SECTION_LEDGER_HISTORY, strTemp, j_))
     {
@@ -438,56 +532,10 @@ void Config::loadFromString (std::string const& fileContents)
         // in the same directory as the config file, but don't complain
         // if we can't find it.
         boost::filesystem::path validatorsFile;
+        std::string data;
 
-        if (getSingleSection (secConfig, SECTION_VALIDATORS_FILE, strTemp, j_))
+        if (loadSectionFromExternalPath (SECTION_VALIDATORS_FILE, validatorsFile, data, validatorsFileName))
         {
-            validatorsFile = strTemp;
-
-            if (validatorsFile.empty ())
-                Throw<std::runtime_error> (
-                    "Invalid path specified in [" SECTION_VALIDATORS_FILE "]");
-
-            if (!validatorsFile.is_absolute() && !CONFIG_DIR.empty())
-                validatorsFile = CONFIG_DIR / validatorsFile;
-
-            if (!boost::filesystem::exists (validatorsFile))
-                Throw<std::runtime_error> (
-                    "The file specified in [" SECTION_VALIDATORS_FILE "] "
-                    "does not exist: " + validatorsFile.string());
-
-            else if (!boost::filesystem::is_regular_file (validatorsFile) &&
-                    !boost::filesystem::is_symlink (validatorsFile))
-                Throw<std::runtime_error> (
-                    "Invalid file specified in [" SECTION_VALIDATORS_FILE "]: " +
-                    validatorsFile.string());
-        }
-        else if (!CONFIG_DIR.empty())
-        {
-            validatorsFile = CONFIG_DIR / validatorsFileName;
-
-            if (!validatorsFile.empty ())
-            {
-                if(!boost::filesystem::exists (validatorsFile))
-                    validatorsFile.clear();
-                else if (!boost::filesystem::is_regular_file (validatorsFile) &&
-                        !boost::filesystem::is_symlink (validatorsFile))
-                    validatorsFile.clear();
-            }
-        }
-
-        if (!validatorsFile.empty () &&
-                boost::filesystem::exists (validatorsFile) &&
-                (boost::filesystem::is_regular_file (validatorsFile) ||
-                boost::filesystem::is_symlink (validatorsFile)))
-        {
-            std::ifstream ifsDefault (validatorsFile.native().c_str());
-
-            std::string data;
-
-            data.assign (
-                std::istreambuf_iterator<char>(ifsDefault),
-                std::istreambuf_iterator<char>());
-
             auto iniFile = parseIniFile (data, true);
 
             auto entries = getIniFileSection (

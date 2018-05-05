@@ -64,7 +64,7 @@ public:
         std::uint32_t retrySequencePercent = 25;
         // TODO: eahennis. Can we remove the multi tx factor?
         std::int32_t multiTxnPercent = -90;
-        std::uint32_t minimumEscalationMultiplier = baseLevel * 500;
+        std::uint32_t minimumEscalationMultiplier = baseLevel * 1;
         std::uint32_t minimumTxnInLedger = 5;
         std::uint32_t minimumTxnInLedgerSA = 1000;
         std::uint32_t targetTxnInLedger = 50;
@@ -261,7 +261,8 @@ private:
 
         static
         std::uint64_t
-        scaleFeeLevel(Snapshot const& snapshot, OpenView const& view,
+        scaleFeeLevel(beast::Journal const& journal,
+            Snapshot const& snapshot, OpenView const& view,
             std::uint32_t txCountPadding = 0);
 
         /**
