@@ -161,6 +161,7 @@ void printHelp (const po::options_description& desc)
            "     version\n"
            "     server_info\n"
            "     sign <private_key> <tx_json> [offline]\n"
+           "     sign_msg <private_key> <message>\n"
            "     sign_for <signer_address> <signer_private_key> <tx_json> [offline]\n"
            "     stop\n"
            "     submit <tx_blob>|[<private_key> <tx_json>]\n"
@@ -168,6 +169,7 @@ void printHelp (const po::options_description& desc)
            "     tx <id>\n"
            "     validation_create [<seed>|<pass_phrase>|<key>]\n"
            "     validation_seed [<seed>|<pass_phrase>|<key>]\n"
+           "     verify_msg <message_json>"
            "     wallet_propose [<passphrase>]\n";
 }
 
