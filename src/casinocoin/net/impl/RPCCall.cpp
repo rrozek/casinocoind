@@ -922,22 +922,17 @@ private:
         return jvRequest;
     }
 
-    // verify_msg <message_json>
+    // verify_msg <message> <signature> <public_key_hex>
     Json::Value parseVerifyMsg (Json::Value const& jvParams)
     {
 
-        if (1 == jvParams.size ())
+        if (3 == jvParams.size ())
         {
-            Json::Value     msgJSON;
-            Json::Reader    reader;
-            if (reader.parse (jvParams[0u].asString (), msgJSON))
-            {
-                Json::Value jvRequest;
-                jvRequest[jss::message] = msgJSON[jss::message];
-                jvRequest[jss::signature] = msgJSON[jss::signature];
-                jvRequest[jss::public_key_hex] = msgJSON[jss::public_key_hex];
-                return jvRequest;
-            }
+            Json::Value jvRequest;
+            jvRequest[jss::message] = jvParams[0u].asString ();
+            jvRequest[jss::signature] = jvParams[1u].asString ();
+            jvRequest[jss::public_key_hex] = jvParams[2u].asString ();
+            return jvRequest;
         }
 
         return rpcError (rpcINVALID_PARAMS);
@@ -1093,7 +1088,7 @@ public:
             {   "unl_list",             &RPCParser::parseAsIs,                  0,  0   },
             {   "validation_create",    &RPCParser::parseValidationCreate,      0,  1   },
             {   "validation_seed",      &RPCParser::parseValidationSeed,        0,  1   },
-            {   "verify_msg",           &RPCParser::parseVerifyMsg,             1,  1   },
+            {   "verify_msg",           &RPCParser::parseVerifyMsg,             3,  3   },
             {   "version",              &RPCParser::parseAsIs,                  0,  0   },
             {   "wallet_propose",       &RPCParser::parseWalletPropose,         0,  1   },
             {   "wallet_seed",          &RPCParser::parseWalletSeed,            0,  1   },

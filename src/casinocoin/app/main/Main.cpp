@@ -169,7 +169,7 @@ void printHelp (const po::options_description& desc)
            "     tx <id>\n"
            "     validation_create [<seed>|<pass_phrase>|<key>]\n"
            "     validation_seed [<seed>|<pass_phrase>|<key>]\n"
-           "     verify_msg <message_json>"
+           "     verify_msg <message> <signature> <public_key_hex>"
            "     wallet_propose [<passphrase>]\n";
 }
 
