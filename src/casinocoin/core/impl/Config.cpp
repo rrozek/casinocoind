@@ -178,7 +178,10 @@ bool Config::reloadFeeVoteParams()
             SECTION_VOTING);
 
         if (entries)
+        {
+            section (SECTION_VOTING).clear();
             section (SECTION_VOTING).append (*entries);
+        }
         return true;
     }
     return false;
