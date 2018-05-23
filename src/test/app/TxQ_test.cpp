@@ -156,7 +156,6 @@ class TxQ_test : public beast::unit_test::suite
                 0, expectedInLedger, 256);
         auto const fees = env.current()->fees();
         BEAST_EXPECT(fees.base == base);
-        BEAST_EXPECT(fees.units == units);
         BEAST_EXPECT(fees.reserve == reserve);
         BEAST_EXPECT(fees.increment == increment);
     }

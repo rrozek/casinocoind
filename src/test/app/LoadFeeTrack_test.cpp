@@ -36,7 +36,6 @@ public:
         {
             Fees f;
             f.base = d.FEE_DEFAULT;
-            f.units = d.TRANSACTION_FEE_BASE;
             f.reserve = 20 * SYSTEM_CURRENCY_PARTS;
             f.increment = 5 * SYSTEM_CURRENCY_PARTS;
             return f;

@@ -727,13 +727,12 @@ Json::Value checkFee (
     auto const limit = [&]()
     {
         // Scale fee units to drops:
-        auto const drops = mulDiv (feeDefault,
-            ledger->fees().base, ledger->fees().units);
+        auto const drops = mul (feeDefault, ledger->fees().base);
         if (!drops.first)
-            Throw<std::overflow_error>("mulDiv");
+            Throw<std::overflow_error>("mul");
         auto const result = mulDiv (drops.second, mult, div);
         if (!result.first)
-            Throw<std::overflow_error>("mulDiv");
+            Throw<std::overflow_error>("mul");
         return result.second;
     }();
 

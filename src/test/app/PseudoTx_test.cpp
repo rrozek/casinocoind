@@ -38,7 +38,6 @@ struct PseudoTx_test : public beast::unit_test::suite
             obj[sfBaseFee] = 0;
             obj[sfReserveBase] = 0;
             obj[sfReserveIncrement] = 0;
-            obj[sfReferenceFeeUnits] = 0;
         }));
 
         res.emplace_back(STTx(ttAMENDMENT, [&](auto& obj) {

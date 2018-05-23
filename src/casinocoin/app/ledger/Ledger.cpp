@@ -601,7 +601,6 @@ Ledger::setup (Config const& config)
     bool ret = true;
 
     fees_.base = config.FEE_DEFAULT;
-    fees_.units = config.TRANSACTION_FEE_BASE;
     fees_.reserve = config.FEE_ACCOUNT_RESERVE;
     fees_.increment = config.FEE_OWNER_RESERVE;
 
@@ -613,9 +612,6 @@ Ledger::setup (Config const& config)
 
             if (sle->getFieldIndex (sfBaseFee) != -1)
                 fees_.base = sle->getFieldU64 (sfBaseFee);
-
-            if (sle->getFieldIndex (sfReferenceFeeUnits) != -1)
-                fees_.units = sle->getFieldU32 (sfReferenceFeeUnits);
 
             if (sle->getFieldIndex (sfReserveBase) != -1)
                 fees_.reserve = sle->getFieldU32 (sfReserveBase);

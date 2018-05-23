@@ -128,7 +128,8 @@ SF_U32 const sfFirstLedgerSequence = make::one<SF_U32::type>(&sfFirstLedgerSeque
 SF_U32 const sfLastLedgerSequence  = make::one<SF_U32::type>(&sfLastLedgerSequence,  STI_UINT32, 27, "LastLedgerSequence");
 SF_U32 const sfTransactionIndex    = make::one<SF_U32::type>(&sfTransactionIndex,    STI_UINT32, 28, "TransactionIndex");
 SF_U32 const sfOperationLimit      = make::one<SF_U32::type>(&sfOperationLimit,      STI_UINT32, 29, "OperationLimit");
-SF_U32 const sfReferenceFeeUnits   = make::one<SF_U32::type>(&sfReferenceFeeUnits,   STI_UINT32, 30, "ReferenceFeeUnits");
+// do not reuse this number just for the sake of backward correctness
+//SF_U32 const sfReferenceFeeUnits   = make::one<SF_U32::type>(&sfReferenceFeeUnits,   STI_UINT32, 30, "ReferenceFeeUnits");
 SF_U32 const sfReserveBase         = make::one<SF_U32::type>(&sfReserveBase,         STI_UINT32, 31, "ReserveBase");
 SF_U32 const sfReserveIncrement    = make::one<SF_U32::type>(&sfReserveIncrement,    STI_UINT32, 32, "ReserveIncrement");
 SF_U32 const sfSetFlag             = make::one<SF_U32::type>(&sfSetFlag,             STI_UINT32, 33, "SetFlag");

@@ -48,9 +48,9 @@ static void fillTransaction (
     txArray["Sequence"] = Json::UInt (sequence++);
     txArray["Account"] = context.app.accountIDCache().toBase58 (accountID);
     auto& fees = ledger.fees();
-    // Convert the reference transaction cost in fee units to drops
+    // Convert the reference transaction cost in baseFee to drops
     // scaled to represent the current fee load.
-    txArray["Fee"] = Json::UInt (scaleFeeLoad(fees.units,
+    txArray["Fee"] = Json::UInt (scaleFeeLoad(fees.base,
         context.app.getFeeTrack(), fees, false));
 }
 

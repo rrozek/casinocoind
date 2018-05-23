@@ -356,7 +356,7 @@ EscrowFinish::calculateBaseFee (PreclaimContext const& ctx)
 
     if (auto const fb = ctx.tx[~sfFulfillment])
     {
-        extraFee += ctx.view.fees().units *
+        extraFee += ctx.view.fees().base *
             (32 + static_cast<std::uint64_t> (fb->size() / 16));
     }
 

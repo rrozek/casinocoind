@@ -160,13 +160,13 @@ scaleFeeLoad(std::uint64_t fee, LoadFeeTrack const& feeTrack,
 
     auto baseFee = fees.base;
     // Compute:
-    // fee = fee * baseFee * feeFactor / (fees.units * lftNormalFee);
+    // fee = fee * baseFee * feeFactor / (fees.base * lftNormalFee);
     // without overflow, and as accurately as possible
 
     // The denominator of the fraction we're trying to compute.
     // fees.units and lftNormalFee are both 32 bit,
     //  so the multiplication can't overflow.
-    auto den = static_cast<std::uint64_t>(fees.units)
+    auto den = static_cast<std::uint64_t>(fees.base)
         * static_cast<std::uint64_t>(feeTrack.getLoadBase());
     // Reduce fee * baseFee * feeFactor / (fees.units * lftNormalFee)
     // to lowest terms.

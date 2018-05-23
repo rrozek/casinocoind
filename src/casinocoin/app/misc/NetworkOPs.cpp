@@ -2283,7 +2283,6 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
     if (lpClosed)
     {
         std::uint64_t baseFee = lpClosed->fees().base;
-        std::uint64_t baseRef = lpClosed->fees().units;
         Json::Value l (Json::objectValue);
         l[jss::seq] = Json::UInt (lpClosed->info().seq);
         l[jss::hash] = to_string (lpClosed->info().hash);
@@ -2298,8 +2297,8 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
         else
         {
             l[jss::base_fee_csc] = static_cast<double> (baseFee) / SYSTEM_CURRENCY_PARTS;
-            l[jss::reserve_base_csc] = static_cast<double> (mulDiv (lpClosed->fees().accountReserve(0).drops(), baseFee, baseRef).second / SYSTEM_CURRENCY_PARTS);
-            l[jss::reserve_inc_csc] = static_cast<double> (mulDiv (lpClosed->fees().increment, baseFee, baseRef).second / SYSTEM_CURRENCY_PARTS);
+            l[jss::reserve_base_csc] = static_cast<double> (mul (lpClosed->fees().accountReserve(0).drops(), baseFee).second / SYSTEM_CURRENCY_PARTS);
+            l[jss::reserve_inc_csc] = static_cast<double> (mul (lpClosed->fees().increment, baseFee).second / SYSTEM_CURRENCY_PARTS);
 
             auto const nowOffset = app_.timeKeeper().nowOffset();
             if (std::abs (nowOffset.count()) >= 60)
@@ -2409,8 +2408,6 @@ void NetworkOPsImp::pubLedger (
             jvObj[jss::ledger_time]
                     = Json::Value::UInt (lpAccepted->info().closeTime.time_since_epoch().count());
 
-            jvObj[jss::fee_ref]
-                    = Json::UInt (lpAccepted->fees().units);
             jvObj[jss::fee_base] = Json::UInt (lpAccepted->fees().base);
             jvObj[jss::reserve_base] = Json::UInt (lpAccepted->fees().accountReserve(0).drops());
             jvObj[jss::reserve_inc] = Json::UInt (lpAccepted->fees().increment);
@@ -2765,8 +2762,7 @@ bool NetworkOPsImp::subLedger (InfoSub::ref isrListener, Json::Value& jvResult)
         jvResult[jss::ledger_hash]     = to_string (lpClosed->info().hash);
         jvResult[jss::ledger_time]
             = Json::Value::UInt(lpClosed->info().closeTime.time_since_epoch().count());
-        jvResult[jss::fee_ref]
-                = Json::UInt (lpClosed->fees().units);
+
         jvResult[jss::fee_base]        = Json::UInt (lpClosed->fees().base);
         jvResult[jss::reserve_base]    = Json::UInt (lpClosed->fees().accountReserve(0).drops());
         jvResult[jss::reserve_inc]     = Json::UInt (lpClosed->fees().increment);

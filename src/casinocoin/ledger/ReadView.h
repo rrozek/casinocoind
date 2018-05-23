@@ -52,7 +52,6 @@ namespace casinocoin {
 struct Fees
 {
     std::uint64_t base = 0;         // Reference tx cost (drops)
-    std::uint32_t units = 0;        // Reference fee units
     std::uint32_t reserve = 0;      // Reserve base (drops)
     std::uint32_t increment = 0;    // Reserve increment (drops)
 

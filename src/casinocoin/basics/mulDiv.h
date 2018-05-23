@@ -48,6 +48,22 @@ namespace casinocoin
 std::pair<bool, std::uint64_t>
 mulDiv(std::uint64_t value, std::uint64_t mul, std::uint64_t div);
 
+/** Return value*mul accurately.
+    Computes the result of the multiplication
+    avoiding overflow and retaining precision.
+    Throws:
+        None
+    Returns:
+        `std::pair`:
+            `first` is `false` if the calculation overflows,
+                `true` if the calculation is safe.
+            `second` is the result of the calculation if
+                `first` is `false`, max value of `uint64_t`
+                if `true`.
+*/
+std::pair<bool, std::uint64_t>
+mul(std::uint64_t value, std::uint64_t mul);
+
 } // casinocoin
 
 #endif

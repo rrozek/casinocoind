@@ -147,7 +147,7 @@ std::uint64_t Transactor::calculateBaseFee (
     // The computation has two parts:
     //  * The base fee, which is the same for most transactions.
     //  * The additional cost of each multisignature on the transaction.
-    std::uint64_t baseFee = ctx.view.fees().units;
+    std::uint64_t baseFee = ctx.view.fees().base;
 
     // Each signer adds one more baseFee to the minimum required fee
     // for the transaction.

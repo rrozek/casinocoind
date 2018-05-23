@@ -120,7 +120,6 @@ LedgerFormats::LedgerFormats ()
 
     add ("FeeSettings", ltFEE_SETTINGS)
             << SOElement (sfBaseFee,             SOE_REQUIRED)
-            << SOElement (sfReferenceFeeUnits,   SOE_REQUIRED)
             << SOElement (sfReserveBase,         SOE_REQUIRED)
             << SOElement (sfReserveIncrement,    SOE_REQUIRED)
             ;

@@ -224,8 +224,6 @@ Change::applyFee()
     feeObject->setFieldU64 (
         sfBaseFee, ctx_.tx.getFieldU64 (sfBaseFee));
     feeObject->setFieldU32 (
-        sfReferenceFeeUnits, ctx_.tx.getFieldU32 (sfReferenceFeeUnits));
-    feeObject->setFieldU32 (
         sfReserveBase, ctx_.tx.getFieldU32 (sfReserveBase));
     feeObject->setFieldU32 (
         sfReserveIncrement, ctx_.tx.getFieldU32 (sfReserveIncrement));

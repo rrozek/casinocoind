@@ -380,7 +380,6 @@ extern SF_U32 const sfFirstLedgerSequence;  // Deprecated: do not use
 extern SF_U32 const sfLastLedgerSequence;
 extern SF_U32 const sfTransactionIndex;
 extern SF_U32 const sfOperationLimit;
-extern SF_U32 const sfReferenceFeeUnits;
 extern SF_U32 const sfReserveBase;
 extern SF_U32 const sfReserveIncrement;
 extern SF_U32 const sfSetFlag;

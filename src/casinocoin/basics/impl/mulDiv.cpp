@@ -51,4 +51,20 @@ mulDiv(std::uint64_t value, std::uint64_t mul, std::uint64_t div)
     return { true, static_cast<std::uint64_t>(result) };
 }
 
+std::pair<bool, std::uint64_t>
+mul(std::uint64_t value, std::uint64_t mul)
+{
+    using namespace boost::multiprecision;
+
+    uint128_t result;
+    result = multiply(result, value, mul);
+
+    auto const limit = std::numeric_limits<std::uint64_t>::max();
+
+    if (result > limit)
+        return { false, limit };
+
+    return { true, static_cast<std::uint64_t>(result) };
+}
+
 } // casinocoin

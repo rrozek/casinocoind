@@ -99,7 +99,6 @@ TxFormats::TxFormats ()
     add ("SetFee", ttFEE)
         << SOElement (sfLedgerSequence,      SOE_OPTIONAL)
         << SOElement (sfBaseFee,             SOE_REQUIRED)
-        << SOElement (sfReferenceFeeUnits,   SOE_REQUIRED)
         << SOElement (sfReserveBase,         SOE_REQUIRED)
         << SOElement (sfReserveIncrement,    SOE_REQUIRED)
         ;
