@@ -48,9 +48,6 @@ public:
         /** The cost of a reference transaction in drops. */
         std::uint64_t reference_fee = 1000000;
 
-        /** The cost of a reference transaction in fee units. */
-        std::uint64_t const reference_fee_units = 1000000;
-
         /** The account reserve requirement in drops. */
         std::uint64_t account_reserve = 10 * SYSTEM_CURRENCY_PARTS;
 
@@ -61,14 +58,12 @@ public:
         ~Setup(){}
         Setup(const Setup& other)
             : reference_fee(other.reference_fee)
-            , reference_fee_units(other.reference_fee_units)
             , account_reserve(other.account_reserve)
             , owner_reserve(other.owner_reserve)
         {}
         Setup& operator=(const Setup& other)
         {
             reference_fee = other.reference_fee;
-            // reference_fee_units omitted
             account_reserve = other.account_reserve;
             owner_reserve = other.owner_reserve;
             return *this;
