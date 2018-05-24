@@ -2283,7 +2283,6 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
     if (lpClosed)
     {
         std::uint64_t baseFee = lpClosed->fees().base;
-        std::uint64_t baseRef = lpClosed->fees().units;
         Json::Value l (Json::objectValue);
         l[jss::seq] = Json::UInt (lpClosed->info().seq);
         l[jss::hash] = to_string (lpClosed->info().hash);
