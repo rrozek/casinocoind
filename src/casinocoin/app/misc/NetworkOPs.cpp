@@ -2298,8 +2298,8 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
         else
         {
             l[jss::base_fee_csc] = static_cast<double> (baseFee) / SYSTEM_CURRENCY_PARTS;
-            l[jss::reserve_base_csc] = static_cast<double> (mulDiv (lpClosed->fees().accountReserve(0).drops(), baseFee, baseRef).second / SYSTEM_CURRENCY_PARTS);
-            l[jss::reserve_inc_csc] = static_cast<double> (mulDiv (lpClosed->fees().increment, baseFee, baseRef).second / SYSTEM_CURRENCY_PARTS);
+            l[jss::reserve_base_csc] = static_cast<double> (lpClosed->fees().accountReserve(0).drops() / SYSTEM_CURRENCY_PARTS);
+            l[jss::reserve_inc_csc] = static_cast<double> (lpClosed->fees().increment / SYSTEM_CURRENCY_PARTS);
 
             auto const nowOffset = app_.timeKeeper().nowOffset();
             if (std::abs (nowOffset.count()) >= 60)
