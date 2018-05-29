@@ -20,6 +20,8 @@
 //==============================================================================
 /*
     2017-06-29  ajochems        Refactored for casinocoin
+    2018-01-18  jrojek          Added KYCSigners section
+    2018-03-19  jrojek          Voting section moved to separate file
 */
 //==============================================================================
 
@@ -86,6 +88,7 @@ public:
     static char const* const configFileName;
     static char const* const databaseDirName;
     static char const* const validatorsFileName;
+    static char const* const votingFileName;
 
     /** Returns the full path and filename of the debug log file. */
     boost::filesystem::path getDebugLogFile () const;
@@ -99,6 +102,10 @@ private:
     boost::filesystem::path DEBUG_LOGFILE;
 
     void load ();
+    bool
+    loadSectionFromExternalPath(const std::string& sectionName,
+                               boost::filesystem::path& filePath,
+                               std::string& data, const std::string &defaultFilePath);
     beast::Journal j_;
 
     bool QUIET = false;          // Minimize logging verbosity.
@@ -138,7 +145,7 @@ public:
     std::string                 START_LEDGER;
 
     // Network parameters
-    int const                   TRANSACTION_FEE_BASE = 1000;   // The number of fee units a reference transaction costs
+    int const                   TRANSACTION_FEE_BASE = 1000000;   // The number of fee units a reference transaction costs
 
     // Note: The following parameters do not relate to the UNL or trust at all
     std::size_t                 NETWORK_QUORUM = 0;         // Minimum number of nodes to consider the network present
@@ -161,7 +168,7 @@ public:
     std::uint64_t                      FEE_DEFAULT = 1000000;
     std::uint64_t                      FEE_ACCOUNT_RESERVE = 10 * SYSTEM_CURRENCY_PARTS;
     std::uint64_t                      FEE_OWNER_RESERVE = 5 * SYSTEM_CURRENCY_PARTS;
-    std::uint64_t                      FEE_OFFER = 10000;
+    std::uint64_t                      FEE_OFFER = 1000000;
 
     // Node storage configuration
     std::uint32_t                      LEDGER_HISTORY = 256;
@@ -181,6 +188,8 @@ public:
 
     std::unordered_set<uint256, beast::uhash<>> features;
 
+    std::vector<std::string> KYCTrustedAccounts;
+
 public:
     Config() = default;
 
@@ -192,6 +201,7 @@ public:
     void setupControl (bool bQuiet,
         bool bSilent, bool bStandalone);
 
+    bool reloadFeeVoteParams();
     /**
      *  Load the config from the contents of the string.
      *

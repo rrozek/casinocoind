@@ -1033,7 +1033,7 @@ bool ApplicationImp::setup()
         enabledAmendments.append (detail::preEnabledAmendments ());
 
         m_amendmentTable = make_AmendmentTable (
-            weeks{2},
+            days{2},
             MAJORITY_FRACTION,
             supportedAmendments,
             enabledAmendments,
@@ -1239,8 +1239,9 @@ bool ApplicationImp::setup()
 
         Resource::Charge loadType = Resource::feeReferenceRPC;
         Resource::Consumer c;
+        beast::IP::Endpoint dummy;
         RPC::Context context { journal ("RPCHandler"), jvCommand, *this,
-            loadType, getOPs (), getLedgerMaster(), c, Role::ADMIN };
+            loadType, getOPs (), getLedgerMaster(), c, dummy, Role::ADMIN };
 
         Json::Value jvResult;
         RPC::doCommand (context, jvResult);

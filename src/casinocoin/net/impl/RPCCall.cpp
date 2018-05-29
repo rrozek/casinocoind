@@ -835,6 +835,20 @@ private:
         return rpcError (rpcINVALID_PARAMS);
     }
 
+    // sign_msg <private_key> <message>
+    Json::Value parseSignMsg (Json::Value const& jvParams)
+    {
+        if (2 == jvParams.size ())
+        {
+            Json::Value jvRequest;
+            jvRequest[jss::secret] = jvParams[0u].asString();
+            jvRequest[jss::message] = jvParams[1u].asString();
+            return jvRequest;
+        }
+
+        return rpcError (rpcINVALID_PARAMS);
+    }
+
     // submit any multisigned transaction to the network
     //
     // submit_multisigned <json>
@@ -906,6 +920,23 @@ private:
             jvRequest[jss::secret]     = jvParams[0u].asString ();
 
         return jvRequest;
+    }
+
+    // verify_msg <message> <signature> <public_key_hex>
+    Json::Value parseVerifyMsg (Json::Value const& jvParams)
+    {
+
+        if (3 == jvParams.size ())
+        {
+            Json::Value jvRequest;
+            jvRequest[jss::message] = jvParams[0u].asString ();
+            jvRequest[jss::signature] = jvParams[1u].asString ();
+            jvRequest[jss::public_key_hex] = jvParams[2u].asString ();
+            return jvRequest;
+        }
+
+        return rpcError (rpcINVALID_PARAMS);
+
     }
 
     // wallet_propose [<passphrase>]
@@ -1044,6 +1075,7 @@ public:
             {   "casinocoin_path_find",     &RPCParser::parseCasinocoinPathFind,        1,  2   },
             {   "sign",                 &RPCParser::parseSignSubmit,            2,  3   },
             {   "sign_for",             &RPCParser::parseSignFor,               3,  4   },
+            {   "sign_msg",             &RPCParser::parseSignMsg,               2,  2   },
             {   "submit",               &RPCParser::parseSignSubmit,            1,  3   },
             {   "submit_multisigned",   &RPCParser::parseSubmitMultiSigned,     1,  1   },
             {   "server_info",          &RPCParser::parseAsIs,                  0,  0   },
@@ -1056,6 +1088,7 @@ public:
             {   "unl_list",             &RPCParser::parseAsIs,                  0,  0   },
             {   "validation_create",    &RPCParser::parseValidationCreate,      0,  1   },
             {   "validation_seed",      &RPCParser::parseValidationSeed,        0,  1   },
+            {   "verify_msg",           &RPCParser::parseVerifyMsg,             3,  3   },
             {   "version",              &RPCParser::parseAsIs,                  0,  0   },
             {   "wallet_propose",       &RPCParser::parseWalletPropose,         0,  1   },
             {   "wallet_seed",          &RPCParser::parseWalletSeed,            0,  1   },

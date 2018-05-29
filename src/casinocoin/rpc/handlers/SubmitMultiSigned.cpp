@@ -50,6 +50,29 @@ Json::Value doSubmitMultiSigned (RPC::Context& context)
     auto const failHard = context.params[jss::fail_hard].asBool();
     auto const failType = NetworkOPs::doFailHard (failHard);
 
+    if (context.params.isMember (jss::tx_json))
+    {
+        // only add it if KYC feature is enabled
+        if (context.app.getLedgerMaster().getValidatedRules().
+            enabled (featureKYC))
+        {
+            // jrojek 15.03.2018 only add if account is KYC-validated
+            AccountID uCallerAccount;
+            if (to_issuer(uCallerAccount, context.params[jss::tx_json][jss::Account].asString()))
+            {
+                auto const callerAccountKeylet = keylet::account (uCallerAccount);
+                std::shared_ptr<const casinocoin::STLedgerEntry> sleCaller = context.app.getLedgerMaster().getValidatedLedger()->read(callerAccountKeylet);
+                if (sleCaller && (sleCaller->isFlag(lsfKYCValidated)))
+                {
+                    // jrojek 28.02.2018 enrich tx_json with clientIP
+                    std::string clientIPStr = context.clientAddress.address().to_string();
+                    Json::Value ipAddress(strHex(clientIPStr.begin(), clientIPStr.size()));
+                    context.params[jss::tx_json][jss::ClientIP] = ipAddress;
+                }
+            }
+        }
+    }
+
     return RPC::transactionSubmitMultiSigned (
         context.params,
         failType,

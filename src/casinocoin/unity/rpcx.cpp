@@ -79,6 +79,7 @@
 #include <casinocoin/rpc/handlers/ServerState.cpp>
 #include <casinocoin/rpc/handlers/SignFor.cpp>
 #include <casinocoin/rpc/handlers/SignHandler.cpp>
+#include <casinocoin/rpc/handlers/SignMsgHandler.cpp>
 #include <casinocoin/rpc/handlers/Stop.cpp>
 #include <casinocoin/rpc/handlers/Submit.cpp>
 #include <casinocoin/rpc/handlers/SubmitMultiSigned.cpp>
@@ -88,6 +89,7 @@
 #include <casinocoin/rpc/handlers/TxHistory.cpp>
 #include <casinocoin/rpc/handlers/UnlList.cpp>
 #include <casinocoin/rpc/handlers/Unsubscribe.cpp>
+#include <casinocoin/rpc/handlers/VerifyMsgHandler.cpp>
 #include <casinocoin/rpc/handlers/ValidationCreate.cpp>
 #include <casinocoin/rpc/handlers/ValidationSeed.cpp>
 #include <casinocoin/rpc/handlers/WalletPropose.cpp>

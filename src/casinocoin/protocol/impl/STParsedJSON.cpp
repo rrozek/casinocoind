@@ -34,6 +34,7 @@
 #include <casinocoin/protocol/STBitString.h>
 #include <casinocoin/protocol/STBlob.h>
 #include <casinocoin/protocol/STVector256.h>
+#include <casinocoin/protocol/STVector128.h>
 #include <casinocoin/protocol/STInteger.h>
 #include <casinocoin/protocol/STParsedJSON.h>
 #include <casinocoin/protocol/STPathSet.h>
@@ -526,7 +527,33 @@ static boost::optional<detail::STVar> parseLeaf (
 
         break;
 
-    case STI_PATHSET:
+        case STI_VECTOR128:
+        if (! value.isArray ())
+        {
+            error = array_expected (json_name, fieldName);
+            return ret;
+        }
+
+        try
+        {
+            STVector128 tail (field);
+            for (Json::UInt i = 0; value.isValidIndex (i); ++i)
+            {
+                uint128 s;
+                s.SetHex (value[i].asString ());
+                tail.push_back (s);
+            }
+            ret = detail::make_stvar <STVector128> (std::move (tail));
+        }
+        catch (std::exception const&)
+        {
+            error = invalid_data (json_name, fieldName);
+            return ret;
+        }
+
+        break;
+
+        case STI_PATHSET:
         if (!value.isArray ())
         {
             error = array_expected (json_name, fieldName);

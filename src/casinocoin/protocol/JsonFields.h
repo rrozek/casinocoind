@@ -65,6 +65,7 @@ JSS ( TakerGets );                  // field.
 JSS ( TakerPays );                  // field.
 JSS ( TxnSignature );               // field
 JSS ( TransactionType );            // in: TransactionSign
+JSS ( ClientIP );                   // in/out: TransactionSign; field
 JSS ( aborted );                    // out: InboundLedger
 JSS ( accepted );                   // out: LedgerToJson, OwnerInfo
 JSS ( account );                    // in/out: many
@@ -286,7 +287,7 @@ JSS ( min_count );                  // in: GetCounts
 JSS ( min_ledger );                 // in: LedgerCleaner
 JSS ( minimum_fee );                // out: TxQ
 JSS ( minimum_level );              // out: TxQ
-JSS ( missingCommand );             // error
+JSS ( missingCommand );             // error or Message to encrypt
 JSS ( name );                       // out: AmendmentTableImpl, PeerImp
 JSS ( needed_state_hashes );        // out: InboundLedger
 JSS ( needed_transaction_hashes );  // out: InboundLedger

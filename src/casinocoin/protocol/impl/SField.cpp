@@ -44,6 +44,7 @@ static std::map<int, std::unique_ptr<SField const>> unknownCodeToField;
 
 // Storage for static const member.
 SField::IsSigning const SField::notSigning;
+SField::IsSigning const SField::notSigningNotHashed;
 
 int SField::num = 0;
 
@@ -110,6 +111,7 @@ SF_U32 const sfTransferRate      = make::one<SF_U32::type>(&sfTransferRate,     
 SF_U32 const sfWalletSize        = make::one<SF_U32::type>(&sfWalletSize,        STI_UINT32, 12, "WalletSize");
 SF_U32 const sfOwnerCount        = make::one<SF_U32::type>(&sfOwnerCount,        STI_UINT32, 13, "OwnerCount");
 SF_U32 const sfDestinationTag    = make::one<SF_U32::type>(&sfDestinationTag,    STI_UINT32, 14, "DestinationTag");
+SF_U32 const sfKYCTime           = make::one<SF_U32::type>(&sfKYCTime,           STI_UINT32, 15, "Date");
 
 // 32-bit integers (uncommon)
 SF_U32 const sfHighQualityIn       = make::one<SF_U32::type>(&sfHighQualityIn,       STI_UINT32, 16, "HighQualityIn");
@@ -189,9 +191,9 @@ SF_Amount const sfSendMax     = make::one<SF_Amount::type>(&sfSendMax,     STI_A
 SF_Amount const sfDeliverMin  = make::one<SF_Amount::type>(&sfDeliverMin,  STI_AMOUNT, 10, "DeliverMin");
 
 // currency amount (uncommon)
-SF_Amount const sfMinimumOffer    = make::one<SF_Amount::type>(&sfMinimumOffer,    STI_AMOUNT, 16, "MinimumOffer");
-SF_Amount const sfCasinocoinEscrow    = make::one<SF_Amount::type>(&sfCasinocoinEscrow,    STI_AMOUNT, 17, "CasinocoinEscrow");
-SF_Amount const sfDeliveredAmount = make::one<SF_Amount::type>(&sfDeliveredAmount, STI_AMOUNT, 18, "DeliveredAmount");
+SF_Amount const sfMinimumOffer      = make::one<SF_Amount::type>(&sfMinimumOffer,       STI_AMOUNT, 16, "MinimumOffer");
+SF_Amount const sfCasinocoinEscrow  = make::one<SF_Amount::type>(&sfCasinocoinEscrow,   STI_AMOUNT, 17, "CasinocoinEscrow");
+SF_Amount const sfDeliveredAmount   = make::one<SF_Amount::type>(&sfDeliveredAmount,    STI_AMOUNT, 18, "DeliveredAmount");
 
 // variable length (common)
 SF_Blob const sfPublicKey       = make::one<SF_Blob::type>(&sfPublicKey,     STI_VL,  1, "PublicKey");
@@ -207,7 +209,7 @@ SF_Blob const sfCreateCode      = make::one<SF_Blob::type>(&sfCreateCode,    STI
 SF_Blob const sfMemoType        = make::one<SF_Blob::type>(&sfMemoType,      STI_VL, 12, "MemoType");
 SF_Blob const sfMemoData        = make::one<SF_Blob::type>(&sfMemoData,      STI_VL, 13, "MemoData");
 SF_Blob const sfMemoFormat      = make::one<SF_Blob::type>(&sfMemoFormat,    STI_VL, 14, "MemoFormat");
-
+SF_Blob const sfClientIP        = make::one<SF_Blob::type>(&sfClientIP,      STI_VL, 15, "ClientIP", SField::sMD_Default, SField::notSigningNotHashed);
 
 // variable length (uncommon)
 SF_Blob const sfFulfillment     = make::one<SF_Blob::type>(&sfFulfillment,     STI_VL, 16, "Fulfillment");
@@ -231,6 +233,8 @@ SF_Vec256 const sfIndexes    = make::one<SF_Vec256::type>(&sfIndexes,    STI_VEC
 SF_Vec256 const sfHashes     = make::one<SF_Vec256::type>(&sfHashes,     STI_VECTOR256, 2, "Hashes");
 SF_Vec256 const sfAmendments = make::one<SF_Vec256::type>(&sfAmendments, STI_VECTOR256, 3, "Amendments");
 
+SF_Vec128 const sfKYCVerifications = make::one<SF_Vec128::type>(&sfKYCVerifications, STI_VECTOR128, 1, "Verifications");
+
 // inner object
 // OBJECT/1 is reserved for end of object
 SField const sfTransactionMetaData = make::one(&sfTransactionMetaData, STI_OBJECT,  2, "TransactionMetaData");
@@ -248,6 +252,7 @@ SField const sfSignerEntry         = make::one(&sfSignerEntry,         STI_OBJEC
 SField const sfSigner              = make::one(&sfSigner,              STI_OBJECT, 16, "Signer");
 //                                                                                 17 has not been used yet...
 SField const sfMajority            = make::one(&sfMajority,            STI_OBJECT, 18, "Majority");
+SField const sfKYC                 = make::one(&sfKYC,                 STI_OBJECT, 19, "KYC");
 
 // array of objects
 // ARRAY/1 is reserved for end of array
@@ -340,6 +345,7 @@ SField::getField (int code)
     case STI_HASH160:
     case STI_PATHSET:
     case STI_VECTOR256:
+    case STI_VECTOR128:
         break;
 
     default:

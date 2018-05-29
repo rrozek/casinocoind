@@ -76,6 +76,9 @@ struct ConfigSection
 #define SECTION_VALIDATOR_TOKEN         "validator_token"
 #define SECTION_VETO_AMENDMENTS         "veto_amendments"
 #define SECTION_WORKERS                 "workers"
+#define SECTION_KYC_SIGNERS             "kyc_trusted_accounts"
+#define SECTION_VOTING                  "voting"
+#define SECTION_VOTING_FILE             "voting_file"
 
 } // casinocoin
 

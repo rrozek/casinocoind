@@ -242,6 +242,7 @@ public:
         SField const& sfTestH256 = SField::getField (STI_HASH256, 255);
         SField const& sfTestU32 = SField::getField (STI_UINT32, 255);
         SField const& sfTestV256 = SField::getField(STI_VECTOR256, 255);
+        SField const& sfTestV128 = SField::getField(STI_VECTOR128, 255);
         SField const& sfTestObject = SField::getField (STI_OBJECT, 255);
 
         SOTemplate elements;
@@ -250,6 +251,7 @@ public:
         elements.push_back (SOElement (sfTestH256, SOE_OPTIONAL));
         elements.push_back (SOElement (sfTestU32, SOE_REQUIRED));
         elements.push_back (SOElement (sfTestV256, SOE_OPTIONAL));
+        elements.push_back (SOElement (sfTestV128, SOE_OPTIONAL));
 
         STObject object1 (elements, sfTestObject);
         STObject object2 (object1);
@@ -336,6 +338,27 @@ public:
 
             auto const& uints1 = object1.getFieldV256(sfTestV256);
             auto const& uints3 = object3.getFieldV256(sfTestV256);
+
+            BEAST_EXPECT(uints1 == uints3);
+        }
+
+        {
+            std::vector<uint128> uints;
+            uints.reserve(5);
+            for (int i = 0; i < uints.capacity(); ++i)
+            {
+                uints.emplace_back(i);
+            }
+            object1.setFieldV128(sfTestV128, STVector128(uints));
+
+            Serializer s;
+            object1.add(s);
+            SerialIter it(s.slice());
+
+            STObject object3(elements, it, sfTestObject);
+
+            auto const& uints1 = object1.getFieldV128(sfTestV128);
+            auto const& uints3 = object3.getFieldV128(sfTestV128);
 
             BEAST_EXPECT(uints1 == uints3);
         }

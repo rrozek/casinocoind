@@ -572,11 +572,12 @@ transactionConstructImpl (std::shared_ptr<STTx const> const& stpTrans,
             if (!app.checkSigs())
                 forceValidity(app.getHashRouter(),
                     sttxNew->getTransactionID(), Validity::SigGoodOnly);
-            if (checkValidity(app.getHashRouter(),
-                *sttxNew, rules, app.config()).first != Validity::Valid)
+            std::pair<Validity, std::string> result = checkValidity(app.getHashRouter(),
+                                                                    *sttxNew, rules, app.config());
+            if (result.first != Validity::Valid)
             {
                 ret.first = RPC::make_error (rpcINTERNAL,
-                    "Invalid signature.");
+                    result.second);
                 return ret;
             }
 

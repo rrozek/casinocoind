@@ -460,6 +460,7 @@ ServerHandlerImp::processSession(
             app_.getOPs(),
             app_.getLedgerMaster(),
             is->getConsumer(),
+            beast::IP::from_asio(session->remote_endpoint().address()),
             role,
             coro,
             is,
@@ -667,15 +668,27 @@ ServerHandlerImp::processRequest (Port const& port,
 
     // Provide the JSON-RPC method as the field "command" in the request.
     params[jss::command] = strMethod;
+
     JLOG (m_journal.trace())
         << "doRpcCommand:" << strMethod << ":" << params;
 
     Resource::Charge loadType = Resource::feeReferenceRPC;
     auto const start (std::chrono::high_resolution_clock::now ());
 
-    RPC::Context context {m_journal, params, app_, loadType, m_networkOPs,
-        app_.getLedgerMaster(), usage, role, coro, InfoSub::pointer(),
-        {user, forwardedFor}};
+    RPC::Context context {
+        m_journal,
+        params,
+        app_,
+        loadType,
+        m_networkOPs,
+        app_.getLedgerMaster(),
+        usage,
+        remoteIPAddress,
+        role,
+        coro,
+        InfoSub::pointer(),
+        {user, forwardedFor}
+    };
     Json::Value result;
     RPC::doCommand (context, result);
 
