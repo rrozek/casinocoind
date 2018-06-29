@@ -140,7 +140,11 @@ SetKYC::doApply ()
         uFlagsOut   &= ~lsfKYCValidated;
     }
 
-    auto KYCObject = sleDst->peekFieldObject(sfKYC);
+    STObject ledgerDstKYCObject(sfKYC);
+    if (sleDst->isFieldPresent(sfKYC))
+    {
+        ledgerDstKYCObject = sleDst->getFieldObject(sfKYC);
+    }
 
     //
     // KYC Verification
@@ -149,23 +153,23 @@ SetKYC::doApply ()
     {
         // TODO jrojek: get acc object from ledger, figure out unique list, setfieldv128(sfKYCVerifications, verifications);
         STVector128 newVerifications = ctx_.tx.getFieldV128 (sfKYCVerifications);
-        // STVector128 existingVerifications = KYCObject.getFieldV128(sfKYCVerifications);
+        // STVector128 existingVerifications = ledgerDstKYCObject.getFieldV128(sfKYCVerifications);
 
         if (newVerifications.size() == 0)
         {
             JLOG(j_.info()) << "clear verifications array";
-            KYCObject.makeFieldAbsent (sfKYCVerifications);
+            ledgerDstKYCObject.makeFieldAbsent (sfKYCVerifications);
         }
         else
         {
             JLOG(j_.info()) << "set verifications array";
-            KYCObject.setFieldV128 (sfKYCVerifications, newVerifications);
+            ledgerDstKYCObject.setFieldV128 (sfKYCVerifications, newVerifications);
         }
 
     }
 
-    KYCObject.setFieldU32 (sfKYCTime, view().parentCloseTime().time_since_epoch().count());
-    sleDst->setFieldObject (sfKYC, KYCObject);
+    ledgerDstKYCObject.setFieldU32 (sfKYCTime, view().parentCloseTime().time_since_epoch().count());
+    sleDst->setFieldObject (sfKYC, ledgerDstKYCObject);
 
     if (uFlagsIn != uFlagsOut)
         sleDst->setFieldU32 (sfFlags, uFlagsOut);
