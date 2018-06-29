@@ -158,7 +158,8 @@ SetKYC::doApply ()
         if (newVerifications.size() == 0)
         {
             JLOG(j_.info()) << "clear verifications array";
-            ledgerDstKYCObject.makeFieldAbsent (sfKYCVerifications);
+            if (ledgerDstKYCObject.isFieldPresent(sfKYCVerifications))
+                ledgerDstKYCObject.makeFieldAbsent (sfKYCVerifications);
         }
         else
         {
