@@ -95,6 +95,24 @@ SetKYC::preflight (PreflightContext const& ctx)
         return temBAD_SRC_ACCOUNT;
     }
 
+    if (uSetFlag == kycfValidated)
+    {
+        if (ctx.tx.isFieldPresent(sfKYCVerifications))
+        {
+            const STArray& kycVerifications = ctx.tx.getFieldArray(sfKYCVerifications);
+            if (kycVerifications.size() == 0)
+            {
+                JLOG(j.info()) << "Cannot set KYC verified flag with empty Verifications array";
+                return temMALFORMED;
+            }
+        }
+        else
+        {
+            JLOG(j.info()) << "Cannot set KYC verified flag without Verifications array";
+            return temMALFORMED;
+        }
+    }
+
     return preflight2(ctx);
 }
 
@@ -110,7 +128,7 @@ SetKYC::doApply ()
     if (!sleDst)
     {
         JLOG(j_.warn()) << "Destination account does not exist.";
-        return temDST_NEEDED;
+        return tecNO_DST;
     }
     else
     {
@@ -168,6 +186,8 @@ SetKYC::doApply ()
         }
 
     }
+
+    // Set flag KYCVerified with empty Verifications array is caught in preflight, so we can safely update ledger object here
 
     ledgerDstKYCObject.setFieldU32 (sfKYCTime, view().parentCloseTime().time_since_epoch().count());
     sleDst->setFieldObject (sfKYC, ledgerDstKYCObject);
