@@ -44,7 +44,7 @@ InnerObjectFormats::InnerObjectFormats ()
 
     add (sfKYC.getJsonName ().c_str (), sfKYC.getCode ())
         << SOElement (sfKYCTime,              SOE_REQUIRED)
-        << SOElement (sfKYCVerifications,     SOE_REQUIRED)
+        << SOElement (sfKYCVerifications,     SOE_OPTIONAL)
         ;
 }
 

@@ -95,6 +95,24 @@ SetKYC::preflight (PreflightContext const& ctx)
         return temBAD_SRC_ACCOUNT;
     }
 
+    if (uSetFlag == kycfValidated)
+    {
+        if (ctx.tx.isFieldPresent(sfKYCVerifications))
+        {
+            const STArray& kycVerifications = ctx.tx.getFieldArray(sfKYCVerifications);
+            if (kycVerifications.size() == 0)
+            {
+                JLOG(j.info()) << "Cannot set KYC verified flag with empty Verifications array";
+                return temMALFORMED;
+            }
+        }
+        else
+        {
+            JLOG(j.info()) << "Cannot set KYC verified flag without Verifications array";
+            return temMALFORMED;
+        }
+    }
+
     return preflight2(ctx);
 }
 
@@ -110,7 +128,7 @@ SetKYC::doApply ()
     if (!sleDst)
     {
         JLOG(j_.warn()) << "Destination account does not exist.";
-        return temDST_NEEDED;
+        return tecNO_DST;
     }
     else
     {
@@ -140,7 +158,11 @@ SetKYC::doApply ()
         uFlagsOut   &= ~lsfKYCValidated;
     }
 
-    auto KYCObject = sleDst->peekFieldObject(sfKYC);
+    STObject ledgerDstKYCObject(sfKYC);
+    if (sleDst->isFieldPresent(sfKYC))
+    {
+        ledgerDstKYCObject = sleDst->getFieldObject(sfKYC);
+    }
 
     //
     // KYC Verification
@@ -149,23 +171,26 @@ SetKYC::doApply ()
     {
         // TODO jrojek: get acc object from ledger, figure out unique list, setfieldv128(sfKYCVerifications, verifications);
         STVector128 newVerifications = ctx_.tx.getFieldV128 (sfKYCVerifications);
-        // STVector128 existingVerifications = KYCObject.getFieldV128(sfKYCVerifications);
+        // STVector128 existingVerifications = ledgerDstKYCObject.getFieldV128(sfKYCVerifications);
 
         if (newVerifications.size() == 0)
         {
             JLOG(j_.info()) << "clear verifications array";
-            KYCObject.makeFieldAbsent (sfKYCVerifications);
+            if (ledgerDstKYCObject.isFieldPresent(sfKYCVerifications))
+                ledgerDstKYCObject.makeFieldAbsent (sfKYCVerifications);
         }
         else
         {
             JLOG(j_.info()) << "set verifications array";
-            KYCObject.setFieldV128 (sfKYCVerifications, newVerifications);
+            ledgerDstKYCObject.setFieldV128 (sfKYCVerifications, newVerifications);
         }
 
     }
 
-    KYCObject.setFieldU32 (sfKYCTime, view().parentCloseTime().time_since_epoch().count());
-    sleDst->setFieldObject (sfKYC, KYCObject);
+    // Set flag KYCVerified with empty Verifications array is caught in preflight, so we can safely update ledger object here
+
+    ledgerDstKYCObject.setFieldU32 (sfKYCTime, view().parentCloseTime().time_since_epoch().count());
+    sleDst->setFieldObject (sfKYC, ledgerDstKYCObject);
 
     if (uFlagsIn != uFlagsOut)
         sleDst->setFieldU32 (sfFlags, uFlagsOut);
