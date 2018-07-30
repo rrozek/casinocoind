@@ -99,7 +99,7 @@ SetKYC::preflight (PreflightContext const& ctx)
     {
         if (ctx.tx.isFieldPresent(sfKYCVerifications))
         {
-            const STArray& kycVerifications = ctx.tx.getFieldArray(sfKYCVerifications);
+            const STVector128& kycVerifications = ctx.tx.getFieldV128(sfKYCVerifications);
             if (kycVerifications.size() == 0)
             {
                 JLOG(j.info()) << "Cannot set KYC verified flag with empty Verifications array";
