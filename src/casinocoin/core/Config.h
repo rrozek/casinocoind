@@ -96,6 +96,9 @@ public:
     /** Returns the full path and filename of the entropy seed file. */
     boost::filesystem::path getEntropyFile () const;
 
+    /** Returns the string for a given network id **/
+    std::string getPeerNetworkString(uint32_t network);
+
 private:
     boost::filesystem::path CONFIG_FILE;
     boost::filesystem::path CONFIG_DIR;
@@ -182,6 +185,10 @@ public:
     // Thread pool configuration
     std::size_t                 WORKERS = 0;
 
+    // Network the server connects to. production = 0, test = 1, development = 2
+    // default is production if not specified in the config
+    std::uint32_t               PEER_NETWORK = 0;
+    
     // These override the command line client settings
     boost::optional<boost::asio::ip::address_v4> rpc_ip;
     boost::optional<std::uint16_t> rpc_port;

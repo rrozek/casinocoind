@@ -79,6 +79,7 @@ struct ConfigSection
 #define SECTION_KYC_SIGNERS             "kyc_trusted_accounts"
 #define SECTION_VOTING                  "voting"
 #define SECTION_VOTING_FILE             "voting_file"
+#define SECTION_NETWORK                 "network"
 
 } // casinocoin
 

@@ -412,6 +412,23 @@ void Config::loadFromString (std::string const& fileContents)
     if (getSingleSection (secConfig, SECTION_PEERS_MAX, strTemp, j_))
         PEERS_MAX = std::max (0, beast::lexicalCastThrow <int> (strTemp));
 
+    if (getSingleSection (secConfig, SECTION_NETWORK, strTemp, j_))
+    {
+        JLOG (j_.info()) << boost::str (
+            boost::format ("Setting Peer Network to: %s") % strTemp);
+
+        if (beast::detail::ci_equal(strTemp, "production"))
+            PEER_NETWORK = 0;
+        else if (beast::detail::ci_equal(strTemp, "test"))
+            PEER_NETWORK = 1;
+        else if (beast::detail::ci_equal(strTemp, "development"))
+            PEER_NETWORK = 2;
+        else
+        {
+            PEER_NETWORK = 0;
+        }
+    }
+
     if (getSingleSection (secConfig, SECTION_NODE_SIZE, strTemp, j_))
     {
         if (beast::detail::ci_equal(strTemp, "tiny"))
@@ -668,6 +685,18 @@ boost::filesystem::path Config::getDebugLogFile () const
     }
 
     return log_file;
+}
+
+std::string Config::getPeerNetworkString(uint32_t network)
+{
+    if(network == 0)
+        return "production";
+    else if(network == 1)
+        return "test";
+    else if(network == 2)
+        return "development";
+    else
+        return "unknown";
 }
 
 } // casinocoin

@@ -125,7 +125,8 @@ buildHello (
             app.nodeIdentity().first));
     h.set_nodeproof (sig.data(), sig.size());
     // h.set_ipv4port (portNumber); // ignored now
-    h.set_testnet (false);
+    h.set_testnet (false); // never used but left for backwards compatability
+    h.set_peernetwork(app.config().PEER_NETWORK);
 
     if (remote.is_v4())
     {
@@ -191,6 +192,9 @@ appendHello (beast::http::fields& h,
     if (hello.has_remote_ip())
         h.insert ("Remote-IP", beast::IP::to_string (
             beast::IP::AddressV4(hello.remote_ip())));
+
+    if (hello.has_peernetwork())
+        h.insert ("Peer-Network", std::to_string(hello.peernetwork()));
 }
 
 std::vector<ProtocolVersion>
@@ -342,6 +346,17 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         }
     }
 
+    {
+        auto const iter = h.find ("Peer-Network");
+        if (iter != h.end())
+        {
+            uint32_t peerNetwork;
+            if (! beast::lexicalCastChecked(peerNetwork, iter->second))
+                return boost::none;
+            hello.set_peernetwork (peerNetwork);
+        }
+    }
+
     return hello;
 }
 
@@ -353,6 +368,17 @@ verifyHello (protocol::TMHello const& h,
     beast::Journal journal,
     Application& app)
 {
+    if(h.has_peernetwork())
+    {
+        if(h.peernetwork() != app.config().PEER_NETWORK)
+        {
+            JLOG(journal.info()) <<
+                "Hello: Disconnect: Wrong network. [Peer expects" << app.config().getPeerNetworkString(h.peernetwork()) <<
+                " and we run " << app.config().getPeerNetworkString(app.config().PEER_NETWORK) << "]";
+            return boost::none;
+        }
+    }
+
     if (h.has_nettime ())
     {
         auto const ourTime = app.timeKeeper().now().time_since_epoch().count();
