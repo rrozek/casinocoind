@@ -416,7 +416,8 @@ void Config::loadFromString (std::string const& fileContents)
     {
         JLOG (j_.info()) << boost::str (
             boost::format ("Setting Peer Network to: %s") % strTemp);
-
+        
+        PEER_NETWORK_SET = true;
         if (beast::detail::ci_equal(strTemp, "production"))
             PEER_NETWORK = 0;
         else if (beast::detail::ci_equal(strTemp, "test"))

@@ -188,6 +188,7 @@ public:
     // Network the server connects to. production = 0, test = 1, development = 2
     // default is production if not specified in the config
     std::uint32_t               PEER_NETWORK = 0;
+    bool                        PEER_NETWORK_SET = false;
     
     // These override the command line client settings
     boost::optional<boost::asio::ip::address_v4> rpc_ip;

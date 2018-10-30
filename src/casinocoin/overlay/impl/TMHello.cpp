@@ -351,9 +351,8 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         if (iter != h.end())
         {
             uint32_t peerNetwork;
-            if (! beast::lexicalCastChecked(peerNetwork, iter->second))
-                return boost::none;
-            hello.set_peernetwork (peerNetwork);
+            if (beast::lexicalCastChecked(peerNetwork, iter->second))
+                hello.set_peernetwork (peerNetwork);
         }
     }
 
@@ -377,6 +376,14 @@ verifyHello (protocol::TMHello const& h,
                 " and we run " << app.config().getPeerNetworkString(app.config().PEER_NETWORK) << "]";
             return boost::none;
         }
+    } 
+    else if(app.config().PEER_NETWORK_SET)
+    {
+        // Peer has no network set but we require it
+        JLOG(journal.info()) <<
+                "Hello: Disconnect: [Peer has no network set but we require " << 
+                app.config().getPeerNetworkString(app.config().PEER_NETWORK) << "]";
+            return boost::none;
     }
 
     if (h.has_nettime ())
