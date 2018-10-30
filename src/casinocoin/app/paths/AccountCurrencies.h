@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#ifndef CASINCOIN_APP_PATHS_ACCOUNTCURRENCIES_H_INCLUDED
+#ifndef CASINOCOIN_APP_PATHS_ACCOUNTCURRENCIES_H_INCLUDED
 #define CASINOCOIN_APP_PATHS_ACCOUNTCURRENCIES_H_INCLUDED
 
 #include <casinocoin/app/paths/CasinocoinLineCache.h>
