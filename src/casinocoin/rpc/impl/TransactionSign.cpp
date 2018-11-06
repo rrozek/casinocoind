@@ -671,7 +671,7 @@ Json::Value checkFee (
             std::stringstream ss;
             ss << "Fee of " << tx[jss::Fee]
                 << " varies from network supported Fee of " << drops.second;
-            return RPC::make_error (rpcHIGH_FEE, ss.str());
+            return RPC::make_error (rpcBAD_FEE, ss.str());
         }
         return Json::Value();
     }

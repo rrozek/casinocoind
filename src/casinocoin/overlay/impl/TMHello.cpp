@@ -372,7 +372,7 @@ verifyHello (protocol::TMHello const& h,
         if(h.peernetwork() != app.config().PEER_NETWORK)
         {
             JLOG(journal.info()) <<
-                "Hello: Disconnect: Wrong network. [Peer expects" << app.config().getPeerNetworkString(h.peernetwork()) <<
+                "Hello: Disconnect: Wrong network. [Peer expects " << app.config().getPeerNetworkString(h.peernetwork()) <<
                 " and we run " << app.config().getPeerNetworkString(app.config().PEER_NETWORK) << "]";
             return boost::none;
         }
