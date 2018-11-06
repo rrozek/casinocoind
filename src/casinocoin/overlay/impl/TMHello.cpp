@@ -377,14 +377,17 @@ verifyHello (protocol::TMHello const& h,
             return boost::none;
         }
     } 
-    else if(app.config().PEER_NETWORK_SET)
-    {
-        // Peer has no network set but we require it
-        JLOG(journal.info()) <<
-                "Hello: Disconnect: [Peer has no network set but we require " << 
-                app.config().getPeerNetworkString(app.config().PEER_NETWORK) << "]";
-            return boost::none;
-    }
+    //
+    // AJOCHEMS: The below else if would cause any node not having the network set in the config to be disconnected ....
+    //
+    // else if(app.config().PEER_NETWORK_SET)
+    // {
+    //     // Peer has no network set but we require it
+    //     JLOG(journal.info()) <<
+    //             "Hello: Disconnect: [Peer has no network set but we require " << 
+    //             app.config().getPeerNetworkString(app.config().PEER_NETWORK) << "]";
+    //         return boost::none;
+    // }
 
     if (h.has_nettime ())
     {
