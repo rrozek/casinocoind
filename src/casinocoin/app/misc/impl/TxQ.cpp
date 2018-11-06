@@ -125,8 +125,21 @@ TxQ::FeeMetrics::update(Application& app,
             feeLevels.size();
     }
 
-    JLOG(j_.debug()) << "Escalation multiplication disabled";
-    escalationMultiplier_ = minimumMultiplier_;
+    if (feeLevels.empty())
+    {
+        escalationMultiplier_ = minimumMultiplier_;
+    }
+    else
+    {
+        // In the case of an odd number of elements, this
+        // evaluates to the middle element; for an even
+        // number of elements, it will add the two elements
+        // on either side of the "middle" and average them.
+        escalationMultiplier_ = (feeLevels[size / 2] +
+            feeLevels[(size - 1) / 2] + 1) / 2;
+        escalationMultiplier_ = std::max(escalationMultiplier_,
+            minimumMultiplier_);
+    }
     JLOG(j_.debug()) << "Expected transactions updated to " <<
         txnsExpected_ << " and multiplier updated to " <<
         escalationMultiplier_;
@@ -135,13 +148,10 @@ TxQ::FeeMetrics::update(Application& app,
 }
 
 std::uint64_t
-TxQ::FeeMetrics::scaleFeeLevel(beast::Journal const& journal,
+TxQ::FeeMetrics::scaleFeeLevel(beast::Journal const& /*journal*/,
     Snapshot const& snapshot, OpenView const& view,
     std::uint32_t txCountPadding)
 {
-    JLOG(journal.debug()) << "scaleFeeLevel escalation is disabled.";
-    return baseLevel;
-    // CODE BELOW IS NEVER EXECUTED
     // Transactions in the open ledger so far
     auto const current = view.txCount() + txCountPadding;
 
@@ -224,9 +234,10 @@ TxQ::FeeMetrics::escalatedSeriesFeeLevel(Snapshot const& snapshot,
 
 TxQ::MaybeTx::MaybeTx(
     std::shared_ptr<STTx const> const& txn_,
-        TxID const& txID_, std::uint64_t feeLevel_,
-            ApplyFlags const flags_,
-                PreflightResult const& pfresult_)
+        TxID const& txID_,
+            std::uint64_t feeLevel_,
+                ApplyFlags const flags_,
+                    PreflightResult const& pfresult_)
     : txn(txn_)
     , feeLevel(feeLevel_)
     , txID(txID_)
@@ -707,7 +718,7 @@ TxQ::apply(Application& app, OpenView& view,
                     transactionID <<
                     " in favor of queued " <<
                     existingIter->second.txID;
-                return{ telINSUF_FEE_P, false };
+                return{ telBAD_FEE, false };
             }
         }
     }
@@ -773,7 +784,7 @@ TxQ::apply(Application& app, OpenView& view,
                                 requiredMultiLevel <<
                                 ". Only paid " <<
                                 feeLevelPaid;
-                            return{ telINSUF_FEE_P, false };
+                            return{ telBAD_FEE, false };
                         }
                     }
                     if (workingIter->first == tSeq)
@@ -947,7 +958,10 @@ TxQ::apply(Application& app, OpenView& view,
 
         JLOG(j_.trace()) << "Applying transaction " <<
             transactionID <<
-            " to open ledger.";
+            " to open ledger. feeLevelPaid " << feeLevelPaid <<
+            " requiredFeeLevel " << requiredFeeLevel <<
+            " view.txCount " << view.txCount() <<
+            " txnsExpected " << metricsSnapshot.txnsExpected;
         casinocoin::TER txnResult;
         bool didApply;
 
@@ -972,8 +986,7 @@ TxQ::apply(Application& app, OpenView& view,
         JLOG(j_.trace()) << "Transaction " <<
             transactionID <<
             " can not be held";
-        return { feeLevelPaid >= requiredFeeLevel ?
-            telCAN_NOT_QUEUE : telINSUF_FEE_P, false };
+        return { telCAN_NOT_QUEUE, false };
     }
 
     // If the queue is full, decide whether to drop the current
@@ -1040,7 +1053,7 @@ TxQ::apply(Application& app, OpenView& view,
             JLOG(j_.warn()) << "Queue is full, and transaction " <<
                 transactionID <<
                 " fee is lower than end item's account average fee";
-            return { telINSUF_FEE_P, false };
+            return { telCAN_NOT_QUEUE, false };
         }
     }
 
@@ -1218,7 +1231,11 @@ TxQ::accept(Application& app,
             auto firstTxn = candidateIter->txn;
 
             JLOG(j_.trace()) << "Applying queued transaction " <<
-                candidateIter->txID << " to open ledger.";
+                candidateIter->txID <<
+                " to open ledger. feeLevelPaid " << feeLevelPaid <<
+                " requiredFeeLevel " << requiredFeeLevel <<
+                " view.txCount " << view.txCount() <<
+                " txnsExpected " << metricSnapshot.txnsExpected;
 
             TER txnResult;
             bool didApply;
@@ -1312,12 +1329,16 @@ TxQ::getMetrics(OpenView const& view, std::uint32_t txCountPadding) const
     result.txInLedger = view.txCount();
     result.txPerLedger = snapshot.txnsExpected;
     result.referenceFeeLevel = baseLevel;
-    result.minFeeLevel = isFull() ? byFee_.rbegin()->feeLevel + 1 :
-        baseLevel;
+    result.minFeeLevel = baseLevel;
     result.medFeeLevel = snapshot.escalationMultiplier;
-    result.expFeeLevel = FeeMetrics::scaleFeeLevel(
-        j_,snapshot, view, txCountPadding);
+    result.expFeeLevel = baseLevel;
 
+    JLOG(j_.debug()) << "TxQ::getMetrics. txCount " << result.txCount <<
+                       " txInLedger " << result.txInLedger <<
+                       " txPerLedger " << result.txPerLedger <<
+                       " minFeeLevel " << result.minFeeLevel <<
+                       " medFeeLevel " << result.medFeeLevel <<
+                       " expFeeLevel " << result.expFeeLevel;
     return result;
 }
 

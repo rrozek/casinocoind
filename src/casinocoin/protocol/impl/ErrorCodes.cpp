@@ -79,6 +79,7 @@ public:
         add (rpcGETS_ACT_MALFORMED,    "getsActMalformed",  "Gets account malformed.");
         add (rpcGETS_AMT_MALFORMED,    "getsAmtMalformed",  "Gets amount malformed.");
         add (rpcHIGH_FEE,              "highFee",           "Current transaction fee exceeds your limit.");
+        add (rpcBAD_FEE,               "badFee",            "Provided fee is different then network operational fee");
         add (rpcHOST_IP_MALFORMED,     "hostIpMalformed",   "Host IP is malformed.");
         add (rpcINSUF_FUNDS,           "insufFunds",        "Insufficient funds.");
         add (rpcINTERNAL,              "internal",          "Internal error.");
