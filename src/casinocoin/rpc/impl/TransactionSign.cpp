@@ -655,8 +655,26 @@ Json::Value checkFee (
     std::shared_ptr<OpenView const> const& ledger)
 {
     Json::Value& tx (request[jss::tx_json]);
+
+    // Default fee in fee units.
+    std::uint64_t const feeDefault = config.TRANSACTION_FEE_BASE;
+    // Scale fee units to drops:
+    auto const drops = mulDiv (feeDefault,
+        ledger->fees().base, ledger->fees().units);
+    if (!drops.first)
+        Throw<std::overflow_error>("mulDiv");
+
     if (tx.isMember (jss::Fee))
+    {
+        if (tx[jss::Fee] != static_cast<unsigned int>(drops.second))
+        {
+            std::stringstream ss;
+            ss << "Fee of " << tx[jss::Fee]
+                << " varies from network supported Fee of " << drops.second;
+            return RPC::make_error (rpcHIGH_FEE, ss.str());
+        }
         return Json::Value();
+    }
 
     if (! doAutoFill)
         return RPC::missing_field_error ("tx_json.Fee");
@@ -698,8 +716,6 @@ Json::Value checkFee (
         }
     }
 
-    // Default fee in fee units.
-    std::uint64_t const feeDefault = config.TRANSACTION_FEE_BASE;
 
     // Administrative and identified endpoints are exempt from local fees.
     std::uint64_t const loadFee =
@@ -726,11 +742,6 @@ Json::Value checkFee (
 
     auto const limit = [&]()
     {
-        // Scale fee units to drops:
-        auto const drops = mulDiv (feeDefault,
-            ledger->fees().base, ledger->fees().units);
-        if (!drops.first)
-            Throw<std::overflow_error>("mulDiv");
         auto const result = mulDiv (drops.second, mult, div);
         if (!result.first)
             Throw<std::overflow_error>("mulDiv");
@@ -752,7 +763,7 @@ Json::Value checkFee (
         return RPC::make_error (rpcHIGH_FEE, ss.str());
     }
 
-    tx [jss::Fee] = static_cast<unsigned int>(fee);
+    tx [jss::Fee] = static_cast<unsigned int>(drops.second);
     return Json::Value();
 }
 
