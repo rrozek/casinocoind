@@ -32,7 +32,7 @@
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/protocol/SystemParameters.h> // VFALCO Breaks levelization
 #include <casinocoin/beast/net/IPEndpoint.h>
-#include <beast/core/detail/ci_char_traits.hpp>
+#include <beast/core/string.hpp>
 #include <casinocoin/beast/utility/Journal.h>
 #include <boost/asio/ip/tcp.hpp> // VFALCO FIX: This include should not be here
 #include <boost/filesystem.hpp> // VFALCO FIX: This include should not be here

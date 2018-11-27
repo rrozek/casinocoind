@@ -19,7 +19,7 @@
 
 #include <BeastConfig.h>
 #include <casinocoin/basics/make_SSLContext.h>
-#include <ripple/beast/rfc2616.h>
+#include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/server/Server.h>
 #include <casinocoin/server/Session.h>
 #include <casinocoin/beast/unit_test.h>

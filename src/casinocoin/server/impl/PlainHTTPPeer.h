@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_SERVER_PLAINHTTPPEER_H_INCLUDED
 #define CASINOCOIN_SERVER_PLAINHTTPPEER_H_INCLUDED
-#include <ripple/beast/rfc2616.h>
+#include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/server/impl/BaseHTTPPeer.h>
 #include <casinocoin/server/impl/PlainWSPeer.h>
 #include <memory>

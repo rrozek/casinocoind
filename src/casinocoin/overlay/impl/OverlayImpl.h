@@ -35,6 +35,7 @@
 #include <casinocoin/basics/Resolver.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/UnorderedContainers.h>
+#include <casinocoin/overlay/impl/TMHello.h>
 #include <casinocoin/peerfinder/PeerfinderManager.h>
 #include <casinocoin/resource/ResourceManager.h>
 #include <boost/asio/ip/tcp.hpp>
@@ -266,6 +267,32 @@ public:
         auto const versions = parse_ProtocolVersions(
             response["Upgrade"]);
         if (versions.size() == 0)
+            return false;
+        return true;
+    }
+
+    template<class Fields>
+    static
+    bool
+    is_upgrade(beast::http::header<true, Fields> const& req)
+    {
+        if(req.version < 11)
+            return false;
+        if(req.method() != beast::http::verb::get)
+            return false;
+        if(! beast::http::token_list{req["Connection"]}.exists("upgrade"))
+            return false;
+        return true;
+    }
+
+    template<class Fields>
+    static
+    bool
+    is_upgrade(beast::http::header<false, Fields> const& req)
+    {
+        if(req.version < 11)
+            return false;
+        if(! beast::http::token_list{req["Connection"]}.exists("upgrade"))
             return false;
         return true;
     }

@@ -40,14 +40,13 @@
 #include <casinocoin/overlay/impl/ConnectAttempt.h>
 #include <casinocoin/overlay/impl/OverlayImpl.h>
 #include <casinocoin/overlay/impl/PeerImp.h>
-#include <casinocoin/overlay/impl/TMHello.h>
 #include <casinocoin/peerfinder/make_Manager.h>
 #include <casinocoin/protocol/STExchange.h>
 #include <casinocoin/beast/core/ByteOrder.h>
 #include <beast/core/detail/base64.hpp>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <beast/http.hpp>
-#include <beast/core/detail/ci_char_traits.hpp>
+#include <beast/core/string.hpp>
 #include <casinocoin/beast/utility/WrappedSink.h>
 
 #include <boost/utility/in_place_factory.hpp>
@@ -230,7 +229,7 @@ OverlayImpl::onHandoff (std::unique_ptr <beast::asio::ssl_bundle>&& ssl_bundle,
         if (std::find_if(types.begin(), types.end(),
                 [](std::string const& s)
                 {
-                    return beast::detail::ci_equal(s, "peer");
+                    return beast::detail::iequals(s, "peer");
                 }) == types.end())
         {
             handoff.moved = false;
@@ -320,32 +319,6 @@ OverlayImpl::onHandoff (std::unique_ptr <beast::asio::ssl_bundle>&& ssl_bundle,
 
 //------------------------------------------------------------------------------
 
-template<class Fields>
-static
-bool
-is_upgrade(beast::http::header<true, Fields> const& req)
-{
-    if(req.version < 11)
-        return false;
-    if(req.method() != beast::http::verb::get)
-        return false;
-    if(! beast::http::token_list{req["Connection"]}.exists("upgrade"))
-        return false;
-    return true;
-}
-
-template<class Fields>
-static
-bool
-is_upgrade(beast::http::header<false, Fields> const& req)
-{
-    if(req.version < 11)
-        return false;
-    if(! beast::http::token_list{req["Connection"]}.exists("upgrade"))
-        return false;
-    return true;
-}
-
 bool
 OverlayImpl::isPeerUpgrade(http_request_type const& request)
 {
@@ -384,7 +357,7 @@ OverlayImpl::makeRedirectResponse (PeerFinder::Slot::ptr const& slot,
         for (auto const& _ : m_peerFinder->redirect(slot))
             ips.append(_.address.to_string());
     }
-    msg.prepare();
+    msg.prepare_payload();
     return std::make_shared<SimpleWriter>(msg);
 }
 
@@ -401,7 +374,7 @@ OverlayImpl::makeErrorResponse (PeerFinder::Slot::ptr const& slot,
     msg.insert("Remote-Address", remote_address.to_string());
     msg.insert(beast::http::field::connection, "close");
     msg.body = text;
-    msg.prepare();
+    msg.prepare_payload();
     return std::make_shared<SimpleWriter>(msg);
 }
 
@@ -856,7 +829,7 @@ OverlayImpl::processRequest (http_request_type const& req,
     msg.insert("Content-Type", "application/json");
     msg.insert("Connection", "close");
     msg.body["overlay"] = crawl();
-    msg.prepare();
+    msg.prepare_payload();
     handoff.response = std::make_shared<SimpleWriter>(msg);
     return true;
 }

@@ -27,7 +27,7 @@
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/nodestore/Factory.h>
 #include <casinocoin/nodestore/Manager.h>
-#include <beast/core/detail/ci_char_traits.hpp>
+#include <beast/core/string.hpp>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -46,7 +46,7 @@ class MemoryFactory : public Factory
 {
 private:
     std::mutex mutex_;
-    std::map <std::string, MemoryDB, beast::detail::ci_less> map_;
+    std::map <std::string, MemoryDB, beast::iless> map_;
 
 public:
     MemoryFactory();
