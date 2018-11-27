@@ -109,7 +109,7 @@ OverlayImpl::Timer::run()
     timer_.expires_from_now (std::chrono::seconds(1));
     timer_.async_wait(overlay_.strand_.wrap(
         std::bind(&Timer::on_timer, shared_from_this(),
-            beast::asio::placeholders::error)));
+            std::placeholders::_1)));
 }
 
 void
@@ -134,7 +134,7 @@ OverlayImpl::Timer::on_timer (error_code ec)
     timer_.expires_from_now (std::chrono::seconds(1));
     timer_.async_wait(overlay_.strand_.wrap(std::bind(
         &Timer::on_timer, shared_from_this(),
-            beast::asio::placeholders::error)));
+            std::placeholders::_1)));
 }
 
 //------------------------------------------------------------------------------
@@ -226,7 +226,7 @@ OverlayImpl::onHandoff (std::unique_ptr <beast::asio::ssl_bundle>&& ssl_bundle,
 
     {
         auto const types = beast::rfc2616::split_commas(
-            request.fields["Connect-As"]);
+            request["Connect-As"]);
         if (std::find_if(types.begin(), types.end(),
                 [](std::string const& s)
                 {
@@ -236,12 +236,12 @@ OverlayImpl::onHandoff (std::unique_ptr <beast::asio::ssl_bundle>&& ssl_bundle,
             handoff.moved = false;
             handoff.response = makeRedirectResponse(slot, request,
                 remote_endpoint.address());
-            handoff.keep_alive = is_keep_alive(request);
+            handoff.keep_alive = beast::rfc2616::is_keep_alive(request);
             return handoff;
         }
     }
 
-    auto hello = parseHello (true, request.fields, journal);
+    auto hello = parseHello (true, request, journal);
     if(! hello)
     {
         m_peerFinder->on_closed(slot);
@@ -292,7 +292,7 @@ OverlayImpl::onHandoff (std::unique_ptr <beast::asio::ssl_bundle>&& ssl_bundle,
         handoff.moved = false;
         handoff.response = makeRedirectResponse(slot, request,
             remote_endpoint.address());
-        handoff.keep_alive = is_keep_alive(request);
+        handoff.keep_alive = beast::rfc2616::is_keep_alive(request);
         return handoff;
     }
 
@@ -320,27 +320,39 @@ OverlayImpl::onHandoff (std::unique_ptr <beast::asio::ssl_bundle>&& ssl_bundle,
 
 //------------------------------------------------------------------------------
 
+template<class Fields>
+static
+bool
+is_upgrade(beast::http::header<true, Fields> const& req)
+{
+    if(req.version < 11)
+        return false;
+    if(req.method() != beast::http::verb::get)
+        return false;
+    if(! beast::http::token_list{req["Connection"]}.exists("upgrade"))
+        return false;
+    return true;
+}
+
+template<class Fields>
+static
+bool
+is_upgrade(beast::http::header<false, Fields> const& req)
+{
+    if(req.version < 11)
+        return false;
+    if(! beast::http::token_list{req["Connection"]}.exists("upgrade"))
+        return false;
+    return true;
+}
+
 bool
 OverlayImpl::isPeerUpgrade(http_request_type const& request)
 {
     if (! is_upgrade(request))
         return false;
     auto const versions = parse_ProtocolVersions(
-        request.fields["Upgrade"]);
-    if (versions.size() == 0)
-        return false;
-    return true;
-}
-
-bool
-OverlayImpl::isPeerUpgrade(http_response_type const& response)
-{
-    if (! is_upgrade(response))
-        return false;
-    if(response.status != 101)
-        return false;
-    auto const versions = parse_ProtocolVersions(
-        response.fields["Upgrade"]);
+        request["Upgrade"]);
     if (versions.size() == 0)
         return false;
     return true;
@@ -360,11 +372,11 @@ OverlayImpl::makeRedirectResponse (PeerFinder::Slot::ptr const& slot,
 {
     beast::http::response<json_body> msg;
     msg.version = request.version;
-    msg.status = 503;
-    msg.reason = "Service Unavailable";
-    msg.fields.insert("Server", BuildInfo::getFullVersionString());
-    msg.fields.insert("Remote-Address", remote_address.to_string());
-    msg.fields.insert("Content-Type", "application/json");
+    msg.result(beast::http::status::service_unavailable);
+    msg.insert("Server", BuildInfo::getFullVersionString());
+    msg.insert("Remote-Address", remote_address);
+    msg.insert("Content-Type", "application/json");
+    msg.insert(beast::http::field::connection, "close");
     msg.body = Json::objectValue;
     {
         auto const result = m_peerFinder->redirect(slot);
@@ -372,7 +384,7 @@ OverlayImpl::makeRedirectResponse (PeerFinder::Slot::ptr const& slot,
         for (auto const& _ : m_peerFinder->redirect(slot))
             ips.append(_.address.to_string());
     }
-    prepare(msg, beast::http::connection::close);
+    msg.prepare();
     return std::make_shared<SimpleWriter>(msg);
 }
 
@@ -384,12 +396,12 @@ OverlayImpl::makeErrorResponse (PeerFinder::Slot::ptr const& slot,
 {
     beast::http::response<beast::http::string_body> msg;
     msg.version = request.version;
-    msg.status = 400;
-    msg.reason = "Bad Request";
-    msg.fields.insert("Server", BuildInfo::getFullVersionString());
-    msg.fields.insert("Remote-Address", remote_address.to_string());
+    msg.result(beast::http::status::bad_request);
+    msg.insert("Server", BuildInfo::getFullVersionString());
+    msg.insert("Remote-Address", remote_address.to_string());
+    msg.insert(beast::http::field::connection, "close");
     msg.body = text;
-    prepare(msg, beast::http::connection::close);
+    msg.prepare();
     return std::make_shared<SimpleWriter>(msg);
 }
 
@@ -834,17 +846,17 @@ bool
 OverlayImpl::processRequest (http_request_type const& req,
     Handoff& handoff)
 {
-    if (req.url != "/crawl")
+    if (req.target() != "/crawl")
         return false;
 
     beast::http::response<json_body> msg;
     msg.version = req.version;
-    msg.status = 200;
-    msg.reason = "OK";
-    msg.fields.insert("Server", BuildInfo::getFullVersionString());
-    msg.fields.insert("Content-Type", "application/json");
+    msg.result(beast::http::status::ok);
+    msg.insert("Server", BuildInfo::getFullVersionString());
+    msg.insert("Content-Type", "application/json");
+    msg.insert("Connection", "close");
     msg.body["overlay"] = crawl();
-    prepare(msg, beast::http::connection::close);
+    msg.prepare();
     handoff.response = std::make_shared<SimpleWriter>(msg);
     return true;
 }

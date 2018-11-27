@@ -29,7 +29,7 @@
 #include <casinocoin/server/Handoff.h>
 #include <casinocoin/server/Port.h>
 #include <casinocoin/server/Writer.h>
-#include <beast/core/prepare_buffers.hpp>
+#include <beast/core/buffer_prefix.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/logic/tribool.hpp>
@@ -104,7 +104,7 @@ public:
             n_ = sb_.size();
             done = true;
         }
-        auto const pb = beast::prepare_buffers(n_, sb_.data());
+        auto const pb = beast::buffer_prefix(n_, sb_.data());
         std::vector<boost::asio::const_buffer> vb (
             std::distance(pb.begin(), pb.end()));
         std::copy(pb.begin(), pb.end(), std::back_inserter(vb));

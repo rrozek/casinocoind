@@ -27,8 +27,8 @@
 #define CASINOCOIN_SERVER_SIMPLEWRITER_H_INCLUDED
 
 #include <casinocoin/server/Writer.h>
-#include <beast/core/streambuf.hpp>
-#include <beast/core/write_dynabuf.hpp>
+#include <beast/core/multi_buffer.hpp>
+#include <beast/core/ostream.hpp>
 #include <beast/http/message.hpp>
 #include <beast/http/write.hpp>
 #include <utility>
@@ -38,7 +38,7 @@ namespace casinocoin {
 /// Deprecated: Writer that serializes a HTTP/1 message
 class SimpleWriter : public Writer
 {
-    beast::streambuf sb_;
+    beast::multi_buffer sb_;
 
 public:
     template<bool isRequest, class Body, class Headers>
@@ -46,7 +46,7 @@ public:
     SimpleWriter(beast::http::message<
         isRequest, Body, Headers> const& msg)
     {
-        beast::write(sb_, msg);
+        beast::ostream(sb_) << msg;
     }
 
     bool

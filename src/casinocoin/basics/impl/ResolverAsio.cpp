@@ -27,7 +27,6 @@
 #include <casinocoin/basics/ResolverAsio.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/beast/net/IPAddressConversion.h>
-#include <beast/core/placeholders.hpp>
 #include <casinocoin/beast/core/WaitableEvent.h>
 #include <boost/asio.hpp>
 #include <atomic>
@@ -342,8 +341,8 @@ public:
 
         m_resolver.async_resolve (query, std::bind (
             &ResolverAsioImpl::do_finish, this, name,
-                beast::asio::placeholders::error, handler,
-                    beast::asio::placeholders::iterator,
+                std::placeholders::_1, handler,
+                    std::placeholders::_2,
                         CompletionCounter (this)));
     }
 

@@ -27,7 +27,6 @@
 #define CASINOCOIN_PEERFINDER_CHECKER_H_INCLUDED
 
 #include <casinocoin/beast/net/IPAddressConversion.h>
-#include <beast/core/placeholders.hpp>
 #include <boost/asio/detail/handler_invoke_helpers.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -221,7 +220,7 @@ Checker<Protocol>::async_connect (
     }
     op->socket_.async_connect (beast::IPAddressConversion::to_asio_endpoint (
         endpoint), std::bind (&basic_async_op::operator(), op,
-            beast::asio::placeholders::error));
+            std::placeholders::_1));
 }
 
 template <class Protocol>

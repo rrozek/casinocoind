@@ -239,7 +239,7 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         auto const iter = h.find ("Upgrade");
         if (iter == h.end())
             return boost::none;
-        auto const versions = parse_ProtocolVersions(iter->second);
+        auto const versions = parse_ProtocolVersions(iter->value().to_string());
         if (versions.empty())
             return boost::none;
         hello.set_protoversion(
@@ -256,10 +256,10 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         if (iter == h.end())
             return boost::none;
         auto const pk = parseBase58<PublicKey>(
-            TokenType::TOKEN_NODE_PUBLIC, iter->second);
+            TokenType::TOKEN_NODE_PUBLIC, iter->value().to_string());
         if (!pk)
             return boost::none;
-        hello.set_nodepublic (iter->second);
+        hello.set_nodepublic (iter->value().to_string());
     }
 
     {
@@ -268,14 +268,14 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         if (iter == h.end())
             return boost::none;
         // TODO Security Review
-        hello.set_nodeproof (beast::detail::base64_decode (iter->second));
+        hello.set_nodeproof (beast::detail::base64_decode (iter->value().to_string()));
     }
 
     {
         auto const iter = h.find (request ?
             "User-Agent" : "Server");
         if (iter != h.end())
-            hello.set_fullversion (iter->second);
+            hello.set_fullversion (iter->value().to_string());
     }
 
     {
@@ -283,7 +283,7 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         if (iter != h.end())
         {
             std::uint64_t nettime;
-            if (! beast::lexicalCastChecked(nettime, iter->second))
+            if (! beast::lexicalCastChecked(nettime, iter->value().to_string()))
                 return boost::none;
             hello.set_nettime (nettime);
         }
@@ -294,7 +294,7 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         if (iter != h.end())
         {
             LedgerIndex ledgerIndex;
-            if (! beast::lexicalCastChecked(ledgerIndex, iter->second))
+            if (! beast::lexicalCastChecked(ledgerIndex, iter->value().to_string()))
                 return boost::none;
             hello.set_ledgerindex (ledgerIndex);
         }
@@ -303,13 +303,13 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
     {
         auto const iter = h.find ("Closed-Ledger");
         if (iter != h.end())
-            hello.set_ledgerclosed (beast::detail::base64_decode (iter->second));
+            hello.set_ledgerclosed (beast::detail::base64_decode (iter->value().to_string()));
     }
 
     {
         auto const iter = h.find ("Previous-Ledger");
         if (iter != h.end())
-            hello.set_ledgerprevious (beast::detail::base64_decode (iter->second));
+            hello.set_ledgerprevious (beast::detail::base64_decode (iter->value().to_string()));
     }
 
     {
@@ -319,7 +319,7 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
             bool valid;
             beast::IP::Address address;
             std::tie (address, valid) =
-                beast::IP::Address::from_string (iter->second);
+                beast::IP::Address::from_string (iter->value().to_string());
             if (!valid)
                 return boost::none;
             if (address.is_v4())
@@ -334,7 +334,7 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
             bool valid;
             beast::IP::Address address;
             std::tie (address, valid) =
-                beast::IP::Address::from_string (iter->second);
+                beast::IP::Address::from_string (iter->value().to_string());
             if (!valid)
                 return boost::none;
             if (address.is_v4())

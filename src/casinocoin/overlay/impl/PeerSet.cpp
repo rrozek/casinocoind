@@ -28,7 +28,7 @@
 #include <casinocoin/overlay/PeerSet.h>
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/overlay/Overlay.h>
-#include <beast/core/placeholders.hpp>
+
 
 namespace casinocoin {
 
