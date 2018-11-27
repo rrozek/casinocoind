@@ -26,7 +26,7 @@
 
     Jean-loup Gailly        Mark Adler
     jloup@gzip.org          madler@alumni.caltech.edu
-
+    
     The data format used by the zlib library is described by RFCs (Request for
     Comments) 1950 to 1952 in the files http://tools.ietf.org/html/rfc1950
     (zlib format), rfc1951 (deflate format) and rfc1952 (gzip format).
@@ -36,6 +36,7 @@
 #define BEAST_ZLIB_DETAIL_WINDOW_HPP
 
 #include <boost/assert.hpp>
+#include <boost/make_unique.hpp>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -126,7 +127,8 @@ window::
 write(std::uint8_t const* in, std::size_t n)
 {
     if(! p_)
-        p_.reset(new std::uint8_t[capacity_]);
+        p_ = boost::make_unique<
+            std::uint8_t[]>(capacity_);
     if(n >= capacity_)
     {
         i_ = 0;

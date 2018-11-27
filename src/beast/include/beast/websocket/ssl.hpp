@@ -11,14 +11,14 @@
 #include <beast/config.hpp>
 #include <beast/websocket/teardown.hpp>
 #include <boost/asio/ip/tcp.hpp>
+
 #include <boost/asio/ssl/stream.hpp>
-#include <memory>
 
 namespace beast {
 namespace websocket {
 
 /** Tear down a `boost::asio::ssl::stream`.
-
+ * 
     This tears down a connection. The implementation will call
     the overload of this function based on the `Stream` parameter
     used to consruct the socket. When `Stream` is a user defined
@@ -37,7 +37,7 @@ teardown(teardown_tag,
         error_code& ec);
 
 /** Start tearing down a `boost::asio::ssl::stream`.
-
+ * 
     This begins tearing down a connection asynchronously.
     The implementation will call the overload of this function
     based on the `Stream` parameter used to consruct the socket.
@@ -47,7 +47,7 @@ teardown(teardown_tag,
     of this function.
 
     @param stream The stream to tear down.
-
+    
     @param handler The handler to be called when the request completes.
     Copies will be made of the handler as required. The equivalent
     function signature of the handler must be:

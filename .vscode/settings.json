@@ -28,6 +28,8 @@
         "inffas8664.c": "cpp",
         "puff.c": "cpp",
         "gun.c": "cpp",
-        "infback.c": "cpp"
-    }
+        "infback.c": "cpp",
+        "typeindex": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }

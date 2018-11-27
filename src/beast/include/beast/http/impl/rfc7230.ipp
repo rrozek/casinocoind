@@ -8,7 +8,7 @@
 #ifndef BEAST_HTTP_IMPL_RFC7230_IPP
 #define BEAST_HTTP_IMPL_RFC7230_IPP
 
-#include <beast/core/detail/ci_char_traits.hpp>
+
 #include <beast/http/detail/rfc7230.hpp>
 #include <iterator>
 
@@ -17,7 +17,7 @@ namespace http {
 
 class param_list::const_iterator
 {
-    using iter_type = boost::string_ref::const_iterator;
+    using iter_type = string_view::const_iterator;
 
     std::string s_;
     detail::param_iter pi_;
@@ -87,7 +87,7 @@ private:
     template<class = void>
     static
     std::string
-    unquote(boost::string_ref const& sr);
+    unquote(string_view sr);
 
     template<class = void>
     void
@@ -133,7 +133,7 @@ cend() const ->
 template<class>
 std::string
 param_list::const_iterator::
-unquote(boost::string_ref const& sr)
+unquote(string_view sr)
 {
     std::string s;
     s.reserve(sr.size());
@@ -165,7 +165,7 @@ increment()
         pi_.v.second.front() == '"')
     {
         s_ = unquote(pi_.v.second);
-        pi_.v.second = boost::string_ref{
+        pi_.v.second = string_view{
             s_.data(), s_.size()};
     }
 }
@@ -291,7 +291,7 @@ find(T const& s) ->
     return std::find_if(begin(), end(),
         [&s](value_type const& v)
         {
-            return beast::detail::ci_equal(s, v.first);
+            return iequals(s, v.first);
         });
 }
 
@@ -346,7 +346,7 @@ increment()
                 if(! detail::is_tchar(*it_))
                     break;
             }
-            v_.first = boost::string_ref{&*p0,
+            v_.first = string_view{&*p0,
                 static_cast<std::size_t>(it_ - p0)};
             detail::param_iter pi;
             pi.it = it_;
@@ -358,7 +358,7 @@ increment()
                 if(pi.empty())
                     break;
             }
-            v_.second = param_list{boost::string_ref{&*it_,
+            v_.second = param_list{string_view{&*it_,
                 static_cast<std::size_t>(pi.it - it_)}};
             it_ = pi.it;
             return;
@@ -518,7 +518,7 @@ increment()
                 if(! detail::is_tchar(*it_))
                     break;
             }
-            v_ = boost::string_ref{&*p0,
+            v_ = string_view{&*p0,
                 static_cast<std::size_t>(it_ - p0)};
             return;
         }
@@ -537,9 +537,29 @@ exists(T const& s)
     return std::find_if(begin(), end(),
         [&s](value_type const& v)
         {
-            return beast::detail::ci_equal(s, v);
+            return iequals(s, v);
         }
     ) != end();
+}
+
+template<class Policy>
+bool
+validate_list(detail::basic_parsed_list<
+    Policy> const& list)
+{
+    auto const last = list.end();
+    auto it = list.begin();
+    if(it.error())
+        return false;
+    while(it != last)
+    {
+        ++it;
+        if(it.error())
+            return false;
+        if(it == last)
+            break;
+    }
+    return true;
 }
 
 } // http

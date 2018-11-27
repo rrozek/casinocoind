@@ -4,6 +4,13 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
+
+#ifndef BEAST_ZLIB_INFLATE_STREAM_HPP
+#define BEAST_ZLIB_INFLATE_STREAM_HPP
+
+#include <beast/config.hpp>
+#include <beast/zlib/detail/inflate_stream.hpp>
+
 // This is a derivative work based on Zlib, copyright below:
 /*
     Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -23,7 +30,7 @@
     2. Altered source versions must be plainly marked as such, and must not be
        misrepresented as being the original software.
     3. This notice may not be removed or altered from any source distribution.
-
+    
     Jean-loup Gailly        Mark Adler
     jloup@gzip.org          madler@alumni.caltech.edu
 
@@ -32,17 +39,12 @@
     (zlib format), rfc1951 (deflate format) and rfc1952 (gzip format).
 */
 
-#ifndef BEAST_ZLIB_INFLATE_STREAM_HPP
-#define BEAST_ZLIB_INFLATE_STREAM_HPP
-
-#include <beast/config.hpp>
-#include <beast/zlib/detail/inflate_stream.hpp>
-
 namespace beast {
+
 namespace zlib {
 
 /** Raw deflate stream decompressor.
-
+ * 
     This implements a raw deflate stream decompressor. The deflate
     protocol is a compression protocol described in
     "DEFLATE Compressed Data Format Specification version 1.3"
@@ -62,13 +64,13 @@ class inflate_stream
 {
 public:
     /** Construct a raw deflate decompression stream.
-
+     * 
         The window size is set to the default of 15 bits.
     */
     inflate_stream() = default;
 
     /** Reset the stream.
-
+     * 
         This puts the stream in a newly constructed state with
         the previously specified window size, but without de-allocating
         any dynamically created structures.
@@ -80,7 +82,7 @@ public:
     }
 
     /** Reset the stream.
-
+     * 
         This puts the stream in a newly constructed state with the
         specified window size, but without de-allocating any dynamically
         created structures.
@@ -92,7 +94,7 @@ public:
     }
 
     /** Put the stream in a newly constructed state.
-
+     * 
         All dynamically allocated memory is de-allocated.
     */
     void
@@ -102,7 +104,7 @@ public:
     }
 
     /** Decompress input and produce output.
-
+     * 
         This function decompresses as much data as possible, and stops when
         the input buffer becomes empty or the output buffer becomes full. It
         may introduce some output latency (reading input without producing any
@@ -180,8 +182,7 @@ public:
         of `write` as noted below, when `write` returns early when `Flush::block` or
         `Flush::trees` is used, and when `write` avoids the allocation of memory for a
         sliding window when `Flush::finsih` is used.
-
-        If a preset dictionary is needed after this call (see @ref dictionary below),
+        If a preset dictionary is needed after this call,
         `write` sets `zs.adler` to the Adler-32 checksum of the dictionary chosen by
         the compressor and returns `error::need_dictionary`; otherwise it sets
         `zs.adler` to the Adler-32 checksum of all output produced so far (that is,

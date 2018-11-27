@@ -9,8 +9,9 @@
 #define BEAST_CONSUMING_BUFFERS_HPP
 
 #include <beast/config.hpp>
-#include <beast/core/buffer_concepts.hpp>
+#include <beast/core/detail/in_place_init.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <iterator>
 #include <type_traits>
@@ -18,8 +19,7 @@
 
 namespace beast {
 
-/** Adapter to trim the front of a `BufferSequence`.
-
+/* Adapter to trim the front of a `BufferSequence`.
     This adapter wraps a buffer sequence to create a new sequence
     which may be incrementally consumed. Bytes consumed are removed
     from the front of the buffer. The underlying memory is not changed,
@@ -40,7 +40,7 @@ class consuming_buffers
 
     BufferSequence bs_;
     iter_type begin_;
-    iter_type end_;
+
     std::size_t skip_ = 0;
 
     template<class Deduced>
@@ -52,14 +52,13 @@ class consuming_buffers
     }
 
 public:
-    /** The type for each element in the list of buffers.
-
+    /* The type for each element in the list of buffers.
         If the buffers in the underlying sequence are convertible to
         `boost::asio::mutable_buffer`, then this type will be
         `boost::asio::mutable_buffer`, else this type will be
         `boost::asio::const_buffer`.
     */
-#if GENERATING_DOCS
+#if BEAST_DOXYGEN
     using value_type = ...;
 #else
     using value_type = typename std::conditional<
@@ -70,7 +69,7 @@ public:
                         boost::asio::const_buffer>::type;
 #endif
 
-#if GENERATING_DOCS
+#if BEAST_DOXYGEN
     /// A bidirectional iterator type that may be used to read elements.
     using const_iterator = implementation_defined;
 
@@ -79,25 +78,33 @@ public:
 
 #endif
 
-    /// Move constructor.
+    /// Constructor
+    consuming_buffers();
+
+    /// Move constructor
     consuming_buffers(consuming_buffers&&);
 
-    /// Copy constructor.
+    /// Copy constructor
     consuming_buffers(consuming_buffers const&);
 
-    /// Move assignment.
-    consuming_buffers& operator=(consuming_buffers&&);
-
-    /// Copy assignment.
-    consuming_buffers& operator=(consuming_buffers const&);
-
-    /** Construct to represent a buffer sequence.
-
+    /* Construct to represent a buffer sequence.
         A copy of the buffer sequence is made. Ownership of the
         underlying memory is not transferred or copied.
     */
     explicit
     consuming_buffers(BufferSequence const& buffers);
+
+    /** Construct a buffer sequence in-place.
+        @param args Arguments forwarded to the contained buffers constructor.
+    */
+    template<class... Args>
+    consuming_buffers(boost::in_place_init_t, Args&&... args);
+
+    /// Move assignment
+    consuming_buffers& operator=(consuming_buffers&&);
+
+    /// Copy assignmen
+    consuming_buffers& operator=(consuming_buffers const&);
 
     /// Get a bidirectional iterator to the first element.
     const_iterator
@@ -107,8 +114,7 @@ public:
     const_iterator
     end() const;
 
-    /** Remove bytes from the beginning of the sequence.
-
+    /* Remove bytes from the beginning of the sequence.
         @param n The number of bytes to remove. If this is
         larger than the number of bytes remaining, all the
         bytes remaining are removed.

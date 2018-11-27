@@ -4,10 +4,18 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
+
+#ifndef BEAST_ZLIB_ZLIB_HPP
+#define BEAST_ZLIB_ZLIB_HPP
+
+#include <beast/config.hpp>
+#include <cstdint>
+#include <cstdlib>
+
 // This is a derivative work based on Zlib, copyright below:
 /*
     Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
-
+    
     This software is provided 'as-is', without any express or implied
     warranty.  In no event will the authors be held liable for any damages
     arising from the use of this software.
@@ -32,13 +40,6 @@
     (zlib format), rfc1951 (deflate format) and rfc1952 (gzip format).
 */
 
-#ifndef BEAST_ZLIB_ZLIB_HPP
-#define BEAST_ZLIB_ZLIB_HPP
-
-#include <beast/config.hpp>
-#include <cstdint>
-#include <cstdlib>
-
 namespace beast {
 namespace zlib {
 
@@ -56,7 +57,7 @@ enum z_Type
 };
 
 /** Deflate codec parameters.
-
+ * 
     Objects of this type are filled in by callers and provided to the
     deflate codec to define the input and output areas for the next
     compress or decompress operation.
@@ -75,13 +76,13 @@ enum z_Type
 struct z_params
 {
     /** A pointer to the next input byte.
-
+     * 
         If there is no more input, this may be set to `nullptr`.
     */
     void const* next_in;
 
     /** The number of bytes of input available at `next_in`.
-
+     * 
         If there is no more input, this should be set to zero.
     */
     std::size_t avail_in;
@@ -130,34 +131,34 @@ enum z_Compression
 };
 
 /** Compression strategy.
-
+ * 
     These are used when compressing streams.
 */
 enum class Strategy
 {
     /** Default strategy.
-
+     * 
         This is suitable for general purpose compression, and works
         well in the majority of cases.
     */
     normal,
 
     /** Filtered strategy.
-
+     * 
         This strategy should be used when the data be compressed
         is produced by a filter or predictor.
     */
     filtered,
 
     /** Huffman-only strategy.
-
+     * 
         This strategy only performs Huffman encoding, without doing
         any string matching.
     */
     huffman,
 
     /** Run Length Encoding strategy.
-
+     * 
         This strategy limits match distances to one, making it
         equivalent to run length encoding. This can give better
         performance for things like PNG image data.
@@ -165,7 +166,7 @@ enum class Strategy
     rle,
 
     /** Fixed table strategy.
-
+     * 
         This strategy prevents the use of dynamic Huffman codes,
         allowing for a simpler decoder for special applications.
     */
