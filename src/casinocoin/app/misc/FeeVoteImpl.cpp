@@ -27,7 +27,7 @@
 #include <casinocoin/protocol/st.h>
 #include <casinocoin/app/misc/FeeVote.h>
 #include <casinocoin/app/main/Application.h>
-#include <casinocoin/app/misc/Validations.h>
+#include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/basics/BasicConfig.h>
 #include <casinocoin/beast/utility/Journal.h>
 
@@ -109,7 +109,7 @@ public:
 
     void
     doVoting (std::shared_ptr<ReadView const> const& lastClosedLedger,
-        ValidationSet const& parentValidations,
+        std::vector<STValidation::pointer> const& parentValidations,
         std::shared_ptr<SHAMap> const& initialPosition) override;
 
     void
@@ -158,8 +158,8 @@ FeeVoteImpl::doValidation(
 void
 FeeVoteImpl::doVoting(
     std::shared_ptr<ReadView const> const& lastClosedLedger,
-        ValidationSet const& set,
-            std::shared_ptr<SHAMap> const& initialPosition)
+    std::vector<STValidation::pointer> const& set,
+    std::shared_ptr<SHAMap> const& initialPosition)
 {
     // LCL must be flag ledger
     assert ((lastClosedLedger->info().seq % 256) == 0);
@@ -173,33 +173,31 @@ FeeVoteImpl::doVoting(
     detail::VotableInteger<std::uint32_t> incReserveVote (
         lastClosedLedger->fees().increment, target_.owner_reserve);
 
-    for (auto const& e : set)
+    for (auto const& val : set)
     {
-        STValidation const& val = *e.second;
-
-        if (val.isTrusted ())
+        if (val->isTrusted ())
         {
-            if (val.isFieldPresent (sfBaseFee))
+            if (val->isFieldPresent (sfBaseFee))
             {
-                baseFeeVote.addVote (val.getFieldU64 (sfBaseFee));
+                baseFeeVote.addVote (val->getFieldU64 (sfBaseFee));
             }
             else
             {
                 baseFeeVote.noVote ();
             }
 
-            if (val.isFieldPresent (sfReserveBase))
+            if (val->isFieldPresent (sfReserveBase))
             {
-                baseReserveVote.addVote (val.getFieldU32 (sfReserveBase));
+                baseReserveVote.addVote (val->getFieldU32 (sfReserveBase));
             }
             else
             {
                 baseReserveVote.noVote ();
             }
 
-            if (val.isFieldPresent (sfReserveIncrement))
+            if (val->isFieldPresent (sfReserveIncrement))
             {
-                incReserveVote.addVote (val.getFieldU32 (sfReserveIncrement));
+                incReserveVote.addVote (val->getFieldU32 (sfReserveIncrement));
             }
             else
             {

@@ -29,7 +29,8 @@
         "puff.c": "cpp",
         "gun.c": "cpp",
         "infback.c": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "chrono": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

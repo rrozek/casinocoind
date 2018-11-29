@@ -35,7 +35,7 @@
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/Transaction.h>
-#include <casinocoin/app/misc/Validations.h>
+#include <casinocoin/app/consensus/CCLValidations.h>
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/protocol/digest.h>
@@ -1582,7 +1582,10 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMValidation> const& m)
             val->setSeen (closeTime);
         }
 
-        if (! app_.getValidations().current (val))
+        if (! isCurrent(app_.getValidations().parms(),
+            app_.timeKeeper().closeTime(),
+            val->getSignTime(),
+            val->getSeenTime()))
         {
             JLOG(p_journal_.trace()) << "Validation: Not current";
             fee_ = Resource::feeUnwantedData;
