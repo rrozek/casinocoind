@@ -31,7 +31,7 @@
 #include <casinocoin/app/ledger/AcceptedLedger.h>
 #include <casinocoin/app/ledger/InboundLedgers.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
-#include <casinocoin/consensus/LedgerTiming.h>
+#include <casinocoin/consensus/ConsensusParms.h>
 #include <casinocoin/app/ledger/LedgerToJson.h>
 #include <casinocoin/app/ledger/LocalTxs.h>
 #include <casinocoin/app/ledger/OpenLedger.h>
@@ -646,7 +646,7 @@ void NetworkOPsImp::setStateTimer ()
 
 void NetworkOPsImp::setHeartbeatTimer ()
 {
-    m_heartbeatTimer.setExpiration (LEDGER_GRANULARITY);
+    m_heartbeatTimer.setExpiration (mConsensus->parms().ledgerGRANULARITY);
 }
 
 void NetworkOPsImp::setClusterTimer ()

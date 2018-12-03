@@ -56,7 +56,7 @@ CCLConsensus::CCLConsensus(
     InboundTransactions& inboundTransactions,
     typename Base::clock_type const& clock,
     beast::Journal journal)
-    : Base(clock, journal)
+    : Base(clock, ConsensusParms{}, journal)
     , app_(app)
     , feeVote_(std::move(feeVote))
     , ledgerMaster_(ledgerMaster)

@@ -29,7 +29,7 @@
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/beast/utility/Journal.h>
-#include <casinocoin/consensus/LedgerTiming.h>
+#include <casinocoin/consensus/ConsensusParms.h>
 #include <casinocoin/protocol/Serializer.h>
 #include <casinocoin/protocol/UintTypes.h>
 #include <memory>
@@ -118,10 +118,11 @@ public:
         @param percentTime Percentage progress through consensus, e.g. 50%
                through or 90%.
         @param proposing Whether we are proposing to our peers in this round.
+        @param p Consensus parameters controlling thresholds for voting
         @return Whether our vote changed
     */
     bool
-    updateVote(int percentTime, bool proposing);
+    updateVote(int percentTime, bool proposing, ConsensusParms const& p);
 
     //! JSON representation of dispute, used for debugging
     Json::Value
@@ -196,7 +197,10 @@ DisputedTx<Tx_t, NodeID_t>::unVote(NodeID_t const& peer)
 
 template <class Tx_t, class NodeID_t>
 bool
-DisputedTx<Tx_t, NodeID_t>::updateVote(int percentTime, bool proposing)
+DisputedTx<Tx_t, NodeID_t>::updateVote(
+    int percentTime,
+    bool proposing,
+    ConsensusParms const& p)
 {
     if (ourVote_ && (nays_ == 0))
         return false;
@@ -218,14 +222,14 @@ DisputedTx<Tx_t, NodeID_t>::updateVote(int percentTime, bool proposing)
         //
         // To prevent avalanche stalls, we increase the needed weight slightly
         // over time.
-        if (percentTime < AV_MID_CONSENSUS_TIME)
-            newPosition = weight > AV_INIT_CONSENSUS_PCT;
-        else if (percentTime < AV_LATE_CONSENSUS_TIME)
-            newPosition = weight > AV_MID_CONSENSUS_PCT;
-        else if (percentTime < AV_STUCK_CONSENSUS_TIME)
-            newPosition = weight > AV_LATE_CONSENSUS_PCT;
+        if (percentTime < p.avMID_CONSENSUS_TIME)
+            newPosition = weight > p.avINIT_CONSENSUS_PCT;
+        else if (percentTime < p.avLATE_CONSENSUS_TIME)
+            newPosition = weight > p.avMID_CONSENSUS_PCT;
+        else if (percentTime < p.avSTUCK_CONSENSUS_TIME)
+            newPosition = weight > p.avLATE_CONSENSUS_PCT;
         else
-            newPosition = weight > AV_STUCK_CONSENSUS_PCT;
+            newPosition = weight > p.avSTUCK_CONSENSUS_PCT;
     }
     else
     {

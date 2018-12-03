@@ -20,6 +20,7 @@
 #define CASINOCOIN_TEST_CSF_LEDGER_H_INCLUDED
 
 #include <casinocoin/basics/chrono.h>
+#include <casinocoin/consensus/LedgerTiming.h>
 #include <test/csf/Tx.h>
 
 namespace casinocoin {
