@@ -72,7 +72,7 @@ public:
         testcase("Set noCasinocoin on a line with negative balance");
 
         using namespace jtx;
-        Env env(*this, features(fs));
+        Env env(*this, with_features(fs));
 
         auto const gw = Account("gateway");
         auto const alice = Account("alice");
@@ -118,7 +118,7 @@ public:
         testcase("pairwise noCasinocoin");
 
         using namespace jtx;
-        Env env(*this, features(fs));
+        Env env(*this, with_features(fs));
 
         auto const alice = Account("alice");
         auto const bob = Account("bob");
@@ -155,7 +155,7 @@ public:
         testcase("Set default ripple on an account and check new trustlines");
 
         using namespace jtx;
-        Env env(*this, features(fs));
+        Env env(*this, with_features(fs));
 
         auto const gw = Account("gateway");
         auto const alice = Account("alice");
