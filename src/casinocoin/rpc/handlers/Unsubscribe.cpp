@@ -35,13 +35,12 @@
 
 namespace casinocoin {
 
-// FIXME: This leaks RPCSub objects for JSON-RPC.  Shouldn't matter for anyone
-// sane.
 Json::Value doUnsubscribe (RPC::Context& context)
 {
 
     InfoSub::pointer ispSub;
     Json::Value jvResult (Json::objectValue);
+    bool removeUrl {false};
 
     if (! context.infoSub && ! context.params.isMember(jss::url))
     {
@@ -58,6 +57,7 @@ Json::Value doUnsubscribe (RPC::Context& context)
         ispSub = context.netOps.findRpcSub (strUrl);
         if (! ispSub)
             return jvResult;
+        removeUrl = true;
     }
     else
     {
@@ -183,9 +183,9 @@ Json::Value doUnsubscribe (RPC::Context& context)
                     || !to_currency (book.out.currency,
                                      taker_gets[jss::currency].asString ()))
             {
-                JLOG (context.j.info()) << "Bad taker_pays currency.";
+                JLOG (context.j.info()) << "Bad taker_gets currency.";
 
-                return rpcError (rpcSRC_CUR_MALFORMED);
+                return rpcError (rpcDST_AMT_MALFORMED);
             }
             // Parse optional issuer.
             else if (((taker_gets.isMember (jss::issuer))
@@ -217,6 +217,11 @@ Json::Value doUnsubscribe (RPC::Context& context)
                 context.netOps.unsubBook(ispSub->getSeq(), reversed(book));
             }
         }
+    }
+
+    if (removeUrl)
+    {
+        context.netOps.tryRemoveRpcSub(context.params[jss::url].asString ());
     }
 
     return jvResult;

@@ -224,6 +224,10 @@ public:
     ~NetworkOPsImp() override
     {
         jobCounter_.join();
+        // this clear() is necessary to ensure the shared_ptrs in this map get
+        // destroyed NOW because the objects in this map invoke methods on this
+        // class when they are destroyed
+        mRpcSubMap.clear();
     }
 
 public:
@@ -484,6 +488,7 @@ public:
     InfoSub::pointer findRpcSub (std::string const& strUrl) override;
     InfoSub::pointer addRpcSub (
         std::string const& strUrl, InfoSub::ref) override;
+    bool tryRemoveRpcSub (std::string const& strUrl) override;
 
     //--------------------------------------------------------------------------
     //
@@ -561,13 +566,20 @@ private:
 
     subRpcMapType mRpcSubMap;
 
-    SubMapType mSubLedger;            // Accepted ledgers.
-    SubMapType mSubManifests;         // Received validator manifests.
-    SubMapType mSubServer;            // When server changes connectivity state.
-    SubMapType mSubTransactions;      // All accepted transactions.
-    SubMapType mSubRTTransactions;    // All proposed and accepted transactions.
-    SubMapType mSubValidations;       // Received validations.
-    SubMapType mSubPeerStatus;        // peer status changes
+    enum SubTypes
+    {
+        sLedger,                    // Accepted ledgers.
+        sManifests,                 // Received validator manifests.
+        sServer,                    // When server changes connectivity state.
+        sTransactions,              // All accepted transactions.
+        sRTTransactions,            // All proposed and accepted transactions.
+        sValidations,               // Received validations.
+        sPeerStatus,                // Peer status changes.
+
+        sLastEntry = sPeerStatus    // as this name implies, any new entry must
+                                    // be ADDED ABOVE this one
+    };
+    std::array<SubMapType, SubTypes::sLastEntry+1> mStreamMaps;
 
     ServerFeeSummary mLastFeeSummary;
 
@@ -1600,7 +1612,7 @@ void NetworkOPsImp::pubManifest (Manifest const& mo)
     // VFALCO consider std::shared_mutex
     ScopedLockType sl (mSubLock);
 
-    if (!mSubManifests.empty ())
+    if (!mStreamMaps[sManifests].empty ())
     {
         Json::Value jvObj (Json::objectValue);
 
@@ -1613,7 +1625,8 @@ void NetworkOPsImp::pubManifest (Manifest const& mo)
         jvObj [jss::signature]        = strHex (mo.getSignature ());
         jvObj [jss::master_signature] = strHex (mo.getMasterSignature ());
 
-        for (auto i = mSubManifests.begin (); i != mSubManifests.end (); )
+        for (auto i = mStreamMaps[sManifests].begin ();
+            i != mStreamMaps[sManifests].end (); )
         {
             if (auto p = i->second.lock())
             {
@@ -1622,7 +1635,7 @@ void NetworkOPsImp::pubManifest (Manifest const& mo)
             }
             else
             {
-                i = mSubManifests.erase (i);
+                i = mStreamMaps[sManifests].erase (i);
             }
         }
     }
@@ -1668,7 +1681,7 @@ void NetworkOPsImp::pubServer ()
     //
     ScopedLockType sl (mSubLock);
 
-    if (!mSubServer.empty ())
+    if (!mStreamMaps[sServer].empty ())
     {
         Json::Value jvObj (Json::objectValue);
 
@@ -1711,7 +1724,8 @@ void NetworkOPsImp::pubServer ()
 
         mLastFeeSummary = f;
 
-        for (auto i = mSubServer.begin (); i != mSubServer.end (); )
+        for (auto i = mStreamMaps[sServer].begin ();
+            i != mStreamMaps[sServer].end (); )
         {
             InfoSub::pointer p = i->second.lock ();
 
@@ -1725,7 +1739,7 @@ void NetworkOPsImp::pubServer ()
             }
             else
             {
-                i = mSubServer.erase (i);
+                i = mStreamMaps[sServer].erase (i);
             }
         }
     }
@@ -1737,7 +1751,7 @@ void NetworkOPsImp::pubValidation (STValidation::ref val)
     // VFALCO consider std::shared_mutex
     ScopedLockType sl (mSubLock);
 
-    if (!mSubValidations.empty ())
+    if (!mStreamMaps[sValidations].empty ())
     {
         Json::Value jvObj (Json::objectValue);
 
@@ -1776,7 +1790,8 @@ void NetworkOPsImp::pubValidation (STValidation::ref val)
         if (auto const reserveInc = (*val)[~sfReserveIncrement])
             jvObj [jss::reserve_inc] = *reserveInc;
 
-        for (auto i = mSubValidations.begin (); i != mSubValidations.end (); )
+        for (auto i = mStreamMaps[sValidations].begin ();
+            i != mStreamMaps[sValidations].end (); )
         {
             if (auto p = i->second.lock())
             {
@@ -1785,7 +1800,7 @@ void NetworkOPsImp::pubValidation (STValidation::ref val)
             }
             else
             {
-                i = mSubValidations.erase (i);
+                i = mStreamMaps[sValidations].erase (i);
             }
         }
     }
@@ -1796,13 +1811,14 @@ void NetworkOPsImp::pubPeerStatus (
 {
     ScopedLockType sl (mSubLock);
 
-    if (!mSubPeerStatus.empty ())
+    if (!mStreamMaps[sPeerStatus].empty ())
     {
         Json::Value jvObj (func());
 
         jvObj [jss::type]                  = "peerStatusChange";
 
-        for (auto i = mSubPeerStatus.begin (); i != mSubPeerStatus.end (); )
+        for (auto i = mStreamMaps[sPeerStatus].begin ();
+            i != mStreamMaps[sPeerStatus].end (); )
         {
             InfoSub::pointer p = i->second.lock ();
 
@@ -1813,7 +1829,7 @@ void NetworkOPsImp::pubPeerStatus (
             }
             else
             {
-                i = mSubValidations.erase (i);
+                i = mStreamMaps[sPeerStatus].erase (i);
             }
         }
     }
@@ -2358,8 +2374,8 @@ void NetworkOPsImp::pubProposedTransaction (
     {
         ScopedLockType sl (mSubLock);
 
-        auto it = mSubRTTransactions.begin ();
-        while (it != mSubRTTransactions.end ())
+        auto it = mStreamMaps[sRTTransactions].begin ();
+        while (it != mStreamMaps[sRTTransactions].end ())
         {
             InfoSub::pointer p = it->second.lock ();
 
@@ -2370,7 +2386,7 @@ void NetworkOPsImp::pubProposedTransaction (
             }
             else
             {
-                it = mSubRTTransactions.erase (it);
+                it = mStreamMaps[sRTTransactions].erase (it);
             }
         }
     }
@@ -2399,7 +2415,7 @@ void NetworkOPsImp::pubLedger (
     {
         ScopedLockType sl (mSubLock);
 
-        if (!mSubLedger.empty ())
+        if (!mStreamMaps[sLedger].empty ())
         {
             Json::Value jvObj (Json::objectValue);
 
@@ -2423,8 +2439,8 @@ void NetworkOPsImp::pubLedger (
                         = app_.getLedgerMaster ().getCompleteLedgers ();
             }
 
-            auto it = mSubLedger.begin ();
-            while (it != mSubLedger.end ())
+            auto it = mStreamMaps[sLedger].begin ();
+            while (it != mStreamMaps[sLedger].end ())
             {
                 InfoSub::pointer p = it->second.lock ();
                 if (p)
@@ -2433,7 +2449,7 @@ void NetworkOPsImp::pubLedger (
                     ++it;
                 }
                 else
-                    it = mSubLedger.erase (it);
+                    it = mStreamMaps[sLedger].erase (it);
             }
         }
     }
@@ -2526,8 +2542,8 @@ void NetworkOPsImp::pubValidatedTransaction (
     {
         ScopedLockType sl (mSubLock);
 
-        auto it = mSubTransactions.begin ();
-        while (it != mSubTransactions.end ())
+        auto it = mStreamMaps[sTransactions].begin ();
+        while (it != mStreamMaps[sTransactions].end ())
         {
             InfoSub::pointer p = it->second.lock ();
 
@@ -2537,12 +2553,12 @@ void NetworkOPsImp::pubValidatedTransaction (
                 ++it;
             }
             else
-                it = mSubTransactions.erase (it);
+                it = mStreamMaps[sTransactions].erase (it);
         }
 
-        it = mSubRTTransactions.begin ();
+        it = mStreamMaps[sRTTransactions].begin ();
 
-        while (it != mSubRTTransactions.end ())
+        while (it != mStreamMaps[sRTTransactions].end ())
         {
             InfoSub::pointer p = it->second.lock ();
 
@@ -2552,7 +2568,7 @@ void NetworkOPsImp::pubValidatedTransaction (
                 ++it;
             }
             else
-                it = mSubRTTransactions.erase (it);
+                it = mStreamMaps[sRTTransactions].erase (it);
         }
     }
     app_.getOrderBookDB ().processTxn (alAccepted, alTx, jvObj);
@@ -2779,28 +2795,30 @@ bool NetworkOPsImp::subLedger (InfoSub::ref isrListener, Json::Value& jvResult)
     }
 
     ScopedLockType sl (mSubLock);
-    return mSubLedger.emplace (isrListener->getSeq (), isrListener).second;
+    return mStreamMaps[sLedger].emplace (
+        isrListener->getSeq (), isrListener).second;
 }
 
 // <-- bool: true=erased, false=was not there
 bool NetworkOPsImp::unsubLedger (std::uint64_t uSeq)
 {
     ScopedLockType sl (mSubLock);
-    return mSubLedger.erase (uSeq);
+    return mStreamMaps[sLedger].erase (uSeq);
 }
 
 // <-- bool: true=added, false=already there
 bool NetworkOPsImp::subManifests (InfoSub::ref isrListener)
 {
     ScopedLockType sl (mSubLock);
-    return mSubManifests.emplace (isrListener->getSeq (), isrListener).second;
+    return mStreamMaps[sManifests].emplace (
+        isrListener->getSeq (), isrListener).second;
 }
 
 // <-- bool: true=erased, false=was not there
 bool NetworkOPsImp::unsubManifests (std::uint64_t uSeq)
 {
     ScopedLockType sl (mSubLock);
-    return mSubManifests.erase (uSeq);
+    return mStreamMaps[sManifests].erase (uSeq);
 }
 
 // <-- bool: true=added, false=already there
@@ -2829,21 +2847,22 @@ bool NetworkOPsImp::subServer (InfoSub::ref isrListener, Json::Value& jvResult,
         app_.nodeIdentity().first);
 
     ScopedLockType sl (mSubLock);
-    return mSubServer.emplace (isrListener->getSeq (), isrListener).second;
+    return mStreamMaps[sServer].emplace (
+        isrListener->getSeq (), isrListener).second;
 }
 
 // <-- bool: true=erased, false=was not there
 bool NetworkOPsImp::unsubServer (std::uint64_t uSeq)
 {
     ScopedLockType sl (mSubLock);
-    return mSubServer.erase (uSeq);
+    return mStreamMaps[sServer].erase (uSeq);
 }
 
 // <-- bool: true=added, false=already there
 bool NetworkOPsImp::subTransactions (InfoSub::ref isrListener)
 {
     ScopedLockType sl (mSubLock);
-    return mSubTransactions.emplace (
+    return mStreamMaps[sTransactions].emplace (
         isrListener->getSeq (), isrListener).second;
 }
 
@@ -2851,14 +2870,14 @@ bool NetworkOPsImp::subTransactions (InfoSub::ref isrListener)
 bool NetworkOPsImp::unsubTransactions (std::uint64_t uSeq)
 {
     ScopedLockType sl (mSubLock);
-    return mSubTransactions.erase (uSeq);
+    return mStreamMaps[sTransactions].erase (uSeq);
 }
 
 // <-- bool: true=added, false=already there
 bool NetworkOPsImp::subRTTransactions (InfoSub::ref isrListener)
 {
     ScopedLockType sl (mSubLock);
-    return mSubRTTransactions.emplace (
+    return mStreamMaps[sRTTransactions].emplace (
         isrListener->getSeq (), isrListener).second;
 }
 
@@ -2866,35 +2885,37 @@ bool NetworkOPsImp::subRTTransactions (InfoSub::ref isrListener)
 bool NetworkOPsImp::unsubRTTransactions (std::uint64_t uSeq)
 {
     ScopedLockType sl (mSubLock);
-    return mSubRTTransactions.erase (uSeq);
+    return mStreamMaps[sRTTransactions].erase (uSeq);
 }
 
 // <-- bool: true=added, false=already there
 bool NetworkOPsImp::subValidations (InfoSub::ref isrListener)
 {
     ScopedLockType sl (mSubLock);
-    return mSubValidations.emplace (isrListener->getSeq (), isrListener).second;
+    return mStreamMaps[sValidations].emplace (
+        isrListener->getSeq (), isrListener).second;
 }
 
 // <-- bool: true=erased, false=was not there
 bool NetworkOPsImp::unsubValidations (std::uint64_t uSeq)
 {
     ScopedLockType sl (mSubLock);
-    return mSubValidations.erase (uSeq);
+    return mStreamMaps[sValidations].erase (uSeq);
 }
 
 // <-- bool: true=added, false=already there
 bool NetworkOPsImp::subPeerStatus (InfoSub::ref isrListener)
 {
     ScopedLockType sl (mSubLock);
-    return mSubPeerStatus.emplace (isrListener->getSeq (), isrListener).second;
+    return mStreamMaps[sPeerStatus].emplace (
+        isrListener->getSeq (), isrListener).second;
 }
 
 // <-- bool: true=erased, false=was not there
 bool NetworkOPsImp::unsubPeerStatus (std::uint64_t uSeq)
 {
     ScopedLockType sl (mSubLock);
-    return mSubPeerStatus.erase (uSeq);
+    return mStreamMaps[sPeerStatus].erase (uSeq);
 }
 
 InfoSub::pointer NetworkOPsImp::findRpcSub (std::string const& strUrl)
@@ -2917,6 +2938,25 @@ InfoSub::pointer NetworkOPsImp::addRpcSub (
     mRpcSubMap.emplace (strUrl, rspEntry);
 
     return rspEntry;
+}
+
+bool NetworkOPsImp::tryRemoveRpcSub (std::string const& strUrl)
+{
+    ScopedLockType sl (mSubLock);
+    auto pInfo = findRpcSub(strUrl);
+
+    if (!pInfo)
+        return false;
+
+    // check to see if any of the stream maps still hold a weak reference to
+    // this entry before removing
+    for (SubMapType const& map : mStreamMaps)
+    {
+        if (map.find(pInfo->getSeq()) != map.end())
+            return false;
+    }
+    mRpcSubMap.erase(strUrl);
+    return true;
 }
 
 #ifndef USE_NEW_BOOK_PAGE
