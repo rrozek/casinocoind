@@ -38,7 +38,7 @@
 #include <casinocoin/app/misc/SHAMapStore.h>
 #include <casinocoin/app/misc/Transaction.h>
 #include <casinocoin/app/misc/TxQ.h>
-#include <casinocoin/app/misc/Validations.h>
+#include <casinocoin/app/consensus/CCLValidations.h>
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/app/paths/PathRequests.h>
 #include <casinocoin/basics/contract.h>
@@ -206,7 +206,7 @@ LedgerMaster::setValidLedger(
 
     if (! standalone_)
     {
-        times = app_.getValidations().getValidationTimes(
+        times = app_.getValidations().getTrustedValidationTimes(
             l->info().hash);
     }
 
@@ -693,7 +693,7 @@ LedgerMaster::checkAccept (uint256 const& hash, std::uint32_t seq)
             return;
 
         valCount =
-            app_.getValidations().getTrustedValidationCount (hash);
+            app_.getValidations().numTrustedForLedger (hash);
 
         if (valCount >= app_.validators ().quorum ())
         {
@@ -757,7 +757,7 @@ LedgerMaster::checkAccept (
         return;
 
     auto const minVal = getNeededValidations();
-    auto const tvc = app_.getValidations().getTrustedValidationCount(
+    auto const tvc = app_.getValidations().numTrustedForLedger(
         ledger->info().hash);
     if (tvc < minVal) // nothing we can do
     {
@@ -847,7 +847,7 @@ LedgerMaster::consensusBuilt(
     // maybe we saved up validations for some other ledger that can be
 
     auto const val =
-        app_.getValidations().getCurrentTrustedValidations();
+        app_.getValidations().currentTrusted();
 
     // Track validation counts with sequence numbers
     class valSeq
