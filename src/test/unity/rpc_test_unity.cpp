@@ -36,6 +36,7 @@
 #include <test/rpc/LedgerRequestRPC_test.cpp>
 #include <test/rpc/NoCasinocoin_test.cpp>
 #include <test/rpc/NoCasinocoinCheck_test.cpp>
+#include <test/rpc/OwnerInfo_test.cpp>
 #include <test/rpc/Peers_test.cpp>
 #include <test/rpc/RobustTransaction_test.cpp>
 #include <test/rpc/RPCOverload_test.cpp>
