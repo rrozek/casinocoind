@@ -942,9 +942,12 @@ CCLConsensus::peerProposal(
 bool
 CCLConsensus::Adaptor::preStartRound(CCLCxLedger const & prevLgr)
 {
-    // We have a key, and we have some idea what the ledger is
+    // We have a key, we have some idea what the ledger is, and we are not
+    // amendment blocked
     validating_ =
-        !app_.getOPs().isNeedNetworkLedger() && (valPublic_.size() != 0);
+        !app_.getOPs().isNeedNetworkLedger() &&
+        (valPublic_.size() != 0) &&
+        !app_.getOPs().isAmendmentBlocked();
 
     if (validating_)
     {

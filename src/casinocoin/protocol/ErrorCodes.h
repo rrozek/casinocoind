@@ -57,6 +57,7 @@ enum error_code_i
     rpcHIGH_FEE,
     rpcNOT_ENABLED,
     rpcNOT_READY,
+    rpcAMENDMENT_BLOCKED,
 
     // Networking
     rpcNO_CLOSED,
