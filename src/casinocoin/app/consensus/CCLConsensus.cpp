@@ -36,6 +36,7 @@
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/TxQ.h>
+#include <casinocoin/app/misc/ValidatorKeys.h>
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/make_lock.h>
@@ -54,21 +55,45 @@ CCLConsensus::CCLConsensus(
     LedgerMaster& ledgerMaster,
     LocalTxs& localTxs,
     InboundTransactions& inboundTransactions,
-    typename Base::clock_type const& clock,
+    Consensus<Adaptor>::clock_type const& clock,
+    ValidatorKeys const& validatorKeys,
     beast::Journal journal)
-    : Base(clock, ConsensusParms{}, journal)
-    , app_(app)
-    , feeVote_(std::move(feeVote))
-    , ledgerMaster_(ledgerMaster)
-    , localTxs_(localTxs)
-    , inboundTransactions_{inboundTransactions}
+    : adaptor_(
+          app,
+          std::move(feeVote),
+          ledgerMaster,
+          localTxs,
+          inboundTransactions,
+          validatorKeys,
+          journal)
+    , consensus_(clock, adaptor_, journal)
     , j_(journal)
-    , nodeID_{calcNodeID(app.nodeIdentity().first)}
+
+{
+}
+
+CCLConsensus::Adaptor::Adaptor(
+    Application& app,
+    std::unique_ptr<FeeVote>&& feeVote,
+    LedgerMaster& ledgerMaster,
+    LocalTxs& localTxs,
+    InboundTransactions& inboundTransactions,
+    ValidatorKeys const& validatorKeys,
+    beast::Journal journal)
+    : app_(app)
+        , feeVote_(std::move(feeVote))
+        , ledgerMaster_(ledgerMaster)
+        , localTxs_(localTxs)
+        , inboundTransactions_{inboundTransactions}
+        , j_(journal)
+        , nodeID_{calcNodeID(app.nodeIdentity().first)}
+        , valPublic_{validatorKeys.publicKey}
+        , valSecret_{validatorKeys.secretKey}
 {
 }
 
 boost::optional<CCLCxLedger>
-CCLConsensus::acquireLedger(LedgerHash const& ledger)
+CCLConsensus::Adaptor::acquireLedger(LedgerHash const& ledger)
 {
     // we need to switch the ledger we're working from
     auto buildLCL = ledgerMaster_.getLedgerByHash(ledger);
@@ -102,37 +127,9 @@ CCLConsensus::acquireLedger(LedgerHash const& ledger)
     return CCLCxLedger(buildLCL);
 }
 
-std::vector<CCLCxPeerPos>
-CCLConsensus::proposals(LedgerHash const& prevLedger)
-{
-    std::vector<CCLCxPeerPos> ret;
-    {
-        std::lock_guard<std::mutex> _(peerPositionsLock_);
-
-        for (auto const& it : peerPositions_)
-            for (auto const& pos : it.second)
-                if (pos->proposal().prevLedger() == prevLedger)
-                    ret.emplace_back(*pos);
-    }
-
-    return ret;
-}
 
 void
-CCLConsensus::storeProposal(CCLCxPeerPos::ref peerPos, NodeID const& nodeID)
-{
-    std::lock_guard<std::mutex> _(peerPositionsLock_);
-
-    auto& props = peerPositions_[nodeID];
-
-    if (props.size() >= 10)
-        props.pop_front();
-
-    props.push_back(peerPos);
-}
-
-void
-CCLConsensus::relay(CCLCxPeerPos const& peerPos)
+CCLConsensus::Adaptor::relay(CCLCxPeerPos const& peerPos)
 {
     protocol::TMProposeSet prop;
 
@@ -146,17 +143,17 @@ CCLConsensus::relay(CCLCxPeerPos const& peerPos)
     prop.set_previousledger(
         proposal.prevLedger().begin(), proposal.position().size());
 
-    auto const pk = peerPos.getPublicKey().slice();
+    auto const pk = peerPos.publicKey().slice();
     prop.set_nodepubkey(pk.data(), pk.size());
 
-    auto const sig = peerPos.getSignature();
+    auto const sig = peerPos.signature();
     prop.set_signature(sig.data(), sig.size());
 
-    app_.overlay().relay(prop, peerPos.getSuppressionID());
+    app_.overlay().relay(prop, peerPos.suppressionID());
 }
 
 void
-CCLConsensus::relay(CCLCxTx const& tx)
+CCLConsensus::Adaptor::relay(CCLCxTx const& tx)
 {
     // If we didn't relay this transaction recently, relay it to all peers
     if (app_.getHashRouter().shouldRelay(tx.id()))
@@ -172,7 +169,7 @@ CCLConsensus::relay(CCLCxTx const& tx)
     }
 }
 void
-CCLConsensus::propose(CCLCxPeerPos::Proposal const& proposal)
+CCLConsensus::Adaptor::propose(CCLCxPeerPos::Proposal const& proposal)
 {
     JLOG(j_.trace()) << "We propose: "
                      << (proposal.isBowOut()
@@ -205,13 +202,13 @@ CCLConsensus::propose(CCLCxPeerPos::Proposal const& proposal)
 }
 
 void
-CCLConsensus::relay(CCLTxSet const& set)
+CCLConsensus::Adaptor::relay(CCLTxSet const& set)
 {
     inboundTransactions_.giveSet(set.id(), set.map_, false);
 }
 
 boost::optional<CCLTxSet>
-CCLConsensus::acquireTxSet(CCLTxSet::ID const& setId)
+CCLConsensus::Adaptor::acquireTxSet(CCLTxSet::ID const& setId)
 {
     if (auto set = inboundTransactions_.getSet(setId, true))
     {
@@ -221,32 +218,32 @@ CCLConsensus::acquireTxSet(CCLTxSet::ID const& setId)
 }
 
 bool
-CCLConsensus::hasOpenTransactions() const
+CCLConsensus::Adaptor::hasOpenTransactions() const
 {
     return !app_.openLedger().empty();
 }
 
 std::size_t
-CCLConsensus::proposersValidated(LedgerHash const& h) const
+CCLConsensus::Adaptor::proposersValidated(LedgerHash const& h) const
 {
     return app_.getValidations().numTrustedForLedger(h);
 }
 
 std::size_t
-CCLConsensus::proposersFinished(LedgerHash const& h) const
+CCLConsensus::Adaptor::proposersFinished(LedgerHash const& h) const
 {
     return app_.getValidations().getNodesAfter(h);
 }
 
 uint256
-CCLConsensus::getPrevLedger(
+CCLConsensus::Adaptor::getPrevLedger(
     uint256 ledgerID,
     CCLCxLedger const& ledger,
-    Mode mode)
+    ConsensusMode mode)
 {
     uint256 parentID;
     // Only set the parent ID if we believe ledger is the right ledger
-    if (mode != Mode::wrongLedger)
+    if (mode != ConsensusMode::wrongLedger)
         parentID = ledger.parentID();
 
     // Get validators that are on our ledger, or "close" to being on
@@ -271,28 +268,27 @@ CCLConsensus::getPrevLedger(
 
     if (netLgr != ledgerID)
     {
-        if (mode != Mode::wrongLedger)
+        if (mode != ConsensusMode::wrongLedger)
             app_.getOPs().consensusViewChange();
 
         if (auto stream = j_.debug())
         {
             for (auto& it : vals)
                 stream << "V: " << it.first << ", " << it.second.count;
-            stream << getJson(true);
         }
     }
 
     return netLgr;
 }
 
-CCLConsensus::Result
-CCLConsensus::onClose(
+auto
+CCLConsensus::Adaptor::onClose(
     CCLCxLedger const& ledger,
     NetClock::time_point const& closeTime,
-    Mode mode)
+    ConsensusMode mode) -> Result
 {
-    const bool wrongLCL = mode == Mode::wrongLedger;
-    const bool proposing = mode == Mode::proposing;
+    const bool wrongLCL = mode == ConsensusMode::wrongLedger;
+    const bool proposing = mode == ConsensusMode::proposing;
 
     notify(protocol::neCLOSING_LEDGER, ledger, !wrongLCL);
 
@@ -352,47 +348,68 @@ CCLConsensus::onClose(
 }
 
 void
-CCLConsensus::onForceAccept(
+CCLConsensus::Adaptor::onForceAccept(
     Result const& result,
     CCLCxLedger const& prevLedger,
     NetClock::duration const& closeResolution,
-    CloseTimes const& rawCloseTimes,
-    Mode const& mode)
+    ConsensusCloseTimes const& rawCloseTimes,
+    ConsensusMode const& mode,
+    Json::Value && consensusJson)
 {
-    doAccept(result, prevLedger, closeResolution, rawCloseTimes, mode);
+    doAccept(
+        result,
+        prevLedger,
+        closeResolution,
+        rawCloseTimes,
+        mode,
+        std::move(consensusJson));
 }
 
 void
-CCLConsensus::onAccept(
+CCLConsensus::Adaptor::onAccept(
     Result const& result,
     CCLCxLedger const& prevLedger,
     NetClock::duration const& closeResolution,
-    CloseTimes const& rawCloseTimes,
-    Mode const& mode)
+    ConsensusCloseTimes const& rawCloseTimes,
+    ConsensusMode const& mode,
+    Json::Value && consensusJson)
 {
     app_.getJobQueue().addJob(
-        jtACCEPT, "acceptLedger", [&, that = this->shared_from_this() ](auto&) {
-            // note that no lock is held inside this thread, which
-            // is fine since once a ledger is accepted, consensus
-            // will not touch any internal state until startRound is called
-            that->doAccept(
-                result, prevLedger, closeResolution, rawCloseTimes, mode);
-            that->app_.getOPs().endConsensus();
+        jtACCEPT,
+        "acceptLedger",
+        [&, cj = std::move(consensusJson) ](auto&) mutable {
+            // Note that no lock is held or acquired during this job.
+            // This is because generic Consensus guarantees that once a ledger
+            // is accepted, the consensus results and capture by reference state
+            // will not change until startRound is called (which happens via
+            // endConsensus).
+            this->doAccept(
+                result,
+                prevLedger,
+                closeResolution,
+                rawCloseTimes,
+                mode,
+                std::move(cj));
+            this->app_.getOPs().endConsensus();
         });
 }
 
 void
-CCLConsensus::doAccept(
+CCLConsensus::Adaptor::doAccept(
     Result const& result,
     CCLCxLedger const& prevLedger,
     NetClock::duration closeResolution,
-    CloseTimes const& rawCloseTimes,
-    Mode const& mode)
+    ConsensusCloseTimes const& rawCloseTimes,
+    ConsensusMode const& mode,
+    Json::Value && consensusJson)
 {
+    prevProposers_ = result.proposers;
+    prevRoundTime_ = result.roundTime.read();
+
     bool closeTimeCorrect;
 
-    const bool proposing = mode == Mode::proposing;
-    const bool haveCorrectLCL = mode != Mode::wrongLedger;
+    const bool proposing = mode == ConsensusMode::proposing;
+    const bool haveCorrectLCL = mode != ConsensusMode::wrongLedger;
     const bool consensusFail = result.state == ConsensusState::MovedOn;
 
     auto consensusCloseTime = result.position.closeTime();
@@ -453,7 +470,7 @@ CCLConsensus::doAccept(
         JLOG(j_.info()) << "CNF buildLCL " << newLCLHash;
 
     // See if we can accept a ledger as fully-validated
-    ledgerMaster_.consensusBuilt(sharedLCL.ledger_, getJson(true));
+    ledgerMaster_.consensusBuilt(sharedLCL.ledger_, std::move(consensusJson));
 
     //-------------------------------------------------------------------------
     {
@@ -544,7 +561,7 @@ CCLConsensus::doAccept(
     // we entered the round with the network,
     // see how close our close time is to other node's
     //  close time reports, and update our clock.
-    if ((mode == Mode::proposing || mode == Mode::observing) && !consensusFail)
+    if ((mode == ConsensusMode::proposing || mode == ConsensusMode::observing) && !consensusFail)
     {
         auto closeTime = rawCloseTimes.self;
 
@@ -583,7 +600,7 @@ CCLConsensus::doAccept(
 }
 
 void
-CCLConsensus::notify(
+CCLConsensus::Adaptor::notify(
     protocol::NodeEvent ne,
     CCLCxLedger const& ledger,
     bool haveCorrectLCL)
@@ -719,7 +736,7 @@ applyTransactions(
 }
 
 CCLCxLedger
-CCLConsensus::buildLCL(
+CCLConsensus::Adaptor::buildLCL(
     CCLCxLedger const& previousLedger,
     CCLTxSet const& set,
     NetClock::time_point closeTime,
@@ -815,7 +832,7 @@ CCLConsensus::buildLCL(
 }
 
 void
-CCLConsensus::validate(CCLCxLedger const& ledger, bool proposing)
+CCLConsensus::Adaptor::validate(CCLCxLedger const& ledger, bool proposing)
 {
     auto validationTime = app_.timeKeeper().closeTime();
     if (validationTime <= lastValidationTime_)
@@ -860,24 +877,13 @@ CCLConsensus::validate(CCLCxLedger const& ledger, bool proposing)
 Json::Value
 CCLConsensus::getJson(bool full) const
 {
-    auto ret = Base::getJson(full);
-    ret["validating"] = validating_;
+    Json::Value ret;
+    {
+      ScopedLockType _{mutex_};
+      ret = consensus_.getJson(full);
+    }
+    ret["validating"] = adaptor_.validating();
     return ret;
-}
-
-PublicKey const&
-CCLConsensus::getValidationPublicKey() const
-{
-    return valPublic_;
-}
-
-void
-CCLConsensus::setValidationKeys(
-    SecretKey const& valSecret,
-    PublicKey const& valPublic)
-{
-    valSecret_ = valSecret;
-    valPublic_ = valPublic;
 }
 
 void
@@ -885,12 +891,12 @@ CCLConsensus::timerEntry(NetClock::time_point const& now)
 {
     try
     {
-        Base::timerEntry(now);
+        ScopedLockType _{mutex_};
+        consensus_.timerEntry(now);
     }
     catch (SHAMapMissingNode const& mn)
     {
         // This should never happen
-        leaveConsensus();
         JLOG(j_.error()) << "Missing node during consensus process " << mn;
         Rethrow();
     }
@@ -901,30 +907,44 @@ CCLConsensus::gotTxSet(NetClock::time_point const& now, CCLTxSet const& txSet)
 {
     try
     {
-        Base::gotTxSet(now, txSet);
+        ScopedLockType _{mutex_};
+        consensus_.gotTxSet(now, txSet);
     }
     catch (SHAMapMissingNode const& mn)
     {
         // This should never happen
-        leaveConsensus();
         JLOG(j_.error()) << "Missing node during consensus process " << mn;
         Rethrow();
     }
 }
 
+
+//! @see Consensus::simulate
+
 void
-CCLConsensus::startRound(
+CCLConsensus::simulate(
     NetClock::time_point const& now,
-    CCLCxLedger::ID const& prevLgrId,
-    CCLCxLedger const& prevLgr)
+    boost::optional<std::chrono::milliseconds> consensusDelay)
+{
+    ScopedLockType _{mutex_};
+    consensus_.simulate(now, consensusDelay);
+}
+
+bool
+CCLConsensus::peerProposal(
+    NetClock::time_point const& now,
+    CCLCxPeerPos const& newProposal)
+{
+    ScopedLockType _{mutex_};
+    return consensus_.peerProposal(now, newProposal);
+}
+
+bool
+CCLConsensus::Adaptor::preStartRound(CCLCxLedger const & prevLgr)
 {
     // We have a key, and we have some idea what the ledger is
     validating_ =
         !app_.getOPs().isNeedNetworkLedger() && (valPublic_.size() != 0);
-
-    // propose only if we're in sync with the network (and validating)
-    bool proposing =
-        validating_ && (app_.getOPs().getOperatingMode() == NetworkOPs::omFULL);
 
     if (validating_)
     {
@@ -939,6 +959,19 @@ CCLConsensus::startRound(
     // Notify inbOund ledgers that we are starting a new round
     inboundTransactions_.newRound(prevLgr.seq());
 
-    Base::startRound(now, prevLgrId, prevLgr, proposing);
+    // propose only if we're in sync with the network (and validating)
+    return validating_ &&
+        (app_.getOPs().getOperatingMode() == NetworkOPs::omFULL);
+}
+
+void
+CCLConsensus::startRound(
+    NetClock::time_point const& now,
+    CCLCxLedger::ID const& prevLgrId,
+    CCLCxLedger const& prevLgr)
+{
+    ScopedLockType _{mutex_};
+    consensus_.startRound(
+        now, prevLgrId, prevLgr, adaptor_.preStartRound(prevLgr));
 }
 }

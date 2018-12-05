@@ -47,6 +47,7 @@ namespace casinocoin {
 class Peer;
 class LedgerMaster;
 class Transaction;
+class ValidatorKeys;
 
 // This is the primary interface into the "client" portion of the program.
 // Code that wants to do normal operations on the network such as
@@ -156,7 +157,7 @@ public:
     //--------------------------------------------------------------------------
 
     // ledger proposal/close functions
-    virtual void processTrustedProposal (CCLCxPeerPos::pointer peerPos,
+    virtual void processTrustedProposal (CCLCxPeerPos peerPos,
         std::shared_ptr<protocol::TMProposeSet> set,
             NodeID const& node) = 0;
 
@@ -180,9 +181,6 @@ public:
     virtual bool isAmendmentBlocked () = 0;
     virtual void setAmendmentBlocked () = 0;
     virtual void consensusViewChange () = 0;
-    virtual PublicKey const& getValidationPublicKey () const = 0;
-    virtual void setValidationKeys (
-        SecretKey const& valSecret, PublicKey const& valPublic) = 0;
 
     virtual Json::Value getConsensusInfo () = 0;
     virtual Json::Value getServerInfo (bool human, bool admin) = 0;
@@ -248,7 +246,7 @@ std::unique_ptr<NetworkOPs>
 make_NetworkOPs (Application& app, NetworkOPs::clock_type& clock, bool standalone,
     std::size_t network_quorum, bool start_valid,
     JobQueue& job_queue, LedgerMaster& ledgerMaster,
-    Stoppable& parent, beast::Journal journal);
+    Stoppable& parent, ValidatorKeys const & validatorKeys, beast::Journal journal);
 
 } // casinocoin
 

@@ -1100,7 +1100,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
                 flags |= SF_TRUSTED;
             }
 
-            if (! app_.getOPs().getValidationPublicKey().size())
+            if (app_.getValidationPublicKey().empty())
             {
                 // For now, be paranoid and have each validator
                 // check each transaction, regardless of source
@@ -1262,8 +1262,8 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMProposeSet> const& m)
         return;
     }
 
-    if (app_.getOPs().getValidationPublicKey().size() &&
-        publicKey == app_.getOPs().getValidationPublicKey())
+    if (!app_.getValidationPublicKey().empty() &&
+        publicKey == app_.getValidationPublicKey())
     {
         JLOG(p_journal_.trace()) << "Proposal: self";
         return;
@@ -1289,7 +1289,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMProposeSet> const& m)
     JLOG(p_journal_.trace()) <<
         "Proposal: " << (isTrusted ? "trusted" : "UNTRUSTED");
 
-    auto proposal = std::make_shared<CCLCxPeerPos> (
+    auto proposal = CCLCxPeerPos(
         publicKey, signature, suppression,
         CCLCxPeerPos::Proposal{prevLedger, set.proposeseq (), proposeHash, closeTime,
             app_.timeKeeper().closeTime(),calcNodeID(publicKey)});
@@ -1895,7 +1895,7 @@ PeerImp::checkTransaction (int flags,
 void
 PeerImp::checkPropose (Job& job,
     std::shared_ptr <protocol::TMProposeSet> const& packet,
-        CCLCxPeerPos::pointer peerPos)
+        CCLCxPeerPos peerPos)
 {
     bool isTrusted = (job.getType () == jtPROPOSAL_t);
 
@@ -1905,7 +1905,7 @@ PeerImp::checkPropose (Job& job,
     assert (packet);
     protocol::TMProposeSet& set = *packet;
 
-    if (! cluster() && !peerPos->checkSign ())
+    if (! cluster() && !peerPos.checkSign ())
     {
         JLOG(p_journal_.warn()) <<
             "Proposal fails sig check";
@@ -1920,12 +1920,12 @@ PeerImp::checkPropose (Job& job,
     }
     else
     {
-        if (app_.getOPs().getConsensusLCL() == peerPos->proposal().prevLedger())
+        if (app_.getOPs().getConsensusLCL() == peerPos.proposal().prevLedger())
         {
             // relay untrusted proposal
             JLOG(p_journal_.trace()) <<
                 "relaying UNTRUSTED proposal";
-            overlay_.relay(set, peerPos->getSuppressionID());
+            overlay_.relay(set, peerPos.suppressionID());
         }
         else
         {

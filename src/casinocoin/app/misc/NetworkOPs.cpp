@@ -42,6 +42,7 @@
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/Transaction.h>
 #include <casinocoin/app/misc/TxQ.h>
+#include <casinocoin/app/misc/ValidatorKeys.h>
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/app/misc/impl/AccountTxPaging.h>
 #include <casinocoin/app/tx/apply.h>
@@ -194,7 +195,7 @@ public:
         Application& app, clock_type& clock, bool standalone,
             std::size_t network_quorum, bool start_valid, JobQueue& job_queue,
                 LedgerMaster& ledgerMaster, Stoppable& parent,
-                    beast::Journal journal)
+                ValidatorKeys const & validatorKeys, beast::Journal journal)
         : NetworkOPs (parent)
         , app_ (app)
         , m_clock (clock)
@@ -205,14 +206,15 @@ public:
         , m_amendmentBlocked (false)
         , m_heartbeatTimer (this)
         , m_clusterTimer (this)
-        , mConsensus (std::make_shared<CCLConsensus>(app,
+        , mConsensus (app,
             make_FeeVote(setup_FeeVote (app_.config().section ("voting")),
                                         app_.logs().journal("FeeVote")),
             ledgerMaster,
             *m_localTX,
             app.getInboundTransactions(),
             stopwatch(),
-            app_.logs().journal("LedgerConsensus")))
+            validatorKeys,
+            app_.logs().journal("LedgerConsensus"))
         , m_ledgerMaster (ledgerMaster)
         , m_job_queue (job_queue)
         , m_standalone (standalone)
@@ -303,7 +305,7 @@ public:
 
     // Ledger proposal/close functions.
     void processTrustedProposal (
-        CCLCxPeerPos::pointer proposal,
+        CCLCxPeerPos proposal,
         std::shared_ptr<protocol::TMProposeSet> set,
         NodeID const &node) override;
 
@@ -330,7 +332,6 @@ private:
         std::shared_ptr<Ledger const> const& newLCL);
     bool checkLastClosedLedger (
         const Overlay::PeerSequence&, uint256& networkClosed);
-    void tryStartConsensus ();
 
 public:
     bool beginConsensus (uint256 const& networkClosed) override;
@@ -367,15 +368,7 @@ public:
     }
     void setAmendmentBlocked () override;
     void consensusViewChange () override;
-    PublicKey const& getValidationPublicKey () const override
-    {
-        return mConsensus->getValidationPublicKey ();
-    }
-    void setValidationKeys (
-        SecretKey const& valSecret, PublicKey const& valPublic) override
-    {
-        mConsensus->setValidationKeys (valSecret, valPublic);
-    }
+
     Json::Value getConsensusInfo () override;
     Json::Value getServerInfo (bool human, bool admin) override;
     void clearLedgerFetch () override;
@@ -556,7 +549,7 @@ private:
     DeadlineTimer m_clusterTimer;
     JobCounter jobCounter_;
 
-    std::shared_ptr<CCLConsensus> mConsensus;
+    CCLConsensus mConsensus;
 
     LedgerMaster& m_ledgerMaster;
     std::shared_ptr<InboundLedger> mAcquiringLedger;
@@ -658,7 +651,7 @@ void NetworkOPsImp::setStateTimer ()
 
 void NetworkOPsImp::setHeartbeatTimer ()
 {
-    m_heartbeatTimer.setExpiration (mConsensus->parms().ledgerGRANULARITY);
+    m_heartbeatTimer.setExpiration (mConsensus.parms().ledgerGRANULARITY);
 }
 
 void NetworkOPsImp::setClusterTimer ()
@@ -704,7 +697,7 @@ void NetworkOPsImp::processHeartbeatTimer ()
                     << "Node count (" << numPeers << ") "
                     << "has fallen below quorum (" << m_network_quorum << ").";
             }
-            // We do not call mConsensus->timerEntry until there
+            // We do not call mConsensus.timerEntry until there
             // are enough peers providing meaningful inputs to consensus
             setHeartbeatTimer ();
 
@@ -727,7 +720,7 @@ void NetworkOPsImp::processHeartbeatTimer ()
 
     }
 
-    mConsensus->timerEntry (app_.timeKeeper().closeTime());
+    mConsensus.timerEntry (app_.timeKeeper().closeTime());
 
     setHeartbeatTimer ();
 }
@@ -782,13 +775,17 @@ void NetworkOPsImp::processClusterTimer ()
 
 std::string NetworkOPsImp::strOperatingMode () const
 {
-    if (mMode == omFULL && mConsensus->haveCorrectLCL())
+    if (mMode == omFULL)
     {
-        if (mConsensus->proposing ())
-            return "proposing";
+        auto const mode = mConsensus.mode();
+        if (mode != ConsensusMode::wrongLedger)
+        {
+            if (mode == ConsensusMode::proposing)
+                return "proposing";
 
-        if (mConsensus->validating ())
-            return "validating";
+            if (mConsensus.validating())
+                return "validating";
+        }
     }
 
     return states_[mMode];
@@ -1259,46 +1256,6 @@ public:
     }
 };
 
-void NetworkOPsImp::tryStartConsensus ()
-{
-    uint256 networkClosed;
-    bool ledgerChange = checkLastClosedLedger (
-        app_.overlay ().getActivePeers (), networkClosed);
-
-    if (networkClosed.isZero ())
-        return;
-
-    // WRITEME: Unless we are in omFULL and in the process of doing a consensus,
-    // we must count how many nodes share our LCL, how many nodes disagree with
-    // our LCL, and how many validations our LCL has. We also want to check
-    // timing to make sure there shouldn't be a newer LCL. We need this
-    // information to do the next three tests.
-
-    if (((mMode == omCONNECTED) || (mMode == omSYNCING)) && !ledgerChange)
-    {
-        // Count number of peers that agree with us and UNL nodes whose
-        // validations we have for LCL.  If the ledger is good enough, go to
-        // omTRACKING - TODO
-        if (!mNeedNetworkLedger)
-            setMode (omTRACKING);
-    }
-
-    if (((mMode == omCONNECTED) || (mMode == omTRACKING)) && !ledgerChange)
-    {
-        // check if the ledger is good enough to go to omFULL
-        // Note: Do not go to omFULL if we don't have the previous ledger
-        // check if the ledger is bad enough to go to omCONNECTED -- TODO
-        auto current = m_ledgerMaster.getCurrentLedger();
-        if (app_.timeKeeper().now() <
-            (current->info().parentCloseTime + 2* current->info().closeTimeResolution))
-        {
-            setMode (omFULL);
-        }
-    }
-
-    beginConsensus (networkClosed);
-}
-
 bool NetworkOPsImp::checkLastClosedLedger (
     const Overlay::PeerSequence& peerList, uint256& networkClosed)
 {
@@ -1534,7 +1491,7 @@ bool NetworkOPsImp::beginConsensus (uint256 const& networkClosed)
     app_.validators().onConsensusStart (
         app_.getValidations().getCurrentPublicKeys ());
 
-    mConsensus->startRound (
+    mConsensus.startRound (
         app_.timeKeeper().closeTime(),
         networkClosed,
         prevLedger);
@@ -1545,19 +1502,19 @@ bool NetworkOPsImp::beginConsensus (uint256 const& networkClosed)
 
 uint256 NetworkOPsImp::getConsensusLCL ()
 {
-    return mConsensus->prevLedgerID ();
+    return mConsensus.prevLedgerID ();
 }
 
 void NetworkOPsImp::processTrustedProposal (
-    CCLCxPeerPos::pointer peerPos,
+    CCLCxPeerPos peerPos,
     std::shared_ptr<protocol::TMProposeSet> set,
     NodeID const& node)
 {
-    mConsensus->storeProposal (peerPos, node);
-
-    if (mConsensus->peerProposal (
-        app_.timeKeeper().closeTime(), peerPos->proposal()))
-        app_.overlay().relay(*set, peerPos->getSuppressionID());
+    if (mConsensus.peerProposal(
+            app_.timeKeeper().closeTime(), peerPos))
+    {
+        app_.overlay().relay(*set, peerPos.suppressionID());
+    }
     else
         JLOG(m_journal.info()) << "Not relaying trusted proposal";
 }
@@ -1580,7 +1537,7 @@ NetworkOPsImp::mapComplete (
 
     // We acquired it because consensus asked us to
     if (fromAcquire)
-        mConsensus->gotTxSet (
+        mConsensus.gotTxSet (
             app_.timeKeeper().closeTime(),
             CCLTxSet{map});
 }
@@ -1598,7 +1555,42 @@ void NetworkOPsImp::endConsensus ()
         }
     }
 
-    tryStartConsensus();
+    uint256 networkClosed;
+    bool ledgerChange = checkLastClosedLedger (
+        app_.overlay ().getActivePeers (), networkClosed);
+
+    if (networkClosed.isZero ())
+        return;
+
+    // WRITEME: Unless we are in omFULL and in the process of doing a consensus,
+    // we must count how many nodes share our LCL, how many nodes disagree with
+    // our LCL, and how many validations our LCL has. We also want to check
+    // timing to make sure there shouldn't be a newer LCL. We need this
+    // information to do the next three tests.
+
+    if (((mMode == omCONNECTED) || (mMode == omSYNCING)) && !ledgerChange)
+    {
+        // Count number of peers that agree with us and UNL nodes whose
+        // validations we have for LCL.  If the ledger is good enough, go to
+        // omTRACKING - TODO
+        if (!mNeedNetworkLedger)
+            setMode (omTRACKING);
+    }
+
+    if (((mMode == omCONNECTED) || (mMode == omTRACKING)) && !ledgerChange)
+    {
+        // check if the ledger is good enough to go to omFULL
+        // Note: Do not go to omFULL if we don't have the previous ledger
+        // check if the ledger is bad enough to go to omCONNECTED -- TODO
+        auto current = m_ledgerMaster.getCurrentLedger();
+        if (app_.timeKeeper().now() <
+            (current->info().parentCloseTime + 2* current->info().closeTimeResolution))
+        {
+            setMode (omFULL);
+        }
+    }
+
+    beginConsensus (networkClosed);
 }
 
 void NetworkOPsImp::consensusViewChange ()
@@ -2132,7 +2124,7 @@ bool NetworkOPsImp::recvValidation (
 
 Json::Value NetworkOPsImp::getConsensusInfo ()
 {
-    return mConsensus->getJson (true);
+    return mConsensus.getJson (true);
 }
 
 Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
@@ -2158,7 +2150,7 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
 
     if (admin)
     {
-        if (getValidationPublicKey().size ())
+        if (!app_.getValidationPublicKey().empty())
         {
             info[jss::pubkey_validator] = toBase58 (
                 TokenType::TOKEN_NODE_PUBLIC,
@@ -2188,23 +2180,23 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
     info[jss::peers] = Json::UInt (app_.overlay ().size ());
 
     Json::Value lastClose = Json::objectValue;
-    lastClose[jss::proposers] = Json::UInt(mConsensus->prevProposers());
+    lastClose[jss::proposers] = Json::UInt(mConsensus.prevProposers());
 
     if (human)
     {
         lastClose[jss::converge_time_s] =
             std::chrono::duration<double>{
-                mConsensus->prevRoundTime()}.count();
+                mConsensus.prevRoundTime()}.count();
     }
     else
     {
         lastClose[jss::converge_time] =
-                Json::Int (mConsensus->prevRoundTime().count());
+                Json::Int (mConsensus.prevRoundTime().count());
     }
 
     info[jss::last_close] = lastClose;
 
-    //  info[jss::consensus] = mConsensus->getJson();
+    //  info[jss::consensus] = mConsensus.getJson();
 
     if (admin)
         info[jss::load] = m_job_queue.getJson ();
@@ -2768,7 +2760,7 @@ std::uint32_t NetworkOPsImp::acceptLedger (
     // FIXME Could we improve on this and remove the need for a specialized
     // API in Consensus?
     beginConsensus (m_ledgerMaster.getClosedLedger()->info().hash);
-    mConsensus->simulate (app_.timeKeeper().closeTime(), consensusDelay);
+    mConsensus.simulate (app_.timeKeeper().closeTime(), consensusDelay);
     return m_ledgerMaster.getCurrentLedger ()->info().seq;
 }
 
@@ -3365,10 +3357,10 @@ std::unique_ptr<NetworkOPs>
 make_NetworkOPs (Application& app, NetworkOPs::clock_type& clock, bool standalone,
     std::size_t network_quorum, bool startvalid,
     JobQueue& job_queue, LedgerMaster& ledgerMaster,
-    Stoppable& parent, beast::Journal journal)
+    Stoppable& parent, ValidatorKeys const & validatorKeys, beast::Journal journal)
 {
     return std::make_unique<NetworkOPsImp> (app, clock, standalone, network_quorum,
-        startvalid, job_queue, ledgerMaster, parent, journal);
+        startvalid, job_queue, ledgerMaster, parent, validatorKeys, journal);
 }
 
 } // casinocoin

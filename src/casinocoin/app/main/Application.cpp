@@ -48,6 +48,7 @@
 #include <casinocoin/app/misc/SHAMapStore.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/app/misc/ValidatorSite.h>
+#include <casinocoin/app/misc/ValidatorKeys.h>
 #include <casinocoin/app/paths/PathRequests.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/ResolverAsio.h>
@@ -311,6 +312,7 @@ public:
     std::unique_ptr <CollectorManager> m_collectorManager;
     CachedSLEs cachedSLEs_;
     std::pair<PublicKey, SecretKey> nodeIdentity_;
+    ValidatorKeys const validatorKeys_;
 
     std::unique_ptr <Resource::Manager> m_resourceManager;
 
@@ -402,6 +404,7 @@ public:
             config_->section (SECTION_INSIGHT), logs_->journal("Collector")))
 
         , cachedSLEs_ (std::chrono::minutes(1), stopwatch())
+        , validatorKeys_(*config_, m_journal)
 
         , m_resourceManager (Resource::make_Manager (
             m_collectorManager->collector(), logs_->journal("Resource")))
@@ -451,7 +454,7 @@ public:
 
         , m_networkOPs (make_NetworkOPs (*this, stopwatch(),
             config_->standalone(), config_->NETWORK_QUORUM, config_->START_VALID,
-            *m_jobQueue, *m_ledgerMaster, *m_jobQueue,
+            *m_jobQueue, *m_ledgerMaster, *m_jobQueue, validatorKeys_,
             logs_->journal("NetworkOPs")))
 
         , cluster_ (std::make_unique<Cluster> (
@@ -574,6 +577,13 @@ public:
     nodeIdentity () override
     {
         return nodeIdentity_;
+    }
+
+    virtual
+    PublicKey const &
+    getValidationPublicKey() const override
+    {
+        return validatorKeys_.publicKey;
     }
 
     NetworkOPs& getOPs () override
@@ -1092,38 +1102,11 @@ bool ApplicationImp::setup()
     }
 
     {
-        PublicKey valPublic;
-        SecretKey valSecret;
-        std::string manifest;
-        if (config().exists (SECTION_VALIDATOR_TOKEN))
-        {
-            if (auto const token = ValidatorToken::make_ValidatorToken (
-                config().section (SECTION_VALIDATOR_TOKEN).lines ()))
-            {
-                valSecret = token->validationSecret;
-                valPublic = derivePublicKey (KeyType::secp256k1, valSecret);
-                manifest = std::move(token->manifest);
-            }
-            else
-            {
-                JLOG(m_journal.fatal()) <<
-                    "Invalid entry in validator token configuration.";
-                return false;
-            }
-        }
-        else if (config().exists (SECTION_VALIDATION_SEED))
-        {
-            auto const seed = parseBase58<Seed>(
-                config().section (SECTION_VALIDATION_SEED).lines ().front());
-            if (!seed)
-                Throw<std::runtime_error> (
-                    "Invalid seed specified in [" SECTION_VALIDATION_SEED "]");
-            valSecret = generateSecretKey (KeyType::secp256k1, *seed);
-            valPublic = derivePublicKey (KeyType::secp256k1, valSecret);
-        }
+        if(validatorKeys_.configInvalid())
+            return false;
 
         if (!validatorManifests_->load (
-            getWalletDB (), "ValidatorManifests", manifest,
+            getWalletDB (), "ValidatorManifests", validatorKeys_.manifest,
             config().section (SECTION_VALIDATOR_KEY_REVOCATION).values ()))
         {
             JLOG(m_journal.fatal()) << "Invalid configured validator manifest.";
@@ -1133,11 +1116,9 @@ bool ApplicationImp::setup()
         publisherManifests_->load (
             getWalletDB (), "PublisherManifests");
 
-        m_networkOPs->setValidationKeys (valSecret, valPublic);
-
         // Setup trusted validators
         if (!validators_->load (
-                valPublic,
+                validatorKeys_.publicKey,
                 config().section (SECTION_VALIDATORS).values (),
                 config().section (SECTION_VALIDATOR_LIST_KEYS).values ()))
         {
