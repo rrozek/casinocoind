@@ -529,8 +529,10 @@ BookStep<TIn, TOut, TDerived>::forEachOffer (
                 continue;
 
         // Make sure offer owner has authorization to own IOUs from issuer.
-        // An account can always own their own IOUs.
-        if (flowCross && (offer.owner() != offer.issueIn().account))
+        // An account can always own CSC or their own IOUs.
+        if (flowCross &&
+            (!isCSC (offer.issueIn().currency)) &&
+            (offer.owner() != offer.issueIn().account))
         {
             auto const& issuerID = offer.issueIn().account;
             auto const issuer = afView.read (keylet::account (issuerID));
@@ -539,10 +541,10 @@ BookStep<TIn, TOut, TDerived>::forEachOffer (
                 // Issuer requires authorization.  See if offer owner has that.
                 auto const& ownerID = offer.owner();
                 auto const authFlag =
-                    ownerID > issuerID ? lsfHighAuth : lsfLowAuth;
+                    issuerID > ownerID ? lsfHighAuth : lsfLowAuth;
 
                 auto const line = afView.read (keylet::line (
-                    ownerID, issuerID, offer.issueOut().currency));
+                    ownerID, issuerID, offer.issueIn().currency));
 
                 if (!line || (((*line)[sfFlags] & authFlag) == 0))
                 {
