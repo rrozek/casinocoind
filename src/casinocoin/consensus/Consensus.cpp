@@ -129,7 +129,7 @@ checkConsensusReached(
 
     std::size_t currentPercentage = (agreeing * 100) / total;
 
-    return currentPercentage > minConsensusPct;
+    return currentPercentage >= minConsensusPct;
 }
 
 ConsensusState
