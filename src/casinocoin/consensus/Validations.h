@@ -472,8 +472,14 @@ public:
             stalePolicy_.now(),
             // The number of validations does not correspond to the number of
             // distinct ledgerIDs so we do not call reserve on ret.
-            [&](std::size_t) {},
-            [&](NodeKey const&, Validation const& v) {
+            [](std::size_t) {},
+            [this,
+             &cutoffBefore,
+             &currentLedger,
+             &valCurrentLedger,
+             &valPriorLedger,
+             &priorLedger,
+             &ret](NodeKey const&, Validation const& v) {
 
                 if (!v.trusted())
                     return;
@@ -492,7 +498,7 @@ public:
                          (valPriorLedger && (v.ledgerID() == priorLedger))))
                     {
                         countPreferred = true;
-                        JLOG(j_.trace()) << "Counting for " << currentLedger
+                        JLOG(this->j_.trace()) << "Counting for " << currentLedger
                                          << " not " << v.ledgerID();
                     }
 

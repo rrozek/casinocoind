@@ -28,6 +28,9 @@
 
 #include <casinocoin/core/LoadMonitor.h>
 
+#include <functional>
+
+
 namespace casinocoin {
 
 // Note that this queue should only be used for CPU-bound jobs
