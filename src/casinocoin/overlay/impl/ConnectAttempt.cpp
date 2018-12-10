@@ -24,13 +24,11 @@
 //==============================================================================
 
 #include <BeastConfig.h>
-#include <casinocoin/overlay/Cluster.h>
 #include <casinocoin/overlay/impl/ConnectAttempt.h>
 #include <casinocoin/overlay/impl/PeerImp.h>
-#include <casinocoin/overlay/impl/Tuning.h>
+#include <casinocoin/overlay/Cluster.h>
 #include <casinocoin/json/json_reader.h>
-#include <beast/http/read.hpp>
-#include <beast/http/write.hpp>
+
 
 namespace casinocoin {
 

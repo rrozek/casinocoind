@@ -27,25 +27,16 @@
 #define CASINOCOIN_OVERLAY_PEERIMP_H_INCLUDED
 
 #include <casinocoin/app/consensus/CCLCxPeerPos.h>
-#include <casinocoin/basics/Log.h> // deprecated
-#include <casinocoin/nodestore/Database.h>
-#include <casinocoin/overlay/predicates.h>
+#include <casinocoin/basics/Log.h>
+#include <casinocoin/beast/core/ByteOrder.h>
+#include <casinocoin/beast/utility/WrappedSink.h>
 #include <casinocoin/overlay/impl/ProtocolMessage.h>
 #include <casinocoin/overlay/impl/OverlayImpl.h>
-#include <casinocoin/resource/Fees.h>
-#include <casinocoin/core/Config.h>
-#include <casinocoin/core/Job.h>
-#include <casinocoin/core/LoadEvent.h>
 #include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/STValidation.h>
-#include <casinocoin/beast/core/ByteOrder.h>
-#include <casinocoin/beast/net/IPAddressConversion.h>
-#include <beast/core/multi_buffer.hpp>
-#include <casinocoin/beast/asio/ssl_bundle.h>
-#include <beast/http/message.hpp>
-#include <beast/http/parser.hpp>
-#include <casinocoin/beast/utility/WrappedSink.h>
+#include <casinocoin/resource/Fees.h>
+
 #include <cstdint>
 #include <deque>
 #include <queue>

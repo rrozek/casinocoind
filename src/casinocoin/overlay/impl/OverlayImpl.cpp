@@ -28,26 +28,16 @@
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/ValidatorList.h>
-#include <casinocoin/core/DatabaseCon.h>
-#include <casinocoin/basics/contract.h>
-#include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/make_SSLContext.h>
-#include <casinocoin/beast/rfc2616.h>
-#include <casinocoin/protocol/JsonFields.h>
-#include <casinocoin/rpc/json_body.h>
-#include <casinocoin/server/SimpleWriter.h>
+#include <casinocoin/beast/core/LexicalCast.h>
+#include <casinocoin/core/DatabaseCon.h>
 #include <casinocoin/overlay/Cluster.h>
+#include <casinocoin/overlay/predicates.h>
 #include <casinocoin/overlay/impl/ConnectAttempt.h>
-#include <casinocoin/overlay/impl/OverlayImpl.h>
 #include <casinocoin/overlay/impl/PeerImp.h>
 #include <casinocoin/peerfinder/make_Manager.h>
-#include <casinocoin/protocol/STExchange.h>
-#include <casinocoin/beast/core/ByteOrder.h>
-#include <beast/core/detail/base64.hpp>
-#include <casinocoin/beast/core/LexicalCast.h>
-#include <beast/http.hpp>
-#include <beast/core/string.hpp>
-#include <casinocoin/beast/utility/WrappedSink.h>
+#include <casinocoin/rpc/json_body.h>
+#include <casinocoin/server/SimpleWriter.h>
 
 #include <boost/utility/in_place_factory.hpp>
 

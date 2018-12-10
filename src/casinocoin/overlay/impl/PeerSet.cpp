@@ -24,8 +24,8 @@
 //==============================================================================
 
 #include <BeastConfig.h>
-#include <casinocoin/app/main/Application.h>
 #include <casinocoin/overlay/PeerSet.h>
+#include <casinocoin/app/main/Application.h>
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/overlay/Overlay.h>
 

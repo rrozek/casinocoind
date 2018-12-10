@@ -976,7 +976,7 @@ def get_classic_sources(toolchain):
     append_sources(result, *list_sources('src/test/server', '.cpp'))
     append_sources(result, *list_sources('src/test/shamap', '.cpp'))
     append_sources(result, *list_sources('src/test/jtx', '.cpp'))
-    append_sources(result, *list_sources('src/test/csf', '.cpp'))    
+    append_sources(result, *list_sources('src/test/csf', '.cpp'))
 
 
     if use_shp(toolchain):
@@ -1008,8 +1008,11 @@ def get_unity_sources(toolchain):
         'src/casinocoin/beast/unity/beast_utility_unity.cpp',
         'src/casinocoin/unity/app_consensus.cpp',
         'src/casinocoin/unity/app_ledger.cpp',
-        'src/casinocoin/unity/app_main.cpp',
+        'src/casinocoin/unity/app_ledger_impl.cpp',
+        'src/casinocoin/unity/app_main1.cpp',
+        'src/casinocoin/unity/app_main2.cpp',
         'src/casinocoin/unity/app_misc.cpp',
+        'src/casinocoin/unity/app_misc_impl.cpp',
         'src/casinocoin/unity/app_paths.cpp',
         'src/casinocoin/unity/app_tx.cpp',
         'src/casinocoin/unity/conditions.cpp',
@@ -1019,16 +1022,20 @@ def get_unity_sources(toolchain):
         'src/casinocoin/unity/crypto.cpp',
         'src/casinocoin/unity/ledger.cpp',
         'src/casinocoin/unity/net.cpp',
-        'src/casinocoin/unity/overlay.cpp',
+        'src/casinocoin/unity/overlay1.cpp',
+        'src/casinocoin/unity/overlay2.cpp',
         'src/casinocoin/unity/peerfinder.cpp',
         'src/casinocoin/unity/json.cpp',
         'src/casinocoin/unity/protocol.cpp',
-        'src/casinocoin/unity/rpcx.cpp',
+        'src/casinocoin/unity/rpcx1.cpp',
+        'src/casinocoin/unity/rpcx2.cpp',
         'src/casinocoin/unity/shamap.cpp',
         'src/casinocoin/unity/server.cpp',
-        'src/test/unity/app_test_unity.cpp',
+        'src/test/unity/app_test_unity1.cpp',
+        'src/test/unity/app_test_unity2.cpp',
         'src/test/unity/basics_test_unity.cpp',
-        'src/test/unity/beast_test_unity.cpp',
+        'src/test/unity/beast_test_unity1.cpp',
+        'src/test/unity/beast_test_unity2.cpp',
     	'src/test/unity/consensus_test_unity.cpp',
         'src/test/unity/core_test_unity.cpp',
         'src/test/unity/conditions_test_unity.cpp',
@@ -1040,8 +1047,10 @@ def get_unity_sources(toolchain):
         'src/test/unity/resource_test_unity.cpp',
         'src/test/unity/rpc_test_unity.cpp',
         'src/test/unity/server_test_unity.cpp',
+        'src/test/unity/server_status_test_unity.cpp',
         'src/test/unity/shamap_test_unity.cpp',
-        'src/test/unity/jtx_unity.cpp',
+        'src/test/unity/jtx_unity1.cpp',
+        'src/test/unity/jtx_unity2.cpp',
         'src/test/unity/csf_unity.cpp'
     )
 

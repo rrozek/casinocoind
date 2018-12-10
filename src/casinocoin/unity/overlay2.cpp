@@ -25,12 +25,11 @@
 
 #include <BeastConfig.h>
 
-#include <casinocoin/app/ledger/AcceptedLedger.cpp>
-#include <casinocoin/app/ledger/AcceptedLedgerTx.cpp>
-#include <casinocoin/app/ledger/AccountStateSF.cpp>
-#include <casinocoin/app/ledger/BookListeners.cpp>
-#include <casinocoin/app/ledger/ConsensusTransSetSF.cpp>
-#include <casinocoin/app/ledger/Ledger.cpp>
-#include <casinocoin/app/ledger/LedgerHistory.cpp>
-#include <casinocoin/app/ledger/OrderBookDB.cpp>
-#include <casinocoin/app/ledger/TransactionStateSF.cpp>
+#include <casinocoin/overlay/impl/PeerImp.cpp>
+#include <casinocoin/overlay/impl/PeerSet.cpp>
+#include <casinocoin/overlay/impl/TMHello.cpp>
+#include <casinocoin/overlay/impl/TrafficCount.cpp>
+
+#if DOXYGEN
+#include <casinocoin/overlay/README.md>
+#endif

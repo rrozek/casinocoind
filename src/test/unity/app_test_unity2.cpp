@@ -1,3 +1,4 @@
+
 //------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
@@ -17,20 +18,20 @@
 */
 //==============================================================================
 
-//==============================================================================
-/*
-    2017-06-30  ajochems        Refactored for casinocoin
-*/
-//==============================================================================
-
-#include <BeastConfig.h>
-
-#include <casinocoin/app/main/BasicApp.cpp>
-#include <casinocoin/app/main/Amendments.cpp>
-#include <casinocoin/app/main/Application.cpp>
-#include <casinocoin/app/main/CollectorManager.cpp>
-#include <casinocoin/app/main/Main.cpp>
-#include <casinocoin/app/main/NodeIdentity.cpp>
-#include <casinocoin/app/main/NodeStoreScheduler.cpp>
-#include <casinocoin/app/main/DBInit.cpp>
-#include <casinocoin/app/main/LoadManager.cpp>
+#include <test/app/Path_test.cpp>
+#include <test/app/PayChan_test.cpp>
+#include <test/app/PayStrand_test.cpp>
+#include <test/app/PseudoTx_test.cpp>
+#include <test/app/Regression_test.cpp>
+#include <test/app/SetAuth_test.cpp>
+#include <test/app/SetRegularKey_test.cpp>
+#include <test/app/SetTrust_test.cpp>
+#include <test/app/SHAMapStore_test.cpp>
+#include <test/app/Taker_test.cpp>
+#include <test/app/Ticket_test.cpp>
+#include <test/app/Transaction_ordering_test.cpp>
+#include <test/app/TrustAndBalance_test.cpp>
+#include <test/app/TxQ_test.cpp>
+#include <test/app/ValidatorKeys_test.cpp>
+#include <test/app/ValidatorList_test.cpp>
+#include <test/app/ValidatorSite_test.cpp>

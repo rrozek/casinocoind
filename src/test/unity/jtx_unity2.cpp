@@ -17,20 +17,21 @@
 */
 //==============================================================================
 
-//==============================================================================
-/*
-    2017-06-30  ajochems        Refactored for casinocoin
-*/
-//==============================================================================
-
 #include <BeastConfig.h>
 
-#include <casinocoin/app/ledger/AcceptedLedger.cpp>
-#include <casinocoin/app/ledger/AcceptedLedgerTx.cpp>
-#include <casinocoin/app/ledger/AccountStateSF.cpp>
-#include <casinocoin/app/ledger/BookListeners.cpp>
-#include <casinocoin/app/ledger/ConsensusTransSetSF.cpp>
-#include <casinocoin/app/ledger/Ledger.cpp>
-#include <casinocoin/app/ledger/LedgerHistory.cpp>
-#include <casinocoin/app/ledger/OrderBookDB.cpp>
-#include <casinocoin/app/ledger/TransactionStateSF.cpp>
+#include <test/jtx/impl/offer.cpp>
+#include <test/jtx/impl/owners.cpp>
+#include <test/jtx/impl/paths.cpp>
+#include <test/jtx/impl/pay.cpp>
+#include <test/jtx/impl/quality2.cpp>
+#include <test/jtx/impl/rate.cpp>
+#include <test/jtx/impl/regkey.cpp>
+#include <test/jtx/impl/sendmax.cpp>
+#include <test/jtx/impl/seq.cpp>
+#include <test/jtx/impl/sig.cpp>
+#include <test/jtx/impl/tag.cpp>
+#include <test/jtx/impl/ticket.cpp>
+#include <test/jtx/impl/trust.cpp>
+#include <test/jtx/impl/txflags.cpp>
+#include <test/jtx/impl/utility.cpp>
+#include <test/jtx/impl/WSClient.cpp>

@@ -24,15 +24,12 @@
 //==============================================================================
 
 #include <BeastConfig.h>
+#include <casinocoin/overlay/impl/TMHello.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/main/Application.h>
-#include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/beast/core/LexicalCast.h>
-#include <casinocoin/core/TimeKeeper.h>
 #include <casinocoin/protocol/digest.h>
-#include <casinocoin/protocol/BuildInfo.h>
-#include <casinocoin/overlay/impl/TMHello.h>
 #include <beast/core/detail/base64.hpp>
 #include <boost/regex.hpp>
 #include <algorithm>

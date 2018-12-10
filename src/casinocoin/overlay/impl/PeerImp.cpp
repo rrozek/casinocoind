@@ -24,41 +24,26 @@
 //==============================================================================
 
 #include <BeastConfig.h>
-#include <casinocoin/overlay/impl/TMHello.h>
 #include <casinocoin/overlay/impl/PeerImp.h>
 #include <casinocoin/overlay/impl/Tuning.h>
+#include <casinocoin/app/consensus/CCLValidations.h>
 #include <casinocoin/app/ledger/InboundLedgers.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
-#include <casinocoin/consensus/LedgerTiming.h>
 #include <casinocoin/app/ledger/InboundTransactions.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/Transaction.h>
-#include <casinocoin/app/consensus/CCLValidations.h>
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/app/tx/apply.h>
-#include <casinocoin/protocol/digest.h>
 #include <casinocoin/basics/random.h>
-#include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/basics/UptimeTimer.h>
-#include <casinocoin/core/JobQueue.h>
-#include <casinocoin/core/TimeKeeper.h>
-#include <casinocoin/json/json_reader.h>
-#include <casinocoin/resource/Fees.h>
-#include <casinocoin/rpc/ServerHandler.h>
-#include <casinocoin/overlay/Cluster.h>
-#include <casinocoin/overlay/ClusterNode.h>
-#include <casinocoin/protocol/BuildInfo.h>
-#include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/beast/core/SemanticVersion.h>
-#include <casinocoin/beast/utility/weak_fn.h>
-#include <beast/core/ostream.hpp>
-#include <beast/http/write.hpp>
+#include <casinocoin/overlay/Cluster.h>
+#include <casinocoin/protocol/digest.h>
+
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/asio/io_service.hpp>
 #include <algorithm>
-#include <functional>
 #include <memory>
 #include <sstream>
 

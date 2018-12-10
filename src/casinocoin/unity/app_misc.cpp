@@ -30,13 +30,3 @@
 #include <casinocoin/app/misc/HashRouter.cpp>
 #include <casinocoin/app/misc/NetworkOPs.cpp>
 #include <casinocoin/app/misc/SHAMapStoreImp.cpp>
-
-#include <casinocoin/app/misc/impl/AccountTxPaging.cpp>
-#include <casinocoin/app/misc/impl/AmendmentTable.cpp>
-#include <casinocoin/app/misc/impl/LoadFeeTrack.cpp>
-#include <casinocoin/app/misc/impl/Manifest.cpp>
-#include <casinocoin/app/misc/impl/Transaction.cpp>
-#include <casinocoin/app/misc/impl/TxQ.cpp>
-#include <casinocoin/app/misc/impl/ValidatorList.cpp>
-#include <casinocoin/app/misc/impl/ValidatorSite.cpp>
-#include <casinocoin/app/misc/impl/ValidatorKeys.cpp>
