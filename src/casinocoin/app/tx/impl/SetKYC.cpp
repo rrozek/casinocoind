@@ -38,10 +38,6 @@ namespace casinocoin {
 TER
 SetKYC::preflight (PreflightContext const& ctx)
 {
-    auto const ret = preflight1 (ctx);
-    if (!isTesSuccess (ret))
-        return ret;
-
     auto& tx = ctx.tx;
     auto& j = ctx.j;
 
@@ -51,6 +47,10 @@ SetKYC::preflight (PreflightContext const& ctx)
         JLOG(j.info()) << "Feature KYC disabled.";
         return temDISABLED;
     }
+
+    auto const ret = preflight1 (ctx);
+    if (!isTesSuccess (ret))
+        return ret;
 
     auto const uDstAccountID = tx.getAccountID (sfDestination);
     if (!uDstAccountID)

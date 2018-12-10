@@ -300,7 +300,7 @@ uint256 STObject::getHash (std::uint32_t prefix) const
 {
     Serializer s;
     s.add32 (prefix);
-    add (s, true, false);
+    add (s, true);
 
     return s.getSHA512Half ();
 }
@@ -722,14 +722,14 @@ bool STObject::operator== (const STObject& obj) const
     return true;
 }
 
-void STObject::add (Serializer& s, bool withSigningFields, bool withNotHashedField) const
+void STObject::add (Serializer& s, bool withSigningFields) const
 {
     std::map<int, STBase const*> fields;
     for (auto const& e : v_)
     {
         // pick out the fields and sort them
         if ((e->getSType() != STI_NOTPRESENT) &&
-            e->getFName().shouldInclude (withSigningFields, withNotHashedField))
+            e->getFName().shouldInclude (withSigningFields))
         {
             fields.insert (std::make_pair (
                 e->getFName().fieldCode, &e.get()));
