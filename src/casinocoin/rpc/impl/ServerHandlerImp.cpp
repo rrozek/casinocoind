@@ -594,7 +594,7 @@ ServerHandlerImp::processRequest (Port const& port,
         return;
     }
 
-    if (! method)
+    if (method.isNull())
     {
         usage.charge(Resource::feeInvalidRPC);
         HTTPReply (400, "Null method", output, rpcJ);
@@ -841,6 +841,7 @@ to_Port(ParsedPort const& parsed, std::ostream& log)
     p.ssl_ciphers = parsed.ssl_ciphers;
     p.pmd_options = parsed.pmd_options;
     p.ws_queue_limit = parsed.ws_queue_limit;
+    p.limit = parsed.limit;
 
     return p;
 }
