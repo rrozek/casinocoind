@@ -99,11 +99,9 @@ public:
         if (!mSending)
         {
             // Start a sending thread.
-            mSending    = true;
-
             JLOG (j_.info()) << "RPCCall::fromNetwork start";
 
-            m_jobQueue.addJob (
+            mSending = m_jobQueue.addJob (
                 jtCLIENT, "RPCSub::sendThread", [this] (Job&) {
                     sendThread();
                 });

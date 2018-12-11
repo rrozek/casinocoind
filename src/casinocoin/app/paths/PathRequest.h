@@ -76,7 +76,7 @@ public:
         beast::Journal journal);
 
     // casinocoin_path_find semantics
-    // Completion function is called
+    // Completion function is called after path update is complete
     PathRequest (
         Application& app,
         std::function <void (void)> const& completion,
@@ -89,6 +89,8 @@ public:
 
     bool isNew ();
     bool needsUpdate (bool newOnly, LedgerIndex index);
+
+    // Called when the PathRequest update is complete.
     void updateComplete ();
 
     std::pair<bool, Json::Value> doCreate (

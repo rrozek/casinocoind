@@ -26,14 +26,14 @@
 #ifndef CASINOCOIN_APP_MISC_NETWORKOPS_H_INCLUDED
 #define CASINOCOIN_APP_MISC_NETWORKOPS_H_INCLUDED
 
-#include <casinocoin/core/JobQueue.h>
-#include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/app/consensus/CCLCxPeerPos.h>
+#include <casinocoin/core/JobQueue.h>
+#include <casinocoin/core/Stoppable.h>
 #include <casinocoin/ledger/ReadView.h>
 #include <casinocoin/net/InfoSub.h>
+#include <casinocoin/protocol/STValidation.h>
 #include <memory>
-#include <casinocoin/core/Stoppable.h>
 #include <deque>
 #include <tuple>
 
@@ -102,7 +102,7 @@ public:
     }
 
 public:
-    virtual ~NetworkOPs () = 0;
+    ~NetworkOPs () override = default;
 
     //--------------------------------------------------------------------------
     //

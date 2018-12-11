@@ -57,8 +57,8 @@ CCLValidationsPolicy::onStale(CCLValidation&& v)
     if (staleWriting_)
         return;
 
-    staleWriting_ = true;
-    app_.getJobQueue().addJob(
+    // addJob() may return false (Job not added) at shutdown.
+    staleWriting_  = app_.getJobQueue().addJob(
         jtWRITE, "Validations::doStaleWrite", [this](Job&) {
             auto event =
                 app_.getJobQueue().makeLoadEvent(jtDISK, "ValidationWrite");

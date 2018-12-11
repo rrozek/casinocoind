@@ -32,9 +32,6 @@ Stoppable::Stoppable (std::string name, RootStoppable& root)
     : m_name (std::move (name))
     , m_root (root)
     , m_child (this)
-    , m_started (false)
-    , m_stopped (false)
-    , m_childrenStopped (false)
 {
 }
 
@@ -42,9 +39,6 @@ Stoppable::Stoppable (std::string name, Stoppable& parent)
     : m_name (std::move (name))
     , m_root (parent.m_root)
     , m_child (this)
-    , m_started (false)
-    , m_stopped (false)
-    , m_childrenStopped (false)
 {
     // Must not have stopping parent.
     assert (! parent.isStopping());
@@ -54,8 +48,8 @@ Stoppable::Stoppable (std::string name, Stoppable& parent)
 
 Stoppable::~Stoppable ()
 {
-    // Children must be stopped.
-    assert (!m_started || m_childrenStopped);
+    // Either we must not have started, or Children must be stopped.
+    assert (!m_root.started() || m_childrenStopped);
 }
 
 bool Stoppable::isStopping() const
@@ -119,12 +113,13 @@ void Stoppable::stopAsyncRecursive (beast::Journal j)
     auto const start = high_resolution_clock::now();
     onStop ();
     auto const ms = duration_cast<milliseconds>(
-        high_resolution_clock::now() - start).count();
+        high_resolution_clock::now() - start);
 
 #ifdef NDEBUG
-    if (ms >= 10)
+    using namespace std::chrono_literals;
+    if (ms >= 10ms)
         if (auto stream = j.fatal())
-            stream << m_name << "::onStop took " << ms << "ms";
+            stream << m_name << "::onStop took " << ms.count() << "ms";
 #else
     (void)ms;
 #endif
@@ -165,9 +160,13 @@ void Stoppable::stopRecursive (beast::Journal j)
 
 RootStoppable::RootStoppable (std::string name)
     : Stoppable (std::move (name), *this)
-    , m_prepared (false)
-    , m_calledStop (false)
 {
+}
+
+RootStoppable::~RootStoppable ()
+{
+    using namespace std::chrono_literals;
+    jobCounter_.join(m_name.c_str(), 1s, debugLog());
 }
 
 bool RootStoppable::isStopping() const
@@ -200,7 +199,7 @@ void RootStoppable::stop (beast::Journal j)
         stopRecursive (j);
 }
 
-bool RootStoppable::stopAsync(beast::Journal j)
+bool RootStoppable::stopAsync (beast::Journal j)
 {
     bool alreadyCalled;
     {
@@ -217,6 +216,11 @@ bool RootStoppable::stopAsync(beast::Journal j)
             stream << "Stoppable::stop called again";
         return false;
     }
+
+    // Wait until all in-flight JobQueue Jobs are completed.
+    using namespace std::chrono_literals;
+    jobCounter_.join (m_name.c_str(), 1s, j);
+
     c_.notify_all();
     stopAsyncRecursive(j);
     return true;

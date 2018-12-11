@@ -39,6 +39,7 @@ namespace casinocoin {
 class PathRequests
 {
 public:
+    /** A collection of all PathRequest instances. */
     PathRequests (Application& app,
             beast::Journal journal, beast::insight::Collector::ptr const& collector)
         : app_ (app)
@@ -49,6 +50,10 @@ public:
         mFull = collector->make_event ("pathfind_full");
     }
 
+    /** Update all of the contained PathRequest instances.
+        @param ledger Ledger we are pathfinding in.
+        @param shouldCancel Invocable that returns whether to cancel.
+     */
     void updateAll (std::shared_ptr<ReadView const> const& ledger,
                     Job::CancelCallback shouldCancel);
 
