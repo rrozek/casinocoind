@@ -25,7 +25,6 @@
 #include <test/jtx/envconfig.h>
 #include <test/jtx/WSClient.h>
 #include <test/jtx/JSONRPCClient.h>
-#include <casinocoin/core/DeadlineTimer.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <beast/http.hpp>

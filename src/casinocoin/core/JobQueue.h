@@ -28,7 +28,6 @@
 
 #include <casinocoin/basics/LocalValue.h>
 #include <casinocoin/basics/win32_workaround.h>
-#include <casinocoin/core/JobCounter.h>
 #include <casinocoin/core/JobTypes.h>
 #include <casinocoin/core/JobTypeData.h>
 #include <casinocoin/core/Stoppable.h>

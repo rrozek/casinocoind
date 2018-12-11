@@ -27,7 +27,6 @@
 
 #include <casinocoin/core/impl/Config.cpp>
 #include <casinocoin/core/impl/DatabaseCon.cpp>
-#include <casinocoin/core/impl/DeadlineTimer.cpp>
 #include <casinocoin/core/impl/LoadEvent.cpp>
 #include <casinocoin/core/impl/LoadMonitor.cpp>
 #include <casinocoin/core/impl/Job.cpp>

@@ -29,13 +29,17 @@
 #include <casinocoin/beast/core/LockFreeStack.h>
 #include <casinocoin/beast/utility/Journal.h>
 #include <casinocoin/beast/core/WaitableEvent.h>
-#include <casinocoin/core/JobCounter.h>
+#include <casinocoin/core/Job.h>
+#include <casinocoin/core/ClosureCounter.h>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 
 namespace casinocoin {
+
+// Give a reasonable name for the JobCounter
+using JobCounter = ClosureCounter<void, Job&>;
 
 class RootStoppable;
 
