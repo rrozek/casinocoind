@@ -37,7 +37,7 @@
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/types.h>
-
+#include <casinocoin/protocol/Protocol.h>
 namespace casinocoin {
 
 /** Performs early sanity checks on the txid */
@@ -563,12 +563,11 @@ void removeUnfundedOffers (ApplyView& view, std::vector<uint256> const& offers, 
 
     for (auto const& index : offers)
     {
-        auto const sleOffer = view.peek (keylet::offer (index));
-        if (sleOffer)
+        if (auto const sleOffer = view.peek (keylet::offer (index)))
         {
             // offer is unfunded
             offerDelete (view, sleOffer, viewJ);
-            if (++removed == 1000)
+            if (++removed == unfundedOfferRemoveLimit)
                 return;
         }
     }
@@ -654,7 +653,7 @@ Transactor::operator()()
     bool didApply = isTesSuccess (terResult);
     auto fee = ctx_.tx.getFieldAmount(sfFee).csc ();
 
-    if (ctx_.size() > 5200)
+    if (ctx_.size() > oversizeMetaDataCap)
         terResult = tecOVERSIZE;
 
     if ((terResult == tecOVERSIZE) ||

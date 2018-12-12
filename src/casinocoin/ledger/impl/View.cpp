@@ -31,6 +31,7 @@
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/st.h>
+#include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/protocol/Quality.h>
 #include <boost/algorithm/string.hpp>
 #include <cassert>
@@ -105,14 +106,6 @@ bool fix1449 (NetClock::time_point const closeTime)
 {
     return closeTime > fix1449Time();
 }
-
-// VFALCO NOTE A copy of the other one for now
-/** Maximum number of entries in a directory page
-    A change would be protocol-breaking.
-*/
-#ifndef DIR_NODE_MAX
-#define DIR_NODE_MAX  32
-#endif
 
 //------------------------------------------------------------------------------
 //
@@ -870,7 +863,7 @@ dirAdd (ApplyView& view,
 
     svIndexes = sleNode->getFieldV256 (sfIndexes);
 
-    if (DIR_NODE_MAX != svIndexes.size ())
+    if (dirNodeMaxEntries != svIndexes.size ())
     {
         // Add to current node.
         view.update(sleNode);

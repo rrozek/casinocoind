@@ -26,6 +26,7 @@
 #include <casinocoin/ledger/Sandbox.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/Protocol.h>
 #include <type_traits>
 
 namespace casinocoin {
@@ -873,9 +874,7 @@ class DirIsEmpty_test
         env.fund(CSC(10000), becky, gw);
         env.close();
 
-        // The DIR_NODE_MAX constant is hidden in View.cpp (Feb 2016).  But,
-        // ideally, we'd verify we're doing a good test with the following:
-//      static_assert (64 >= (2 * DIR_NODE_MAX), "");
+        static_assert (64 >= (2 * dirNodeMaxEntries), "");
 
         // Generate 64 currencies named AAA -> AAP and ADA -> ADP.
         std::vector<IOU> currencies;
