@@ -235,21 +235,21 @@ struct FlowDebugInfo
                 }
                 ostr << ']';
             };
-            auto writeCscAmtList = [&ostr, &write_list](
+            auto writeCscAmtList = [&write_list](
                 std::vector<EitherAmount> const& amts, char delim=';') {
                 auto get_val = [](EitherAmount const& a) -> std::string {
                     return casinocoin::to_string (a.csc);
                 };
                 write_list (amts, get_val, delim);
             };
-            auto writeIouAmtList = [&ostr, &write_list](
+            auto writeIouAmtList = [&write_list](
                 std::vector<EitherAmount> const& amts, char delim=';') {
                 auto get_val = [](EitherAmount const& a) -> std::string {
                     return casinocoin::to_string (a.iou);
                 };
                 write_list (amts, get_val, delim);
             };
-            auto writeIntList = [&ostr, &write_list](
+            auto writeIntList = [&write_list](
                 std::vector<size_t> const& vals, char delim=';') {
                 auto get_val = [](
                     size_t const& v) -> size_t const& { return v; };
