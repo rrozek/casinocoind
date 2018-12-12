@@ -155,7 +155,12 @@ CasinocoinCalc::Output CasinocoinCalc::casinocoinCalculate (
         {
             JLOG (j.error()) << "Exception from flow: " << e.what ();
             if (!useFlowV1Output)
-                Rethrow();
+            {
+                // return a tec so the tx is stored
+                path::CasinocoinCalc::Output exceptResult;
+                exceptResult.setResult(tecINTERNAL);
+                return exceptResult;
+            }
         }
     }
 
