@@ -35,6 +35,7 @@
 #include <snappy.h>
 #include <cstddef>
 #include <cstring>
+#include <string>
 #include <utility>
 
 namespace casinocoin {
@@ -67,14 +68,14 @@ snappy_decompress (void const* in,
             reinterpret_cast<char const*>(in),
                 in_size, &result.second))
         Throw<std::runtime_error> (
-            "snappy decompress");
+            "snappy decompress: GetUncompressedLength");
     void* const out = bf(result.second);
     result.first = out;
     if (! snappy::RawUncompress(
         reinterpret_cast<char const*>(in), in_size,
             reinterpret_cast<char*>(out)))
         Throw<std::runtime_error> (
-            "snappy decompress");
+            "snappy decompress: RawUncompress");
     return result;
 }
 
@@ -92,7 +93,7 @@ lz4_decompress (void const* in,
         p, in_size, result.second);
     if (n == 0)
         Throw<std::runtime_error> (
-            "lz4 decompress");
+            "lz4 decompress: n == 0");
     void* const out = bf(result.second);
     result.first = out;
     if (LZ4_decompress_fast(
@@ -100,7 +101,7 @@ lz4_decompress (void const* in,
             reinterpret_cast<char*>(out),
                 result.second) + n != in_size)
         Throw<std::runtime_error> (
-            "lz4 decompress");
+            "lz4 decompress: LZ4_decompress_fast");
     return result;
 }
 
@@ -183,7 +184,9 @@ nodeobject_decompress (void const* in,
             field<std::uint16_t>::size; // Mask
         if (in_size < hs + 32)
             Throw<std::runtime_error> (
-                "nodeobject codec: short inner node");
+                "nodeobject codec v1: short inner node size: "
+                + std::string("in_size = ") + std::to_string(in_size)
+                + " hs = " + std::to_string(hs));
         istream is(p, in_size);
         std::uint16_t mask;
         read<std::uint16_t>(is, mask);  // Mask
@@ -199,7 +202,7 @@ nodeobject_decompress (void const* in,
             static_cast<std::uint32_t>(HashPrefix::innerNode));
         if (mask == 0)
             Throw<std::runtime_error> (
-                "nodeobject codec: empty inner node");
+                "nodeobject codec v1: empty inner node");
         std::uint16_t bit = 0x8000;
         for (int i = 16; i--; bit >>= 1)
         {
@@ -207,7 +210,9 @@ nodeobject_decompress (void const* in,
             {
                 if (in_size < 32)
                     Throw<std::runtime_error> (
-                        "nodeobject codec: short inner node");
+                        "nodeobject codec v1: short inner node subsize: "
+                        + std::string("in_size = ") + std::to_string(in_size)
+                        + " i = " + std::to_string(i));
                 std::memcpy(os.data(32), is(32), 32);
                 in_size -= 32;
             }
@@ -218,14 +223,16 @@ nodeobject_decompress (void const* in,
         }
         if (in_size > 0)
             Throw<std::runtime_error> (
-                "nodeobject codec: long inner node");
+                "nodeobject codec v1: long inner node, in_size = "
+                + std::to_string(in_size));
         break;
     }
     case 3: // full v1 inner node
     {
         if (in_size != 16 * 32) // hashes
             Throw<std::runtime_error> (
-                "nodeobject codec: short full inner node");
+                "nodeobject codec v1: short full inner node, in_size = "
+                + std::to_string(in_size));
         istream is(p, in_size);
         result.second = 525;
         void* const out = bf(result.second);
@@ -264,7 +271,7 @@ nodeobject_decompress (void const* in,
             static_cast<std::uint32_t>(HashPrefix::innerNodeV2));
         if (mask == 0)
             Throw<std::runtime_error> (
-                "nodeobject codec: empty inner node");
+                "nodeobject codec v2: empty inner node");
         std::uint16_t bit = 0x8000;
         for (int i = 16; i--; bit >>= 1)
         {
@@ -272,7 +279,9 @@ nodeobject_decompress (void const* in,
             {
                 if (in_size < 32)
                     Throw<std::runtime_error> (
-                        "nodeobject codec: short inner node");
+                        "nodeobject codec v2: short inner node subsize: "
+                        + std::string("in_size = ") + std::to_string(in_size)
+                        + " i = " + std::to_string(i));
                 std::memcpy(os.data(32), is(32), 32);
                 in_size -= 32;
             }
@@ -284,12 +293,15 @@ nodeobject_decompress (void const* in,
         write<std::uint8_t>(os, depth);
         if (in_size < (depth+1)/2)
             Throw<std::runtime_error> (
-                "nodeobject codec: short inner node");
+                "nodeobject codec v2: short inner node: "
+                + std::string("size = ") + std::to_string(in_size)
+                + " depth = " + std::to_string(depth));
         std::memcpy(os.data((depth+1)/2), is((depth+1)/2), (depth+1)/2);
         in_size -= (depth+1)/2;
         if (in_size > 0)
             Throw<std::runtime_error> (
-                "nodeobject codec: long inner node");
+                "nodeobject codec v2: long inner node, in_size = "
+                + std::to_string(in_size));
         break;
     }
     case 6: // full v2 inner node
@@ -301,7 +313,9 @@ nodeobject_decompress (void const* in,
         result.second = 525 + 1 + (depth+1)/2;
         if (in_size != 16 * 32 + (depth+1)/2) // hashes and common
             Throw<std::runtime_error> (
-                "nodeobject codec: short full inner node");
+                "nodeobject codec v2: short full inner node: "
+                + std::string("size = ") + std::to_string(in_size)
+                + " depth = " + std::to_string(depth));
         void* const out = bf(result.second);
         result.first = out;
         ostream os(out, result.second);
