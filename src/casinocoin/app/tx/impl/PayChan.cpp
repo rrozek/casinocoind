@@ -140,7 +140,7 @@ closeChannel (
     // Remove PayChan from owner directory
     {
         auto const page = (*slep)[sfOwnerNode];
-        TER const ter = dirDelete (view, true, page, keylet::ownerDir (src).key,
+        TER const ter = dirDelete (view, true, page, keylet::ownerDir (src),
             key, false, page == 0, j);
         if (!isTesSuccess (ter))
             return ter;
@@ -245,13 +245,11 @@ PayChanCreate::doApply()
 
     // Add PayChan to owner directory
     {
-        uint64_t page;
-        auto result = dirAdd (ctx_.view (), page, keylet::ownerDir (account),
-            slep->key (), describeOwnerDir (account),
-            ctx_.app.journal ("View"));
-        if (!isTesSuccess (result.first))
-            return result.first;
-        (*slep)[sfOwnerNode] = page;
+        auto page = dirAdd (ctx_.view(), keylet::ownerDir(account), slep->key(),
+            false, describeOwnerDir (account), ctx_.app.journal ("View"));
+        if (!page)
+            return tecDIR_FULL;
+        (*slep)[sfOwnerNode] = *page;
     }
 
     // Deduct owner's balance, increment owner count
