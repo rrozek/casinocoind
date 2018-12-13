@@ -58,6 +58,7 @@
 #include <casinocoin/overlay/Cluster.h>
 #include <casinocoin/overlay/make_Overlay.h>
 #include <casinocoin/protocol/STParsedJSON.h>
+#include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/resource/Fees.h>
 #include <casinocoin/beast/asio/io_latency_probe.h>
 #include <casinocoin/beast/core/LexicalCast.h>
@@ -83,7 +84,7 @@ private:
     beast::Journal j_;
 
     // missing node handler
-    std::uint32_t maxSeq = 0;
+    LedgerIndex maxSeq = 0;
     std::mutex maxSeqLock;
 
     void acquire (
@@ -1013,8 +1014,16 @@ public:
         setSweepTimer();
     }
 
+    LedgerIndex getMaxDisallowedLedger() override
+    {
+        return maxDisallowedLedger_;
+    }
 
 private:
+    // For a newly-started validator, this is the greatest persisted ledger
+    // and new validations must be greater than this.
+    std::atomic<LedgerIndex> maxDisallowedLedger_ {0};
+
     void addTxnSeqField();
     void addValidationSeqFields();
     bool updateTables ();
@@ -1031,6 +1040,8 @@ private:
         std::string const& ledgerID,
         bool replay,
         bool isFilename);
+
+    void setMaxDisallowedLedger();
 };
 
 //------------------------------------------------------------------------------
@@ -1079,6 +1090,9 @@ bool ApplicationImp::setup()
         JLOG(m_journal.fatal()) << "Cannot create database connections!";
         return false;
     }
+
+    if (validatorKeys_.publicKey.size())
+        setMaxDisallowedLedger();
 
     getLedgerDB ().getSession ()
         << boost::str (boost::format ("PRAGMA cache_size=-%d;") %
@@ -1999,6 +2013,21 @@ bool ApplicationImp::updateTables ()
 
     return true;
 }
+
+void ApplicationImp::setMaxDisallowedLedger()
+{
+    boost::optional <LedgerIndex> seq;
+    {
+        auto db = getLedgerDB().checkoutDb();
+        *db << "SELECT MAX(LedgerSeq) FROM Ledgers;", soci::into(seq);
+    }
+    if (seq)
+        maxDisallowedLedger_ = *seq;
+
+    JLOG (m_journal.trace()) << "Max persisted ledger is "
+                             << maxDisallowedLedger_;
+}
+
 
 //------------------------------------------------------------------------------
 

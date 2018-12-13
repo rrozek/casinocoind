@@ -30,6 +30,7 @@
 #include <casinocoin/shamap/TreeNodeCache.h>
 #include <casinocoin/basics/TaggedCache.h>
 #include <casinocoin/core/Config.h>
+#include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/beast/utility/PropertyStream.h>
 #include <memory>
 #include <mutex>
@@ -181,6 +182,10 @@ public:
 
     /** Retrieve the "wallet database" */
     virtual DatabaseCon& getWalletDB () = 0;
+
+    /** Ensure that a newly-started validator does not sign proposals older
+     * than the last ledger it persisted. */
+    virtual LedgerIndex getMaxDisallowedLedger() = 0;
 };
 
 std::unique_ptr <Application>
