@@ -42,7 +42,7 @@ git-subtree. See the corresponding README for more details.
 ## For more information:
 
 * [Casinocoin Website](http://www.casinocoin.org)
-* [Casinocoin Developer Center](http://dev.casinocoin.org)
+* [Casinocoin Developer Center](https://casinocoin.org/build/)
 
 - - -
 
