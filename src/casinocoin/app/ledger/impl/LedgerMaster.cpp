@@ -217,6 +217,7 @@ LedgerMaster::setValidLedger(
             !app_.getMaxDisallowedLedger() ||
             l->info().seq + max_ledger_difference_ >
                     app_.getMaxDisallowedLedger());
+    (void) max_ledger_difference_;
     mValidLedgerSeq = l->info().seq;
 
     app_.getOPs().updateLocalTx (*l);
