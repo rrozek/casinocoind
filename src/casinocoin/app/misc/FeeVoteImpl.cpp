@@ -218,12 +218,14 @@ FeeVoteImpl::doVoting(
     // add transactions to our position
     if ((baseFee != lastClosedLedger->fees().base) ||
             (baseReserve != lastClosedLedger->fees().accountReserve(0)) ||
-            (incReserve != lastClosedLedger->fees().increment))
+            (incReserve != lastClosedLedger->fees().increment) ||
+            (feeUnits != lastClosedLedger->fees().units))
     {
         JLOG(journal_.warn()) <<
             "We are voting for a fee change: " << baseFee <<
             "/" << baseReserve <<
-            "/" << incReserve;
+            "/" << incReserve <<
+            "/" << feeUnits;
 
         STTx feeTx (ttFEE,
             [seq,baseFee,baseReserve,incReserve,feeUnits](auto& obj)
