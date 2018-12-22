@@ -61,15 +61,15 @@ public:
     struct Setup
     {
         std::size_t ledgersInQueue = 20;
-        std::uint32_t retrySequencePercent = 25;
+        std::uint32_t retrySequencePercent = 0;
         // TODO: eahennis. Can we remove the multi tx factor?
         std::int32_t multiTxnPercent = -90;
-        std::uint32_t minimumEscalationMultiplier = baseLevel * 1;
+        std::uint32_t minimumEscalationMultiplier = baseLevel * 500;
         std::uint32_t minimumTxnInLedger = 5;
         std::uint32_t minimumTxnInLedgerSA = 1000;
         std::uint32_t targetTxnInLedger = 50;
         boost::optional<std::uint32_t> maximumTxnInLedger;
-        std::uint32_t maximumTxnPerAccount = 10;
+        std::uint32_t maximumTxnPerAccount = 5;
         std::uint32_t minimumLastLedgerBuffer = 2;
         /* So we don't deal with infinite fee levels, treat
             any transaction with a 0 base fee (ie. SetRegularKey
@@ -319,7 +319,7 @@ private:
             that the queue doesn't fill up with stale transactions
             which prevent lower fee level transactions from queuing.
         */
-        static constexpr int retriesAllowed = 10;
+        static constexpr int retriesAllowed = 5;
 
     public:
         MaybeTx(std::shared_ptr<STTx const> const&,
@@ -336,6 +336,8 @@ private:
     public:
         bool operator()(const MaybeTx& lhs, const MaybeTx& rhs) const
         {
+            if (lhs.feeLevel == rhs.feeLevel)
+                return lhs.txID > rhs.txID;
             return lhs.feeLevel > rhs.feeLevel;
         }
     };

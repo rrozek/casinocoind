@@ -55,6 +55,7 @@ enum error_code_i
     rpcTOO_BUSY,
     rpcSLOW_DOWN,
     rpcHIGH_FEE,
+    rpcBAD_FEE,
     rpcNOT_ENABLED,
     rpcNOT_READY,
 

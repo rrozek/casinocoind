@@ -546,7 +546,7 @@ public:
     }
 
 private:
-    void add (Serializer & s, bool withSigningFields, bool withNotHashedField = true) const;
+    void add (Serializer & s, bool withSigningFields) const;
 
     // Sort the entries in an STObject into the order that they will be
     // serialized.  Note: they are not sorted into pointer value order, they

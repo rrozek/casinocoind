@@ -656,7 +656,16 @@ Json::Value checkFee (
 {
     Json::Value& tx (request[jss::tx_json]);
     if (tx.isMember (jss::Fee))
+    {
+//        if (tx[jss::Fee] != static_cast<unsigned int>(drops.second))
+//        {
+//            std::stringstream ss;
+//            ss << "Fee of " << tx[jss::Fee]
+//                << " varies from network supported Fee of " << drops.second;
+//            return RPC::make_error (rpcBAD_FEE, ss.str());
+//        }
         return Json::Value();
+    }
 
     if (! doAutoFill)
         return RPC::missing_field_error ("tx_json.Fee");
