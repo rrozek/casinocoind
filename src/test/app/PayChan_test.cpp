@@ -181,7 +181,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("simple");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         auto USDA = alice["USD"];
@@ -248,7 +248,7 @@ struct PayChan_test : public beast::unit_test::suite
             auto const reqBal = chanBal + delta;
             auto const authAmt = reqBal + CSC (-100);
             assert (reqBal <= chanAmt);
-            env (claim (alice, chan, reqBal, authAmt), ter (tecNO_PERMISSION));
+            env (claim (alice, chan, reqBal, authAmt), ter (temBAD_AMOUNT));
         }
         {
             // No signature needed since the owner is claiming
@@ -296,7 +296,7 @@ struct PayChan_test : public beast::unit_test::suite
             auto const sig =
                 signClaimAuth (alice.pk (), alice.sk (), chan, authAmt);
             env (claim (bob, chan, reqAmt, authAmt, Slice (sig), alice.pk ()),
-                ter (tecNO_PERMISSION));
+                ter (temBAD_AMOUNT));
             BEAST_EXPECT (channelBalance (*env.current (), chan) == chanBal);
             BEAST_EXPECT (channelAmount (*env.current (), chan) == chanAmt);
             auto const feeDrops = env.current ()->fees ().base;
@@ -353,7 +353,7 @@ struct PayChan_test : public beast::unit_test::suite
         auto const carol = Account ("carol");
         {
             // If dst claims after cancel after, channel closes
-            Env env (*this, with_features (featurePayChan));
+            Env env (*this);
             env.fund (CSC (10000), alice, bob);
             auto const pk = alice.pk ();
             auto const settleDelay = 100s;
@@ -392,7 +392,7 @@ struct PayChan_test : public beast::unit_test::suite
         }
         {
             // Third party can close after cancel after
-            Env env (*this, with_features (featurePayChan));
+            Env env (*this);
             env.fund (CSC (10000), alice, bob, carol);
             auto const pk = alice.pk ();
             auto const settleDelay = 100s;
@@ -422,7 +422,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("expiration");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         auto const carol = Account ("carol");
@@ -483,7 +483,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("settle delay");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -543,7 +543,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("close dry");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -579,7 +579,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("default amount");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -638,7 +638,7 @@ struct PayChan_test : public beast::unit_test::suite
         using namespace std::literals::chrono_literals;
         {
             // Create a channel where dst disallows CSC
-            Env env (*this, with_features (featurePayChan));
+            Env env (*this);
             auto const alice = Account ("alice");
             auto const bob = Account ("bob");
             env.fund (CSC (10000), alice, bob);
@@ -654,7 +654,7 @@ struct PayChan_test : public beast::unit_test::suite
         {
             // Claim to a channel where dst disallows CSC
             // (channel is created before disallow csc is set)
-            Env env (*this, with_features (featurePayChan));
+            Env env (*this);
             auto const alice = Account ("alice");
             auto const bob = Account ("bob");
             env.fund (CSC (10000), alice, bob);
@@ -680,7 +680,7 @@ struct PayChan_test : public beast::unit_test::suite
         using namespace jtx;
         using namespace std::literals::chrono_literals;
         // Create a channel where dst disallows CSC
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -705,7 +705,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("Multiple channels to the same account");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -727,7 +727,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("RPC");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -797,7 +797,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("Optional Fields");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         auto const carol = Account ("carol");
@@ -837,7 +837,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("malformed pk");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, with_features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         auto USDA = alice["USD"];

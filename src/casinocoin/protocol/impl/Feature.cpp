@@ -123,5 +123,6 @@ uint256 const featureEnforceInvariants = *getRegisteredFeature("EnforceInvariant
 uint256 const featureKYC = *getRegisteredFeature("KYC");
 uint256 const featureSortedDirectories = *getRegisteredFeature("SortedDirectories");
 uint256 const fix1201 = *getRegisteredFeature("fix1201");
+uint256 const fix1512 = *getRegisteredFeature("fix1512");
 
 } // casinocoin
