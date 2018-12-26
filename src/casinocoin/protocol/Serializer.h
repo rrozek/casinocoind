@@ -31,6 +31,7 @@
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Buffer.h>
 #include <casinocoin/basics/Slice.h>
+#include <casinocoin/beast/crypto/secure_erase.h>
 #include <cassert>
 #include <cstdint>
 #include <iomanip>
@@ -204,8 +205,8 @@ public:
     }
     void secureErase ()
     {
-        memset (& (mData.front ()), 0, mData.size ());
-        erase ();
+        beast::secure_erase(mData.data(), mData.size());
+        mData.clear ();
     }
     void erase ()
     {
