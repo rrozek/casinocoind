@@ -480,8 +480,8 @@ public:
         , mFeeTrack (std::make_unique<LoadFeeTrack>(logs_->journal("LoadManager")))
 
         , mHashRouter (std::make_unique<HashRouter>(
-            stopwatch(), HashRouter::getDefaultHoldTime ()))
-
+            stopwatch(), HashRouter::getDefaultHoldTime (),
+            HashRouter::getDefaultRecoverLimit ()))
         , mValidations (ValidationParms(),stopwatch(), logs_->journal("Validations"),
             *this)
 

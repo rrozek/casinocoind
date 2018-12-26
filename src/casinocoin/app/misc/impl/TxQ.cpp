@@ -336,7 +336,7 @@ TxQ::canBeHeld(STTx const& tx, OpenView const& view,
             promise to stick around for long enough that it has
             a realistic chance of getting into a ledger.
         */
-        auto lastValid = getLastLedgerSequence(tx);
+        auto const lastValid = getLastLedgerSequence(tx);
         canBeHeld = !lastValid || *lastValid >=
             view.info().seq + setup_.minimumLastLedgerBuffer;
     }
@@ -346,10 +346,31 @@ TxQ::canBeHeld(STTx const& tx, OpenView const& view,
             can queue. Mitigates the lost cost of relaying should
             an early one fail or get dropped.
         */
-        canBeHeld = accountIter == byAccount_.end() ||
-            replacementIter ||
-                accountIter->second.getTxnCount() <
-                    setup_.maximumTxnPerAccount;
+
+        // Allow if the account is not in the queue at all
+        canBeHeld = accountIter == byAccount_.end();
+
+        if(!canBeHeld)
+        {
+            // Allow this tx to replace another one
+            canBeHeld = replacementIter.is_initialized();
+        }
+
+        if (!canBeHeld)
+        {
+            // Allow if there are fewer than the limit
+            canBeHeld = accountIter->second.getTxnCount() <
+                setup_.maximumTxnPerAccount;
+        }
+
+        if (!canBeHeld)
+        {
+            // Allow if the transaction goes in front of any
+            // queued transactions. Enables recovery of open
+            // ledger transactions, and stuck transactions.
+            auto const tSeq = tx.getSequence();
+            canBeHeld = tSeq < accountIter->second.transactions.rbegin()->first;
+        }
     }
     return canBeHeld;
 }
@@ -509,8 +530,7 @@ TxQ::tryClearAccountQueue(Application& app, OpenView& view,
                 non-blockers?
             Yes: Remove the queued transaction. Continue to next
                 step.
-            No: Reject `txn` with `telINSUF_FEE_P` or
-                `telCAN_NOT_QUEUE`. Stop.
+            No: Reject `txn` with `telCAN_NOT_QUEUE_FEE`. Stop.
         No: Continue to next step.
     3. Does this tx have the expected sequence number for the
             account?
@@ -524,11 +544,11 @@ TxQ::tryClearAccountQueue(Application& app, OpenView& view,
                     than the previous tx?
                 No: Reject with `telINSUF_FEE_P`. Stop.
                 Yes: Are any of the prior sequence txs blockers?
-                    Yes: Reject with `telCAN_NOT_QUEUE`. Stop.
+                    Yes: Reject with `telCAN_NOT_QUEUE_BLOCKED`. Stop.
                     No: Are the fees in-flight of the other
                             queued txs >= than the account
                             balance or minimum account reserve?
-                        Yes: Reject with `telCAN_NOT_QUEUE`. Stop.
+                        Yes: Reject with `telCAN_NOT_QUEUE_BALANCE`. Stop.
                         No: Create a throwaway sandbox `View`. Modify
                             the account's sequence number to match
                             the tx (avoid `terPRE_SEQ`), and decrease
@@ -547,8 +567,7 @@ TxQ::tryClearAccountQueue(Application& app, OpenView& view,
                 it to `doApply()` and return that result.
             No: Continue to the next step.
     6. Can the tx be held in the queue? (See TxQ::canBeHeld).
-            No: Reject `txn` with `telINSUF_FEE_P` if this tx
-                has the current sequence, or `telCAN_NOT_QUEUE`
+            No: Reject `txn` with `telCAN_NOT_QUEUE_FULL`
                 if not. Stop.
             Yes: Continue to the next step.
     7. Is the queue full?
@@ -610,8 +629,15 @@ TxQ::apply(Application& app, OpenView& view,
     auto const baseFee = calculateBaseFee(app, view, *tx, j);
     auto const feeLevelPaid = getFeeLevelPaid(*tx,
         baseLevel, baseFee, setup_);
-    auto const requiredFeeLevel = FeeMetrics::scaleFeeLevel(
-        j_, metricsSnapshot, view);
+    auto const requiredFeeLevel = [&]()
+    {
+        auto feeLevel = FeeMetrics::scaleFeeLevel(j_, metricsSnapshot, view);
+        if ((flags & tapPREFER_QUEUE) && byFee_.size())
+        {
+            return std::max(feeLevel, byFee_.begin()->feeLevel);
+        }
+        return feeLevel;
+    }();
 
     auto accountIter = byAccount_.find(account);
     bool const accountExists = accountIter != byAccount_.end();
@@ -676,8 +702,7 @@ TxQ::apply(Application& app, OpenView& view,
                                 transactionID <<
                                 " in favor of normal queued " <<
                                 existingIter->second.txID;
-                            return{existingIter == txQAcct.transactions.begin() ?
-                                telINSUF_FEE_P : telCAN_NOT_QUEUE, false };
+                            return {telCAN_NOT_QUEUE_BLOCKS, false };
                         }
                     }
                 }
@@ -707,7 +732,7 @@ TxQ::apply(Application& app, OpenView& view,
                     transactionID <<
                     " in favor of queued " <<
                     existingIter->second.txID;
-                return{ telINSUF_FEE_P, false };
+                return{ telCAN_NOT_QUEUE_FEE, false };
             }
         }
     }
@@ -803,7 +828,7 @@ TxQ::apply(Application& app, OpenView& view,
                             transactionID <<
                             ". A blocker-type transaction " <<
                             "is in the queue.";
-                        return{ telCAN_NOT_QUEUE, false };
+                        return{ telCAN_NOT_QUEUE_BLOCKED, false };
                     }
                     multiTxn->fee +=
                         workingIter->second.consequences->fee;
@@ -821,7 +846,7 @@ TxQ::apply(Application& app, OpenView& view,
                     than the account's current balance, or the
                     minimum reserve. If it is, then there's a risk
                     that the fees won't get paid, so drop this
-                    transaction with a telCAN_NOT_QUEUE result.
+                    transaction with a telCAN_NOT_QUEUE_BALANCE result.
                     TODO: Decide whether to count the current txn fee
                         in this limit if it's the last transaction for
                         this account. Currently, it will not count,
@@ -863,7 +888,7 @@ TxQ::apply(Application& app, OpenView& view,
                         "Ignoring transaction " <<
                         transactionID <<
                         ". Total fees in flight too high.";
-                    return{ telCAN_NOT_QUEUE, false };
+                    return{ telCAN_NOT_QUEUE_BALANCE, false };
                 }
 
                 // Create the test view from the current view
@@ -901,24 +926,27 @@ TxQ::apply(Application& app, OpenView& view,
 
     /* Quick heuristic check to see if it's worth checking that this
         tx has a high enough fee to clear all the txs in the queue.
-        1) Must be an account already in the queue.
-        2) Must be have passed the multiTxn checks (tx is not the next
+        1) Transaction is trying to get into the open ledger
+        2) Must be an account already in the queue.
+        3) Must be have passed the multiTxn checks (tx is not the next
             account seq, the skipped seqs are in the queue, the reserve
             doesn't get exhausted, etc).
-        3) The next transaction must not have previously tried and failed
+        4) The next transaction must not have previously tried and failed
             to apply to an open ledger.
-        4) Tx must be paying more than just the required fee level to
+        5) Tx must be paying more than just the required fee level to
             get itself into the queue.
-        5) Fee level must be escalated above the default (if it's not,
+        6) Fee level must be escalated above the default (if it's not,
             then the first tx _must_ have failed to process in `accept`
             for some other reason. Tx is allowed to queue in case
             conditions change, but don't waste the effort to clear).
-        6) Tx is not a 0-fee / free transaction, regardless of fee level.
+        7) Tx is not a 0-fee / free transaction, regardless of fee level.
     */
-    if (accountExists && multiTxn.is_initialized() &&
-        multiTxn->nextTxIter->second.retriesRemaining == MaybeTx::retriesAllowed &&
-        feeLevelPaid > requiredFeeLevel &&
-            requiredFeeLevel > baseLevel && baseFee != 0)
+    if (!(flags & tapPREFER_QUEUE) && accountExists &&
+        multiTxn.is_initialized() &&
+        multiTxn->nextTxIter->second.retriesRemaining ==
+            MaybeTx::retriesAllowed &&
+                feeLevelPaid > requiredFeeLevel &&
+                    requiredFeeLevel > baseLevel && baseFee != 0)
     {
         OpenView sandbox(open_ledger, &view, view.rules());
 
@@ -972,8 +1000,7 @@ TxQ::apply(Application& app, OpenView& view,
         JLOG(j_.trace()) << "Transaction " <<
             transactionID <<
             " can not be held";
-        return { feeLevelPaid >= requiredFeeLevel ?
-            telCAN_NOT_QUEUE : telINSUF_FEE_P, false };
+        return { telCAN_NOT_QUEUE, false };
     }
 
     // If the queue is full, decide whether to drop the current
@@ -988,7 +1015,7 @@ TxQ::apply(Application& app, OpenView& view,
                 transactionID <<
                 " would kick a transaction from the same account (" <<
                 account << ") out of the queue.";
-            return { telCAN_NOT_QUEUE, false };
+            return { telCAN_NOT_QUEUE_FULL, false };
         }
         auto const& endAccount = byAccount_.at(lastRIter->account);
         auto endEffectiveFeeLevel = [&]()
@@ -1040,7 +1067,7 @@ TxQ::apply(Application& app, OpenView& view,
             JLOG(j_.warn()) << "Queue is full, and transaction " <<
                 transactionID <<
                 " fee is lower than end item's account average fee";
-            return { telINSUF_FEE_P, false };
+            return { telCAN_NOT_QUEUE_FULL, false };
         }
     }
 
@@ -1107,7 +1134,8 @@ TxQ::processClosedLedger(Application& app,
     auto ledgerSeq = view.info().seq;
 
     if (!timeLeap)
-        maxSize_ = snapshot.txnsExpected * setup_.ledgersInQueue;
+        maxSize_ = std::max (snapshot.txnsExpected * setup_.ledgersInQueue,
+             setup_.queueSizeMin);
 
     // Remove any queued candidates whose LastLedgerSequence has gone by.
     for(auto candidateIter = byFee_.begin(); candidateIter != byFee_.end(); )
@@ -1456,6 +1484,7 @@ setup_TxQ(Config const& config)
     TxQ::Setup setup;
     auto const& section = config.section("transaction_queue");
     set(setup.ledgersInQueue, "ledgers_in_queue", section);
+    set(setup.queueSizeMin, "minimum_queue_size", section);
     set(setup.retrySequencePercent, "retry_sequence_percent", section);
     set(setup.multiTxnPercent, "multi_txn_percent", section);
     set(setup.minimumEscalationMultiplier,

@@ -1047,6 +1047,8 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
     {
         // If we've never been in synch, there's nothing we can do
         // with a transaction
+        JLOG(p_journal_.debug()) << "Ignoring incoming transaction: " <<
+            "Need network ledger";
         return;
     }
 
@@ -1066,11 +1068,10 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
             if (flags & SF_BAD)
             {
                 fee_ = Resource::feeInvalidSignature;
+                JLOG(p_journal_.debug()) << "Ignoring known bad tx " <<
+                    txID;
                 return;
             }
-
-            if (!(flags & SF_RETRY))
-                return;
         }
 
         JLOG(p_journal_.debug()) << "Got tx " << txID;
