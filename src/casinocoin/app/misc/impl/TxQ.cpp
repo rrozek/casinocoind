@@ -35,6 +35,7 @@
 #include <boost/algorithm/clamp.hpp>
 #include <limits>
 #include <numeric>
+#include <algorithm>
 
 namespace casinocoin {
 
@@ -113,16 +114,32 @@ TxQ::FeeMetrics::update(Application& app,
         // so clamp down on limits.
         txnsExpected_ = boost::algorithm::clamp(feeLevels.size(),
             minimumTxnCount_, targetTxnCount_);
+        recentTxnCounts_.clear();
     }
     else if (feeLevels.size() > txnsExpected_ ||
         feeLevels.size() > targetTxnCount_)
     {
+        recentTxnCounts_.push_back(feeLevels.size());
+        auto const iter = std::max_element(recentTxnCounts_.begin(),
+            recentTxnCounts_.end());
+        BOOST_ASSERT(iter != recentTxnCounts_.end());
+        auto const next = [&]
+        {
+            // Grow quickly: If the max_element is >= the
+            // current size limit, use it.
+            if (*iter >= txnsExpected_)
+                return *iter;
+            // Shrink slowly: If the max_element is < the
+            // current size limit, use a limit that is
+            // 90% of the way from max_element to the
+            // current size limit.
+            return (txnsExpected_ * 9 + *iter) / 10;
+        }();
         // Ledgers are processing in a timely manner,
         // so keep the limit high, but don't let it
         // grow without bound.
-        txnsExpected_ = maximumTxnCount_ ?
-            std::min(feeLevels.size(), *maximumTxnCount_) :
-            feeLevels.size();
+        txnsExpected_ = std::min(next,
+            maximumTxnCount_.value_or(next));
     }
 
     JLOG(j_.debug()) << "Escalation multiplication disabled";
@@ -1056,7 +1073,7 @@ TxQ::apply(Application& app, OpenView& view,
             JLOG(j_.warn()) <<
                 "Removing last item of account " <<
                 lastRIter->account <<
-                "from queue with average fee of" <<
+                " from queue with average fee of " <<
                 endEffectiveFeeLevel << " in favor of " <<
                 transactionID << " with fee of " <<
                 feeLevelPaid;

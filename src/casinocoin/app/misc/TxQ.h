@@ -32,7 +32,7 @@
 #include <casinocoin/protocol/TER.h>
 #include <casinocoin/protocol/STTx.h>
 #include <boost/intrusive/set.hpp>
-
+#include <boost/circular_buffer.hpp>
 namespace casinocoin {
 
 class Application;
@@ -200,6 +200,9 @@ private:
         // One more than this value will be accepted
         // before escalation kicks in.
         std::size_t txnsExpected_;
+        // Recent history of transaction counts that
+        // exceed the targetTxnCount_
+        boost::circular_buffer<std::size_t> recentTxnCounts_;
         // Minimum value of escalationMultiplier.
         std::uint64_t const minimumMultiplier_;
         // Based on the median fee of the LCL. Used
@@ -219,6 +222,7 @@ private:
                     targetTxnCount_ : *setup.maximumTxnInLedger :
                         boost::optional<std::size_t>(boost::none))
             , txnsExpected_(minimumTxnCount_)
+            , recentTxnCounts_(setup.ledgersInQueue)
             , minimumMultiplier_(setup.minimumEscalationMultiplier)
             , escalationMultiplier_(minimumMultiplier_)
             , j_(j)
