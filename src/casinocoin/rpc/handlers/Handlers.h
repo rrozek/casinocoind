@@ -93,7 +93,8 @@ Json::Value doWalletPropose         (RPC::Context&);
 Json::Value doWalletSeed            (RPC::Context&);
 Json::Value doWalletUnlock          (RPC::Context&);
 Json::Value doWalletVerify          (RPC::Context&);
-
-} // casinocoin
+Json::Value doValidators            (RPC::Context&);
+Json::Value doValidatorListSites    (RPC::Context&);
+} // ripple
 
 #endif

@@ -24,6 +24,7 @@
 #include <casinocoin/app/misc/detail/Work.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/json/json_value.h>
 #include <boost/asio.hpp>
 #include <mutex>
 
@@ -67,10 +68,17 @@ private:
 
     struct Site
     {
+        struct Status
+        {
+            clock_type::time_point refreshed;
+            ListDisposition disposition;
+        };
+
         std::string uri;
         parsedURL pUrl;
         std::chrono::minutes refreshInterval;
         clock_type::time_point nextRefresh;
+        boost::optional<Status> lastRefreshStatus;
     };
 
     boost::asio::io_service& ios_;
@@ -144,6 +152,11 @@ public:
     */
     void
     stop ();
+
+    /** Return JSON representation of configured validator sites
+     */
+    Json::Value
+    getJson() const;
 
 private:
     /// Queue next site to be fetched

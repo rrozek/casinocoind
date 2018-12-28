@@ -1259,39 +1259,6 @@ void NetworkOPsImp::setAmendmentBlocked ()
     setMode (omTRACKING);
 }
 
-class ValidationCount
-{
-public:
-    int trustedValidations, nodesUsing;
-    NodeID highNodeUsing, highValidation;
-
-    ValidationCount () : trustedValidations (0), nodesUsing (0)
-    {
-    }
-
-    bool operator> (const ValidationCount& v) const
-    {
-        if (trustedValidations > v.trustedValidations)
-            return true;
-
-        if (trustedValidations < v.trustedValidations)
-            return false;
-
-        if (trustedValidations == 0)
-        {
-            if (nodesUsing > v.nodesUsing)
-                return true;
-
-            if (nodesUsing < v.nodesUsing)
-                return false;
-
-            return highNodeUsing > v.highNodeUsing;
-        }
-
-        return highValidation > v.highValidation;
-    }
-};
-
 bool NetworkOPsImp::checkLastClosedLedger (
     const Overlay::PeerSequence& peerList, uint256& networkClosed)
 {
@@ -2187,6 +2154,29 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
     info[jss::validation_quorum] = static_cast<Json::UInt>(
         app_.validators ().quorum ());
 
+    if (admin)
+    {
+        if (auto when = app_.validators().expires())
+        {
+            if (human)
+            {
+                if(*when == TimeKeeper::time_point::max())
+                    info[jss::validator_list_expires] = "never";
+                else
+                    info[jss::validator_list_expires] = to_string(*when);
+            }
+            else
+                info[jss::validator_list_expires] =
+                    static_cast<Json::UInt>(when->time_since_epoch().count());
+        }
+        else
+        {
+            if (human)
+                info[jss::validator_list_expires] = "unknown";
+            else
+                info[jss::validator_list_expires] = 0;
+        }
+    }
     info[jss::io_latency_ms] = static_cast<Json::UInt> (
         app_.getIOLatency().count());
 
