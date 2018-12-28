@@ -230,11 +230,14 @@ class CCLConsensus
             CCLCxLedger const& ledger,
             ConsensusMode mode);
 
+        /** Notified of change in consensus mode
+            @param before The prior consensus mode
+            @param after The new consensus mode
+        */
         void
-        onModeChange(ConsensusMode before, ConsensusMode after)
-        {
-            mode_ = after;
-        }
+        onModeChange(
+            ConsensusMode before,
+            ConsensusMode after);
 
         /** Close the open ledger and return initial consensus position.
            @param ledger the ledger we are changing to
