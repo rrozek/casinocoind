@@ -284,7 +284,7 @@ void Config::setup (std::string const& strConf, bool bQuiet,
         legacy("database_path", boost::filesystem::absolute(dataDir).string());
     }
 
-    HTTPClient::initializeSSLContext(*this);
+    HTTPClient::initializeSSLContext(*this, j_);
 
     if (RUN_STANDALONE)
         LEDGER_HISTORY = 0;

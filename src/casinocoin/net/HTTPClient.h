@@ -43,7 +43,7 @@ public:
         maxClientHeaderBytes = 32 * 1024
     };
 
-    static void initializeSSLContext (Config const& config);
+    static void initializeSSLContext (Config const& config, beast::Journal j);
 
     static void get (
         bool bSSL,

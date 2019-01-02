@@ -1,12 +1,10 @@
 //------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
-    Copyright (c) 2012, 2013 Ripple Labs Inc.
-
+    Copyright (c) 2016 Ripple Labs Inc.
     Permission to use, copy, modify, and/or distribute this software for any
     purpose  with  or without fee is hereby granted, provided that the above
     copyright notice and this permission notice appear in all copies.
-
     THE  SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
     WITH  REGARD  TO  THIS  SOFTWARE  INCLUDING  ALL  IMPLIED  WARRANTIES  OF
     MERCHANTABILITY  AND  FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -17,19 +15,26 @@
 */
 //==============================================================================
 
-//==============================================================================
-/*
-    2017-06-30  ajochems        Refactored for casinocoin
+#ifndef CASINOCOIN_NET_REGISTER_SSL_CERTS_H_INCLUDED
+#define CASINOCOIN_NET_REGISTER_SSL_CERTS_H_INCLUDED
+
+#include <boost/asio/ssl/context.hpp>
+#include <casinocoin/basics/Log.h>
+
+namespace casinocoin {
+/** Register default SSL certificates.
+    Register the system default SSL root certificates. On linux/mac,
+    this just calls asio's `set_default_verify_paths` to look in standard
+    operating system locations. On windows, it uses the OS certificate
+    store accessible via CryptoAPI.
 */
-//==============================================================================
+void
+registerSSLCerts(
+    boost::asio::ssl::context&,
+    boost::system::error_code&,
+    beast::Journal j);
 
-#undef DEPRECATED_IN_MAC_OS_X_VERSION_10_7_AND_LATER
-#define DEPRECATED_IN_MAC_OS_X_VERSION_10_7_AND_LATER /**/
+}  // namespace casinocoin
 
-#include <BeastConfig.h>
-#include <casinocoin/net/impl/HTTPClient.cpp>
-#include <casinocoin/net/impl/InfoSub.cpp>
-#include <casinocoin/net/impl/RPCCall.cpp>
-#include <casinocoin/net/impl/RPCErr.cpp>
-#include <casinocoin/net/impl/RPCSub.cpp>
-#include <casinocoin/net/impl/RegisterSSLCerts.cpp>
+#endif
+
