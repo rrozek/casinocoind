@@ -160,18 +160,18 @@ class CCLConsensus
         boost::optional<CCLCxLedger>
         acquireLedger(LedgerHash const& ledger);
 
-        /** Relay the given proposal to all peers
-            @param peerPos The peer position to relay.
+        /** Share the given proposal with all peers
+            @param peerPos The peer position to share.
          */
         void
-        relay(CCLCxPeerPos const& peerPos);
+        share(CCLCxPeerPos const& peerPos);
 
-        /** Relay disputed transacction to peers.
-            Only relay if the provided transaction hasn't been shared recently.
-            @param tx The disputed transaction to relay.
+        /** Share disputed transaction to peers.
+            Only share if the provided transaction hasn't been shared recently.
+            @param tx The disputed transaction to share.
         */
         void
-        relay(CCLCxTx const& tx);
+        share(CCLCxTx const& tx);
 
         /** Acquire the transaction set associated with a proposal.
             If the transaction set is not available locally, will attempt
@@ -209,11 +209,11 @@ class CCLConsensus
         void
         propose(CCLCxPeerPos::Proposal const& proposal);
 
-        /** Relay the given tx set to peers.
+        /** Share the given tx set to peers.
             @param set The TxSet to share.
         */
         void
-        relay(CCLTxSet const& set);
+        share(CCLTxSet const& set);
 
         /** Get the ID of the previous ledger/last closed ledger(LCL) on the
            network

@@ -1,11 +1,10 @@
 //------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
-    Copyright (c) 2012-2017 Ripple Labs Inc.
+    Copyright (c) 2012-2017 Ripple Labs Inc
     Permission to use, copy, modify, and/or distribute this software for any
     purpose  with  or without fee is hereby granted, provided that the above
     copyright notice and this permission notice appear in all copies.
-
     THE  SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
     WITH  REGARD  TO  THIS  SOFTWARE  INCLUDING  ALL  IMPLIED  WARRANTIES  OF
     MERCHANTABILITY  AND  FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -15,10 +14,24 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 //==============================================================================
+#ifndef CASINOCOIN_TEST_CSF_PROPOSAL_H_INCLUDED
+#define CASINOCOIN_TEST_CSF_PROPOSAL_H_INCLUDED
 
-#include <test/consensus/ByzantineFailureSim_test.cpp>
-#include <test/consensus/Consensus_test.cpp>
-#include <test/consensus/DistributedValidatorsSim_test.cpp>
-#include <test/consensus/LedgerTiming_test.cpp>
-#include <test/consensus/ScaleFreeSim_test.cpp>
-#include <test/consensus/Validations_test.cpp>
+#include <casinocoin/consensus/ConsensusProposal.h>
+#include <test/csf/ledgers.h>
+#include <test/csf/Tx.h>
+#include <test/csf/Validation.h>
+
+namespace casinocoin {
+namespace test {
+namespace csf {
+/** Proposal is a position taken in the consensus process and is represented
+    directly from the generic types.
+*/
+using Proposal = ConsensusProposal<PeerID, Ledger::ID, TxSet::ID>;
+
+}  // namespace csf
+}  // namespace test
+}  // namespace casinocoin
+
+#endif
