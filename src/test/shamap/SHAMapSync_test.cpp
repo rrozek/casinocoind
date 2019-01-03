@@ -24,19 +24,21 @@
 #include <casinocoin/basics/random.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/beast/unit_test.h>
-
+#include <casinocoin/beast/xor_shift_engine.h>
 namespace casinocoin {
 namespace tests {
 
 class sync_test : public beast::unit_test::suite
 {
 public:
-    static std::shared_ptr<SHAMapItem> makeRandomAS ()
+    beast::xor_shift_engine eng_;
+
+    std::shared_ptr<SHAMapItem> makeRandomAS ()
     {
         Serializer s;
 
         for (int d = 0; d < 3; ++d)
-            s.add32 (rand_int<std::uint32_t>());
+            s.add32 (rand_int<std::uint32_t>(eng_));
 
         return std::make_shared<SHAMapItem>(
             s.getSHA512Half(), s.peekData ());
@@ -140,8 +142,8 @@ public:
                 SHAMapNodeID (),
                 gotNodeIDs_a,
                 gotNodes_a,
-                rand_bool(),
-                rand_int(2)));
+                rand_bool(eng_),
+                rand_int(eng_, 2)));
 
             unexpected (gotNodes_a.size () < 1, "NodeSize");
 
@@ -168,24 +170,32 @@ public:
 
             for (auto& it : nodesMissing)
             {
-                BEAST_EXPECT(source.getNodeFat (
-                    it.first,
-                    gotNodeIDs_b,
-                    gotNodes_b,
-                    rand_bool(),
-                    rand_int(2)));
+                // Don't use BEAST_EXPECT here b/c it will be called a non-deterministic number of times
+                // and the number of tests run should be deterministic
+                if (!source.getNodeFat(
+                        it.first,
+                        gotNodeIDs_b,
+                        gotNodes_b,
+                        rand_bool(eng_),
+                        rand_int(eng_, 2)))
+                    fail();
             }
 
-            BEAST_EXPECT(gotNodeIDs_b.size () == gotNodes_b.size ());
-            BEAST_EXPECT(!gotNodeIDs_b.empty ());
+            // Don't use BEAST_EXPECT here b/c it will be called a non-deterministic number of times
+            // and the number of tests run should be deterministic
+            if (gotNodeIDs_b.size() != gotNodes_b.size() ||
+                gotNodeIDs_b.empty())
+                fail();
 
             for (std::size_t i = 0; i < gotNodeIDs_b.size(); ++i)
             {
-                BEAST_EXPECT(
-                    destination.addKnownNode (
-                        gotNodeIDs_b[i],
-                        makeSlice(gotNodes_b[i]),
-                        nullptr).isUseful ());
+                // Don't use BEAST_EXPECT here b/c it will be called a non-deterministic number of times
+                // and the number of tests run should be deterministic
+                if (!destination
+                         .addKnownNode(
+                             gotNodeIDs_b[i], makeSlice(gotNodes_b[i]), nullptr)
+                         .isUseful())
+                    fail();
             }
         }
         while (true);
