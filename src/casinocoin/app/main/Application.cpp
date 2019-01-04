@@ -57,6 +57,7 @@
 #include <casinocoin/nodestore/DummyScheduler.h>
 #include <casinocoin/overlay/Cluster.h>
 #include <casinocoin/overlay/make_Overlay.h>
+#include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/STParsedJSON.h>
 #include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/resource/Fees.h>
@@ -207,15 +208,6 @@ public:
         acquire (hash, 0);
     }
 };
-
-
-/** Amendments that this server supports and enables by default */
-std::vector<std::string>
-preEnabledAmendments ();
-
-/** Amendments that this server supports, but doesn't enable by default */
-std::vector<std::string>
-supportedAmendments ();
 
 } // detail
 
@@ -1114,7 +1106,6 @@ bool ApplicationImp::setup()
         supportedAmendments.append (detail::supportedAmendments ());
 
         Section enabledAmendments = config_->section (SECTION_AMENDMENTS);
-        enabledAmendments.append (detail::preEnabledAmendments ());
 
         m_amendmentTable = make_AmendmentTable (
             days{2},
