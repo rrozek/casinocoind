@@ -118,6 +118,8 @@ public:
         getCounter ().increment ();
     }
 
+    CountedObject& operator=(CountedObject const&) = default;
+
     ~CountedObject ()
     {
         getCounter ().decrement ();

@@ -67,12 +67,12 @@ public:
     {
     }
 
+    PreflightResult(PreflightResult const&) = default;
     /// Deleted copy assignment operator
     PreflightResult& operator=(PreflightResult const&) = delete;
 };
 
 /** Describes the results of the `preclaim` check
-
     @note All members are const to make it more difficult
         to "fake" a result without calling `preclaim`.
     @see preflight, preclaim, doApply, apply
@@ -120,6 +120,7 @@ public:
     {
     }
 
+    PreclaimResult(PreclaimResult const&) = default;
     /// Deleted copy assignment operator
     PreclaimResult& operator=(PreclaimResult const&) = delete;
 };

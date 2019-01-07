@@ -167,6 +167,7 @@ struct FlowDebugInfo
                 auto const end = FlowDebugInfo::clock::now ();
                 info->timePoints[tag].second = end;
             }
+            Stopper(Stopper&&) = default;
         };
         return Stopper (std::move (name), *this);
     }

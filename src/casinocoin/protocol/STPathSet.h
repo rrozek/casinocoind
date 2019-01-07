@@ -124,6 +124,7 @@ public:
     }
 
     STPathElement(STPathElement const&) = default;
+    STPathElement& operator=(STPathElement const&) = default;
 
     int
     getNodeType () const

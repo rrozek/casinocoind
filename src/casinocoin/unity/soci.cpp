@@ -23,6 +23,11 @@
 */
 //==============================================================================
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+#endif
+
 #include <BeastConfig.h>
 
 // Core soci
@@ -57,3 +62,7 @@
 
 #include <core/blob.cpp>
 #include <backends/sqlite3/blob.cpp>
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

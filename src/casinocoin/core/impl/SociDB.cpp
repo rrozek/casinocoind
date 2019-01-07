@@ -23,6 +23,11 @@
 */
 //==============================================================================
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+#endif
+
 #include <BeastConfig.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/core/ConfigSections.h>
@@ -276,3 +281,7 @@ std::unique_ptr <Checkpointer> makeCheckpointer (
 }
 
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
