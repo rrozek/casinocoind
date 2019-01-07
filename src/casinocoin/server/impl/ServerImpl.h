@@ -39,6 +39,8 @@
 
 namespace casinocoin {
 
+using Endpoints = std::vector<boost::asio::ip::tcp::endpoint>;
+
 /** A multi-protocol server.
 
     This server maintains multiple configured listening ports,
@@ -64,7 +66,7 @@ public:
         This may only be called once.
     */
     virtual
-    void
+    Endpoints
     ports (std::vector<Port> const& v) = 0;
 
     /** Close the server.
@@ -90,8 +92,6 @@ private:
     {
         historySize = 100
     };
-
-    using Doors = std::vector <std::shared_ptr<Door<Handler>>>;
 
     Handler& handler_;
     beast::Journal j_;
@@ -119,7 +119,7 @@ public:
         return j_;
     }
 
-    void
+    Endpoints
     ports (std::vector<Port> const& ports) override;
 
     void
@@ -169,13 +169,15 @@ ServerImpl<Handler>::
 }
 
 template<class Handler>
-void
+Endpoints
 ServerImpl<Handler>::
 ports (std::vector<Port> const& ports)
 {
     if (closed())
         Throw<std::logic_error> ("ports() on closed Server");
     ports_.reserve(ports.size());
+    Endpoints eps;
+    eps.reserve(ports.size());
     for(auto const& port : ports)
     {
         ports_.push_back(port);
@@ -183,9 +185,11 @@ ports (std::vector<Port> const& ports)
             io_service_, ports_.back(), j_))
         {
             list_.push_back(sp);
+            eps.push_back(sp->get_endpoint());
             sp->run();
         }
     }
+    return eps;
 }
 
 template<class Handler>
