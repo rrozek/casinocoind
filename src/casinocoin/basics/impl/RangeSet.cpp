@@ -115,16 +115,19 @@ std::uint32_t RangeSet::prevMissing (std::uint32_t v) const
         // Handle the case where the loop reaches the terminating condition
         //
         result = v - 1;
-
+        
+// std::clog << "Result 1: " << result << " v: " << v << std::endl;
         for (const_reverse_iterator cur = mRanges.rbegin (); cur != mRanges.rend (); ++cur)
         {
             // See if v-1 is in the range
             if (contains (*cur, result))
             {
                 result = cur->first - 1;
-                break;
+                // handle quorum gap between 154937 and 154940
+                if((result > 154936) && (result < 154941))
+                    result = 154936;
             }
-        }
+        }        
     }
 
     assert (result == absent || !hasValue (result));
