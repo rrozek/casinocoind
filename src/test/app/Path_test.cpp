@@ -1027,7 +1027,8 @@ public:
     {
         testcase("Path Find: CNY");
         using namespace jtx;
-        Env env{*this, supported_features_except(featureFlow)};
+        Env env{*this,
+                supported_amendments().reset(featureFlow)};
 
         Account A1 {"A1"};
         Account A2 {"A2"};

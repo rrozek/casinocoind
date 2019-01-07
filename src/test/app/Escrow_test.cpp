@@ -206,7 +206,7 @@ struct Escrow_test : public beast::unit_test::suite
         using namespace std::chrono;
 
         { // Escrow not enabled
-            Env env(*this, supported_features_except (featureEscrow));
+            Env env(*this, supported_amendments() - featureEscrow);
             env.fund(CSC(5000), "alice", "bob");
             env(lockup("alice", "bob", CSC(1000), env.now() + 1s), ter(temDISABLED));
             env(finish("bob", "alice", 1),                         ter(temDISABLED));
@@ -692,7 +692,7 @@ struct Escrow_test : public beast::unit_test::suite
 
         {
             testcase ("Metadata & Ownership (without fix1523)");
-            Env env(*this, supported_features_except (fix1523));
+            Env env(*this, supported_amendments() - fix1523);
             env.fund(CSC(5000), alice, bruce, carol);
             auto const seq = env.seq(alice);
 
