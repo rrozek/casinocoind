@@ -72,6 +72,7 @@ LoadMonitor::LoadMonitor (beast::Journal j)
 // call with the mutex
 void LoadMonitor::update ()
 {
+    using namespace std::chrono_literals;
     int now = UptimeTimer::getInstance ().getElapsedSeconds ();
     if (now == mLastUpdate) // current
         return;
@@ -82,8 +83,8 @@ void LoadMonitor::update ()
         // way out of date
         mCounts = 0;
         mLatencyEvents = 0;
-        mLatencyMSAvg = 0;
-        mLatencyMSPeak = 0;
+        mLatencyMSAvg = 0ms;
+        mLatencyMSPeak = 0ms;
         mLastUpdate = now;
         // VFALCO TODO don't return from the middle...
         return;
@@ -92,7 +93,6 @@ void LoadMonitor::update ()
     // do exponential decay
     /*
         David:
-
         "Imagine if you add 10 to something every second. And you
          also reduce it by 1/4 every second. It will "idle" at 40,
          correponding to 10 counts per second."
@@ -138,25 +138,28 @@ void LoadMonitor::addSamples (int count, std::chrono::milliseconds latency)
     update ();
     mCounts += count;
     mLatencyEvents += count;
-    mLatencyMSAvg += latency.count();
-    mLatencyMSPeak += latency.count();
+    mLatencyMSAvg += latency;
+    mLatencyMSPeak += latency;
 
-    int const latencyPeak = mLatencyEvents * latency.count() * 4 / count;
+    auto const latencyPeak = mLatencyEvents * latency * 4 / count;
 
     if (mLatencyMSPeak < latencyPeak)
         mLatencyMSPeak = latencyPeak;
 }
 
-void LoadMonitor::setTargetLatency (std::uint64_t avg, std::uint64_t pk)
+void LoadMonitor::setTargetLatency (std::chrono::milliseconds avg,
+                                    std::chrono::milliseconds pk)
 {
     mTargetLatencyAvg  = avg;
     mTargetLatencyPk = pk;
 }
 
-bool LoadMonitor::isOverTarget (std::uint64_t avg, std::uint64_t peak)
+bool LoadMonitor::isOverTarget (std::chrono::milliseconds avg,
+                                std::chrono::milliseconds peak)
 {
-    return (mTargetLatencyPk && (peak > mTargetLatencyPk)) ||
-           (mTargetLatencyAvg && (avg > mTargetLatencyAvg));
+    using namespace std::chrono_literals;
+    return (mTargetLatencyPk > 0ms && (peak > mTargetLatencyPk)) ||
+           (mTargetLatencyAvg > 0ms && (avg > mTargetLatencyAvg));
 }
 
 bool LoadMonitor::isOver ()
@@ -173,6 +176,7 @@ bool LoadMonitor::isOver ()
 
 LoadMonitor::Stats LoadMonitor::getStats ()
 {
+    using namespace std::chrono_literals;
     Stats stats;
 
     std::lock_guard<std::mutex> sl (mutex_);
@@ -183,8 +187,8 @@ LoadMonitor::Stats LoadMonitor::getStats ()
 
     if (mLatencyEvents == 0)
     {
-        stats.latencyAvg = 0;
-        stats.latencyPeak = 0;
+        stats.latencyAvg = 0ms;
+        stats.latencyPeak = 0ms;
     }
     else
     {

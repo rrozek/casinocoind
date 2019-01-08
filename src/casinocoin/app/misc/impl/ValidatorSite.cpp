@@ -54,7 +54,7 @@ ValidatorSite::ValidatorSite (
 ValidatorSite::~ValidatorSite()
 {
     std::unique_lock<std::mutex> lock{state_mutex_};
-    if (timer_.expires_at().time_since_epoch().count())
+    if (timer_.expires_at() > clock_type::time_point{})
     {
         if (! stopping_)
         {
@@ -105,7 +105,7 @@ void
 ValidatorSite::start ()
 {
     std::lock_guard <std::mutex> lock{state_mutex_};
-    if (! timer_.expires_at().time_since_epoch().count())
+    if (timer_.expires_at() == clock_type::time_point{})
         setTimer ();
 }
 
@@ -352,3 +352,4 @@ ValidatorSite::getJson() const
     return jrr;
 }
 } // casinocoin
+
