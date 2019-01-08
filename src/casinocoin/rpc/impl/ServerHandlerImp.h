@@ -33,6 +33,7 @@
 #include <casinocoin/server/WSSession.h>
 #include <casinocoin/rpc/RPCHandler.h>
 #include <casinocoin/app/main/CollectorManager.h>
+#include <casinocoin/json/Output.h>
 #include <map>
 #include <mutex>
 #include <vector>

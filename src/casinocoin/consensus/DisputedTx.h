@@ -31,6 +31,7 @@
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/beast/utility/Journal.h>
 #include <casinocoin/consensus/ConsensusParms.h>
+#include <casinocoin/json/json_writer.h>
 #include <casinocoin/protocol/Serializer.h>
 #include <casinocoin/protocol/UintTypes.h>
 #include <memory>
@@ -245,14 +246,14 @@ DisputedTx<Tx_t, NodeID_t>::updateVote(
         JLOG(j_.info()) << "No change (" << (ourVote_ ? "YES" : "NO")
                         << ") : weight " << weight << ", percent "
                         << percentTime;
-        JLOG(j_.debug()) << getJson();
+        JLOG(j_.debug()) << Json::Compact{getJson()};
         return false;
     }
 
     ourVote_ = newPosition;
     JLOG(j_.debug()) << "We now vote " << (ourVote_ ? "YES" : "NO") << " on "
                      << tx_.id();
-    JLOG(j_.debug()) << getJson();
+    JLOG(j_.debug()) << Json::Compact{getJson()};
     return true;
 }
 
