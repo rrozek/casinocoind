@@ -104,7 +104,7 @@ std::uint32_t RangeSet::getPrev (std::uint32_t v) const
 
 // Return the largest number not in the set that is less than the given number
 //
-std::uint32_t RangeSet::prevMissing (std::uint32_t v) const
+std::uint32_t RangeSet::prevMissing (std::uint32_t v, beast::Journal journal) const
 {
     std::uint32_t result = absent;
 
@@ -122,11 +122,18 @@ std::uint32_t RangeSet::prevMissing (std::uint32_t v) const
             if (contains (*cur, result))
             {
                 result = cur->first - 1;
-                break;
+                // handle any gap in the range
+                if(mLostLedgers.size() > 0)
+                {
+                    while (std::find(mLostLedgers.begin(), mLostLedgers.end(), result) != mLostLedgers.end())
+                    {
+                        JLOG (journal.trace()) << "RangeSet skip missing ledger: " << result;
+                        result = result - 1;
+                    }
+                }
             }
         }
     }
-
     assert (result == absent || !hasValue (result));
 
     return result;
@@ -271,6 +278,16 @@ void RangeSet::checkInternalConsistency () const noexcept
         assert (iter->first <= iter->second);
     }
 #endif
+}
+
+void RangeSet::addLostLedger(std::uint32_t seq, beast::Journal journal)
+{
+    JLOG (journal.trace()) << "RangeSet addLostLedger: " << seq;
+    if (std::find(mLostLedgers.begin(), mLostLedgers.end(), seq) == mLostLedgers.end()) 
+    {
+        // sequence not in vector, add it
+        mLostLedgers.push_back(seq);
+    }
 }
 
 } // casinocoin
