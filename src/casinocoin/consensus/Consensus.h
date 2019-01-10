@@ -1500,6 +1500,12 @@ Consensus<Derived, Traits>::createDisputes(TxSet_t const& o)
 
     for (auto& id : differences)
     {
+        if ((id.second && !result_->set.find(id.first))
+            || (!id.second && !o.find(id.first)))
+        {
+            JLOG(j_.warn()) << "Not creating disputes. Local SHAMap corrupted";
+            continue;
+        }
         ++dc;
         // create disputed transactions (from the ledger that has them)
         assert(
