@@ -50,7 +50,7 @@ public:
     std::uint32_t getPrev (std::uint32_t) const;
 
     // largest number not in the set that is less than the given number
-    std::uint32_t prevMissing (std::uint32_t) const;
+    std::uint32_t prevMissing (std::uint32_t, beast::Journal journal) const;
 
     // Add an item to the set
     void setValue (std::uint32_t);
@@ -72,6 +72,9 @@ public:
     */
     void checkInternalConsistency () const noexcept;
 
+    // add a lost ledger to the vector
+    void addLostLedger(std::uint32_t seq, beast::Journal journal);
+
 private:
     void simplify ();
 
@@ -90,6 +93,10 @@ private:
 
     // First is lowest value in range, last is highest value in range
     Map mRanges;
+
+    // Vector of lost sequences due to quorum loss
+    std::vector<std::uint32_t> mLostLedgers;
+
 };
 
 } // casinocoin

@@ -373,7 +373,7 @@ LedgerMaster::getFullValidatedRange (std::uint32_t& minVal, std::uint32_t& maxVa
 
     {
         ScopedLockType sl (mCompleteLock);
-        minVal = mCompleteLedgers.prevMissing (maxVal);
+        minVal = mCompleteLedgers.prevMissing (maxVal, m_journal);
     }
 
     if (minVal == RangeSet::absent)
@@ -397,7 +397,7 @@ LedgerMaster::getValidatedRange (std::uint32_t& minVal, std::uint32_t& maxVal)
 
     {
         ScopedLockType sl (mCompleteLock);
-        minVal = mCompleteLedgers.prevMissing (maxVal);
+        minVal = mCompleteLedgers.prevMissing (maxVal, m_journal);
     }
 
     if (minVal == RangeSet::absent)
@@ -1292,6 +1292,11 @@ LedgerMaster::getCompleteLedgers ()
     return mCompleteLedgers.toString ();
 }
 
+void LedgerMaster::addLostLedgerToRangeSet (std::uint32_t seq)
+{
+    mCompleteLedgers.addLostLedger(seq, m_journal);
+}
+
 boost::optional <NetClock::time_point>
 LedgerMaster::getCloseTimeBySeq (LedgerIndex ledgerIndex)
 {
@@ -1556,8 +1561,7 @@ void LedgerMaster::doAdvance ()
                 std::uint32_t missing;
                 {
                     ScopedLockType sl (mCompleteLock);
-                    missing = mCompleteLedgers.prevMissing(
-                        mPubLedger->info().seq);
+                    missing = mCompleteLedgers.prevMissing(mPubLedger->info().seq, m_journal);
                 }
                 JLOG (m_journal.trace())
                     << "tryAdvance discovered missing " << missing;
