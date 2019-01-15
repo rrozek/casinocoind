@@ -182,8 +182,7 @@ public:
 
     /** Set the number of thread serving the job queue to precisely this number.
     */
-    void setThreadCount (int c, bool const standaloneMode,
-                         bool const validator=true);
+    void setThreadCount (int c, bool const standaloneMode);
 
     /** Return a scoped LoadEvent.
     */
