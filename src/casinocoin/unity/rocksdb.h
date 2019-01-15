@@ -41,6 +41,7 @@
 # define ROCKSDB_PLATFORM_WINDOWS
 #else
 # define ROCKSDB_PLATFORM_POSIX
+# define ROCKSDB_LIB_IO_POSIX
 # if BEAST_MAC || BEAST_IOS
 #  define OS_MACOSX 1
 # elif BEAST_BSD
@@ -66,6 +67,7 @@
 #include <rocksdb2/include/rocksdb/cache.h>
 #include <rocksdb2/include/rocksdb/compaction_filter.h>
 #include <rocksdb2/include/rocksdb/comparator.h>
+#include <rocksdb2/include/rocksdb/convenience.h>
 #include <rocksdb2/include/rocksdb/db.h>
 #include <rocksdb2/include/rocksdb/env.h>
 #include <rocksdb2/include/rocksdb/filter_policy.h>
