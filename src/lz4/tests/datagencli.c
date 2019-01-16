@@ -1,62 +1,36 @@
 /*
     datagencli.c
     compressible data command line generator
-    Copyright (C) Yann Collet 2012-2015
-
+    Copyright (C) Yann Collet 2012-2016
     GPL v2 License
-
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
     You can contact the author at :
-   - ZSTD source repository : https://github.com/Cyan4973/zstd
+   - LZ4 source repository : https://github.com/lz4/lz4
    - Public forum : https://groups.google.com/forum/#!forum/lz4c
 */
 
 /**************************************
 *  Includes
 **************************************/
+#include "util.h"      /* U32 */
 #include <stdio.h>     /* fprintf, stderr */
 #include "datagen.h"   /* RDG_generate */
-
-
-/**************************************
-*  Basic Types
-**************************************/
-#if defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)   /* C99 */
-# include <stdint.h>
-  typedef  uint8_t BYTE;
-  typedef uint16_t U16;
-  typedef uint32_t U32;
-  typedef  int32_t S32;
-  typedef uint64_t U64;
-#else
-  typedef unsigned char       BYTE;
-  typedef unsigned short      U16;
-  typedef unsigned int        U32;
-  typedef   signed int        S32;
-  typedef unsigned long long  U64;
-#endif
+#include "lz4.h"       /* LZ4_VERSION_STRING */
 
 
 /**************************************
 *  Constants
 **************************************/
-#ifndef ZSTD_VERSION
-#  define ZSTD_VERSION "r1"
-#endif
-
 #define KB *(1 <<10)
 #define MB *(1 <<20)
 #define GB *(1U<<30)
@@ -182,7 +156,7 @@ int main(int argc, char** argv)
         }
     }
 
-    DISPLAYLEVEL(4, "Data Generator %s \n", ZSTD_VERSION);
+    DISPLAYLEVEL(4, "Data Generator %s \n", LZ4_VERSION_STRING);
     DISPLAYLEVEL(3, "Seed = %u \n", seed);
     if (proba!=COMPRESSIBILITY_DEFAULT) DISPLAYLEVEL(3, "Compressibility : %i%%\n", (U32)(proba*100));
 

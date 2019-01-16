@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Test LZ4 interoperability between versions"""
+
+#
+# Copyright (C) 2011-present, Takayuki Matsuoka
+# All rights reserved.
+# GPL v2 License
+#
 
 import glob
 import subprocess
@@ -8,20 +15,20 @@ import shutil
 import sys
 import hashlib
 
-repo_url = 'https://github.com/Cyan4973/lz4.git'
-tmp_dir_name = 'test/lz4test'
+repo_url = 'https://github.com/lz4/lz4.git'
+tmp_dir_name = 'tests/versionsTest'
 make_cmd = 'make'
 git_cmd = 'git'
 test_dat_src = 'README.md'
 test_dat = 'test_dat'
-head = 'r999'
+head = 'v999'
 
 def proc(cmd_args, pipe=True, dummy=False):
     if dummy:
         return
     if pipe:
         subproc = subprocess.Popen(cmd_args,
-                                   stdout=subprocess.PIPE, 
+                                   stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
     else:
         subproc = subprocess.Popen(cmd_args)
@@ -36,9 +43,11 @@ def git(args, pipe=True):
 def get_git_tags():
     stdout, stderr = git(['tag', '-l', 'r[0-9][0-9][0-9]'])
     tags = stdout.decode('utf-8').split()
+    stdout, stderr = git(['tag', '-l', 'v[1-9].[0-9].[0-9]'])
+    tags += stdout.decode('utf-8').split()
     return tags
 
-# http://stackoverflow.com/a/19711609/2132223
+# https://stackoverflow.com/a/19711609/2132223
 def sha1_of_file(filepath):
     with open(filepath, 'rb') as f:
         return hashlib.sha1(f.read()).hexdigest()
@@ -46,8 +55,8 @@ def sha1_of_file(filepath):
 if __name__ == '__main__':
     error_code = 0
     base_dir = os.getcwd() + '/..'           # /path/to/lz4
-    tmp_dir = base_dir + '/' + tmp_dir_name  # /path/to/lz4/test/lz4test
-    clone_dir = tmp_dir + '/' + 'lz4'        # /path/to/lz4/test/lz4test/lz4
+    tmp_dir = base_dir + '/' + tmp_dir_name  # /path/to/lz4/tests/versionsTest
+    clone_dir = tmp_dir + '/' + 'lz4'        # /path/to/lz4/tests/versionsTest/lz4
     programs_dir = base_dir + '/programs'    # /path/to/lz4/programs
     os.makedirs(tmp_dir, exist_ok=True)
 
@@ -75,11 +84,11 @@ if __name__ == '__main__':
                 os.chdir(clone_dir)
                 git(['--work-tree=' + r_dir, 'checkout', tag, '--', '.'], False)
                 os.chdir(r_dir + '/programs')  # /path/to/lz4/lz4test/<TAG>/programs
-                make(['clean', 'lz4c', 'lz4c32'], False)
             else:
                 os.chdir(programs_dir)
-                make(['lz4c', 'lz4c32'], False)
+            make(['clean', 'lz4c'], False)
             shutil.copy2('lz4c',   dst_lz4c)
+            make(['clean', 'lz4c32'], False)
             shutil.copy2('lz4c32', dst_lz4c32)
 
     # Compress test.dat by all released lz4c and lz4c32
