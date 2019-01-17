@@ -464,7 +464,7 @@ private:
             if (reader.parse (jvParams[2u].asString (), txJSON))
             {
                 // sign_for txJSON.
-                Json::Value jvRequest;
+                Json::Value jvRequest{Json::objectValue};
 
                 jvRequest[jss::account] = jvParams[0u].asString ();
                 jvRequest[jss::secret]  = jvParams[1u].asString ();
@@ -808,7 +808,7 @@ private:
     Json::Value parseCasinocoinPathFind (Json::Value const& jvParams)
     {
         Json::Reader    reader;
-        Json::Value     jvRequest;
+        Json::Value     jvRequest{Json::objectValue};
         bool            bLedger     = 2 == jvParams.size ();
 
         JLOG (j_.trace()) << "RPC json: " << jvParams[0u];
@@ -841,7 +841,7 @@ private:
         {
             // Submitting tx_blob
 
-            Json::Value jvRequest;
+            Json::Value jvRequest{Json::objectValue};
 
             jvRequest[jss::tx_blob]    = jvParams[0u].asString ();
 
@@ -851,7 +851,7 @@ private:
                  && reader.parse (jvParams[1u].asString (), txJSON))
         {
             // Signing or submitting tx_json.
-            Json::Value jvRequest;
+            Json::Value jvRequest{Json::objectValue};
 
             jvRequest[jss::secret]     = jvParams[0u].asString ();
             jvRequest[jss::tx_json]    = txJSON;
@@ -870,7 +870,7 @@ private:
     {
         if (2 == jvParams.size ())
         {
-            Json::Value jvRequest;
+            Json::Value jvRequest{Json::objectValue};
             jvRequest[jss::secret] = jvParams[0u].asString();
             jvRequest[jss::message] = jvParams[1u].asString();
             return jvRequest;
@@ -890,7 +890,7 @@ private:
             Json::Reader    reader;
             if (reader.parse (jvParams[0u].asString (), txJSON))
             {
-                Json::Value jvRequest;
+                Json::Value jvRequest{Json::objectValue};
                 jvRequest[jss::tx_json] = txJSON;
                 return jvRequest;
             }
@@ -909,7 +909,7 @@ private:
         if (txHash.length() != 64)
             return rpcError (rpcINVALID_PARAMS);
 
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
         jvRequest[jss::tx_hash] = txHash;
 
         jvParseLedger (jvRequest, jvParams[1u].asString());
@@ -927,7 +927,7 @@ private:
     // tx <transaction_id>
     Json::Value parseTx (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         if (jvParams.size () > 1)
         {
@@ -942,7 +942,7 @@ private:
     // tx_history <index>
     Json::Value parseTxHistory (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         jvRequest[jss::start]  = jvParams[0u].asUInt ();
 
@@ -955,7 +955,7 @@ private:
     // shell history file (e.g. .bash_history) and it may be leaked via the process status command (i.e. ps).
     Json::Value parseValidationCreate (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         if (jvParams.size ())
             jvRequest[jss::secret]     = jvParams[0u].asString ();
@@ -969,7 +969,7 @@ private:
     // shell history file (e.g. .bash_history) and it may be leaked via the process status command (i.e. ps).
     Json::Value parseValidationSeed (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         if (jvParams.size ())
             jvRequest[jss::secret]     = jvParams[0u].asString ();
@@ -983,7 +983,7 @@ private:
 
         if (3 == jvParams.size ())
         {
-            Json::Value jvRequest;
+            Json::Value jvRequest{Json::objectValue};
             jvRequest[jss::message] = jvParams[0u].asString ();
             jvRequest[jss::signature] = jvParams[1u].asString ();
             jvRequest[jss::public_key_hex] = jvParams[2u].asString ();
@@ -998,7 +998,7 @@ private:
     // <passphrase> is only for testing. Master seeds should only be generated randomly.
     Json::Value parseWalletPropose (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         if (jvParams.size ())
             jvRequest[jss::passphrase]     = jvParams[0u].asString ();
@@ -1009,7 +1009,7 @@ private:
     // wallet_seed [<seed>|<passphrase>|<passkey>]
     Json::Value parseWalletSeed (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         if (jvParams.size ())
             jvRequest[jss::secret]     = jvParams[0u].asString ();
@@ -1025,7 +1025,7 @@ private:
         unsigned int index = 0;
         const unsigned int size = jvParams.size ();
 
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         std::string param = jvParams[index++].asString ();
         if (param.empty ())

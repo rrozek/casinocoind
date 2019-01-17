@@ -384,11 +384,26 @@ public:
     }
 
     void
+    test_validation_create()
+    {
+        using namespace test::jtx;
+        Env env{*this};
+        auto result = env.rpc("validation_create");
+        BEAST_EXPECT(result.isMember(jss::result) &&
+                     result[jss::result][jss::status] == "success");
+        result = env.rpc("validation_create",
+                         "BAWL MAN JADE MOON DOVE GEM SON NOW HAD ADEN GLOW TIRE");
+        BEAST_EXPECT(result.isMember(jss::result) &&
+                     result[jss::result][jss::status] == "success");
+    }
+
+    void
     run()
     {
         testPrivileges();
         testStaticUNL();
         testDynamicUNL();
+        test_validation_create();
     }
 };
 
@@ -396,3 +411,4 @@ BEAST_DEFINE_TESTSUITE(ValidatorRPC, app, ripple);
 
 }  // namespace test
 }  // namespace casinocoin
+
