@@ -175,8 +175,8 @@ public:
                              int& flags);
 
     // Add a peer suppression and return whether the entry should be processed
-    bool shouldProcess (uint256 const& key, PeerShortID peer,
-        int& flags, Stopwatch::time_point now, std::chrono::seconds interval);
+    bool shouldProcess (uint256 const& key, PeerShortID peer, int& flags,
+        std::chrono::seconds tx_interval);
 
     /** Set the flags on a hash.
 
@@ -223,3 +223,4 @@ private:
 } // casinocoin
 
 #endif
+

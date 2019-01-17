@@ -228,6 +228,7 @@ PeerImp::charge (Resource::Charge const& fee)
         usage_.disconnect() && strand_.running_in_this_thread())
     {
         // Sever the connection
+        overlay_.incPeerDisconnectCharges();
         fail("charge: Resources");
     }
 }
@@ -420,6 +421,7 @@ PeerImp::close()
         error_code ec;
         timer_.cancel(ec);
         socket_.close(ec);
+        overlay_.incPeerDisconnect();
         if(m_inbound)
         {
             JLOG(journal_.debug()) << "Closed";
@@ -1060,10 +1062,10 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
         uint256 txID = stx->getTransactionID ();
 
         int flags;
-
         constexpr std::chrono::seconds tx_interval = 10s;
-        if (! app_.getHashRouter ().shouldProcess (
-            txID, id_, flags, clock_type::now(), tx_interval))
+
+        if (! app_.getHashRouter ().shouldProcess (txID, id_, flags,
+            tx_interval))
         {
             // we have seen this transaction recently
             if (flags & SF_BAD)
@@ -1100,6 +1102,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
         constexpr int max_transactions = 250;
         if (app_.getJobQueue().getJobCount(jtTRANSACTION) > max_transactions)
         {
+            overlay_.incJqTransOverflow();
             JLOG(p_journal_.info()) << "Transaction queue is full";
         }
         else if (app_.getLedgerMaster().getValidatedLedgerAge() > 10min)
@@ -2398,3 +2401,4 @@ PeerImp::isHighLatency() const
 }
 
 } // casinocoin
+
