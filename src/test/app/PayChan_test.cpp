@@ -636,17 +636,15 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("Disallow CSC");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
+
+        auto const alice = Account ("alice");
+        auto const bob = Account ("bob");
         {
-            // Create a channel where dst disallows CSC
-            Env env (*this);
-            auto const alice = Account ("alice");
-            auto const bob = Account ("bob");
+            // Create a channel where dst disallows XRP
+            Env env (*this, supported_amendments() - featureDepositAuth);
             env.fund (CSC (10000), alice, bob);
             env (fset (bob, asfDisallowCSC));
-            auto const pk = alice.pk ();
-            auto const settleDelay = 3600s;
-            auto const channelFunds = CSC (1000);
-            env (create (alice, bob, channelFunds, settleDelay, pk),
+            env (create (alice, bob, CSC (1000), 3600s, alice.pk()),
                 ter (tecNO_TARGET));
             auto const chan = channel (*env.current (), alice, bob);
             BEAST_EXPECT (!channelExists (*env.current (), chan));
@@ -655,13 +653,19 @@ struct PayChan_test : public beast::unit_test::suite
             // Claim to a channel where dst disallows CSC
             // (channel is created before disallow csc is set)
             Env env (*this);
-            auto const alice = Account ("alice");
-            auto const bob = Account ("bob");
             env.fund (CSC (10000), alice, bob);
-            auto const pk = alice.pk ();
-            auto const settleDelay = 3600s;
-            auto const channelFunds = CSC (1000);
-            env (create (alice, bob, channelFunds, settleDelay, pk));
+            env (fset (bob, asfDisallowCSC));
+            env (create (alice, bob, CSC (1000), 3600s, alice.pk()));
+            auto const chan = channel (*env.current (), alice, bob);
+            BEAST_EXPECT (channelExists (*env.current (), chan));
+        }
+
+        {
+            // Claim to a channel where dst disallows XRP
+            // (channel is created before disallow xrp is set)
+            Env env (*this, supported_amendments() - featureDepositAuth);
+            env.fund (CSC (10000), alice, bob);
+            env (create (alice, bob, CSC (1000), 3600s, alice.pk()));
             auto const chan = channel (*env.current (), alice, bob);
             BEAST_EXPECT (channelExists (*env.current (), chan));
 
@@ -669,6 +673,20 @@ struct PayChan_test : public beast::unit_test::suite
             auto const preBob = env.balance (bob);
             auto const reqBal = CSC (500).value();
             env (claim (alice, chan, reqBal, reqBal), ter(tecNO_TARGET));
+        }
+        {
+            // Claim to a channel where dst disallows XRP (channel is
+            // created before disallow xrp is set).  Ignore that flag
+            // since it is just advisory.
+            Env env (*this);
+            env.fund (CSC (10000), alice, bob);
+            env (create (alice, bob, CSC (1000), 3600s, alice.pk()));
+            auto const chan = channel (*env.current (), alice, bob);
+            BEAST_EXPECT (channelExists (*env.current (), chan));
+
+            env (fset (bob, asfDisallowCSC));
+            auto const reqBal = CSC (500).value();
+            env (claim (alice, chan, reqBal, reqBal));
         }
     }
 
