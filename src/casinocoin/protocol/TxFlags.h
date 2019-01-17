@@ -75,6 +75,7 @@ const std::uint32_t asfAccountTxnID        = 5;
 const std::uint32_t asfNoFreeze            = 6;
 const std::uint32_t asfGlobalFreeze        = 7;
 const std::uint32_t asfDefaultCasinocoin   = 8;
+const std::uint32_t asfDepositAuth         = 9;
 
 // KYCSet SetFlag/ClearFlag values
 const std::uint32_t kycfValidated          = 1;
