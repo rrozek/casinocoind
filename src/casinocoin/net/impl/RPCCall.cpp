@@ -25,6 +25,7 @@
 
 #include <BeastConfig.h>
 #include <casinocoin/app/main/Application.h>
+#include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/net/RPCCall.h>
 #include <casinocoin/net/RPCErr.h>
 #include <casinocoin/basics/contract.h>
@@ -43,6 +44,7 @@
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <beast/core/string.hpp>
 #include <boost/asio/streambuf.hpp>
+#include <boost/optional.hpp>
 #include <boost/regex.hpp>
 #include <array>
 #include <iostream>
@@ -86,6 +88,33 @@ std::string createHTTPPost (
     s << "\r\n" << strMsg;
 
     return s.str ();
+}
+
+static
+boost::optional<std::uint64_t>
+to_uint64(std::string const& s)
+{
+    if (s.empty())
+        return boost::none;
+
+    for (auto c : s)
+    {
+        if (!isdigit(c))
+            return boost::none;
+    }
+
+    try
+    {
+        std::size_t pos{};
+        auto const drops = std::stoul(s, &pos);
+        if (s.size() != pos)
+            return boost::none;
+        return drops;
+    }
+    catch (std::exception const&)
+    {
+        return boost::none;
+    }
 }
 
 class RPCParser
@@ -686,16 +715,9 @@ private:
         }
         jvRequest[jss::channel_id] = jvParams[1u].asString ();
 
-        try
-        {
-            auto const drops = std::stoul (jvParams[2u].asString ());
-            (void)drops;  // just used for error checking
-            jvRequest[jss::amount] = jvParams[2u];
-        }
-        catch (std::exception const&)
-        {
-            return rpcError (rpcCHANNEL_AMT_MALFORMED);
-        }
+        if (!jvParams[2u].isString() || !to_uint64(jvParams[2u].asString()))
+            return rpcError(rpcCHANNEL_AMT_MALFORMED);
+        jvRequest[jss::amount] = jvParams[2u];
 
         return jvRequest;
     }
@@ -705,7 +727,21 @@ private:
     {
         std::string const strPk = jvParams[0u].asString ();
 
-        if (!parseBase58<PublicKey> (TokenType::TOKEN_ACCOUNT_PUBLIC, strPk))
+        bool const validPublicKey = [&strPk]{
+            if (parseBase58<PublicKey> (TokenType::TOKEN_ACCOUNT_PUBLIC, strPk))
+                return true;
+
+            std::pair<Blob, bool> pkHex(strUnHex (strPk));
+            if (!pkHex.second)
+                return false;
+
+            if (!publicKeyType(makeSlice(pkHex.first)))
+                return false;
+
+            return true;
+        }();
+
+        if (!validPublicKey)
             return rpcError (rpcPUBLIC_MALFORMED);
 
         Json::Value jvRequest (Json::objectValue);
@@ -718,16 +754,11 @@ private:
                 return rpcError (rpcCHANNEL_MALFORMED);
         }
         jvRequest[jss::channel_id] = jvParams[1u].asString ();
-        try
-        {
-            auto const drops = std::stoul (jvParams[2u].asString ());
-            (void)drops;  // just used for error checking
-            jvRequest[jss::amount] = jvParams[2u];
-        }
-        catch (std::exception const&)
-        {
-            return rpcError (rpcCHANNEL_AMT_MALFORMED);
-        }
+
+        if (!jvParams[2u].isString() || !to_uint64(jvParams[2u].asString()))
+            return rpcError(rpcCHANNEL_AMT_MALFORMED);
+        jvRequest[jss::amount] = jvParams[2u];
+
         jvRequest[jss::signature] = jvParams[3u].asString ();
 
         return jvRequest;

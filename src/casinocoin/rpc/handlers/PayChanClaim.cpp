@@ -37,7 +37,36 @@
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <casinocoin/rpc/impl/Tuning.h>
 
+#include <boost/optional.hpp>
+
 namespace casinocoin {
+
+static
+boost::optional<std::uint64_t>
+to_uint64(std::string const& s)
+{
+    if (s.empty())
+        return boost::none;
+
+    for (auto c : s)
+    {
+        if (!isdigit(c))
+            return boost::none;
+    }
+
+    try
+    {
+        std::size_t pos{};
+        auto const drops = std::stoul(s, &pos);
+        if (s.size() != pos)
+            return boost::none;
+        return drops;
+    }
+    catch (std::exception const&)
+    {
+        return boost::none;
+    }
+}
 
 // {
 //   secret_key: <signing_secret_key>
@@ -60,15 +89,15 @@ Json::Value doChannelAuthorize (RPC::Context& context)
     if (!channelId.SetHexExact (params[jss::channel_id].asString ()))
         return rpcError (rpcCHANNEL_MALFORMED);
 
-    std::uint64_t drops = 0;
-    try
-    {
-        drops = std::stoul (params[jss::amount].asString ());
-    }
-    catch (std::exception const&)
-    {
+    boost::optional<std::uint64_t> const optDrops =
+        params[jss::amount].isString()
+        ? to_uint64(params[jss::amount].asString())
+        : boost::none;
+
+    if (!optDrops)
         return rpcError (rpcCHANNEL_AMT_MALFORMED);
-    }
+
+    std::uint64_t const drops = *optDrops;
 
     Serializer msg;
     serializePayChanAuthorization (msg, channelId, CSCAmount (drops));
@@ -96,29 +125,40 @@ Json::Value doChannelVerify (RPC::Context& context)
 {
     auto const& params (context.params);
     for (auto const& p :
-        {jss::public_key, jss::channel_id, jss::amount, jss::signature})
+         {jss::public_key, jss::channel_id, jss::amount, jss::signature})
         if (!params.isMember (p))
             return RPC::missing_field_error (p);
 
-    std::string const strPk = params[jss::public_key].asString ();
-    auto const pk =
-        parseBase58<PublicKey> (TokenType::TOKEN_ACCOUNT_PUBLIC, strPk);
-    if (!pk)
-        return rpcError (rpcPUBLIC_MALFORMED);
+    boost::optional<PublicKey> pk;
+    {
+        std::string const strPk = params[jss::public_key].asString();
+        pk = parseBase58<PublicKey>(TokenType::TOKEN_ACCOUNT_PUBLIC, strPk);
+
+        if (!pk)
+        {
+            std::pair<Blob, bool> pkHex(strUnHex (strPk));
+            if (!pkHex.second)
+                return rpcError(rpcPUBLIC_MALFORMED);
+            auto const pkType = publicKeyType(makeSlice(pkHex.first));
+            if (!pkType)
+                return rpcError(rpcPUBLIC_MALFORMED);
+            pk.emplace(makeSlice(pkHex.first));
+        }
+    }
 
     uint256 channelId;
     if (!channelId.SetHexExact (params[jss::channel_id].asString ()))
         return rpcError (rpcCHANNEL_MALFORMED);
 
-    std::uint64_t drops = 0;
-    try
-    {
-        drops = std::stoul (params[jss::amount].asString ());
-    }
-    catch (std::exception const&)
-    {
+    boost::optional<std::uint64_t> const optDrops =
+        params[jss::amount].isString()
+        ? to_uint64(params[jss::amount].asString())
+        : boost::none;
+
+    if (!optDrops)
         return rpcError (rpcCHANNEL_AMT_MALFORMED);
-    }
+
+    std::uint64_t const drops = *optDrops;
 
     std::pair<Blob, bool> sig(strUnHex (params[jss::signature].asString ()));
     if (!sig.second || !sig.first.size ())
@@ -134,3 +174,4 @@ Json::Value doChannelVerify (RPC::Context& context)
 }
 
 } // casinocoin
+
