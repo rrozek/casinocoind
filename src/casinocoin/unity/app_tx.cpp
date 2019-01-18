@@ -28,9 +28,12 @@
 #include <casinocoin/app/tx/impl/apply.cpp>
 #include <casinocoin/app/tx/impl/applySteps.cpp>
 #include <casinocoin/app/tx/impl/BookTip.cpp>
+#include <casinocoin/app/tx/impl/CancelCheck.cpp>
 #include <casinocoin/app/tx/impl/CancelOffer.cpp>
 #include <casinocoin/app/tx/impl/CancelTicket.cpp>
+#include <casinocoin/app/tx/impl/CashCheck.cpp>
 #include <casinocoin/app/tx/impl/Change.cpp>
+#include <casinocoin/app/tx/impl/CreateCheck.cpp>
 #include <casinocoin/app/tx/impl/CreateOffer.cpp>
 #include <casinocoin/app/tx/impl/CreateTicket.cpp>
 #include <casinocoin/app/tx/impl/Escrow.cpp>

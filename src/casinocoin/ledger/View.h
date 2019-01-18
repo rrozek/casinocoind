@@ -66,6 +66,10 @@ bool
 isGlobalFrozen (ReadView const& view,
     AccountID const& issuer);
 
+bool
+isFrozen (ReadView const& view, AccountID const& account,
+    Currency const& currency, AccountID const& issuer);
+
 // Returns the amount an account can spend without going into debt.
 //
 // <-- saAmount: amount of currency held by account. May be negative.
@@ -354,3 +358,4 @@ bool fix1449 (NetClock::time_point const closeTime);
 } // casinocoin
 
 #endif
+

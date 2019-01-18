@@ -196,6 +196,15 @@ getSignerListIndex (AccountID const& account)
         std::uint32_t (0));  // 0 == default SignerList ID.
 }
 
+uint256
+getCheckIndex (AccountID const& account, std::uint32_t uSequence)
+{
+    return sha512Half(
+        std::uint16_t(spaceCheck),
+        account,
+        std::uint32_t(uSequence));
+}
+
 //------------------------------------------------------------------------------
 
 namespace keylet {
@@ -291,6 +300,13 @@ Keylet signers_t::operator()(AccountID const& id) const
         getSignerListIndex(id) };
 }
 
+Keylet check_t::operator()(AccountID const& id,
+    std::uint32_t seq) const
+{
+    return { ltCHECK,
+        getCheckIndex(id, seq) };
+}
+
 //------------------------------------------------------------------------------
 
 Keylet unchecked (uint256 const& key)
@@ -344,3 +360,4 @@ payChan (AccountID const& source, AccountID const& dst, std::uint32_t seq)
 } // keylet
 
 } // casinocoin
+

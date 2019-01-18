@@ -96,13 +96,16 @@ getCasinocoinStateIndex (AccountID const& a, Issue const& issue);
 uint256
 getSignerListIndex (AccountID const& account);
 
+uint256
+getCheckIndex (AccountID const& account, std::uint32_t uSequence);
+
 //------------------------------------------------------------------------------
 
 /* VFALCO TODO
     For each of these operators that take just the uin256 and
     only attach the LedgerEntryType, we can comment out that
     operator to see what breaks, and those call sites are
-    candidates for having the Keylet either passed in a a
+    candidates for having the Keylet either passed in as a
     parameter, or having a data member that stores the keylet.
 */
 
@@ -219,6 +222,19 @@ struct signers_t
 };
 static signers_t const signers {};
 
+/** A Check */
+struct check_t
+{
+    Keylet operator()(AccountID const& id,
+        std::uint32_t seq) const;
+
+    Keylet operator()(uint256 const& key) const
+    {
+        return { ltCHECK, key };
+    }
+};
+static check_t const check {};
+
 //------------------------------------------------------------------------------
 
 /** Any ledger entry */
@@ -253,3 +269,4 @@ payChan (AccountID const& source, AccountID const& dst, std::uint32_t seq);
 }
 
 #endif
+
