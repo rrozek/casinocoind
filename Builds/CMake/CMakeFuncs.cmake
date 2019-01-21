@@ -337,7 +337,13 @@ macro(use_boost)
       set(BOOST_ROOT $ENV{CLANG_BOOST_ROOT})
     endif()
 
-    set(Boost_USE_STATIC_LIBS on)
+    # boost dynamic libraries don't trivially support @rpath
+    # linking right now (cmake's default), so just force
+    # static linking for macos, or if requested on linux
+    # by flag
+    if (static OR APPLE)
+      set(Boost_USE_STATIC_LIBS on)
+    endif()
     set(Boost_USE_MULTITHREADED on)
     set(Boost_USE_STATIC_RUNTIME off)
     if(MSVC)
