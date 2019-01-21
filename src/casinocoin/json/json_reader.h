@@ -87,6 +87,8 @@ public:
      */
     std::string getFormatedErrorMessages () const;
 
+    static constexpr unsigned nest_limit {1000};
+
 private:
     enum TokenType
     {
@@ -135,9 +137,9 @@ private:
     bool readCppStyleComment ();
     bool readString ();
     Reader::TokenType readNumber ();
-    bool readValue ();
-    bool readObject ( Token& token );
-    bool readArray ( Token& token );
+    bool readValue(unsigned depth);
+    bool readObject(Token& token, unsigned depth);
+    bool readArray (Token& token, unsigned depth);
     bool decodeNumber ( Token& token );
     bool decodeString ( Token& token );
     bool decodeString ( Token& token, std::string& decoded );
@@ -218,3 +220,4 @@ std::istream& operator>> ( std::istream&, Value& );
 } // namespace Json
 
 #endif // CPPTL_JSON_READER_H_INCLUDED
+

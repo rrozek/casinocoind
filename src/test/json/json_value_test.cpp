@@ -24,6 +24,8 @@
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/beast/type_name.h>
 
+#include <algorithm>
+
 namespace casinocoin {
 
 struct json_value_test : beast::unit_test::suite
@@ -249,6 +251,52 @@ struct json_value_test : beast::unit_test::suite
         }
     }
 
+    void test_nest_limits ()
+    {
+        Json::Reader r;
+        {
+            auto nest = [](std::uint32_t depth)->std::string {
+                    std::string s = "{";
+                    for (std::uint32_t i{1}; i <= depth; ++i)
+                        s += "\"obj\":{";
+                    for (std::uint32_t i{1}; i <= depth; ++i)
+                        s += "}";
+                    s += "}";
+                    return s;
+                };
+
+            {
+                // Within object nest limit
+                auto json{nest(std::min(10u, Json::Reader::nest_limit))};
+                Json::Value j;
+                BEAST_EXPECT(r.parse(json, j));
+            }
+
+            {
+                // Exceed object nest limit
+                auto json{nest(Json::Reader::nest_limit + 1)};
+                Json::Value j;
+                BEAST_EXPECT(!r.parse(json, j));
+            }
+        }
+
+        auto nest = [](std::uint32_t depth)->std::string {
+            std::string s = "{";
+                for (std::uint32_t i{1}; i <= depth; ++i)
+                    s += "\"array\":[{";
+                for (std::uint32_t i{1}; i <= depth; ++i)
+                    s += "]}";
+                s += "}";
+                return s;
+            };
+        {
+            // Exceed array nest limit
+            auto json{nest(Json::Reader::nest_limit + 1)};
+            Json::Value j;
+            BEAST_EXPECT(!r.parse(json, j));
+        }
+    }
+
     void run ()
     {
         test_bool ();
@@ -258,9 +306,11 @@ struct json_value_test : beast::unit_test::suite
         test_move ();
         test_comparisons ();
         test_compact ();
+        test_nest_limits ();
     }
 };
 
 BEAST_DEFINE_TESTSUITE(json_value, json, ripple);
 
 } // casinocoin
+
