@@ -44,7 +44,6 @@
 #include <casinocoin/protocol/BuildInfo.h>
 #include <casinocoin/beast/clock/basic_seconds_clock.h>
 #include <casinocoin/beast/core/CurrentThreadName.h>
-#include <casinocoin/beast/core/Time.h>
 #include <casinocoin/beast/utility/Debug.h>
 
 #include <beast/unit_test/dstream.hpp>
@@ -63,6 +62,10 @@
 #include <utility>
 #include <stdexcept>
 
+#ifdef _MSC_VER
+#include <sys/types.h>
+#include <sys/timeb.h>
+#endif
 
 #if BOOST_VERSION >= 106400
 #define HAS_BOOST_PROCESS 1
@@ -596,12 +599,23 @@ int run (int argc, char** argv)
 //
 int main (int argc, char** argv)
 {
-    // Workaround for Boost.Context / Boost.Coroutine
-    // https://svn.boost.org/trac/boost/ticket/10657
-    (void)beast::currentTimeMillis();
-
 #ifdef _MSC_VER
-    casinocoin::sha512_deprecatedMSVCWorkaround();
+    {
+        // Work around for https://svn.boost.org/trac/boost/ticket/10657
+        // Reported against boost version 1.56.0.  If an application's
+        // first call to GetTimeZoneInformation is from a coroutine, an
+        // unhandled exception is generated.  A workaround is to call
+        // GetTimeZoneInformation at least once before launching any
+        // coroutines.  At the time of this writing the _ftime call is
+        // used to initialize the timezone information.
+        struct _timeb t;
+    #ifdef _INC_TIME_INL
+            _ftime_s (&t);
+    #else
+            _ftime (&t);
+    #endif
+    }
+    ripple::sha512_deprecatedMSVCWorkaround();
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -646,3 +660,4 @@ int main (int argc, char** argv)
 
     return result;
 }
+
