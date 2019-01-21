@@ -576,7 +576,8 @@ ServerHandlerImp::processRequest (Port const& port,
             ! jsonOrig ||
             ! (jsonOrig.isObject () || jsonOrig.isArray()))
         {
-            HTTPReply (400, "Unable to parse request", output, rpcJ);
+            HTTPReply (400, "Unable to parse request: " +
+                       reader.getFormatedErrorMessages(), output, rpcJ);
             return;
         }
     }
