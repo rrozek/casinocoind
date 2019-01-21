@@ -78,7 +78,6 @@ JSS ( account_objects );            // out: AccountObjects
 JSS ( account_root );               // in: LedgerEntry
 JSS ( accounts );                   // in: LedgerEntry, Subscribe,
                                     //     handlers/Ledger, Unsubscribe
-                                    // out: WalletAccounts
 JSS ( accounts_proposed );          // in: Subscribe, Unsubscribe
 JSS ( action );
 JSS ( acquiring );                  // out: LedgerRequest
@@ -146,7 +145,7 @@ JSS ( dbKBTotal );                  // out: getCounts
 JSS ( dbKBTransaction );            // out: getCounts
 JSS ( debug_signing );              // in: TransactionSign
 JSS ( delivered_amount );           // out: addPaymentDeliveredAmount
-JSS ( deprecated );                 // out: WalletSeed
+JSS ( deprecated );                 // out
 JSS ( descending );                 // in: AccountTx*
 JSS ( destination_account );        // in: PathRequest, CasinocoinPathFind, account_lines
                                     // out: AccountChannels
@@ -224,7 +223,7 @@ JSS ( issuer );                     // in: CasinocoinPathFind, Subscribe,
                                     // out: paths/Node, STPathSet, STAmount
 JSS ( jsonrpc );                    // json version
 JSS ( jq_trans_overflow );          // JobQueue transaction limit overflow.
-JSS ( key );                        // out: WalletSeed
+JSS ( key );                        // out
 JSS ( key_type );                   // in/out: WalletPropose, TransactionSign
 JSS ( latency );                    // out: PeerImp
 JSS ( last );                       // out: RPCVersion
@@ -377,10 +376,10 @@ JSS ( role );                       // out: Ping.cpp
 JSS ( rt_accounts );                // in: Subscribe, Unsubscribe
 JSS ( sanity );                     // out: PeerImp
 JSS ( search_depth );               // in: CasinocoinPathFind
-JSS ( secret );                     // in: TransactionSign, WalletSeed,
+JSS ( secret );                     // in: TransactionSign,
                                     //     ValidationCreate, ValidationSeed,
                                     //     channel_authorize
-JSS ( seed );                       // in: WalletAccounts, out: WalletSeed
+JSS ( seed );                       //
 JSS ( seed_hex );                   // in: WalletPropose, TransactionSign
 JSS ( send_currencies );            // out: AccountCurrencies
 JSS ( send_max );                   // in: PathRequest, CasinocoinPathFind

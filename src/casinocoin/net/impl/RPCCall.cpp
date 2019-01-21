@@ -1037,17 +1037,6 @@ private:
         return jvRequest;
     }
 
-    // wallet_seed [<seed>|<passphrase>|<passkey>]
-    Json::Value parseWalletSeed (Json::Value const& jvParams)
-    {
-        Json::Value jvRequest{Json::objectValue};
-
-        if (jvParams.size ())
-            jvRequest[jss::secret]     = jvParams[0u].asString ();
-
-        return jvRequest;
-    }
-
     // parse gateway balances
     // gateway_balances [<ledger>] <issuer_account> [ <hotwallet> [ <hotwallet> ]]
 
@@ -1177,7 +1166,6 @@ public:
             {   "verify_msg",           &RPCParser::parseVerifyMsg,             3,  3   },
             {   "version",              &RPCParser::parseAsIs,                  0,  0   },
             {   "wallet_propose",       &RPCParser::parseWalletPropose,         0,  1   },
-            {   "wallet_seed",          &RPCParser::parseWalletSeed,            0,  1   },
             {   "internal",             &RPCParser::parseInternal,              1,  -1  },
 
             // Evented methods
