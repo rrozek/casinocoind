@@ -30,6 +30,7 @@
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/beast/core/ByteOrder.h>
 #include <casinocoin/beast/utility/WrappedSink.h>
+#include <casinocoin/basics/RangeSet.h>
 #include <casinocoin/overlay/impl/ProtocolMessage.h>
 #include <casinocoin/overlay/impl/OverlayImpl.h>
 #include <casinocoin/protocol/Protocol.h>
@@ -131,6 +132,7 @@ private:
     //
     LedgerIndex minLedger_ = 0;
     LedgerIndex maxLedger_ = 0;
+    RangeSet<std::uint32_t> shards_;
     uint256 closedLedgerHash_;
     uint256 previousLedgerHash_;
     std::deque<uint256> recentLedgers_;
@@ -301,6 +303,12 @@ public:
 
     void
     ledgerRange (std::uint32_t& minSeq, std::uint32_t& maxSeq) const override;
+
+    bool
+    hasShard (std::uint32_t shardIndex) const override;
+
+    std::string
+    getShards () const override;
 
     bool
     hasTxSet (uint256 const& hash) const override;
@@ -529,3 +537,4 @@ PeerImp::sendEndpoints (FwdIt first, FwdIt last)
 }
 
 #endif
+

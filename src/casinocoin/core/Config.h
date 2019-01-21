@@ -123,6 +123,7 @@ private:
 
 public:
     bool doImport = false;
+    bool valShards = false;
     bool ELB_SUPPORT = false;
 
     std::vector<std::string>    IPS;                    // Peer IPs from casinocoind.cfg.

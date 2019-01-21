@@ -28,6 +28,7 @@
 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/ledger/AbstractFetchPackContainer.h>
+#include <casinocoin/app/ledger/InboundLedgers.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/app/ledger/LedgerCleaner.h>
 #include <casinocoin/app/ledger/LedgerHistory.h>
@@ -186,7 +187,7 @@ public:
         LedgerIndex ledgerIndex);
 
     boost::optional <NetClock::time_point> getCloseTimeByHash (
-        LedgerHash const& ledgerHash);
+        LedgerHash const& ledgerHash, LedgerIndex ledgerIndex);
 
     void addHeldTransaction (std::shared_ptr<Transaction> const& trans);
     void fixMismatch (ReadView const& ledger);
@@ -261,14 +262,21 @@ private:
         Job& job,
         std::shared_ptr<Ledger const> ledger);
 
-    void getFetchPack(LedgerHash missingHash, LedgerIndex missingIndex);
-    boost::optional<LedgerHash> getLedgerHashForHistory(LedgerIndex index);
+    void getFetchPack(
+        LedgerIndex missingIndex, InboundLedger::Reason reason);
+
+    boost::optional<LedgerHash> getLedgerHashForHistory(
+        LedgerIndex index, InboundLedger::Reason reason);
+
     std::size_t getNeededValidations();
     void advanceThread();
+    void fetchForHistory(
+        std::uint32_t missing,
+        bool& progress,
+        InboundLedger::Reason reason);
     // Try to publish ledgers, acquire missing ledgers.  Always called with
     // m_mutex locked.  The passed ScopedLockType is a reminder to callers.
     void doAdvance(ScopedLockType&);
-    bool shouldFetchPack(std::uint32_t seq) const;
     bool shouldAcquire(
         std::uint32_t const currentLedger,
         std::uint32_t const ledgerHistory,
@@ -304,6 +312,9 @@ private:
 
     // The last ledger we handled fetching history
     std::shared_ptr<Ledger const> mHistLedger;
+
+    // The last ledger we handled fetching for a shard
+    std::shared_ptr<Ledger const> mShardLedger;
 
     // Fully validated ledger, whether or not we have the ledger resident.
     std::pair <uint256, LedgerIndex> mLastValidLedger {uint256(), 0};
@@ -348,7 +359,7 @@ private:
     // How much history do we want to keep
     std::uint32_t const ledger_history_;
 
-    int const ledger_fetch_size_;
+    std::uint32_t const ledger_fetch_size_;
 
     TaggedCache<uint256, Blob> fetch_packs_;
 
@@ -363,3 +374,4 @@ private:
 } // casinocoin
 
 #endif
+

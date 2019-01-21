@@ -77,6 +77,7 @@ SHAMap::snapShot (bool isMutable) const
         newMap.state_ = SHAMapState::Immutable;
 
     newMap.seq_ = seq_ + 1;
+    newMap.ledgerSeq_ = ledgerSeq_;
     newMap.root_ = root_;
     newMap.backed_ = backed_;
 
@@ -253,8 +254,7 @@ SHAMap::fetchNodeFromDB (SHAMapHash const& hash) const
 
     if (backed_)
     {
-        std::shared_ptr<NodeObject> obj = f_.db().fetch (hash.as_uint256());
-        if (obj)
+        if (auto obj = f_.db().fetch(hash.as_uint256(), ledgerSeq_))
         {
             try
             {
@@ -290,10 +290,10 @@ SHAMap::fetchNodeFromDB (SHAMapHash const& hash) const
                 return std::shared_ptr<SHAMapTreeNode> ();
             }
         }
-        else if (ledgerSeq_ != 0)
+        else if (full_)
         {
             f_.missing_node(ledgerSeq_);
-            const_cast<std::uint32_t&>(ledgerSeq_) = 0;
+            const_cast<bool&>(full_) = false;
         }
     }
 
@@ -312,7 +312,7 @@ SHAMap::checkFilter(SHAMapHash const& hash,
             makeSlice(*nodeData), 0, snfPREFIX, hash, true, f_.journal ());
         if (node)
         {
-            filter->gotNode (true, hash,
+            filter->gotNode (true, hash, ledgerSeq_,
                 std::move(*nodeData), node->getType ());
             if (backed_)
                 canonicalize (hash, node);
@@ -488,7 +488,7 @@ SHAMap::descendAsync (SHAMapInnerNode* parent, int branch,
         if (!ptr && backed_)
         {
             std::shared_ptr<NodeObject> obj;
-            if (! f_.db().asyncFetch (hash.as_uint256(), obj))
+            if (! f_.db().asyncFetch (hash.as_uint256(), ledgerSeq_, obj))
             {
                 pending = true;
                 return nullptr;
@@ -1123,8 +1123,8 @@ SHAMap::writeNode (
 
     Serializer s;
     node->addRaw (s, snfPREFIX);
-    f_.db().store (t,
-        std::move (s.modData ()), node->getNodeHash ().as_uint256());
+    f_.db().store (t, std::move (s.modData ()),
+        node->getNodeHash ().as_uint256(), ledgerSeq_);
     return node;
 }
 
@@ -1386,3 +1386,4 @@ SHAMap::isInconsistentNode(std::shared_ptr<SHAMapAbstractNode> const& node) cons
 }
 
 } // casinocoin
+

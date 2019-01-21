@@ -42,6 +42,7 @@
 #include <casinocoin/basics/make_lock.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <casinocoin/consensus/LedgerTiming.h>
+#include <casinocoin/nodestore/DatabaseShard.h>
 #include <casinocoin/overlay/Overlay.h>
 #include <casinocoin/overlay/predicates.h>
 #include <casinocoin/protocol/Feature.h>
@@ -112,7 +113,7 @@ CCLConsensus::Adaptor::acquireLedger(LedgerHash const& ledger)
             app_.getJobQueue().addJob(
                 jtADVANCE, "getConsensusLedger", [app, hash](Job&) {
                     app->getInboundLedgers().acquire(
-                        hash, 0, InboundLedger::fcCONSENSUS);
+                        hash, 0, InboundLedger::Reason::CONSENSUS);
                 });
         }
         return boost::none;
@@ -631,9 +632,16 @@ CCLConsensus::Adaptor::notify(
     }
     s.set_firstseq(uMin);
     s.set_lastseq(uMax);
-    app_.overlay().foreach (
-        send_always(std::make_shared<Message>(s, protocol::mtSTATUS_CHANGE)));
-    JLOG(j_.trace()) << "send status change to peer";
+    if (auto shardStore = app_.getShardStore())
+    {
+        auto shards = shardStore->getCompleteShards();
+        if (! shards.empty())
+            s.set_shardseqs(shards);
+    }
+    app_.overlay ().foreach (send_always (
+        std::make_shared <Message> (
+            s, protocol::mtSTATUS_CHANGE)));
+    JLOG (j_.trace()) << "send status change to peer";
 }
 
 /** Apply a set of transactions to a ledger.

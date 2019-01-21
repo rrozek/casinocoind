@@ -28,19 +28,13 @@
 
 namespace casinocoin {
 
-AccountStateSF::AccountStateSF(Family& f, AbstractFetchPackContainer& fp)
-    : f_(f)
-    , fp_(fp)
+void
+AccountStateSF::gotNode(bool, SHAMapHash const& nodeHash,
+    std::uint32_t ledgerSeq, Blob&& nodeData,
+    SHAMapTreeNode::TNType) const
 {
-}
-
-void AccountStateSF::gotNode (bool fromFilter,
-                              SHAMapHash const& nodeHash,
-                              Blob&& nodeData,
-                              SHAMapTreeNode::TNType) const
-{
-    f_.db().store(hotACCOUNT_NODE, std::move(nodeData),
-        nodeHash.as_uint256());
+    db_.store(hotACCOUNT_NODE, std::move(nodeData),
+        nodeHash.as_uint256(), ledgerSeq);
 }
 
 boost::optional<Blob>
@@ -50,3 +44,4 @@ AccountStateSF::getNode(SHAMapHash const& nodeHash) const
 }
 
 } // casinocoin
+

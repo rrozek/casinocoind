@@ -27,35 +27,36 @@
 #define CASINOCOIN_APP_LEDGER_TRANSACTIONSTATESF_H_INCLUDED
 
 #include <casinocoin/app/ledger/AbstractFetchPackContainer.h>
+#include <casinocoin/nodestore/Database.h>
 #include <casinocoin/shamap/SHAMapSyncFilter.h>
-#include <casinocoin/shamap/Family.h>
 #include <cstdint>
 
 namespace casinocoin {
 
 // This class is only needed on add functions
 // sync filter for transactions tree during ledger sync
-class TransactionStateSF
-    : public SHAMapSyncFilter
+class TransactionStateSF : public SHAMapSyncFilter
 {
-private:
-    Family& f_;
-    AbstractFetchPackContainer& fp_;
-
 public:
-    explicit
-    TransactionStateSF(Family&, AbstractFetchPackContainer&);
+    TransactionStateSF(NodeStore::Database& db, AbstractFetchPackContainer& fp)
+        : db_(db)
+        , fp_(fp)
+    {}
 
-    // Note that the nodeData is overwritten by this call
-    void gotNode (bool fromFilter,
-                  SHAMapHash const& nodeHash,
-                  Blob&& nodeData,
-                  SHAMapTreeNode::TNType) const override;
+    void
+    gotNode(bool fromFilter, SHAMapHash const& nodeHash,
+        std::uint32_t ledgerSeq, Blob&& nodeData,
+            SHAMapTreeNode::TNType type) const override;
 
     boost::optional<Blob>
     getNode(SHAMapHash const& nodeHash) const override;
+
+private:
+    NodeStore::Database& db_;
+    AbstractFetchPackContainer& fp_;
 };
 
 } // casinocoin
 
 #endif
+

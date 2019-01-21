@@ -86,7 +86,7 @@ private:
 
     std::string name_;
     beast::Journal journal_;
-    MemoryDB* db_;
+    MemoryDB* db_ {nullptr};
 
 public:
     MemoryBackend (size_t keyBytes, Section const& keyValues,
@@ -96,7 +96,6 @@ public:
     {
         if (name_.empty())
             Throw<std::runtime_error> ("Missing path in Memory backend");
-        db_ = &memoryFactory.open(name_);
     }
 
     ~MemoryBackend ()
@@ -111,6 +110,12 @@ public:
     }
 
     void
+    open() override
+    {
+        db_ = &memoryFactory.open(name_);
+    }
+
+    void
     close() override
     {
         db_ = nullptr;
@@ -121,6 +126,7 @@ public:
     Status
     fetch (void const* key, std::shared_ptr<NodeObject>* pObject) override
     {
+        assert(db_);
         uint256 const hash (uint256::fromVoid (key));
 
         std::lock_guard<std::mutex> _(db_->mutex);
@@ -151,6 +157,7 @@ public:
     void
     store (std::shared_ptr<NodeObject> const& object) override
     {
+        assert(db_);
         std::lock_guard<std::mutex> _(db_->mutex);
         db_->table.emplace (object->getHash(), object);
     }
@@ -165,6 +172,7 @@ public:
     void
     for_each (std::function <void(std::shared_ptr<NodeObject>)> f) override
     {
+        assert(db_);
         for (auto const& e : db_->table)
             f (e.second);
     }
@@ -223,3 +231,4 @@ MemoryFactory::createInstance (
 
 }
 }
+

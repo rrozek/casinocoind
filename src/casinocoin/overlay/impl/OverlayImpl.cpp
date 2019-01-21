@@ -25,12 +25,14 @@
 //==============================================================================
 
 #include <BeastConfig.h>
+#include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/basics/make_SSLContext.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <casinocoin/core/DatabaseCon.h>
+#include <casinocoin/nodestore/DatabaseShard.h>
 #include <casinocoin/overlay/Cluster.h>
 #include <casinocoin/overlay/predicates.h>
 #include <casinocoin/overlay/impl/ConnectAttempt.h>
@@ -791,8 +793,19 @@ OverlayImpl::crawl()
             }
         }
         auto version = sp->getVersion ();
-        if (!version.empty ())
-            pv["version"] = version;
+        if (! version.empty ())
+            pv[jss::version] = version;
+
+        std::uint32_t minSeq, maxSeq;
+        sp->ledgerRange(minSeq, maxSeq);
+        if (minSeq != 0 || maxSeq != 0)
+            pv[jss::complete_ledgers] =
+                std::to_string(minSeq) + "-" +
+                    std::to_string(maxSeq);
+
+        auto shards = sp->getShards();
+        if (! shards.empty())
+            pv[jss::complete_shards] = shards;
     });
 
     return jv;
@@ -1065,3 +1078,4 @@ make_Overlay (
 }
 
 }
+

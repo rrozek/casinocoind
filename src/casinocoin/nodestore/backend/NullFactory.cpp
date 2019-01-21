@@ -50,6 +50,11 @@ public:
     }
 
     void
+    open() override
+    {
+    }
+
+    void
     close() override
     {
     }
@@ -149,3 +154,4 @@ static NullFactory nullFactory;
 
 }
 }
+

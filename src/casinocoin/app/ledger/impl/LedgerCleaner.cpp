@@ -290,7 +290,7 @@ private:
                 "Node missing from ledger " << ledger->info().seq;
             app_.getInboundLedgers().acquire (
                 ledger->info().hash, ledger->info().seq,
-                InboundLedger::fcGENERIC);
+                InboundLedger::Reason::GENERIC);
         }
         return hash ? *hash : zero; // kludge
     }
@@ -309,13 +309,13 @@ private:
         bool doTxns)
     {
         auto nodeLedger = app_.getInboundLedgers().acquire (
-            ledgerHash, ledgerIndex, InboundLedger::fcGENERIC);
+            ledgerHash, ledgerIndex, InboundLedger::Reason::GENERIC);
         if (!nodeLedger)
         {
             JLOG (j_.debug()) << "Ledger " << ledgerIndex << " not available";
             app_.getLedgerMaster().clearLedger (ledgerIndex);
             app_.getInboundLedgers().acquire(
-                ledgerHash, ledgerIndex, InboundLedger::fcGENERIC);
+                ledgerHash, ledgerIndex, InboundLedger::Reason::GENERIC);
             return false;
         }
 
@@ -342,7 +342,7 @@ private:
             JLOG (j_.debug()) << "Ledger " << ledgerIndex << " is missing nodes";
             app_.getLedgerMaster().clearLedger (ledgerIndex);
             app_.getInboundLedgers().acquire(
-                ledgerHash, ledgerIndex, InboundLedger::fcGENERIC);
+                ledgerHash, ledgerIndex, InboundLedger::Reason::GENERIC);
             return false;
         }
 
@@ -396,7 +396,7 @@ private:
                     // ledger.
                     referenceLedger =
                         app_.getInboundLedgers().acquire(
-                            refHash, refIndex, InboundLedger::fcGENERIC);
+                            refHash, refIndex, InboundLedger::Reason::GENERIC);
                     if (referenceLedger)
                         ledgerHash = getLedgerHash(
                             referenceLedger, ledgerIndex);
@@ -512,3 +512,4 @@ make_LedgerCleaner (Application& app,
 
 } // detail
 } // casinocoin
+

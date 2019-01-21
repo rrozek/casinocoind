@@ -51,7 +51,7 @@ public:
     ~ManagerImp();
 
     Factory*
-    find (std::string const& name);
+    find (std::string const& name) override;
 
     void
     insert (Factory& factory) override;
@@ -73,19 +73,10 @@ public:
         Stoppable& parent,
         Section const& backendParameters,
         beast::Journal journal) override;
-
-    std::unique_ptr <DatabaseRotating>
-    make_DatabaseRotating (
-        std::string const& name,
-        Scheduler& scheduler,
-        std::int32_t readThreads,
-        Stoppable& parent,
-        std::shared_ptr <Backend> writableBackend,
-        std::shared_ptr <Backend> archiveBackend,
-        beast::Journal journal) override;
 };
 
 }
 }
 
 #endif
+
