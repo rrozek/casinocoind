@@ -17,6 +17,8 @@
 
 #include <BeastConfig.h>
 #include <casinocoin/app/consensus/CCLValidations.h>
+#include <casinocoin/app/ledger/InboundLedger.h>
+#include <casinocoin/app/ledger/InboundLedgers.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
@@ -34,19 +36,119 @@
 
 namespace casinocoin {
 
-CCLValidationsPolicy::CCLValidationsPolicy(Application& app) : app_(app)
+CCLValidatedLedger::CCLValidatedLedger(MakeGenesis)
+    : ledgerID_{0}, ledgerSeq_{0}
+{
+}
+
+CCLValidatedLedger::CCLValidatedLedger(
+    std::shared_ptr<Ledger const> const& ledger,
+    beast::Journal j)
+    : ledgerID_{ledger->info().hash}, ledgerSeq_{ledger->seq()}, j_{j}
+{
+    auto const hashIndex = ledger->read(keylet::skip());
+    if (hashIndex)
+    {
+        assert(hashIndex->getFieldU32(sfLastLedgerSequence) == (seq() - 1));
+        ancestors_ = hashIndex->getFieldV256(sfHashes).value();
+    }
+    else
+        JLOG(j_.warn()) << "Ledger " << ledgerSeq_ << ":" << ledgerID_
+                        << " missing recent ancestor hashes";
+}
+
+auto
+CCLValidatedLedger::minSeq() const -> Seq
+{
+    return seq() - std::min(seq(), static_cast<Seq>(ancestors_.size()));
+}
+
+auto
+CCLValidatedLedger::seq() const -> Seq
+{
+    return ledgerSeq_;
+}
+auto
+CCLValidatedLedger::id() const -> ID
+{
+    return ledgerID_;
+}
+
+auto CCLValidatedLedger::operator[](Seq const& s) const -> ID
+{
+    if (s >= minSeq() && s <= seq())
+    {
+        if (s == seq())
+            return ledgerID_;
+        Seq const diff = seq() - s;
+        return ancestors_[ancestors_.size() - diff];
+    }
+
+    JLOG(j_.warn()) << "Unable to determine hash of ancestor seq=" << s
+                    << " from ledger hash=" << ledgerID_
+                    << " seq=" << ledgerSeq_;
+    // Default ID that is less than all others
+    return ID{0};
+}
+
+// Return the sequence number of the earliest possible mismatching ancestor
+CCLValidatedLedger::Seq
+mismatch(CCLValidatedLedger const& a, CCLValidatedLedger const& b)
+{
+    using Seq = CCLValidatedLedger::Seq;
+
+    // Find overlapping interval for known sequence for the ledgers
+    Seq const lower = std::max(a.minSeq(), b.minSeq());
+    Seq const upper = std::min(a.seq(), b.seq());
+
+    Seq curr = upper;
+    while (curr != Seq{0} && a[curr] != b[curr] && curr >= lower)
+        --curr;
+
+    // If the searchable interval mismatches entirely, then we have to
+    // assume the ledgers mismatch starting post genesis ledger
+    return (curr < lower) ? Seq{1} : (curr + Seq{1});
+}
+
+CCLValidationsAdaptor::CCLValidationsAdaptor(Application& app, beast::Journal j)
+    : app_(app),  j_(j)
 {
     staleValidations_.reserve(512);
 }
 
 NetClock::time_point
-CCLValidationsPolicy::now() const
+CCLValidationsAdaptor::now() const
 {
     return app_.timeKeeper().closeTime();
 }
 
+boost::optional<CCLValidatedLedger>
+CCLValidationsAdaptor::acquire(LedgerHash const & hash)
+{
+    auto ledger = app_.getLedgerMaster().getLedgerByHash(hash);
+    if (!ledger)
+    {
+        JLOG(j_.debug())
+            << "Need validated ledger for preferred ledger analysis " << hash;
+
+        Application * pApp = &app_;
+
+        app_.getJobQueue().addJob(
+            jtADVANCE, "getConsensusLedger", [pApp, hash](Job&) {
+                pApp ->getInboundLedgers().acquire(
+                    hash, 0, InboundLedger::Reason::CONSENSUS);
+            });
+        return boost::none;
+    }
+
+    assert(!ledger->open() && ledger->isImmutable());
+    assert(ledger->info().hash == hash);
+
+    return CCLValidatedLedger(std::move(ledger), j_);
+}
+
 void
-CCLValidationsPolicy::onStale(CCLValidation&& v)
+CCLValidationsAdaptor::onStale(CCLValidation&& v)
 {
     // Store the newly stale validation; do not do significant work in this
     // function since this is a callback from Validations, which may be
@@ -58,7 +160,7 @@ CCLValidationsPolicy::onStale(CCLValidation&& v)
         return;
 
     // addJob() may return false (Job not added) at shutdown.
-    staleWriting_  = app_.getJobQueue().addJob(
+    staleWriting_ = app_.getJobQueue().addJob(
         jtWRITE, "Validations::doStaleWrite", [this](Job&) {
             auto event =
                 app_.getJobQueue().makeLoadEvent(jtDISK, "ValidationWrite");
@@ -68,7 +170,7 @@ CCLValidationsPolicy::onStale(CCLValidation&& v)
 }
 
 void
-CCLValidationsPolicy::flush(hash_map<PublicKey, CCLValidation>&& remaining)
+CCLValidationsAdaptor::flush(hash_map<PublicKey, CCLValidation>&& remaining)
 {
     bool anyNew = false;
     {
@@ -104,7 +206,7 @@ CCLValidationsPolicy::flush(hash_map<PublicKey, CCLValidation>&& remaining)
 // NOTE: doStaleWrite() must be called with staleLock_ *locked*.  The passed
 // ScopedLockType& acts as a reminder to future maintainers.
 void
-CCLValidationsPolicy::doStaleWrite(ScopedLockType&)
+CCLValidationsAdaptor::doStaleWrite(ScopedLockType&)
 {
     static const std::string insVal(
         "INSERT INTO Validations "
@@ -129,10 +231,13 @@ CCLValidationsPolicy::doStaleWrite(ScopedLockType&)
 
                 Serializer s(1024);
                 soci::transaction tr(*db);
-                for (auto const& cclValidation : currentStale)
+                for (CCLValidation const& wValidation : currentStale)
                 {
+                    // Only save full validations until we update the schema
+                    if(!wValidation.full())
+                        continue;
                     s.erase();
-                    STValidation::pointer const& val = cclValidation.unwrap();
+                    STValidation::pointer const& val = wValidation.unwrap();
                     val->add(s);
 
                     auto const ledgerHash = to_string(val->getLedgerHash());
@@ -172,85 +277,63 @@ handleNewValidation(Application& app,
     STValidation::ref val,
     std::string const& source)
 {
-    PublicKey const& signer = val->getSignerPublic();
+    PublicKey const& signingKey = val->getSignerPublic();
     uint256 const& hash = val->getLedgerHash();
 
     // Ensure validation is marked as trusted if signer currently trusted
-    boost::optional<PublicKey> pubKey = app.validators().getTrustedKey(signer);
-    if (!val->isTrusted() && pubKey)
+    boost::optional<PublicKey> masterKey =
+        app.validators().getTrustedKey(signingKey);
+    if (!val->isTrusted() && masterKey)
         val->setTrusted();
-    CCLValidations& validations  = app.getValidations();
-
-    beast::Journal j = validations.journal();
-
-    // Do not process partial validations.
-    if (!val->isFull())
-    {
-        const bool current = isCurrent(
-            validations.parms(),
-            app.timeKeeper().closeTime(),
-            val->getSignTime(),
-            val->getSeenTime());
-
-        JLOG(j.debug()) << "Val (partial) for " << hash << " from "
-                         << toBase58(TokenType::TOKEN_NODE_PUBLIC, signer)
-                         << " ignored "
-                         << (val->isTrusted() ? "trusted/" : "UNtrusted/")
-                         << (current ? "current" : "stale");
-
-        // Only forward if current and trusted
-        return current && val->isTrusted();
-    }
-
-    if (!val->isTrusted())
-    {
-        JLOG(j.trace()) << "Node "
-                        << toBase58(TokenType::TOKEN_NODE_PUBLIC, signer)
-                        << " not in UNL st="
-                        << val->getSignTime().time_since_epoch().count()
-                        << ", hash=" << hash
-                        << ", shash=" << val->getSigningHash()
-                        << " src=" << source;
-    }
 
     // If not currently trusted, see if signer is currently listed
-    if (!pubKey)
-        pubKey = app.validators().getListedKey(signer);
+    if (!masterKey)
+        masterKey = app.validators().getListedKey(signingKey);
 
     bool shouldRelay = false;
+    CCLValidations& validations = app.getValidations();
+    beast::Journal j = validations.adaptor().journal();
 
-    // only add trusted or listed
-    if (pubKey)
+    auto dmp = [&](beast::Journal::Stream s, std::string const& msg) {
+        s << "Val for " << hash
+          << (val->isTrusted() ? " trusted/" : " UNtrusted/")
+          << (val->isFull() ? "full" : "partial") << " from "
+          << (masterKey ? toBase58(TokenType::TOKEN_NODE_PUBLIC, *masterKey)
+                        : "unknown")
+          << " signing key "
+          << toBase58(TokenType::TOKEN_NODE_PUBLIC, signingKey) << " " << msg
+          << " src=" << source;
+    };
+
+    if(!val->isFieldPresent(sfLedgerSequence))
     {
-        using AddOutcome = CCLValidations::AddOutcome;
+        if(j.error())
+            dmp(j.error(), "missing ledger sequence field");
+        return false;
+    }
 
-        AddOutcome const res = validations.add(*pubKey, val);
+    // masterKey is seated only if validator is trusted or listed
+    if (masterKey)
+    {
+        ValStatus const outcome = validations.add(*masterKey, val);
+        if(j.debug())
+            dmp(j.debug(), to_string(outcome));
 
-        // This is a duplicate validation
-        if (res == AddOutcome::repeat)
-            return false;
-
-        // This validation replaced a prior one with the same sequence number
-        if (res == AddOutcome::sameSeq)
+        if(outcome == ValStatus::badSeq && j.warn())
         {
             auto const seq = val->getFieldU32(sfLedgerSequence);
-            JLOG(j.warn()) << "Trusted node "
-                           << toBase58(TokenType::TOKEN_NODE_PUBLIC, *pubKey)
-                           << " published multiple validations for ledger "
-                           << seq;
+            dmp(j.warn(),
+                "already validated sequence at or past " + to_string(seq));
+        }
+        else if(outcome == ValStatus::repeatID && j.warn())
+        {
+            auto const seq = val->getFieldU32(sfLedgerSequence);
+            dmp(j.warn(),
+                "already validated ledger with same id but different seq "
+                "than" + to_string(seq));
         }
 
-        JLOG(j.debug()) << "Val for " << hash << " from "
-                    << toBase58(TokenType::TOKEN_NODE_PUBLIC, signer)
-                    << " added "
-                    << (val->isTrusted() ? "trusted/" : "UNtrusted/")
-                    << ((res == AddOutcome::current) ? "current" : "stale");
-
-        // Trusted current validations should be checked and relayed.
-        // Trusted validations with sameSeq replaced an older validation
-        // with that sequence number, so should still be checked and relayed.
-        if (val->isTrusted() &&
-            (res == AddOutcome::current || res == AddOutcome::sameSeq))
+        if (val->isTrusted() && outcome == ValStatus::current)
         {
             app.getLedgerMaster().checkAccept(
                 hash, val->getFieldU32(sfLedgerSequence));
@@ -261,8 +344,8 @@ handleNewValidation(Application& app,
     else
     {
         JLOG(j.debug()) << "Val for " << hash << " from "
-                    << toBase58(TokenType::TOKEN_NODE_PUBLIC, signer)
-                    << " not added UNtrusted/";
+                    << toBase58(TokenType::TOKEN_NODE_PUBLIC, signingKey)
+                    << " not added UNlisted";
     }
 
     // This currently never forwards untrusted validations, though we may

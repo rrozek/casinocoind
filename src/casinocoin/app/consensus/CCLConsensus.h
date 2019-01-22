@@ -196,12 +196,13 @@ class CCLConsensus
 
         /** Number of proposers that have validated a ledger descended from
            requested ledger.
-            @param h The hash of the ledger of interest.
+            @param ledger The current working ledger
+            @param h The hash of the preferred working ledger
             @return The number of validating peers that have validated a ledger
-                    succeeding the one provided.
+                    descended from the preferred working ledger.
         */
         std::size_t
-        proposersFinished(LedgerHash const& h) const;
+        proposersFinished(CCLCxLedger const & ledger, LedgerHash const& h) const;
 
         /** Propose the given position to my peers.
             @param proposal Our proposed position
@@ -456,3 +457,4 @@ private:
 }
 
 #endif
+

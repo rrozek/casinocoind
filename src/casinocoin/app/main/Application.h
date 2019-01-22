@@ -81,12 +81,10 @@ class SHAMapStore;
 
 using NodeCache     = TaggedCache <SHAMapHash, Blob>;
 
-template <class StalePolicy, class Validation, class MutexType>
+template <class Adaptor>
 class Validations;
-class CCLValidation;
-class CCLValidationsPolicy;
-using CCLValidations =
-    Validations<CCLValidationsPolicy, CCLValidation, std::mutex>;
+class CCLValidationsAdaptor;
+using CCLValidations = Validations<CCLValidationsAdaptor>;
 
 class Application : public beast::PropertyStream::Source
 {

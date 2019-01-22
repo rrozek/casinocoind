@@ -217,9 +217,10 @@ checkConsensus(
       std::size_t proposersValidated(Ledger::ID const & prevLedger) const;
 
       // Number of proposers that have validated a ledger descended from the
-      // given ledger
-      std::size_t proposersFinished(Ledger::ID const & prevLedger) const;
-
+      // given ledger; if prevLedger.id() != prevLedgerID, use prevLedgerID
+      // for the determination
+      std::size_t proposersFinished(Ledger const & prevLedger,
+                                    Ledger::ID const & prevLedger) const;
       // Return the ID of the last closed (and validated) ledger that the
       // application thinks consensus should use as the prior ledger.
       Ledger::ID getPrevLedger(Ledger::ID const & prevLedgerID,
@@ -1395,7 +1396,8 @@ Consensus<Adaptor>::haveConsensus()
             ++disagree;
         }
     }
-    auto currentFinished = adaptor_.proposersFinished(prevLedgerID_);
+    auto currentFinished =
+        adaptor_.proposersFinished(previousLedger_, prevLedgerID_);
 
     JLOG(j_.debug()) << "Checking for TX consensus: agree=" << agree
                      << ", disagree=" << disagree;
@@ -1531,3 +1533,4 @@ Consensus<Adaptor>::asCloseTime(NetClock::time_point raw) const
 }  // namespace casinocoin
 
 #endif
+
