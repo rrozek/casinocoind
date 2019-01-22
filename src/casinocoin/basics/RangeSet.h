@@ -127,6 +127,7 @@ prevMissing(RangeSet<T> const & rs, T t, T minVal = 0)
  }  // namespace casinocoin
 
 
+
 // The boost serialization documents recommended putting free-function helpers
 // in the boost serialization namespace
 

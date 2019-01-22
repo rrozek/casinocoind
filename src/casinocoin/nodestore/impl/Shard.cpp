@@ -21,6 +21,8 @@
 #include <casinocoin/nodestore/impl/DatabaseShardImp.h>
 #include <casinocoin/nodestore/Manager.h>
 
+#include <fstream>
+
 namespace casinocoin {
 namespace NodeStore {
 

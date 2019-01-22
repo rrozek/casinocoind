@@ -32,10 +32,9 @@
 #include <casinocoin/core/Config.h>
 #include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/beast/utility/PropertyStream.h>
+#include <boost/asio/io_service.hpp>
 #include <memory>
 #include <mutex>
-
-namespace boost { namespace asio { class io_service; } }
 
 namespace casinocoin {
 

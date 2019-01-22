@@ -33,6 +33,7 @@
 #include <casinocoin/ledger/ReadView.h>
 #include <casinocoin/net/InfoSub.h>
 #include <casinocoin/protocol/STValidation.h>
+#include <boost/asio/io_service.hpp>
 #include <memory>
 #include <deque>
 #include <tuple>
