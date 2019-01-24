@@ -150,6 +150,7 @@ JSS ( destination_account );        // in: PathRequest, CasinocoinPathFind, acco
                                     // out: AccountChannels
 JSS ( destination_amount );         // in: PathRequest, CasinocoinPathFind
 JSS ( destination_currencies );     // in: PathRequest, CasinocoinPathFind
+JSS ( dest_public_key_hex );        // in: EncryptMsgHandler
 JSS ( destination_tag );            // in: PathRequest
                                     // out: AccountChannels
 JSS ( dir_entry );                  // out: DirectoryEntryIterator
@@ -159,6 +160,7 @@ JSS ( directory );                  // in: LedgerEntry
 JSS ( drops );                      // out: TxQ
 JSS ( duration_us );                // out: NetworkOPs
 JSS ( enabled );                    // out: AmendmentTable
+JSS ( encrypted_message );          // out: EncryptMsgHandler
 JSS ( engine_result );              // out: NetworkOPs, TransactionSign, Submit
 JSS ( engine_result_code );         // out: NetworkOPs, TransactionSign, Submit
 JSS ( engine_result_message );      // out: NetworkOPs, TransactionSign, Submit
@@ -388,6 +390,7 @@ JSS ( source_account );             // in: PathRequest, CasinocoinPathFind
 JSS ( source_amount );              // in: PathRequest, CasinocoinPathFind
 JSS ( source_currencies );          // in: PathRequest, CasinocoinPathFind
 JSS ( source_tag );                 // out: AccountChannels
+JSS ( src_public_key_hex );         // in: DecryptMsgHandler
 JSS ( stand_alone );                // out: NetworkOPs
 JSS ( start );                      // in: TxHistory
 JSS ( state );                      // out: Logic.h, ServerState, LedgerData

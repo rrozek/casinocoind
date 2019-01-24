@@ -849,6 +849,36 @@ private:
         return rpcError (rpcINVALID_PARAMS);
     }
 
+    // decrypt_msg <secret> <src_pub_key_hex> <message>
+    Json::Value parseDecryptMsg (Json::Value const& jvParams)
+    {
+        if (3 == jvParams.size ())
+        {
+            Json::Value jvRequest;
+            jvRequest[jss::secret] = jvParams[0u].asString();
+            jvRequest[jss::src_public_key_hex] = jvParams[1u].asString();
+            jvRequest[jss::encrypted_message] = jvParams[2u].asString();
+            return jvRequest;
+        }
+
+        return rpcError (rpcINVALID_PARAMS);
+    }
+
+    // decrypt_msg <secret> <dest_pub_key_hex> <message>
+    Json::Value parseEncryptMsg (Json::Value const& jvParams)
+    {
+        if (3 == jvParams.size ())
+        {
+            Json::Value jvRequest;
+            jvRequest[jss::secret] = jvParams[0u].asString();
+            jvRequest[jss::dest_public_key_hex] = jvParams[1u].asString();
+            jvRequest[jss::message] = jvParams[2u].asString();
+            return jvRequest;
+        }
+
+        return rpcError (rpcINVALID_PARAMS);
+    }
+
     // submit any multisigned transaction to the network
     //
     // submit_multisigned <json>
@@ -1051,6 +1081,8 @@ public:
             {   "channel_verify",       &RPCParser::parseChannelVerify,         4,  4   },
             {   "connect",              &RPCParser::parseConnect,               1,  2   },
             {   "consensus_info",       &RPCParser::parseAsIs,                  0,  0   },
+            {   "decrypt_msg",          &RPCParser::parseDecryptMsg,            3,  3   },
+            {   "encrypt_msg",          &RPCParser::parseEncryptMsg,            3,  3   },
             {   "feature",              &RPCParser::parseFeature,               0,  2   },
             {   "fetch_info",           &RPCParser::parseFetchInfo,             0,  1   },
             {   "gateway_balances",     &RPCParser::parseGatewayBalances  ,     1,  -1  },

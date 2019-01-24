@@ -141,6 +141,8 @@ void printHelp (const po::options_description& desc)
            "     channel_verify <public_key> <channel_id> <drops> <signature>\n"
            "     connect <ip> [<port>]\n"
            "     consensus_info\n"
+           "     decrypt_msg <secret> <src_pub_key_hex> <message>\n"
+           "     encrypt_msg <secret> <dest_pub_key_hex> <message>\n"
            "     feature [<feature> [accept|reject]]\n"
            "     fetch_info [clear]\n"
            "     gateway_balances [<ledger>] <issuer_account> [ <hotwallet> [ <hotwallet> ]]\n"

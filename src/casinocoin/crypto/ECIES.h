@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
-    Copyright (c) 2012, 2013 Ripple Labs Inc.
+    Copyright (c) 2014 Ripple Labs Inc.
 
     Permission to use, copy, modify, and/or distribute this software for any
     purpose  with  or without fee is hereby granted, provided that the above
@@ -17,23 +17,21 @@
 */
 //==============================================================================
 
-//==============================================================================
-/*
-    2017-06-30  ajochems        Refactored for casinocoin
-*/
-//==============================================================================
+#ifndef CASINOCOIN_CRYPTO_ECIES_H_INCLUDED
+#define CASINOCOIN_CRYPTO_ECIES_H_INCLUDED
 
-#include <BeastConfig.h>
+#include <casinocoin/basics/base_uint.h>
+#include <casinocoin/basics/Blob.h>
 
-#include <casinocoin/crypto/impl/ec_key.cpp>
-#include <casinocoin/crypto/impl/GenerateDeterministicKey.cpp>
-#include <casinocoin/crypto/impl/KeyType.cpp>
-#include <casinocoin/crypto/impl/openssl.cpp>
-#include <casinocoin/crypto/impl/csprng.cpp>
-#include <casinocoin/crypto/impl/RFC1751.cpp>
-#include <casinocoin/crypto/impl/ECDSAKey.cpp>
-#include <casinocoin/crypto/impl/ECIES.cpp>
+namespace casinocoin {
 
-#if DOXYGEN
-#include <casinocoin/crypto/README.md>
+// ECIES functions. These throw on failure
+
+// encrypt/decrypt functions with integrity checking.
+// Note that the other side must somehow know what keys to use
+Blob encryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& plaintext);
+Blob decryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& ciphertext);
+
+} // casinocoin
+
 #endif
