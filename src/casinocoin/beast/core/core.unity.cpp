@@ -53,7 +53,6 @@
 
 #include <casinocoin/beast/core/LexicalCast.h>
 
-#include <casinocoin/beast/core/SystemStats.h>
 #include <casinocoin/beast/core/SemanticVersion.h>
 
 #if BEAST_MSVC
@@ -166,28 +165,8 @@
 #include <casinocoin/beast/core/osx_ObjCHelpers.h>
 #endif
 
-#if BEAST_ANDROID
-#include "native/android_JNIHelpers.h"
-#endif
-
 #if BEAST_MAC || BEAST_IOS
 #include <casinocoin/beast/core/mac_SystemStats.mm>
-
-#elif BEAST_WINDOWS
-#include <casinocoin/beast/core/win32_SystemStats.cpp>
-
-#elif BEAST_LINUX
-#include <casinocoin/beast/core/linux_SystemStats.cpp>
-
-#elif BEAST_BSD
-#include <casinocoin/beast/core/bsd_SystemStats.cpp>
-
-#elif BEAST_ANDROID
-#include "native/android_Files.cpp"
-#include "native/android_Misc.cpp"
-#include "native/android_SystemStats.cpp"
-#include "native/android_Threads.cpp"
-
 #endif
 
 #include <casinocoin/beast/core/CurrentThreadName.cpp>
@@ -209,3 +188,4 @@
 #pragma pop_macro("_aligned_offset_recalloc")
 #pragma pop_macro("_aligned_msize")
 #endif
+

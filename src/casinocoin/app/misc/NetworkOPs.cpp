@@ -59,12 +59,12 @@
 #include <casinocoin/resource/ResourceManager.h>
 #include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/beast/core/LexicalCast.h>
-#include <casinocoin/beast/core/SystemStats.h>
 #include <casinocoin/beast/utility/rngfill.h>
 #include <casinocoin/basics/make_lock.h>
 #include <beast/core/detail/base64.hpp>
 #include <casinocoin/basics/mulDiv.h>
 #include <boost/asio/steady_timer.hpp>
+#include <boost/asio/ip/host_name.hpp>
 namespace casinocoin {
 
 class NetworkOPsImp final
@@ -633,8 +633,10 @@ NetworkOPsImp::StateAccounting::states_ = {{
 std::string
 NetworkOPsImp::getHostId (bool forAdmin)
 {
+    static std::string const hostname = boost::asio::ip::host_name();
+
     if (forAdmin)
-        return beast::getComputerName ();
+        return hostname;
 
     // For non-admin uses hash the node public key into a
     // single RFC1751 word:

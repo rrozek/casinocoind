@@ -22,6 +22,7 @@
 //==============================================================================
 
 #include <casinocoin/beast/core/CurrentThreadName.h>
+#include <casinocoin/beast/core/Config.h>
 #include <boost/thread/tss.hpp>
 
 namespace beast {
@@ -101,10 +102,8 @@ void setCurrentThreadNameImpl (std::string const& name)
 #include <Foundation/NSThread.h>
 #include <Foundation/NSString.h>
 #import <objc/message.h>
-namespace beast{
-#include <casinocoin/beast/core/osx_ObjCHelpers.h>
-}
-
+#include <ripple/beast/core/osx_ObjCHelpers.h>
+#include <ripple/beast/core/Memory.h>
 #else
 #include <sys/prctl.h>
 
@@ -143,3 +142,4 @@ void setCurrentThreadName (std::string name)
 }
 
 } // beast
+

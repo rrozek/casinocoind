@@ -18,7 +18,6 @@
 //==============================================================================
 
 #include <casinocoin/beast/utility/Debug.h>
-#include <casinocoin/beast/core/SystemStats.h>
 
 namespace beast {
 
@@ -111,3 +110,4 @@ void checkHeap ()
 }
 
 }
+
