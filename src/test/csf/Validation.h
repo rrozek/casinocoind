@@ -171,6 +171,12 @@ public:
     }
 
     void
+    setUntrusted()
+    {
+        trusted_ = false;
+    }
+
+    void
     setSeen(NetClock::time_point seen)
     {
         seenTime_ = seen;

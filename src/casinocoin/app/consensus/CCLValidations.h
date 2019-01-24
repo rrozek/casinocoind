@@ -97,7 +97,19 @@ public:
         return val_->isTrusted();
     }
 
-    /// Whether the validatioon is full (not-partial)
+    void
+    setTrusted()
+    {
+        val_->setTrusted();
+    }
+
+    void
+    setUntrusted()
+    {
+        val_->setUntrusted();
+    }
+
+    /// Whether the validation is full (not-partial)
     bool
     full() const
     {
@@ -204,7 +216,7 @@ public:
         @param remaining The remaining validations to flush
     */
     void
-    flush(hash_map<PublicKey, CCLValidation>&& remaining);
+    flush(hash_map<NodeID, CCLValidation>&& remaining);
 
     /** Attempt to acquire the ledger with given id from the network */
     boost::optional<CCLValidatedLedger>

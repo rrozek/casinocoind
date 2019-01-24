@@ -31,8 +31,31 @@ class CCLValidations_test : public beast::unit_test::suite
 
 public:
     void
-    run() override
+    testChangeTrusted()
     {
+        testcase("Change validation trusted status");
+        PublicKey key = derivePublicKey(KeyType::ed25519, randomSecretKey());
+        auto v = std::make_shared<STValidation>(
+            uint256(), NetClock::time_point(), key, calcNodeID(key), true);
+
+        BEAST_EXPECT(!v->isTrusted());
+        v->setTrusted();
+        BEAST_EXPECT(v->isTrusted());
+        v->setUntrusted();
+        BEAST_EXPECT(!v->isTrusted());
+
+        CCLValidation rcv{v};
+        BEAST_EXPECT(!rcv.trusted());
+        rcv.setTrusted();
+        BEAST_EXPECT(rcv.trusted());
+        rcv.setUntrusted();
+        BEAST_EXPECT(!rcv.trusted());
+    }
+
+    void
+    testCCLValidatedLedger()
+    {
+        testcase("CCLValidatedLedger ancestry");
         beast::Journal j;
 
         using Seq = CCLValidatedLedger::Seq;
@@ -191,8 +214,14 @@ public:
                 }
             }
         }
+    }
 
-
+public:
+    void
+    run() override
+    {
+        testChangeTrusted();
+        testCCLValidatedLedger();
     }
 };
 

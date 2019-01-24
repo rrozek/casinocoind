@@ -170,7 +170,7 @@ CCLValidationsAdaptor::onStale(CCLValidation&& v)
 }
 
 void
-CCLValidationsAdaptor::flush(hash_map<PublicKey, CCLValidation>&& remaining)
+CCLValidationsAdaptor::flush(hash_map<NodeID, CCLValidation>&& remaining)
 {
     bool anyNew = false;
     {
@@ -315,7 +315,7 @@ handleNewValidation(Application& app,
     // masterKey is seated only if validator is trusted or listed
     if (masterKey)
     {
-        ValStatus const outcome = validations.add(*masterKey, val);
+        ValStatus const outcome = validations.add(calcNodeID(*masterKey), val);
         if(j.debug())
             dmp(j.debug(), to_string(outcome));
 
@@ -324,13 +324,6 @@ handleNewValidation(Application& app,
             auto const seq = val->getFieldU32(sfLedgerSequence);
             dmp(j.warn(),
                 "already validated sequence at or past " + to_string(seq));
-        }
-        else if(outcome == ValStatus::repeatID && j.warn())
-        {
-            auto const seq = val->getFieldU32(sfLedgerSequence);
-            dmp(j.warn(),
-                "already validated ledger with same id but different seq "
-                "than" + to_string(seq));
         }
 
         if (val->isTrusted() && outcome == ValStatus::current)

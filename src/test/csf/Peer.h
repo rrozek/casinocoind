@@ -146,7 +146,7 @@ struct Peer
         }
 
         void
-        flush(hash_map<PeerKey, Validation>&& remaining)
+        flush(hash_map<PeerID, Validation>&& remaining)
         {
         }
 
@@ -672,9 +672,9 @@ struct Peer
     {
         v.setTrusted();
         v.setSeen(now());
-        ValStatus const res = validations.add(v.key(), v);
+        ValStatus const res = validations.add(v.nodeID(), v);
 
-        if(res == ValStatus::stale || res == ValStatus::repeatID)
+        if(res == ValStatus::stale)
             return false;
 
         // Acquire will try to get from network if not already local
@@ -866,8 +866,10 @@ struct Peer
 
         issue(StartRound{bestLCL, lastClosedLedger});
 
+        // Not yet modeling dynamic UNL.
+        hash_set<PeerID> nowUntrusted;
         consensus.startRound(
-            now(), bestLCL, lastClosedLedger, runAsValidator);
+            now(), bestLCL, lastClosedLedger, nowUntrusted, runAsValidator);
     }
 
     // Start the consensus process assuming it is not yet running
@@ -886,7 +888,7 @@ struct Peer
     {
         // We don't care about the actual epochs, but do want the
         // generated NetClock time to be well past its epoch to ensure
-        // any subtractions of two NetClock::time_point in the consensu
+        // any subtractions of two NetClock::time_point in the consensus
         // code are positive. (e.g. proposeFRESHNESS)
         using namespace std::chrono;
         using namespace std::chrono_literals;

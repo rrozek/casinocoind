@@ -23,6 +23,7 @@
 #include <casinocoin/beast/utility/Journal.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/SecretKey.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <string>
 
 namespace casinocoin {
@@ -37,6 +38,7 @@ class ValidatorKeys
 public:
     PublicKey publicKey;
     SecretKey secretKey;
+    NodeID nodeID;
     std::string manifest;
     ValidatorKeys(Config const& config, beast::Journal j);
 

@@ -1307,9 +1307,16 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMProposeSet> const& m)
         "Proposal: " << (isTrusted ? "trusted" : "UNTRUSTED");
 
     auto proposal = CCLCxPeerPos(
-        publicKey, signature, suppression,
-        CCLCxPeerPos::Proposal{prevLedger, set.proposeseq (), proposeHash, closeTime,
-            app_.timeKeeper().closeTime(),calcNodeID(publicKey)});
+        publicKey,
+        signature,
+        suppression,
+        CCLCxPeerPos::Proposal{
+            prevLedger,
+            set.proposeseq(),
+            proposeHash,
+            closeTime,
+            app_.timeKeeper().closeTime(),
+            calcNodeID(app_.validatorManifests().getMasterKey(publicKey))});
 
     std::weak_ptr<PeerImp> weak = shared_from_this();
     app_.getJobQueue ().addJob (
@@ -1617,8 +1624,13 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMValidation> const& m)
         STValidation::pointer val;
         {
             SerialIter sit (makeSlice(m->validation()));
-            val = std::make_shared <
-                STValidation> (std::ref (sit), false);
+            val = std::make_shared<STValidation>(
+                std::ref(sit),
+                [this](PublicKey const& pk) {
+                    return calcNodeID(
+                        app_.validatorManifests().getMasterKey(pk));
+                },
+                false);
             val->setSeen (closeTime);
         }
 
@@ -1960,8 +1972,7 @@ PeerImp::checkPropose (Job& job,
 
     if (isTrusted)
     {
-        app_.getOPs ().processTrustedProposal (
-            peerPos, packet, calcNodeID (publicKey_));
+        app_.getOPs ().processTrustedProposal (peerPos, packet);
     }
     else
     {

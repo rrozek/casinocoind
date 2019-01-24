@@ -46,7 +46,6 @@ ValidatorKeys::ValidatorKeys(Config const& config, beast::Journal j)
                 KeyType::secp256k1, token->validationSecret);
             auto const m = Manifest::make_Manifest(
                 beast::detail::base64_decode(token->manifest));
-
             if (! m || pk != m->signingKey)
             {
                 configInvalid_ = true;
@@ -57,6 +56,7 @@ ValidatorKeys::ValidatorKeys(Config const& config, beast::Journal j)
             {
                 secretKey = token->validationSecret;
                 publicKey = pk;
+                nodeID = calcNodeID(m->masterKey);
                 manifest = std::move(token->manifest);
             }
         }
@@ -81,7 +81,9 @@ ValidatorKeys::ValidatorKeys(Config const& config, beast::Journal j)
         {
             secretKey = generateSecretKey(KeyType::secp256k1, *seed);
             publicKey = derivePublicKey(KeyType::secp256k1, secretKey);
+            nodeID = calcNodeID(publicKey);
         }
     }
 }
 } // namespace casinocoin
+

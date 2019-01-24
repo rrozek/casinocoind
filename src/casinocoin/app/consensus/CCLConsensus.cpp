@@ -87,7 +87,7 @@ CCLConsensus::Adaptor::Adaptor(
         , localTxs_(localTxs)
         , inboundTransactions_{inboundTransactions}
         , j_(journal)
-        , nodeID_{calcNodeID(app.nodeIdentity().first)}
+        , nodeID_{validatorKeys.nodeID}
         , valPublic_{validatorKeys.publicKey}
         , valSecret_{validatorKeys.secretKey}
 {
@@ -843,6 +843,7 @@ CCLConsensus::Adaptor::validate(CCLCxLedger const& ledger, bool proposing)
         ledger.id(),
         validationTime,
         valPublic_,
+        nodeID_,
         proposing /* full if proposed */);
     v->setFieldU32(sfLedgerSequence, ledger.seq());
 
@@ -988,11 +989,12 @@ void
 CCLConsensus::startRound(
     NetClock::time_point const& now,
     CCLCxLedger::ID const& prevLgrId,
-    CCLCxLedger const& prevLgr)
+    CCLCxLedger const& prevLgr,
+    hash_set<NodeID> const& nowUntrusted)
 {
     ScopedLockType _{mutex_};
     consensus_.startRound(
-        now, prevLgrId, prevLgr, adaptor_.preStartRound(prevLgr));
+        now, prevLgrId, prevLgr, nowUntrusted, adaptor_.preStartRound(prevLgr));
 }
 }
 
