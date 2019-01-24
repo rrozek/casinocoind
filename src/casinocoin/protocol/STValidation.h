@@ -130,8 +130,6 @@ public:
     NetClock::time_point
     getSeenTime() const;
 
-    std::uint32_t
-    getFlags() const;
 
     PublicKey
     getSignerPublic() const;
