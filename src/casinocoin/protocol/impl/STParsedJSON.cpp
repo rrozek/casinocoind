@@ -502,7 +502,7 @@ static boost::optional<detail::STVar> parseLeaf (
         break;
 
     case STI_VECTOR256:
-        if (! value.isArray ())
+        if (! value.isArrayOrNull ())
         {
             error = array_expected (json_name, fieldName);
             return ret;
@@ -554,7 +554,7 @@ static boost::optional<detail::STVar> parseLeaf (
         break;
 
         case STI_PATHSET:
-        if (!value.isArray ())
+        if (!value.isArrayOrNull ())
         {
             error = array_expected (json_name, fieldName);
             return ret;
@@ -568,7 +568,7 @@ static boost::optional<detail::STVar> parseLeaf (
             {
                 STPath p;
 
-                if (!value[i].isArray ())
+                if (!value[i].isArrayOrNull ())
                 {
                     std::stringstream ss;
                     ss << fieldName << "[" << i << "]";
@@ -588,7 +588,7 @@ static boost::optional<detail::STVar> parseLeaf (
 
                     Json::Value pathEl = value[i][j];
 
-                    if (!pathEl.isObject ())
+                    if (!pathEl.isObject())
                     {
                         error = not_an_object (element_name);
                         return ret;
@@ -742,7 +742,7 @@ static boost::optional <STObject> parseObject (
     int depth,
     Json::Value& error)
 {
-    if (! json.isObject ())
+    if (! json.isObjectOrNull ())
     {
         error = not_an_object (json_name);
         return boost::none;
@@ -776,7 +776,7 @@ static boost::optional <STObject> parseObject (
         case STI_TRANSACTION:
         case STI_LEDGERENTRY:
         case STI_VALIDATION:
-            if (! value.isObject ())
+            if (! value.isObjectOrNull ())
             {
                 error = not_an_object (json_name, fieldName);
                 return boost::none;
@@ -849,7 +849,7 @@ static boost::optional <detail::STVar> parseArray (
     int depth,
     Json::Value& error)
 {
-    if (! json.isArray ())
+    if (! json.isArrayOrNull ())
     {
         error = not_an_array (json_name);
         return boost::none;
@@ -867,11 +867,12 @@ static boost::optional <detail::STVar> parseArray (
 
         for (Json::UInt i = 0; json.isValidIndex (i); ++i)
         {
-            bool const isObject (json[i].isObject());
-            bool const singleKey (isObject ? json[i].size() == 1 : true);
+            bool const isObjectOrNull (json[i].isObjectOrNull());
+            bool const singleKey (isObjectOrNull ? json[i].size() == 1 : true);
 
-            if (!isObject || !singleKey)
+            if (!isObjectOrNull || !singleKey)
             {
+                // null values are !singleKey
                 error = singleton_expected (json_name, i);
                 return boost::none;
             }
@@ -957,3 +958,4 @@ STParsedJSONArray::STParsedJSONArray (
 
 
 } // casinocoin
+

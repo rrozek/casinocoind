@@ -198,11 +198,11 @@ Json::Value doSubscribe (RPC::Context& context)
 
         for (auto& j: context.params[jss::books])
         {
-            if (!j.isObject ()
+            if (!j.isObject()
                     || !j.isMember (jss::taker_pays)
                     || !j.isMember (jss::taker_gets)
-                    || !j[jss::taker_pays].isObject ()
-                    || !j[jss::taker_gets].isObject ())
+                    || !j[jss::taker_pays].isObjectOrNull ()
+                    || !j[jss::taker_gets].isObjectOrNull ())
                 return rpcError (rpcINVALID_PARAMS);
 
             Book book;
@@ -336,3 +336,4 @@ Json::Value doSubscribe (RPC::Context& context)
 }
 
 } // casinocoin
+

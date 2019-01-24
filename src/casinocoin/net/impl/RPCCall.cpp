@@ -179,7 +179,7 @@ private:
     {
         Json::Value v (Json::objectValue);
 
-        if (jvParams.isArray () && (jvParams.size () > 0))
+        if (jvParams.isArray() && (jvParams.size () > 0))
             v[jss::params] = jvParams;
 
         return v;
@@ -519,7 +519,7 @@ private:
 
         if (reader.parse (jvParams[1u].asString (), jvRequest))
         {
-            if (!jvRequest.isObject ())
+            if (!jvRequest.isObjectOrNull ())
                 return rpcError (rpcINVALID_PARAMS);
 
             jvRequest[jss::method] = jvParams[0u];
@@ -550,7 +550,8 @@ private:
                 jv.isMember(jss::id) && jv.isMember(jss::method))
             {
                 if (jv.isMember(jss::params) &&
-                      !(jv[jss::params].isArray() || jv[jss::params].isNull()))
+                      !(jv[jss::params].isNull() || jv[jss::params].isArray() ||
+                                                    jv[jss::params].isObject()))
                     return false;
                 return true;
             }

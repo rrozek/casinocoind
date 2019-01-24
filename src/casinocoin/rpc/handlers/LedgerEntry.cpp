@@ -70,7 +70,11 @@ Json::Value doLedgerEntry (RPC::Context& context)
     }
     else if (context.params.isMember (jss::directory))
     {
-        if (!context.params[jss::directory].isObject ())
+        if (context.params[jss::directory].isNull())
+        {
+            jvResult[jss::error]   = "malformedRequest";
+        }
+        else if (!context.params[jss::directory].isObject())
         {
             uNodeIndex.SetHex (context.params[jss::directory].asString ());
         }
@@ -120,7 +124,7 @@ Json::Value doLedgerEntry (RPC::Context& context)
     }
     else if (context.params.isMember (jss::offer))
     {
-        if (!context.params[jss::offer].isObject ())
+        if (!context.params[jss::offer].isObject())
         {
             uNodeIndex.SetHex (context.params[jss::offer].asString ());
         }
@@ -146,7 +150,7 @@ Json::Value doLedgerEntry (RPC::Context& context)
         Currency         uCurrency;
         Json::Value     jvCasinocoinState   = context.params[jss::casinocoin_state];
 
-        if (!jvCasinocoinState.isObject ()
+        if (!jvCasinocoinState.isObject()
             || !jvCasinocoinState.isMember (jss::currency)
             || !jvCasinocoinState.isMember (jss::accounts)
             || !jvCasinocoinState[jss::accounts].isArray ()
@@ -219,3 +223,4 @@ Json::Value doLedgerEntry (RPC::Context& context)
 }
 
 } // casinocoin
+

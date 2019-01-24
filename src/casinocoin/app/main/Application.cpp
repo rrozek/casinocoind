@@ -1591,7 +1591,7 @@ ApplicationImp::loadLedgerFromFile (
             ledger = ledger.get()["accountState"];
         }
 
-        if (!ledger.get().isArray ())
+        if (!ledger.get().isArrayOrNull ())
         {
             JLOG(m_journal.fatal())
                << "State nodes must be an array";
@@ -1606,7 +1606,7 @@ ApplicationImp::loadLedgerFromFile (
         {
             Json::Value& entry = ledger.get()[index];
 
-            if (!entry.isObject())
+            if (!entry.isObjectOrNull())
             {
                 JLOG(m_journal.fatal())
                     << "Invalid entry in ledger";
