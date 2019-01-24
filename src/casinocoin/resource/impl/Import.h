@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_RESOURCE_IMPORT_H_INCLUDED
 #define CASINOCOIN_RESOURCE_IMPORT_H_INCLUDED
-
+#include <casinocoin/resource/impl/Entry.h>
 #include <casinocoin/resource/Consumer.h>
 
 namespace casinocoin {

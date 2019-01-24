@@ -17,6 +17,7 @@
 */
 //==============================================================================
 
+#include <casinocoin/beast/core/SemanticVersion.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 
 #include <algorithm>
