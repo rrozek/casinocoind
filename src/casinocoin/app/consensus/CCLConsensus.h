@@ -211,10 +211,10 @@ class CCLConsensus
         propose(CCLCxPeerPos::Proposal const& proposal);
 
         /** Share the given tx set to peers.
-            @param set The TxSet to share.
+            @param txns The TxSet to share.
         */
         void
-        share(CCLTxSet const& set);
+        share(CCLTxSet const& txns);
 
         /** Get the ID of the previous ledger/last closed ledger(LCL) on the
            network
@@ -315,7 +315,7 @@ class CCLConsensus
             ledger, this function also populates retriableTxs with those that
             can be retried in the next round.
             @param previousLedger Prior ledger building upon
-            @param set The set of transactions to apply to the ledger
+            @param txns The set of transactions to apply to the ledger
             @param closeTime The the ledger closed
             @param closeTimeCorrect Whether consensus agreed on close time
             @param closeResolution Resolution used to determine consensus close
@@ -328,7 +328,7 @@ class CCLConsensus
         CCLCxLedger
         buildLCL(
             CCLCxLedger const& previousLedger,
-            CCLTxSet const& set,
+            CCLTxSet const& txns,
             NetClock::time_point closeTime,
             bool closeTimeCorrect,
             NetClock::duration closeResolution,
@@ -337,6 +337,7 @@ class CCLConsensus
 
         /** Validate the given ledger and share with peers as necessary
             @param ledger The ledger to validate
+            @param txns The consensus transaction set
             @param proposing Whether we were proposing transactions while
                              generating this ledger.  If we are not proposing,
                              a validation can still be sent to inform peers that
@@ -344,7 +345,7 @@ class CCLConsensus
                              but are still around and trying to catch up.
         */
         void
-        validate(CCLCxLedger const& ledger, bool proposing);
+        validate(CCLCxLedger const& ledger, CCLTxSet const& txns, bool proposing);
 
     };
 

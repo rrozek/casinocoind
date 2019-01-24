@@ -35,8 +35,8 @@ public:
     {
         testcase("Change validation trusted status");
         PublicKey key = derivePublicKey(KeyType::ed25519, randomSecretKey());
-        auto v = std::make_shared<STValidation>(
-            uint256(), NetClock::time_point(), key, calcNodeID(key), true);
+        auto v = std::make_shared<STValidation>(uint256(), uint256(),
+            NetClock::time_point(), key, calcNodeID(key), true);
 
         BEAST_EXPECT(!v->isTrusted());
         v->setTrusted();
