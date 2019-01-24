@@ -24,7 +24,7 @@
 //==============================================================================
 
 #include <BeastConfig.h>
-#include <casinocoin/resource/Charge.h>
+#include <casinocoin/resource/Fees.h>
 
 namespace casinocoin {
 namespace Resource {
