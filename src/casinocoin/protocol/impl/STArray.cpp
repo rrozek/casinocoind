@@ -69,7 +69,7 @@ STArray::STArray (SField const& f, int n)
     v_.reserve(n);
 }
 
-STArray::STArray (SerialIter& sit, SField const& f)
+STArray::STArray (SerialIter& sit, SField const& f, int depth)
     : STBase(f)
 {
     while (!sit.empty ())
@@ -103,8 +103,7 @@ STArray::STArray (SerialIter& sit, SField const& f)
             Throw<std::runtime_error> ("Non-object in array");
         }
 
-        v_.emplace_back(fn);
-        v_.back().set (sit, 1);
+        v_.emplace_back(sit, fn, depth+1);
 
         if (v_.back().setTypeFromSField (fn) == STObject::typeSetFail)
         {
@@ -189,3 +188,4 @@ void STArray::sort (bool (*compare) (const STObject&, const STObject&))
 }
 
 } // casinocoin
+
