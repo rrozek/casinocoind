@@ -71,7 +71,7 @@ public:
         Scheduler& scheduler,
         int readThreads,
         Stoppable& parent,
-        Section const& backendParameters,
+        Section const& config,
         beast::Journal journal) override;
 };
 

@@ -117,7 +117,7 @@ InboundLedger::init(ScopedLockType& collectionLock)
             if (mFailed)
                 return;
         }
-        else if (shardStore && mSeq >= NodeStore::genesisSeq)
+        else if (shardStore && mSeq >= shardStore->earliestSeq())
         {
             if (auto l = shardStore->fetchLedger(mHash, mSeq))
             {

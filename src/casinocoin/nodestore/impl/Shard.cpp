@@ -26,14 +26,13 @@
 namespace casinocoin {
 namespace NodeStore {
 
-Shard::Shard(std::uint32_t index, int cacheSz,
-    PCache::clock_type::rep cacheAge,
-    beast::Journal& j)
+Shard::Shard(DatabaseShard const& db, std::uint32_t index,
+    int cacheSz, PCache::clock_type::rep cacheAge, beast::Journal& j)
     : index_(index)
-    , firstSeq_(std::max(genesisSeq,
-        DatabaseShard::firstSeq(index)))
-    , lastSeq_(std::max(firstSeq_,
-        DatabaseShard::lastSeq(index)))
+    , firstSeq_(db.firstLedgerSeq(index))
+    , lastSeq_(std::max(firstSeq_, db.lastLedgerSeq(index)))
+    , maxLedgers_(index == db.earliestShardIndex() ?
+        lastSeq_ - firstSeq_ + 1 : db.ledgersPerShard())
     , pCache_(std::make_shared<PCache>(
         "shard " + std::to_string(index_),
         cacheSz, cacheAge, stopwatch(), j))
@@ -42,7 +41,7 @@ Shard::Shard(std::uint32_t index, int cacheSz,
         stopwatch(), cacheSz, cacheAge))
     , j_(j)
 {
-    if (index_ < DatabaseShard::seqToShardIndex(genesisSeq))
+    if (index_ < db.earliestShardIndex())
         Throw<std::runtime_error>("Shard: Invalid index");
 }
 
@@ -100,16 +99,7 @@ Shard::open(Section config, Scheduler& scheduler,
                     " invalid control file";
                 return false;
             }
-
-            auto const genesisShardIndex {
-                DatabaseShard::seqToShardIndex(genesisSeq)};
-            auto const genesisNumLedgers {
-                DatabaseShard::ledgersPerShard() - (
-                    genesisSeq - DatabaseShardImp::firstSeq(
-                        genesisShardIndex))};
-            if (boost::icl::length(storedSeqs_) ==
-                (index_ == genesisShardIndex ? genesisNumLedgers :
-                    DatabaseShard::ledgersPerShard()))
+            if (boost::icl::length(storedSeqs_) >= maxLedgers_)
             {
                 JLOG(j_.error()) <<
                     "shard " << index_ <<
@@ -138,15 +128,7 @@ Shard::setStored(std::shared_ptr<Ledger const> const& l)
             " already stored";
         return false;
     }
-    auto const genesisShardIndex {
-        DatabaseShard::seqToShardIndex(genesisSeq)};
-    auto const genesisNumLedgers {
-        DatabaseShard::ledgersPerShard() - (
-            genesisSeq - DatabaseShardImp::firstSeq(
-                genesisShardIndex))};
-    if (boost::icl::length(storedSeqs_) >=
-        (index_ == genesisShardIndex ? genesisNumLedgers :
-            DatabaseShard::ledgersPerShard()) - 1)
+    if (boost::icl::length(storedSeqs_) >= maxLedgers_ - 1)
     {
         if (backend_->fdlimit() != 0)
         {
