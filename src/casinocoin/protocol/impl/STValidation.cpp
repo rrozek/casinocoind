@@ -32,6 +32,29 @@
 
 namespace casinocoin {
 
+STValidation::STValidation (SerialIter& sit, bool checkSignature)
+    : STObject (getFormat (), sit, sfValidation)
+{
+    auto const spk = getFieldVL(sfSigningPubKey);
+
+    if (publicKeyType(makeSlice(spk)) != KeyType::secp256k1)
+    {
+        JLOG (debugLog().error())
+            << "Invalid public key in validation" << getJson (0);
+        Throw<std::runtime_error> ("Invalid public key in validation");
+    }
+
+    mNodeID = calcNodeID(PublicKey(makeSlice(spk)));
+    assert (mNodeID.isNonZero ());
+
+    if  (checkSignature && !isValid ())
+    {
+        JLOG (debugLog().error())
+            << "Invalid signature in validation" << getJson (0);
+        Throw<std::runtime_error> ("Invalid signature in validation");
+    }
+}
+
 STValidation::STValidation(
     uint256 const& ledgerHash,
     uint256 const& consensusHash,
@@ -41,6 +64,10 @@ STValidation::STValidation(
     bool isFull)
     : STObject(getFormat(), sfValidation), mNodeID(nodeID), mSeen(signTime)
 {
+    // This is our own public key and it should always be valid.
+    if (!publicKeyType(publicKey))
+        LogicError ("Invalid validation public key");
+
     // Does not sign
     setFieldH256 (sfLedgerHash, ledgerHash);
     setFieldH256 (sfConsensusHash, consensusHash);
@@ -98,6 +125,9 @@ bool STValidation::isValid (uint256 const& signingHash) const
 {
     try
     {
+        if (publicKeyType(getSignerPublic()) != KeyType::secp256k1)
+            return false;
+
         return verifyDigest (getSignerPublic(),
             signingHash,
             makeSlice(getFieldVL (sfSignature)),

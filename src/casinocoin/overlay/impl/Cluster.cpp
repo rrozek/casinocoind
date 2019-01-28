@@ -127,7 +127,7 @@ Cluster::load (Section const& nodes)
         }
 
         auto const id = parseBase58<PublicKey>(
-            TokenType::TOKEN_NODE_PUBLIC, match[1]);
+            TokenType::NodePublic, match[1]);
 
         if (!id)
         {
@@ -150,3 +150,4 @@ Cluster::load (Section const& nodes)
 }
 
 } // casinocoin
+

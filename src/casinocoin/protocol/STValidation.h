@@ -53,6 +53,9 @@ public:
     using ref = const std::shared_ptr<STValidation>&;
 
     enum { kFullFlag = 0x1 };
+	
+	// These throw if the object is not valid
+    STValidation (SerialIter & sit, bool checkSignature = true);
 
     /** Construct a STValidation from a peer.
         Construct a STValidation from serialized data previously shared by a

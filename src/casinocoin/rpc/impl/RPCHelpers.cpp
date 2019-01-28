@@ -43,7 +43,7 @@ accountFromStringStrict(std::string const& account)
     boost::optional <AccountID> result;
 
     auto const publicKey = parseBase58<PublicKey> (
-        TokenType::TOKEN_ACCOUNT_PUBLIC,
+        TokenType::AccountPublic,
         account);
 
     if (publicKey)
@@ -731,3 +731,4 @@ beast::SemanticVersion const lastVersion("1.0.0");
 
 } // RPC
 } // casinocoin
+

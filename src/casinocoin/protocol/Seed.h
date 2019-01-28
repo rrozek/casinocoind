@@ -108,10 +108,10 @@ inline
 std::string
 toBase58 (Seed const& seed)
 {
-    return base58EncodeToken(
-        TOKEN_FAMILY_SEED, seed.data(), seed.size());
+    return base58EncodeToken(TokenType::FamilySeed, seed.data(), seed.size());
 }
 
 }
 
 #endif
+

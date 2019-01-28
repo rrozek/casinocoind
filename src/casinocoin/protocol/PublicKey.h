@@ -76,7 +76,7 @@ public:
     /** Create a public key.
 
         Preconditions:
-            publicKeyType(Slice(data, size)) != boost::none
+            publicKeyType(slice) != boost::none
     */
     explicit
     PublicKey (Slice const& slice);

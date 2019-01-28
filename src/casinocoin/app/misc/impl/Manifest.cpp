@@ -63,10 +63,8 @@ Manifest::make_Manifest (std::string s)
             auto const spk = st.getFieldVL (sfSigningPubKey);
             if (! publicKeyType (makeSlice(spk)))
                 return boost::none;
-            auto const opt_sig = get (st, sfSignature);
-            if (! opt_sig)
+            if (! get (st, sfSignature))
                 return boost::none;
-
             return Manifest (std::move (s), PublicKey (makeSlice(pk)),
                 PublicKey (makeSlice(spk)), *opt_seq);
         }
@@ -89,7 +87,7 @@ logMftAct (
     std::uint32_t seq)
 {
     s << "Manifest: " << action <<
-         ";Pk: " << toBase58 (TokenType::TOKEN_NODE_PUBLIC, pk) <<
+         ";Pk: " << toBase58 (TokenType::NodePublic, pk) <<
          ";Seq: " << seq << ";";
     return s;
 }
@@ -103,7 +101,7 @@ Stream& logMftAct (
     std::uint32_t oldSeq)
 {
     s << "Manifest: " << action <<
-         ";Pk: " << toBase58 (TokenType::TOKEN_NODE_PUBLIC, pk) <<
+         ";Pk: " << toBase58 (TokenType::NodePublic, pk) <<
          ";Seq: " << seq <<
          ";OldSeq: " << oldSeq << ";";
     return s;
@@ -475,3 +473,4 @@ void ManifestCache::save (
     tr.commit ();
 }
 } // casinocoin
+

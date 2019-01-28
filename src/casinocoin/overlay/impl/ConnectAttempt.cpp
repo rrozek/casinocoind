@@ -370,7 +370,7 @@ ConnectAttempt::processResponse()
         return close(); // verifyHello logs
     JLOG(journal_.info()) <<
         "Public Key: " << toBase58 (
-            TokenType::TOKEN_NODE_PUBLIC,
+            TokenType::NodePublic,
             *publicKey);
 
     auto const protocol =
@@ -399,3 +399,4 @@ ConnectAttempt::processResponse()
 }
 
 } // casinocoin
+

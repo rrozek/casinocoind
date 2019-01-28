@@ -70,7 +70,7 @@ CCLCxPeerPos::getJson() const
     auto ret = proposal().getJson();
 
     if (publicKey().size())
-        ret[jss::peer_id] = toBase58(TokenType::TOKEN_NODE_PUBLIC, publicKey());
+        ret[jss::peer_id] = toBase58(TokenType::NodePublic, publicKey());
 
     return ret;
 }
@@ -108,3 +108,4 @@ CCLCxPeerPos::Data::Data(
 }
 
 } // casinocoin
+

@@ -84,7 +84,7 @@ public:
 
         // Keys/ID when using [validation_token]
         SecretKey const tokenSecretKey = *parseBase58<SecretKey>(
-            TokenType::TOKEN_NODE_PRIVATE, tokenSecretStr);
+            TokenType::NodePrivate, tokenSecretStr);
         PublicKey const tokenPublicKey =
             derivePublicKey(KeyType::secp256k1, tokenSecretKey);
 

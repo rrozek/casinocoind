@@ -181,7 +181,7 @@ public:
         using address_type = boost::asio::ip::address;
 
         auto toStr = [](PublicKey const& publicKey) {
-            return toBase58(TokenType::TOKEN_NODE_PUBLIC, publicKey);
+            return toBase58(TokenType::NodePublic, publicKey);
         };
 
         // Publisher manifest/signing keys
