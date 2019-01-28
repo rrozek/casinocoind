@@ -353,8 +353,8 @@ void RFC1751::standard (std::string& strWord)
 {
     for (auto& letter : strWord)
     {
-        if (islower (letter))
-            letter = toupper (letter);
+        if (islower (static_cast<unsigned char>(letter)))
+            letter = toupper (static_cast<unsigned char>(letter));
         else if (letter == '1')
             letter = 'L';
         else if (letter == '0')
@@ -512,3 +512,4 @@ RFC1751::getWordFromBlob (void const* blob, size_t bytes)
 }
 
 } // casinocoin
+

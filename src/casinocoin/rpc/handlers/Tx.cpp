@@ -51,7 +51,7 @@ isHexTxID (std::string const& txid)
     auto const ret = std::find_if (txid.begin (), txid.end (),
         [](std::string::value_type c)
         {
-            return !std::isxdigit (c);
+            return !std::isxdigit (static_cast<unsigned char>(c));
         });
 
     return (ret == txid.end ());
@@ -151,3 +151,4 @@ Json::Value doTx (RPC::Context& context)
 }
 
 } // casinocoin
+

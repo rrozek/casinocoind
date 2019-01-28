@@ -30,6 +30,7 @@
 #include <casinocoin/basics/Blob.h>
 #include <casinocoin/basics/strHex.h>
 #include <boost/format.hpp>
+#include <boost/optional.hpp>
 #include <sstream>
 #include <string>
 
@@ -101,6 +102,9 @@ bool parseUrl (parsedURL& pUrl, std::string const& strUrl);
 
 std::string trim_whitespace (std::string str);
 
+boost::optional<std::uint64_t> to_uint64(std::string const& s);
+
 } // casinocoin
 
 #endif
+
