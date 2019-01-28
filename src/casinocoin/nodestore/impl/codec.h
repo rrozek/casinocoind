@@ -46,44 +46,6 @@ namespace NodeStore {
 
 template <class BufferFactory>
 std::pair<void const*, std::size_t>
-snappy_compress (void const* in,
-    std::size_t in_size, BufferFactory&& bf)
-{
-    std::pair<void const*, std::size_t> result;
-    auto const out_max =
-        snappy::MaxCompressedLength(in_size);
-    void* const out = bf(out_max);
-    result.first = out;
-    snappy::RawCompress(
-        reinterpret_cast<char const*>(in),
-            in_size, reinterpret_cast<char*>(out),
-                &result.second);
-    return result;
-}
-
-template <class BufferFactory>
-std::pair<void const*, std::size_t>
-snappy_decompress (void const* in,
-    std::size_t in_size, BufferFactory&& bf)
-{
-    std::pair<void const*, std::size_t> result;
-    if (! snappy::GetUncompressedLength(
-            reinterpret_cast<char const*>(in),
-                in_size, &result.second))
-        Throw<std::runtime_error> (
-            "snappy decompress: GetUncompressedLength");
-    void* const out = bf(result.second);
-    result.first = out;
-    if (! snappy::RawUncompress(
-        reinterpret_cast<char const*>(in), in_size,
-            reinterpret_cast<char*>(out)))
-        Throw<std::runtime_error> (
-            "snappy decompress: RawUncompress");
-    return result;
-}
-
-template <class BufferFactory>
-std::pair<void const*, std::size_t>
 lz4_decompress (void const* in,
     std::size_t in_size, BufferFactory&& bf)
 {
@@ -579,3 +541,4 @@ filter_inner (void* in, std::size_t in_size)
 } // casinocoin
 
 #endif
+
