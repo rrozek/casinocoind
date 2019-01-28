@@ -22,12 +22,12 @@
 #define BEAST_HASH_UHASH_H_INCLUDED
 
 #include <casinocoin/beast/hash/hash_append.h>
-#include <casinocoin/beast/hash/spooky.h>
+#include <casinocoin/beast/hash/xxhasher.h>
 
 namespace beast {
 
 // Universal hash function
-template <class Hasher = spooky>
+template <class Hasher = xxhasher>
 struct uhash
 {
     using result_type = typename Hasher::result_type;
@@ -45,3 +45,4 @@ struct uhash
 } // beast
 
 #endif
+
