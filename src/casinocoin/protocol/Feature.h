@@ -84,7 +84,8 @@ class FeatureCollections
         "fix1528",
         "DepositAuth",
         "Checks",
-        "fix1571"
+        "fix1571",
+        "fix1543",
     };
 
     std::vector<uint256> features;
@@ -368,6 +369,7 @@ extern uint256 const fix1528;
 extern uint256 const featureDepositAuth;
 extern uint256 const featureChecks;
 extern uint256 const fix1571;
+extern uint256 const fix1543;
 
 } // casinocoin
 

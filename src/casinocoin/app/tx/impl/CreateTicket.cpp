@@ -29,7 +29,7 @@
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
-
+#include <casinocoin/protocol/TxFlags.h>
 namespace casinocoin {
 
 TER
@@ -37,6 +37,9 @@ CreateTicket::preflight (PreflightContext const& ctx)
 {
     if (! ctx.rules.enabled(featureTickets))
         return temDISABLED;
+
+    if (ctx.tx.getFlags() & tfUniversalMask)
+        return temINVALID_FLAG;
 
     auto const ret = preflight1 (ctx);
     if (!isTesSuccess (ret))
