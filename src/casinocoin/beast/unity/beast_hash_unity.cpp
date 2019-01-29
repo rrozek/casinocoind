@@ -18,4 +18,4 @@
 //==============================================================================
 
 #include <casinocoin/beast/hash/xxhasher.h>
-#include <casinocoin/beast/hash/impl/xxhash.c>
+#include <casinocoin/beast/hash/impl/xxhash.cpp>
