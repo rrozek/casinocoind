@@ -23,10 +23,7 @@
 */
 //==============================================================================
 
-#if ! BEAST_COMPILE_OBJECTIVE_CPP
-
 // MUST come first!
 #include <BeastConfig.h>
 #include <casinocoin/beast/core/core.unity.cpp>
 
-#endif
