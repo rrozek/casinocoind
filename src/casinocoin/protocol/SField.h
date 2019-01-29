@@ -401,6 +401,8 @@ extern SF_U64 const sfExchangeRate;
 extern SF_U64 const sfLowNode;
 extern SF_U64 const sfHighNode;
 extern SF_U64 const sfDestinationNode;
+extern SF_U64 const sfCookie;
+
 
 // 128-bit
 extern SF_U128 const sfEmailHash;
@@ -523,3 +525,4 @@ extern SField const sfMajorities;
 } // casinocoin
 
 #endif
+
