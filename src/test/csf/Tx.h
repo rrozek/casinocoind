@@ -62,32 +62,53 @@ private:
 };
 
 //!-------------------------------------------------------------------------
-//! All sets of Tx are represented as a flat_set.
+//! All sets of Tx are represented as a flat_set for performance.
 using TxSetType = boost::container::flat_set<Tx>;
 
 //! TxSet is a set of transactions to consider including in the ledger
 class TxSet
 {
 public:
-    using ID = TxSetType;
+    using ID = beast::uhash<>::result_type;
     using Tx = csf::Tx;
-    using MutableTxSet = TxSet;
+
+    static ID calcID(TxSetType const & txs)
+    {
+        return beast::uhash<>{}(txs);
+    }
+
+    class MutableTxSet
+    {
+        friend class TxSet;
+
+        TxSetType txs_;
+
+    public:
+        MutableTxSet(TxSet const& s) : txs_{s.txs_}
+        {
+        }
+
+        bool
+        insert(Tx const& t)
+        {
+            return txs_.insert(t).second;
+        }
+
+        bool
+        erase(Tx::ID const& txId)
+        {
+            return txs_.erase(Tx{txId}) > 0;
+        }
+    };
 
     TxSet() = default;
-    TxSet(TxSetType const& s) : txs_{s}
+    TxSet(TxSetType const& s) : txs_{s}, id_{calcID(txs_)}
     {
     }
 
-    bool
-    insert(Tx const& t)
+    TxSet(MutableTxSet && m)
+        : txs_{std::move(m.txs_)}, id_{calcID(txs_)}
     {
-        return txs_.insert(t).second;
-    }
-
-    bool
-    erase(Tx::ID const& txId)
-    {
-        return txs_.erase(Tx{txId}) > 0;
     }
 
     bool
@@ -106,10 +127,16 @@ public:
         return nullptr;
     }
 
-    auto const&
-    id() const
+    TxSetType const &
+    txs() const
     {
         return txs_;
+    }
+
+    ID
+    id() const
+    {
+        return id_;
     }
 
     /** @return Map of Tx::ID that are missing. True means
@@ -136,8 +163,12 @@ public:
         return res;
     }
 
+private:
     //! The set contains the actual transactions
     TxSetType txs_;
+
+    //! The unique ID of this tx set
+    ID id_;
 };
 
 //------------------------------------------------------------------------------
@@ -185,6 +216,6 @@ hash_append(Hasher& h, Tx const& tx)
 
 }  // csf
 }  // test
-}  // ripple
+}  // casinocoin
 
 #endif

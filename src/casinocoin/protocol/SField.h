@@ -247,10 +247,11 @@ public:
         fieldMeta = c;
     }
 
-    bool shouldInclude (bool withSigningField) const
+    bool shouldInclude (bool withSigningField, bool withNotHashedField = true) const
     {
         return (fieldValue < 256 &&
-                    (withSigningField || (signingField == IsSigning::yes)));
+                (withSigningField || (signingField == IsSigning::yes)) &&
+                (withNotHashedField || (signingField != IsSigning::noAndNotHashed)));
     }
 
     bool operator== (const SField& f) const
