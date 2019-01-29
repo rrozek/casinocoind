@@ -36,9 +36,9 @@
 namespace casinocoin {
 
 // {
-//   secret: <secret>,
-//   dest_public_key_hex: <pub_key>
+//   dest_public_key_hex: <pub_key>,
 //   message: <string>,
+//   secret: <secret> <OPTOINAL>
 // }
 Json::Value doEncryptMsg (RPC::Context& context)
 {
@@ -48,45 +48,56 @@ Json::Value doEncryptMsg (RPC::Context& context)
         return RPC::missing_field_error (jss::message);
     if (! context.params.isMember (jss::dest_public_key_hex))
         return RPC::missing_field_error (jss::dest_public_key_hex);
-    if (! context.params.isMember (jss::secret))
-        return RPC::missing_field_error (jss::secret);
+
     JLOG(j.debug()) << "doEncryptMsg: " << context.params;
 
-    Json::Value jvResult;
-    auto const keypair = RPC::keypairForSignature (context.params, jvResult);
-    if (RPC::contains_error (jvResult))
-        return std::move (jvResult);
-
+    // dest pubKey
     auto unHexedPubKey = strUnHex(context.params[jss::dest_public_key_hex].asString());
     if (!unHexedPubKey.second)
         return RPC::make_param_error("dest_public_key_hex is malformed");
+    PublicKey pubKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
 
+    // msg
     std::string msg = context.params[jss::message].asString();
     Serializer s(msg.data(), msg.size());
+
+    // sender secret
+    Json::Value jvResult;
+    SecretKey* optionalSecretKey = nullptr;
+    if (context.params.isMember (jss::secret))
+    {
+        auto const keypair = RPC::keypairForSignature (context.params, jvResult);
+        if (RPC::contains_error (jvResult))
+            return std::move (jvResult);
+        optionalSecretKey = new SecretKey(keypair.second);
+    }
 
     Blob encryptedMsgBlob;
     try
     {
-        uint256 secretInt = uint256::fromVoid(keypair.second.data());
-        encryptedMsgBlob = encryptECIES(secretInt, unHexedPubKey.first, s.peekData());
+        encryptedMsgBlob = encryptECIES(pubKey, s.peekData(), optionalSecretKey);
     }
     catch (std::runtime_error const& error)
     {
+        if (optionalSecretKey)
+            delete optionalSecretKey;
         JLOG(j.info()) << "doEncryptMsg: thrown " << error.what();
         return RPC::make_param_error("cannot encrypt msg");
     }
+
+    if (optionalSecretKey)
+        delete optionalSecretKey;
+
     if (encryptedMsgBlob.empty())
     {
         JLOG(j.info()) << "doEncryptMsg: result is empty";
         return RPC::make_param_error("result is empty");
     }
 
-    Slice pubKeySlice = keypair.first.slice();
-
     jvResult[jss::message] = context.params[jss::message];
     jvResult[jss::encrypted_message] = Json::Value(strHex(encryptedMsgBlob.data(), encryptedMsgBlob.size()));
     jvResult[jss::dest_public_key_hex] = context.params[jss::dest_public_key_hex];
-    jvResult[jss::src_public_key_hex] = Json::Value(strHex(pubKeySlice.data(), pubKeySlice.size()));
+    jvResult[jss::src_public_key_hex] = Json::Value(strHex(encryptedMsgBlob.data(), PublicKey::defaultSize()));
 
     return jvResult;
 }

@@ -62,6 +62,7 @@ namespace casinocoin {
 // key. They *must* be called in try/catch blocks.
 
 // Algorithmic choices:
+#define ECIES_PUBKEY_SIZE   (264/8)             // pubKey size. see casinocoin/protocol/PublicKey.h
 #define ECIES_KEY_HASH      SHA512              // Hash used to expand shared secret
 #define ECIES_KEY_LENGTH    (512/8)             // Size of expanded shared secret
 #define ECIES_MIN_SEC       (128/8)             // The minimum equivalent security
@@ -113,6 +114,16 @@ static void getECIESSecret (uint256 const& secretKey,
     getECIESSecret (ECDSAPrivateKey (secretKey), ECDSAPublicKey (publicKey), enc_key, hmac_key);
 }
 
+static void getECIESSecret (SecretKey secretKey,
+                            PublicKey publicKey,
+                            ECIES_ENC_KEY_TYPE& enc_key,
+                            ECIES_HMAC_KEY_TYPE& hmac_key)
+{
+    uint256 secretInt = uint256::fromVoid(secretKey.data());
+    Blob publicKeyBlob(publicKey.data(), publicKey.data() + publicKey.size());
+    getECIESSecret (secretInt, publicKeyBlob, enc_key, hmac_key);
+}
+
 static ECIES_HMAC_TYPE makeHMAC (const ECIES_HMAC_KEY_TYPE& secret, Blob const& data)
 {
     HMAC_CTX ctx;
@@ -145,9 +156,8 @@ static ECIES_HMAC_TYPE makeHMAC (const ECIES_HMAC_KEY_TYPE& secret, Blob const& 
     return ret;
 }
 
-Blob encryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& plaintext)
+Blob encryptECIES(const PublicKey &publicKeyTo, const Blob &plaintext, SecretKey* secretKeyFrom /*= nullptr*/)
 {
-
     ECIES_ENC_IV_TYPE iv;
     beast::rngfill (
         iv.begin (),
@@ -156,8 +166,20 @@ Blob encryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& 
 
     ECIES_ENC_KEY_TYPE secret;
     ECIES_HMAC_KEY_TYPE hmacKey;
+    PublicKey pubKeyFrom;
 
-    getECIESSecret (secretKey, publicKey, secret, hmacKey);
+    if (secretKeyFrom == nullptr)
+    {
+        std::pair<PublicKey, SecretKey> ephemeralKeys = randomKeyPair(KeyType::secp256k1);
+        getECIESSecret (ephemeralKeys.second, publicKeyTo, secret, hmacKey);
+        pubKeyFrom = ephemeralKeys.first;
+    }
+    else
+    {
+        pubKeyFrom = derivePublicKey(KeyType::secp256k1, *secretKeyFrom);
+        getECIESSecret (*secretKeyFrom, publicKeyTo, secret, hmacKey);
+    }
+
     ECIES_HMAC_TYPE hmac = makeHMAC (hmacKey, plaintext);
 
     hmacKey.zero ();
@@ -173,12 +195,16 @@ Blob encryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& 
 
     secret.zero ();
 
-    Blob out (plaintext.size () + ECIES_HMAC_SIZE + ECIES_ENC_KEY_SIZE + ECIES_ENC_BLK_SIZE, 0);
+    Blob out (plaintext.size () + ECIES_PUBKEY_SIZE + ECIES_HMAC_SIZE + ECIES_ENC_KEY_SIZE + ECIES_ENC_BLK_SIZE, 0);
     int len = 0, bytesWritten;
 
+    // output ephem PUBKEY
+    memcpy (& (out.front ()), pubKeyFrom.data (), ECIES_PUBKEY_SIZE);
+    len = ECIES_PUBKEY_SIZE;
+
     // output IV
-    memcpy (& (out.front ()), iv.begin (), ECIES_ENC_BLK_SIZE);
-    len = ECIES_ENC_BLK_SIZE;
+    memcpy (& (out.front ()) + len, iv.begin (), ECIES_ENC_BLK_SIZE);
+    len += ECIES_ENC_BLK_SIZE;
 
     // Encrypt/output HMAC
     bytesWritten = out.capacity () - len;
@@ -215,23 +241,28 @@ Blob encryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& 
 
     len += bytesWritten;
 
-    // Output contains: IV, encrypted HMAC, encrypted data, encrypted padding
-    assert (len <= (plaintext.size () + ECIES_HMAC_SIZE + (2 * ECIES_ENC_BLK_SIZE)));
-    assert (len >= (plaintext.size () + ECIES_HMAC_SIZE + ECIES_ENC_BLK_SIZE)); // IV, HMAC, data
+    // Output contains: PUBKEY, IV, encrypted HMAC, encrypted data, encrypted padding
+    assert (len <= (plaintext.size () + ECIES_PUBKEY_SIZE + ECIES_HMAC_SIZE + (2 * ECIES_ENC_BLK_SIZE)));
+    assert (len >= (plaintext.size () + ECIES_PUBKEY_SIZE + ECIES_HMAC_SIZE + ECIES_ENC_BLK_SIZE)); // IV, HMAC, data
     out.resize (len);
     EVP_CIPHER_CTX_cleanup (&ctx);
     return out;
 }
 
-Blob decryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& ciphertext)
+Blob decryptECIES(const SecretKey &secretKeyTo, const Blob &ciphertext)
 {
-    // minimum ciphertext = IV + HMAC + 1 block
-    if (ciphertext.size () < ((2 * ECIES_ENC_BLK_SIZE) + ECIES_HMAC_SIZE) )
+    // minimum ciphertext = PUBKEY + IV + HMAC + 1 block
+    if (ciphertext.size () < ((2 * ECIES_ENC_BLK_SIZE) + ECIES_HMAC_SIZE + ECIES_PUBKEY_SIZE) )
         Throw<std::runtime_error> ("ciphertext too short");
+
+    // extract PUBKEY
+    Blob ephemeralPubKeyBlob(PublicKey::defaultSize());
+    memcpy (&ephemeralPubKeyBlob[0], & (ciphertext.front ()), ECIES_PUBKEY_SIZE);
+    PublicKey ephemeralPubKey(Slice(ephemeralPubKeyBlob.data(), ephemeralPubKeyBlob.size()));
 
     // extract IV
     ECIES_ENC_IV_TYPE iv;
-    memcpy (iv.begin (), & (ciphertext.front ()), ECIES_ENC_BLK_SIZE);
+    memcpy (iv.begin (), & (ciphertext.front ()) + ECIES_PUBKEY_SIZE, ECIES_ENC_BLK_SIZE);
 
     // begin decrypting
     EVP_CIPHER_CTX ctx;
@@ -239,7 +270,7 @@ Blob decryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& 
 
     ECIES_ENC_KEY_TYPE secret;
     ECIES_HMAC_KEY_TYPE hmacKey;
-    getECIESSecret (secretKey, publicKey, secret, hmacKey);
+    getECIESSecret (secretKeyTo, ephemeralPubKey, secret, hmacKey);
 
     if (EVP_DecryptInit_ex (&ctx, ECIES_ENC_ALGO, nullptr, secret.begin (), iv.begin ()) != 1)
     {
@@ -254,7 +285,7 @@ Blob decryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& 
     int outlen = ECIES_HMAC_SIZE;
 
     if ( (EVP_DecryptUpdate (&ctx, hmac.begin (), &outlen,
-                             & (ciphertext.front ()) + ECIES_ENC_BLK_SIZE, ECIES_HMAC_SIZE + 1) != 1) || (outlen != ECIES_HMAC_SIZE) )
+                             & (ciphertext.front ()) + ECIES_ENC_BLK_SIZE + ECIES_PUBKEY_SIZE, ECIES_HMAC_SIZE + 1) != 1) || (outlen != ECIES_HMAC_SIZE) )
     {
         secret.zero ();
         hmacKey.zero ();
@@ -263,12 +294,12 @@ Blob decryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& 
     }
 
     // decrypt plaintext (after IV and encrypted mac)
-    Blob plaintext (ciphertext.size () - ECIES_HMAC_SIZE - ECIES_ENC_BLK_SIZE);
+    Blob plaintext (ciphertext.size () - ECIES_HMAC_SIZE - ECIES_ENC_BLK_SIZE - ECIES_PUBKEY_SIZE);
     outlen = plaintext.size ();
 
     if (EVP_DecryptUpdate (&ctx, & (plaintext.front ()), &outlen,
-                           & (ciphertext.front ()) + ECIES_ENC_BLK_SIZE + ECIES_HMAC_SIZE + 1,
-                           ciphertext.size () - ECIES_ENC_BLK_SIZE - ECIES_HMAC_SIZE - 1) != 1)
+                           & (ciphertext.front ()) + ECIES_PUBKEY_SIZE + ECIES_ENC_BLK_SIZE + ECIES_HMAC_SIZE + 1,
+                           ciphertext.size () - ECIES_PUBKEY_SIZE - ECIES_ENC_BLK_SIZE - ECIES_HMAC_SIZE - 1) != 1)
     {
         secret.zero ();
         hmacKey.zero ();

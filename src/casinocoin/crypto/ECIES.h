@@ -22,15 +22,17 @@
 
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/basics/Blob.h>
+#include <casinocoin/protocol/SecretKey.h>
+#include <casinocoin/protocol/PublicKey.h>
 
 namespace casinocoin {
 
 // ECIES functions. These throw on failure
 
-// encrypt/decrypt functions with integrity checking.
-// Note that the other side must somehow know what keys to use
-Blob encryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& plaintext);
-Blob decryptECIES (uint256 const& secretKey, Blob const& publicKey, Blob const& ciphertext);
+// encrypt/decrypt functions with integrity checking
+// for non-anonymous message encryption provide SecretKey. sender decrypted publicKey is prepended to the message
+Blob encryptECIES (PublicKey const& publicKeyTo, Blob const& plaintext, SecretKey* secretKeyFrom = nullptr);
+Blob decryptECIES (SecretKey const& secretKeyTo, Blob const& ciphertext);
 
 } // casinocoin
 

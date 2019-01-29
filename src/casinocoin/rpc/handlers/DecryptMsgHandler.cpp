@@ -37,8 +37,7 @@ namespace casinocoin {
 
 // {
 //   secret: <secret>,
-//   src_public_key_hex: <pub_key>
-//   encrypted_message: <string>,
+//   encrypted_message: <string>
 // }
 Json::Value doDecryptMsg (RPC::Context& context)
 {
@@ -46,8 +45,6 @@ Json::Value doDecryptMsg (RPC::Context& context)
 
     if (! context.params.isMember (jss::encrypted_message))
         return RPC::missing_field_error (jss::encrypted_message);
-    if (! context.params.isMember (jss::src_public_key_hex))
-        return RPC::missing_field_error (jss::src_public_key_hex);
     if (! context.params.isMember (jss::secret))
         return RPC::missing_field_error (jss::secret);
     JLOG(j.debug()) << "doDecryptMsg: " << context.params;
@@ -56,10 +53,6 @@ Json::Value doDecryptMsg (RPC::Context& context)
     auto const keypair = RPC::keypairForSignature (context.params, jvResult);
     if (RPC::contains_error (jvResult))
         return std::move (jvResult);
-
-    auto unHexedPubKey = strUnHex(context.params[jss::src_public_key_hex].asString());
-    if (!unHexedPubKey.second)
-        return RPC::make_param_error("src_public_key_hex is malformed");
 
     auto unHexedEncryptedMsg = strUnHex(context.params[jss::encrypted_message].asString());
     if (!unHexedEncryptedMsg.second)
@@ -70,8 +63,7 @@ Json::Value doDecryptMsg (RPC::Context& context)
     Blob decryptedMsgBlob;
     try
     {
-        uint256 secretInt = uint256::fromVoid(keypair.second.data());
-        decryptedMsgBlob = decryptECIES(secretInt, unHexedPubKey.first, s.peekData());
+        decryptedMsgBlob = decryptECIES(keypair.second, s.peekData());
     }
     catch (std::runtime_error const& error)
     {
@@ -90,7 +82,7 @@ Json::Value doDecryptMsg (RPC::Context& context)
 
     jvResult[jss::encrypted_message] = context.params[jss::encrypted_message];
     jvResult[jss::message] = Json::Value(decryptedMsg);
-    jvResult[jss::src_public_key_hex] = context.params[jss::src_public_key_hex];
+    jvResult[jss::src_public_key_hex] = strHex(unHexedEncryptedMsg.first.data(), PublicKey::defaultSize());
     jvResult[jss::dest_public_key_hex] = Json::Value(strHex(pubKeySlice.data(), pubKeySlice.size()));
 
     return jvResult;
