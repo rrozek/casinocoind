@@ -56,7 +56,7 @@ struct Fees
     std::uint32_t reserve = 0;      // Reserve base (drops)
     std::uint32_t increment = 0;    // Reserve increment (drops)
 
-    Fees() = default;
+    explicit Fees() = default;
     Fees (Fees const&) = default;
     Fees& operator= (Fees const&) = default;
 
@@ -77,6 +77,8 @@ struct Fees
 /** Information about the notional ledger backing the view. */
 struct LedgerInfo
 {
+    explicit LedgerInfo() = default;
+
     //
     // For all ledgers
     //
@@ -447,3 +449,4 @@ void addRaw (LedgerInfo const&, Serializer&);
 #include <casinocoin/ledger/detail/ReadViewFwdRange.ipp>
 
 #endif
+

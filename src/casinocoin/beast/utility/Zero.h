@@ -46,6 +46,7 @@ namespace beast {
 
 struct Zero
 {
+    explicit Zero() = default;
 };
 
 namespace {
@@ -161,3 +162,4 @@ bool operator<=(Zero, T const& t)
 } // beast
 
 #endif
+

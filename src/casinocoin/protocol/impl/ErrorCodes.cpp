@@ -35,6 +35,8 @@ namespace std {
 template <>
 struct hash <casinocoin::error_code_i>
 {
+    explicit hash() = default;
+
     std::size_t operator() (casinocoin::error_code_i value) const
     {
         return value;

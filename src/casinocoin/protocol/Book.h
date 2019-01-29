@@ -114,6 +114,8 @@ private:
         std::hash <casinocoin::AccountID>, 1>;
 
 public:
+    explicit hash() = default;
+
     using value_type = std::size_t;
     using argument_type = casinocoin::Issue;
 
@@ -138,6 +140,8 @@ private:
     hasher m_hasher;
 
 public:
+    explicit hash() = default;
+
     using value_type = std::size_t;
     using argument_type = casinocoin::Book;
 
@@ -159,6 +163,8 @@ template <>
 struct hash <casinocoin::Issue>
     : std::hash <casinocoin::Issue>
 {
+    explicit hash() = default;
+
     using Base = std::hash <casinocoin::Issue>;
     // VFALCO NOTE broken in vs2012
     //using Base::Base; // inherit ctors
@@ -168,6 +174,8 @@ template <>
 struct hash <casinocoin::Book>
     : std::hash <casinocoin::Book>
 {
+    explicit hash() = default;
+
     using Base = std::hash <casinocoin::Book>;
     // VFALCO NOTE broken in vs2012
     //using Base::Base; // inherit ctors
@@ -176,3 +184,4 @@ struct hash <casinocoin::Book>
 }
 
 #endif
+

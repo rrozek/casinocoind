@@ -28,8 +28,10 @@ template <class T>
 struct is_aged_container
     : std::false_type
 {
+    explicit is_aged_container() = default;
 };
 
 }
 
 #endif
+

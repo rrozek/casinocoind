@@ -105,6 +105,8 @@ public:
     class key_equal
     {
     public:
+        explicit key_equal() = default;
+
         bool operator() (base_uint const& lhs, base_uint const& rhs) const
         {
             return lhs == rhs;
@@ -121,7 +123,10 @@ private:
               constructor: something like base_uint(0) is ambiguous.
     */
     // NIKB TODO Remove the need for this constructor.
-    struct VoidHelper {};
+    struct VoidHelper
+    {
+        explicit VoidHelper() = default;
+    };
 
     explicit base_uint (void const* data, VoidHelper)
     {
@@ -584,7 +589,9 @@ namespace beast
 template <std::size_t Bits, class Tag>
 struct is_uniquely_represented<casinocoin::base_uint<Bits, Tag>>
     : public std::true_type
-    {};
+    {
+        explicit is_uniquely_represented() = default;
+    };
 
 }  // beast
 

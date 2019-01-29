@@ -203,6 +203,8 @@ class BookPaymentStep
     : public BookStep<TIn, TOut, BookPaymentStep<TIn, TOut>>
 {
 public:
+    explicit BookPaymentStep() = default;
+
     using BookStep<TIn, TOut, BookPaymentStep<TIn, TOut>>::BookStep;
     using BookStep<TIn, TOut, BookPaymentStep<TIn, TOut>>::qualityUpperBound;
 
@@ -1093,3 +1095,4 @@ make_BookStepXI (
 }
 
 } // casinocoin
+

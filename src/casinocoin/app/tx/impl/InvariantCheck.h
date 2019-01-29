@@ -48,6 +48,7 @@ namespace casinocoin {
 class InvariantChecker_PROTOTYPE
 {
 public:
+    explicit InvariantChecker_PROTOTYPE() = default;
 
     /**
      * @brief called for each ledger entry in the current transaction.

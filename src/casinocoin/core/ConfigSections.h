@@ -33,6 +33,8 @@ namespace casinocoin {
 // VFALCO DEPRECATED in favor of the BasicConfig interface
 struct ConfigSection
 {
+    explicit ConfigSection() = default;
+
     static std::string nodeDatabase ()       { return "node_db"; }
     static std::string shardDatabase ()      { return "shard_db"; }
     static std::string importNodeDatabase () { return "import_db"; }
@@ -84,3 +86,4 @@ struct ConfigSection
 } // casinocoin
 
 #endif
+

@@ -34,6 +34,8 @@ namespace casinocoin {
 
 struct AmountSpec
 {
+    explicit AmountSpec() = default;
+
     bool native;
     union
     {
@@ -221,3 +223,4 @@ toAmountSpec (
 }
 
 #endif
+

@@ -36,6 +36,8 @@ namespace PeerFinder {
 class SourceStrings : public Source
 {
 public:
+    explicit SourceStrings() = default;
+
     using Strings = std::vector <std::string>;
 
     static beast::SharedPtr <Source> New (std::string const& name, Strings const& strings);
@@ -45,3 +47,4 @@ public:
 }
 
 #endif
+

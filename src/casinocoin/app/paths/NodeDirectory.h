@@ -37,6 +37,8 @@ namespace casinocoin {
 class NodeDirectory
 {
 public:
+    explicit NodeDirectory() = default;
+
     // Current directory - the last 64 bits of this are the quality.
     uint256 current;
 
@@ -120,3 +122,4 @@ public:
 } // casinocoin
 
 #endif
+

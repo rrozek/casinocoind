@@ -114,7 +114,10 @@ public:
     //--------------------------------------------------------------------------
 
 private:
-    struct PausedTag { };
+    struct PausedTag
+    {
+        explicit PausedTag() = default;
+    };
 
     /*  A Worker executes tasks on its provided thread.
 
@@ -168,3 +171,4 @@ private:
 } // beast
 
 #endif
+

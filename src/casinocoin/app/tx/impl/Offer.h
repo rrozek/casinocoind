@@ -47,6 +47,8 @@ protected:
 template<>
 class TOfferBase<STAmount, STAmount>
 {
+public:
+    explicit TOfferBase() = default;
 };
 
 
@@ -246,3 +248,4 @@ operator<< (std::ostream& os, TOffer<TIn, TOut> const& offer)
 }
 
 #endif
+

@@ -115,6 +115,8 @@ namespace keylet {
 /** AccountID root */
 struct account_t
 {
+    explicit account_t() = default;
+
     Keylet operator()(AccountID const& id) const;
 };
 static account_t const account {};
@@ -122,6 +124,8 @@ static account_t const account {};
 /** The amendment table */
 struct amendments_t
 {
+    explicit amendments_t() = default;
+
     Keylet operator()() const;
 };
 static amendments_t const amendments {};
@@ -132,6 +136,8 @@ Keylet child (uint256 const& key);
 /** Skip list */
 struct skip_t
 {
+    explicit skip_t() = default;
+
     Keylet operator()() const;
 
     Keylet operator()(LedgerIndex ledger) const;
@@ -141,6 +147,8 @@ static skip_t const skip {};
 /** The ledger fees */
 struct fees_t
 {
+    explicit fees_t() = default;
+
     // VFALCO This could maybe be constexpr
     Keylet operator()() const;
 };
@@ -149,6 +157,8 @@ static fees_t const fees {};
 /** The beginning of an order book */
 struct book_t
 {
+    explicit book_t() = default;
+
     Keylet operator()(Book const& b) const;
 };
 static book_t const book {};
@@ -156,6 +166,8 @@ static book_t const book {};
 /** A trust line */
 struct line_t
 {
+    explicit line_t() = default;
+
     Keylet operator()(AccountID const& id0,
         AccountID const& id1, Currency const& currency) const;
 
@@ -172,6 +184,8 @@ static line_t const line {};
 /** An offer from an account */
 struct offer_t
 {
+    explicit offer_t() = default;
+
     Keylet operator()(AccountID const& id,
         std::uint32_t seq) const;
 
@@ -185,6 +199,8 @@ static offer_t const offer {};
 /** The initial directory page for a specific quality */
 struct quality_t
 {
+    explicit quality_t() = default;
+
     Keylet operator()(Keylet const& k,
         std::uint64_t q) const;
 };
@@ -193,6 +209,8 @@ static quality_t const quality {};
 /** The directry for the next lower quality */
 struct next_t
 {
+    explicit next_t() = default;
+
     Keylet operator()(Keylet const& k) const;
 };
 static next_t const next {};
@@ -200,6 +218,8 @@ static next_t const next {};
 /** A ticket belonging to an account */
 struct ticket_t
 {
+    explicit ticket_t() = default;
+
     Keylet operator()(AccountID const& id,
         std::uint32_t seq) const;
 
@@ -213,6 +233,8 @@ static ticket_t const ticket {};
 /** A SignerList */
 struct signers_t
 {
+    explicit signers_t() = default;
+
     Keylet operator()(AccountID const& id) const;
 
     Keylet operator()(uint256 const& key) const
@@ -225,6 +247,8 @@ static signers_t const signers {};
 /** A Check */
 struct check_t
 {
+    explicit check_t() = default;
+
     Keylet operator()(AccountID const& id,
         std::uint32_t seq) const;
 

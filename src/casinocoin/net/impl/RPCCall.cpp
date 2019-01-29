@@ -1209,6 +1209,8 @@ namespace
 
 struct RPCCallImp
 {
+    explicit RPCCallImp() = default;
+
     // VFALCO NOTE Is this a to-do comment or a doc comment?
     // Place the async result somewhere useful.
     static void callRPCHandler (Json::Value* jvOutput, Json::Value const& jvInput)

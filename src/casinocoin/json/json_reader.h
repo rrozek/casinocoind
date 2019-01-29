@@ -112,6 +112,8 @@ private:
     class Token
     {
     public:
+        explicit Token() = default;
+
         TokenType type_;
         Location start_;
         Location end_;
@@ -120,6 +122,8 @@ private:
     class ErrorInfo
     {
     public:
+        explicit ErrorInfo() = default;
+
         Token token_;
         std::string message_;
         Location extra_;

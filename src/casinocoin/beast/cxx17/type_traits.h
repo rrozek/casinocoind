@@ -49,8 +49,10 @@ struct is_constructible <pair <T, U>>
         is_default_constructible <T>::value &&
         is_default_constructible <U>::value>
 {
+    explicit is_constructible() = default;
 };
 
 } // std
 
 #endif
+

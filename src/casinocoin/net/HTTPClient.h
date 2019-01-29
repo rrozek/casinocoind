@@ -38,6 +38,8 @@ namespace casinocoin {
 class HTTPClient
 {
 public:
+    explicit HTTPClient() = default;
+
     enum
     {
         maxClientHeaderBytes = 32 * 1024
@@ -82,3 +84,4 @@ public:
 } // casinocoin
 
 #endif
+

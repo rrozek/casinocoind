@@ -33,7 +33,7 @@ namespace Sim {
 /** A snapshot of a Node in the network simulator. */
 struct NodeSnapshot
 {
-
+    explicit NodeSnapshot() = default;
 };
 
 }
@@ -41,3 +41,4 @@ struct NodeSnapshot
 }
 
 #endif
+

@@ -41,7 +41,11 @@ namespace casinocoin {
 
 namespace detail {
 
-class AccountIDTag { };
+class AccountIDTag
+{
+public:
+    explicit AccountIDTag() = default;
+};
 
 } // detail
 
@@ -189,8 +193,10 @@ namespace std {
 template <>
 struct hash <casinocoin::AccountID> : casinocoin::AccountID::hasher
 {
+    explicit hash() = default;
 };
 
 } // std
 
 #endif
+

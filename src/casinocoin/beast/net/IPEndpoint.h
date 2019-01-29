@@ -157,6 +157,8 @@ namespace std {
 template <>
 struct hash <beast::IP::Endpoint>
 {
+    explicit hash() = default;
+
     std::size_t operator() (beast::IP::Endpoint const& endpoint) const
         { return beast::uhash<>{} (endpoint); }
 };
@@ -167,9 +169,12 @@ namespace boost {
 template <>
 struct hash <beast::IP::Endpoint>
 {
+    explicit hash() = default;
+
     std::size_t operator() (beast::IP::Endpoint const& endpoint) const
         { return beast::uhash<>{} (endpoint); }
 };
 }
 
 #endif
+

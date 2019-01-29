@@ -45,6 +45,8 @@ namespace casinocoin {
 class TxFlag
 {
 public:
+    explicit TxFlag() = default;
+
     static std::uint32_t const requireDestTag = 0x00010000;
 };
 // VFALCO TODO Move all flags into this container after some study.

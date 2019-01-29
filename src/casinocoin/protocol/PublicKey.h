@@ -147,6 +147,8 @@ hash_append (Hasher& h,
 template<>
 struct STExchange<STBlob, PublicKey>
 {
+    explicit STExchange() = default;
+
     using value_type = PublicKey;
 
     static
@@ -260,3 +262,4 @@ calcAccountID (PublicKey const& pk);
 } // casinocoin
 
 #endif
+

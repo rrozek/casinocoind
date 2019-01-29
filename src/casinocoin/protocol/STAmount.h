@@ -84,7 +84,10 @@ public:
     //--------------------------------------------------------------------------
     STAmount(SerialIter& sit, SField const& name);
 
-    struct unchecked { };
+    struct unchecked
+    {
+        explicit unchecked() = default;
+    };
 
     // Do not call canonicalize
     STAmount (SField const& name, Issue const& issue,
@@ -443,3 +446,4 @@ private:
 } // casinocoin
 
 #endif
+

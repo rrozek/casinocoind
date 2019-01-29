@@ -40,6 +40,8 @@ class STObject;
 class SignerEntries
 {
 public:
+    explicit SignerEntries() = default;
+
     struct SignerEntry
     {
         AccountID account;
@@ -74,3 +76,4 @@ public:
 } // casinocoin
 
 #endif // CASINOCOIN_TX_IMPL_SIGNER_ENTRIES_H_INCLUDED
+

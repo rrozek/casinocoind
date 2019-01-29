@@ -51,6 +51,7 @@ namespace der {
 // length octets:
 struct Preamble
 {
+    explicit Preamble() = default;
     std::uint8_t type = 0;
     std::size_t tag = 0;
     std::size_t length = 0;
@@ -245,3 +246,4 @@ parseInteger(Slice& s, std::size_t count, std::error_code& ec)
 } // casinocoin
 
 #endif
+

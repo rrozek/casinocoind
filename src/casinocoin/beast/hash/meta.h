@@ -31,12 +31,14 @@ struct static_and <b0, bN...>
     : public std::integral_constant <
         bool, b0 && static_and<bN...>::value>
 {
+    explicit static_and() = default;
 };
 
 template <>
 struct static_and<>
     : public std::true_type
 {
+    explicit static_and() = default;
 };
 
 #ifndef __INTELLISENSE__
@@ -52,12 +54,14 @@ struct static_sum <s0, sN...>
     : public std::integral_constant <
         std::size_t, s0 + static_sum<sN...>::value>
 {
+    explicit static_sum() = default;
 };
 
 template <>
 struct static_sum<>
     : public std::integral_constant<std::size_t, 0>
 {
+    explicit static_sum() = default;
 };
 
 #ifndef __INTELLISENSE__
@@ -72,6 +76,7 @@ struct enable_if_lvalue
     std::is_lvalue_reference<T>::value
     >
 {
+    explicit enable_if_lvalue() = default;
 };
 
 /** Ensure const reference function parameters are valid lvalues.
@@ -142,3 +147,4 @@ using enable_if_lvalue_t = typename enable_if_lvalue<T, U>::type;
 } // beast
 
 #endif // BEAST_UTILITY_META_H_INCLUDED
+

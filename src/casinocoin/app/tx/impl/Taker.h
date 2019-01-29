@@ -79,6 +79,8 @@ protected:
 
     struct Flow
     {
+        explicit Flow() = default;
+
         Amounts order;
         Amounts issuers;
 
@@ -315,3 +317,4 @@ private:
 }
 
 #endif
+

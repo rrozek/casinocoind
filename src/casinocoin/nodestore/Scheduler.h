@@ -35,6 +35,8 @@ namespace NodeStore {
 /** Contains information about a fetch operation. */
 struct FetchReport
 {
+    explicit FetchReport() = default;
+
     std::chrono::milliseconds elapsed;
     bool isAsync;
     bool wentToDisk;
@@ -44,6 +46,8 @@ struct FetchReport
 /** Contains information about a batch write operation. */
 struct BatchWriteReport
 {
+    explicit BatchWriteReport() = default;
+
     std::chrono::milliseconds elapsed;
     int writeCount;
 };
@@ -83,3 +87,4 @@ public:
 }
 
 #endif
+

@@ -47,6 +47,8 @@ class Cluster
 private:
     struct Comparator
     {
+        explicit Comparator() = default;
+
         using is_transparent = std::true_type;
 
         bool
@@ -130,3 +132,4 @@ public:
 } // casinocoin
 
 #endif
+

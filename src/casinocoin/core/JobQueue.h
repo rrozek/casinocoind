@@ -38,7 +38,10 @@
 namespace casinocoin {
 
 class Logs;
-struct Coro_create_t {};
+struct Coro_create_t
+{
+    explicit Coro_create_t() = default;
+};
 
 /** A pool of threads to perform work.
 
@@ -418,3 +421,4 @@ JobQueue::postCoro (JobType t, std::string const& name, F&& f)
 }
 
 #endif
+

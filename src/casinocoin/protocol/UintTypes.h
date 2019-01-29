@@ -33,9 +33,23 @@
 namespace casinocoin {
 namespace detail {
 
-class CurrencyTag {};
-class DirectoryTag {};
-class NodeIDTag {};
+class CurrencyTag
+{
+public:
+    explicit CurrencyTag() = default;
+};
+
+class DirectoryTag
+{
+public:
+    explicit DirectoryTag() = default;
+};
+
+class NodeIDTag
+{
+public:
+    explicit NodeIDTag() = default;
+};
 
 } // detail
 
@@ -86,18 +100,22 @@ namespace std {
 template <>
 struct hash <casinocoin::Currency> : casinocoin::Currency::hasher
 {
+    explicit hash() = default;
 };
 
 template <>
 struct hash <casinocoin::NodeID> : casinocoin::NodeID::hasher
 {
+    explicit hash() = default;
 };
 
 template <>
 struct hash <casinocoin::Directory> : casinocoin::Directory::hasher
 {
+    explicit hash() = default;
 };
 
 } // std
 
 #endif
+

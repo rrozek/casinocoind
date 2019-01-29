@@ -36,6 +36,8 @@ struct Import
 {
     struct Item
     {
+        explicit Item() = default;
+
         int balance;
         Consumer consumer;
     };
@@ -57,3 +59,4 @@ struct Import
 }
 
 #endif
+

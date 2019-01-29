@@ -43,7 +43,10 @@ public:
     using ref = const pointer&;
 
 private:
-    struct CtorHelper{};
+    struct CtorHelper
+    {
+        explicit CtorHelper() = default;
+    };
     template<class T>
     TxMeta (uint256 const& txID, std::uint32_t ledger, T const& data, beast::Journal j,
                         CtorHelper);
@@ -154,3 +157,4 @@ private:
 } // casinocoin
 
 #endif
+

@@ -70,6 +70,8 @@ public:
 
     struct Setup
     {
+        explicit Setup() = default;
+
         std::shared_ptr<boost::asio::ssl::context> context;
         bool expire = false;
         beast::IP::Address public_ip;
@@ -270,3 +272,4 @@ struct ScoreHasTxSet
 }
 
 #endif
+

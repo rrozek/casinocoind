@@ -65,9 +65,12 @@ namespace std
 template<>
 struct is_error_code_enum<casinocoin::cryptoconditions::error>
 {
+    explicit is_error_code_enum() = default;
+
     static bool const value = true;
 };
 
 } // std
 
 #endif
+

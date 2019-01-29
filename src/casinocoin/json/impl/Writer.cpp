@@ -195,6 +195,8 @@ private:
     // JSON collections are either arrrays, or objects.
     struct Collection
     {
+        explicit Collection() = default;
+
         /** What type of collection are we in? */
         Writer::CollectionType type;
 
@@ -325,3 +327,4 @@ void Writer::finish ()
 }
 
 } // Json
+

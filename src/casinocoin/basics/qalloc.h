@@ -117,6 +117,8 @@ public:
     template <class U>
     struct rebind
     {
+        explicit rebind() = default;
+
         using other = qalloc_type<U, ShareOnCopy>;
     };
 
@@ -410,3 +412,4 @@ qalloc_type<T, ShareOnCopy>::select_on_copy(std::false_type) const ->
 } // casinocoin
 
 #endif
+

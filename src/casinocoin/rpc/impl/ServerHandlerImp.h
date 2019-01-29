@@ -52,11 +52,15 @@ class ServerHandlerImp
 public:
     struct Setup
     {
+        explicit Setup() = default;
+
         std::vector<Port> ports;
 
         // Memberspace
         struct client_t
         {
+            explicit client_t() = default;
+
             bool secure = false;
             std::string ip;
             std::uint16_t port = 0;
@@ -72,6 +76,8 @@ public:
         // Configuration for the Overlay
         struct overlay_t
         {
+            explicit overlay_t() = default;
+
             boost::asio::ip::address ip;
             std::uint16_t port = 0;
         };
@@ -181,3 +187,4 @@ private:
 }
 
 #endif
+

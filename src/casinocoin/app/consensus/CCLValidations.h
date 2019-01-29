@@ -147,6 +147,7 @@ public:
     using Seq = LedgerIndex;
     struct MakeGenesis
     {
+        explicit MakeGenesis() = default;
     };
 
     CCLValidatedLedger(MakeGenesis);

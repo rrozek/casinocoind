@@ -126,6 +126,8 @@ class NetworkOPsImp final
     {
         struct Counters
         {
+            explicit Counters() = default;
+
             std::uint32_t transitions = 0;
             std::chrono::microseconds dur = std::chrono::microseconds (0);
         };

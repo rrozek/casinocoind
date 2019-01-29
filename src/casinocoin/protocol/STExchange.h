@@ -50,6 +50,8 @@ struct STExchange;
 template <class U, class T>
 struct STExchange<STInteger<U>, T>
 {
+    explicit STExchange() = default;
+
     using value_type = U;
 
     static
@@ -72,6 +74,8 @@ struct STExchange<STInteger<U>, T>
 template <>
 struct STExchange<STBlob, Slice>
 {
+    explicit STExchange() = default;
+
     using value_type = Slice;
 
     static
@@ -95,6 +99,8 @@ struct STExchange<STBlob, Slice>
 template <>
 struct STExchange<STBlob, Buffer>
 {
+    explicit STExchange() = default;
+
     using value_type = Buffer;
 
     static
@@ -207,3 +213,4 @@ erase (STObject& st,
 } // casinocoin
 
 #endif
+

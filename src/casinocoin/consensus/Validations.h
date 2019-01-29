@@ -38,6 +38,8 @@ namespace casinocoin {
  */
 struct ValidationParms
 {
+    explicit ValidationParms() = default;
+
     /** The number of seconds a validation remains current after its ledger's
         close time.
         This is a safety to protect against very old validations and the time
@@ -891,6 +893,7 @@ public:
         adaptor_.flush(std::move(flushed));
     }
 };
+
 }  // namespace casinocoin
 #endif
 

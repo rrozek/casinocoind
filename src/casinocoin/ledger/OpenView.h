@@ -42,7 +42,11 @@ namespace casinocoin {
     rules of open ledgers applied during transaction
     processing.
 */
-struct open_ledger_t {};
+struct open_ledger_t
+{
+    explicit open_ledger_t() = default;
+};
+
 extern open_ledger_t const open_ledger;
 
 //------------------------------------------------------------------------------
@@ -233,3 +237,4 @@ public:
 } // casinocoin
 
 #endif
+

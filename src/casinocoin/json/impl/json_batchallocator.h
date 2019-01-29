@@ -112,6 +112,8 @@ public:
 private:
     struct BatchInfo
     {
+        explicit BatchInfo() = default;
+
         BatchInfo* next_;
         AllocatedType* used_;
         AllocatedType* end_;
