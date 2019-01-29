@@ -159,16 +159,6 @@
 #undef _aligned_msize
 #endif
 
-#include <casinocoin/beast/core/Memory.h>
-
-#if BEAST_MAC || BEAST_IOS
-#include <casinocoin/beast/core/osx_ObjCHelpers.h>
-#endif
-
-#if BEAST_MAC || BEAST_IOS
-#include <casinocoin/beast/core/mac_SystemStats.mm>
-#endif
-
 #include <casinocoin/beast/core/CurrentThreadName.cpp>
 #include <casinocoin/beast/core/SemanticVersion.cpp>
 #include <casinocoin/beast/core/WaitableEvent.cpp>
