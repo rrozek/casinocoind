@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/BookDirs.h>
 #include <casinocoin/ledger/View.h>
 #include <casinocoin/protocol/Indexes.h>

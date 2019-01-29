@@ -22,7 +22,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/SetKYC.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/core/Config.h>

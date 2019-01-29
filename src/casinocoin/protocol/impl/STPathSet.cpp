@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/STPathSet.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/basics/contract.h>

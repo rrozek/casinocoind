@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/shamap/SHAMapMissingNode.h>
 #include <ostream>
 

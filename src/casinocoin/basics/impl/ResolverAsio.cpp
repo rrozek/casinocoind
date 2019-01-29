@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/ResolverAsio.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/beast/net/IPAddressConversion.h>

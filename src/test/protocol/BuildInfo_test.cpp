@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/BuildInfo.h>
 #include <casinocoin/beast/core/SemanticVersion.h>
 #include <casinocoin/beast/unit_test.h>

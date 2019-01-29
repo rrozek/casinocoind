@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/ledger/ApplyViewImpl.h>

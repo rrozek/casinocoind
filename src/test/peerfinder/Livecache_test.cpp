@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/peerfinder/impl/Livecache.h>
 #include <casinocoin/beast/unit_test.h>

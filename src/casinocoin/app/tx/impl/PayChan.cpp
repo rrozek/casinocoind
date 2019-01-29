@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/PayChan.h>
 
 #include <casinocoin/basics/chrono.h>

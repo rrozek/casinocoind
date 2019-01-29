@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/StringUtilities.h>
 #include <test/jtx/TestSuite.h>
 #include <casinocoin/json/json_value.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/peerfinder/PeerfinderManager.h>
 #include <casinocoin/peerfinder/impl/Tuning.h>
 

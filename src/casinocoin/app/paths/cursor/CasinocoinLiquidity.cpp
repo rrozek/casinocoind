@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Quality.h>
 #include <casinocoin/app/paths/cursor/CasinocoinLiquidity.h>
 #include <casinocoin/basics/Log.h>

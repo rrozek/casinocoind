@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/main/NodeStoreScheduler.h>
 #include <cassert>
 

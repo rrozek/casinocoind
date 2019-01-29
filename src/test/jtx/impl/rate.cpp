@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/rate.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/basics/contract.h>

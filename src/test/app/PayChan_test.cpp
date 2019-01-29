@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/overlay/impl/PeerImp.cpp>
 #include <casinocoin/overlay/impl/PeerSet.cpp>

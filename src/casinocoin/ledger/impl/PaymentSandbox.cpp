@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/impl/AmountSpec.h>
 #include <casinocoin/ledger/PaymentSandbox.h>
 #include <casinocoin/ledger/View.h>

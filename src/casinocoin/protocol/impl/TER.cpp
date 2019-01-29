@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/TER.h>
 #include <boost/range/adaptor/transformed.hpp>
 #include <unordered_map>

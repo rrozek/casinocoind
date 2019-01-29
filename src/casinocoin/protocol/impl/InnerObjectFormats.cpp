@@ -24,7 +24,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/InnerObjectFormats.h>
 
 namespace casinocoin {

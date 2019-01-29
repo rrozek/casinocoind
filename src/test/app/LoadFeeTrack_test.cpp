@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/beast/unit_test.h>

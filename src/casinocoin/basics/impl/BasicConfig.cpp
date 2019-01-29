@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/BasicConfig.h>
 #include <boost/regex.hpp>
 #include <algorithm>

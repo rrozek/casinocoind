@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/TER.h>
 #include <casinocoin/beast/unit_test.h>
 

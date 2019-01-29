@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/nodestore/impl/DatabaseNodeImp.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/protocol/HashPrefix.h>

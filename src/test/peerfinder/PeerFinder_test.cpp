@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/protocol/PublicKey.h>

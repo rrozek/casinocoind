@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/CashDiff.h>
 #include <casinocoin/protocol/STAmount.h>
 #include <casinocoin/beast/unit_test.h>

@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/protocol/InnerObjectFormats.h>
 #include <casinocoin/protocol/ErrorCodes.h>          // RPC::containsError

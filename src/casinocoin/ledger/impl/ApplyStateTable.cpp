@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/detail/ApplyStateTable.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/json/to_string.h>

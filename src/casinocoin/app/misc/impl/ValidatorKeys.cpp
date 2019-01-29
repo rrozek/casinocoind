@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/misc/ValidatorKeys.h>
 
 #include <casinocoin/app/misc/Manifest.h>

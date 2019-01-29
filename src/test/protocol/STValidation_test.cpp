@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/SecretKey.h>

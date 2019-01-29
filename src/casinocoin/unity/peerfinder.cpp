@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/peerfinder/impl/Bootcache.cpp>
 #include <casinocoin/peerfinder/impl/PeerfinderConfig.cpp>

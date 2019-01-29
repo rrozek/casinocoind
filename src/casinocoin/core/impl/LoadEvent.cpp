@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/LoadEvent.h>
 #include <casinocoin/core/LoadMonitor.h>
 #include <cassert>

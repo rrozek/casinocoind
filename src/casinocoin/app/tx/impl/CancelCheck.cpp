@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/CancelCheck.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/basics/Log.h>

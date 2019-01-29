@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/nodestore/impl/codec.h>
 #include <casinocoin/beast/clock/basic_seconds_clock.h>

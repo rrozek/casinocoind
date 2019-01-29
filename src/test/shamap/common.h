@@ -20,7 +20,7 @@
 #ifndef CASINOCOIN_SHAMAP_TESTS_COMMON_H_INCLUDED
 #define CASINOCOIN_SHAMAP_TESTS_COMMON_H_INCLUDED
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/nodestore/DatabaseShard.h>
 #include <casinocoin/nodestore/DummyScheduler.h>

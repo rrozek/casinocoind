@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/ledger/InboundLedger.h>
 #include <casinocoin/shamap/SHAMapNodeID.h>
 #include <casinocoin/app/ledger/AccountStateSF.h>

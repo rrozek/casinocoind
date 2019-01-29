@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerHistory.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/tx/apply.h>

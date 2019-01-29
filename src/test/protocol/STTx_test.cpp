@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Sign.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/STParsedJSON.h>

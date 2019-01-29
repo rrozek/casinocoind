@@ -35,7 +35,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated"
 #endif
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/core/SociDB.h>
 #include <soci/sqlite3/soci-sqlite3.h>

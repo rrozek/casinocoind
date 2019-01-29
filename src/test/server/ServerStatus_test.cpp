@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/rpc/ServerHandler.h>
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>

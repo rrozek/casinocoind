@@ -24,7 +24,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/applySteps.h>
 #include <casinocoin/app/tx/impl/ApplyContext.h>
 #include <casinocoin/app/tx/impl/CancelCheck.h>

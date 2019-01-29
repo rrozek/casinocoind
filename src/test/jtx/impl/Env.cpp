@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/balance.h>
 #include <test/jtx/Env.h>
 #include <test/jtx/fee.h>

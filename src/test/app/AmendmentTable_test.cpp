@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/misc/AmendmentTable.h>
 #include <casinocoin/basics/BasicConfig.h>

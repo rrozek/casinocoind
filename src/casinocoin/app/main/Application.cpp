@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/core/DatabaseCon.h>
 #include <casinocoin/app/consensus/CCLValidations.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/core/Config.h>

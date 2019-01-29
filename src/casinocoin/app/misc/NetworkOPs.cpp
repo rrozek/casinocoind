@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/consensus/Consensus.h>
 #include <casinocoin/app/consensus/CCLConsensus.h>

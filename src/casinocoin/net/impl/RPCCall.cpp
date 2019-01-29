@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/net/RPCCall.h>

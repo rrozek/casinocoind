@@ -14,7 +14,7 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 //==============================================================================
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/tagged_integer.h>
 #include <casinocoin/beast/clock/manual_clock.h>
 #include <casinocoin/beast/unit_test.h>

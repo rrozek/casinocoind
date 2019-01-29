@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <test/csf/Digraph_test.cpp>
 #include <test/csf/Histogram_test.cpp>

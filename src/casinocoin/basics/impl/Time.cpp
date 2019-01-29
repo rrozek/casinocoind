@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/clock/chrono_util.h>
 #include <casinocoin/basics/chrono.h>
 #include <iomanip>

@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <test/jtx/WSClient.h>

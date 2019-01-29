@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/unity/rocksdb.h>
 
 #if CASINOCOIN_ROCKSDB_AVAILABLE

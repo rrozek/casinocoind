@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/BookTip.h>
 #include <casinocoin/basics/Log.h>
 

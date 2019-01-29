@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/json/Object.h>
 #include <test/json/TestOutputSuite.h>
 #include <casinocoin/beast/unit_test.h>

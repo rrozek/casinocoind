@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <casinocoin/app/paths/Flow.h>
 #include <casinocoin/app/paths/impl/Steps.h>

@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/beast/unit_test.h>
 #include <test/jtx/Env.h>

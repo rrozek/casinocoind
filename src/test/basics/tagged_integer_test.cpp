@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/tagged_integer.h>
 #include <casinocoin/beast/unit_test.h>
 #include <type_traits>

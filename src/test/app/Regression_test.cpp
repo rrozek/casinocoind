@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <test/jtx/envconfig.h>
 #include <casinocoin/app/tx/apply.h>

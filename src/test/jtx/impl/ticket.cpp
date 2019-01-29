@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/ticket.h>
 #include <casinocoin/protocol/JsonFields.h>
 

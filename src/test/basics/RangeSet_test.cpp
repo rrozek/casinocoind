@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/RangeSet.h>
 #include <casinocoin/beast/unit_test.h>
 #include <boost/archive/binary_iarchive.hpp>

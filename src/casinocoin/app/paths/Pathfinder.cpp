@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/paths/Tuning.h>
 #include <casinocoin/app/paths/Pathfinder.h>

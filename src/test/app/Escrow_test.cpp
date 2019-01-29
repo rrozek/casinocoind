@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <casinocoin/app/tx/applySteps.h>
 #include <casinocoin/ledger/Directory.h>

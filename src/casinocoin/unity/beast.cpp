@@ -24,6 +24,6 @@
 //==============================================================================
 
 // MUST come first!
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/core/core.unity.cpp>
 

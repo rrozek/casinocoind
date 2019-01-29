@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/ApplyView.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/protocol/Protocol.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/ledger/TransactionMaster.h>
 #include <casinocoin/app/main/Application.h>

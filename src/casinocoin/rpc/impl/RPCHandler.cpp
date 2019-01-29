@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/rpc/RPCHandler.h>
 #include <casinocoin/rpc/impl/Tuning.h>

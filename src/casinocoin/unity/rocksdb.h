@@ -36,7 +36,6 @@
 #endif
 #endif
 
-#ifndef CASINOCOIN_ROCKSDB_AVAILABLE
 #if BEAST_WIN32
 # define ROCKSDB_PLATFORM_WINDOWS
 #else
@@ -50,6 +49,8 @@
 #  define OS_LINUX
 # endif
 #endif
+
+#ifndef CASINOCOIN_ROCKSDB_AVAILABLE
 # if BEAST_WIN32
 #  define CASINOCOIN_ROCKSDB_AVAILABLE 0
 # else
@@ -91,3 +92,4 @@
 #endif
 
 #endif
+

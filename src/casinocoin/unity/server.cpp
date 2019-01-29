@@ -27,7 +27,7 @@
 #include <casinocoin/server/README.md>
 #endif
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/server/impl/JSONRPCUtil.cpp>
 #include <casinocoin/server/impl/Port.cpp>

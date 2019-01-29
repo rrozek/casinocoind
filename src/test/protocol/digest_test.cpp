@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/beast/utility/rngfill.h>
 #include <casinocoin/beast/xor_shift_engine.h>

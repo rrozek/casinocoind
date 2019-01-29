@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/basics/ToString.h>

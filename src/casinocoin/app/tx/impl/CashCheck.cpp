@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/CashCheck.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/app/paths/Flow.h>

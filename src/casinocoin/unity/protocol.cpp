@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/protocol/impl/AccountID.cpp>
 #include <casinocoin/protocol/impl/Book.cpp>

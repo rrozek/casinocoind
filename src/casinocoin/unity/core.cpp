@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/core/impl/Config.cpp>
 #include <casinocoin/core/impl/DatabaseCon.cpp>

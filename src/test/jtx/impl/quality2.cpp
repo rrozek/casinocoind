@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/quality.h>
 #include <casinocoin/protocol/SField.h>
 #include <casinocoin/protocol/Quality.h>

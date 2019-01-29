@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/main/LoadManager.cpp>
 #include <casinocoin/app/main/Main.cpp>

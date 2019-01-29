@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/utility.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/HashPrefix.h>

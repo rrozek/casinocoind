@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/nodestore/impl/Shard.h>
 #include <casinocoin/app/ledger/InboundLedger.h>
 #include <casinocoin/nodestore/impl/DatabaseShardImp.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/strHex.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/protocol/digest.h>

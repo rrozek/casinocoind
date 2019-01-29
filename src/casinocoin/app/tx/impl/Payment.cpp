@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/Payment.h>
 #include <casinocoin/app/paths/CasinocoinCalc.h>
 #include <casinocoin/basics/Log.h>

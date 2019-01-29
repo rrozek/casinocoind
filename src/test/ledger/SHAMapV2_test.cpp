@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/Ledger.h>
 #include <test/jtx.h>
 #include <casinocoin/beast/unit_test.h>

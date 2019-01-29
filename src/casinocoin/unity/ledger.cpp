@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/ledger/impl/ApplyStateTable.cpp>
 #include <casinocoin/ledger/impl/ApplyView.cpp>

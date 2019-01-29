@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <test/jtx/Env_test.cpp>
 #include <test/jtx/WSClient_test.cpp>

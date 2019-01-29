@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/jtx_json.h>
 #include <test/jtx/utility.h>
 #include <casinocoin/json/json_reader.h>

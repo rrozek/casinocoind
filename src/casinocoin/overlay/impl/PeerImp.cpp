@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/overlay/impl/PeerImp.h>
 #include <casinocoin/overlay/impl/Tuning.h>
 #include <casinocoin/app/consensus/CCLValidations.h>

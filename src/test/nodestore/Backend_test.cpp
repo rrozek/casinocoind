@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/unity/rocksdb.h>
 #include <test/nodestore/TestBase.h>
 #include <casinocoin/nodestore/DummyScheduler.h>

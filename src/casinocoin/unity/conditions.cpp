@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/conditions/impl/Condition.cpp>
 #include <casinocoin/conditions/impl/Fulfillment.cpp>

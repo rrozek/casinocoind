@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/rpc/impl/Handler.h>
 #include <casinocoin/rpc/handlers/Handlers.h>
 #include <casinocoin/rpc/handlers/Version.h>

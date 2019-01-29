@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/CreateOffer.h>
 #include <casinocoin/app/ledger/OrderBookDB.h>
 #include <casinocoin/app/paths/Flow.h>

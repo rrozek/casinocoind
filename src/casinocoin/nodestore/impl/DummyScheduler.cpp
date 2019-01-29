@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/nodestore/DummyScheduler.h>
 
 namespace casinocoin {

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/tx/impl/apply.cpp>
 #include <casinocoin/app/tx/impl/applySteps.cpp>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <cassert>

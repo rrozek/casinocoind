@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/core/Config.h>
 
 #ifdef _MSC_VER

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/protocol/STAccount.h>
 #include <casinocoin/protocol/STAmount.h>

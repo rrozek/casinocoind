@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/Feature.h>

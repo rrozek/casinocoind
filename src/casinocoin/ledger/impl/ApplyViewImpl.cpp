@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/ApplyViewImpl.h>
 #include <casinocoin/basics/contract.h>
 #include <cassert>

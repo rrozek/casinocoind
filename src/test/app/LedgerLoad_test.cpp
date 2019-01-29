@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/unit_test.h>
 #include <test/jtx.h>
 #include <test/jtx/Env.h>

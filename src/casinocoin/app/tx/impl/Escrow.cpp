@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/Escrow.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/basics/chrono.h>

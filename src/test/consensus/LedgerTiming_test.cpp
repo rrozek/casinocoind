@@ -16,7 +16,7 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 //==============================================================================
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/consensus/LedgerTiming.h>
 

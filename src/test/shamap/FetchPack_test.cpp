@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/shamap/SHAMap.h>
 #include <test/shamap/common.h>
 #include <casinocoin/protocol/digest.h>

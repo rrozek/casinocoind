@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/unit_test.h>
 #include <test/csf/Scheduler.h>
 #include <set>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/SetSignerList.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/protocol/Feature.h>

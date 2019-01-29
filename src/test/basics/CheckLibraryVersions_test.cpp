@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/CheckLibraryVersions.h>
 #include <casinocoin/basics/impl/CheckLibraryVersionsImpl.h>
 #include <casinocoin/beast/unit_test.h>

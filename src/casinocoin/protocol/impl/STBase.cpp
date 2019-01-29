@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/STBase.h>
 #include <boost/checked_delete.hpp>
 #include <cassert>

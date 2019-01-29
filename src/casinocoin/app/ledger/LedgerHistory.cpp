@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/ledger/LedgerHistory.h>
 #include <casinocoin/app/ledger/LedgerToJson.h>
 #include <casinocoin/basics/Log.h>

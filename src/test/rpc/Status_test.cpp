@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/rpc/Status.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/beast/unit_test.h>

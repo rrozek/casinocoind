@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Sustain.h>
 #include <casinocoin/beast/core/CurrentThreadName.h>
 #include <boost/format.hpp>

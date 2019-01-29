@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/Flow.h>
 #include <casinocoin/app/paths/impl/Steps.h>
 #include <casinocoin/basics/contract.h>

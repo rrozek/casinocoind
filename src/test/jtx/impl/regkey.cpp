@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/regkey.h>
 #include <casinocoin/protocol/JsonFields.h>
 

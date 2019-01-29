@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/nodestore/backend/MemoryFactory.cpp>
 #include <casinocoin/nodestore/backend/NuDBFactory.cpp>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/AmendmentTable.h>
 #include <casinocoin/protocol/STValidation.h>

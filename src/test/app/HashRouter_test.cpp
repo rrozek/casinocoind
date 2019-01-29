@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/beast/unit_test.h>

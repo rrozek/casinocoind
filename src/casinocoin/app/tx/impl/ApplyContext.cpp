@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/ApplyContext.h>
 #include <casinocoin/app/tx/impl/InvariantCheck.h>
 #include <casinocoin/app/tx/impl/Transactor.h>

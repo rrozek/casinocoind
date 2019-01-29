@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/make_SSLContext.h>
 #include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/server/Server.h>

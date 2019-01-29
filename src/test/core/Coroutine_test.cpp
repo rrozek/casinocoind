@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/JobQueue.h>
 #include <test/jtx.h>
 #include <chrono>

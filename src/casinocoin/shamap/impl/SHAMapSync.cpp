@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/random.h>
 #include <casinocoin/shamap/SHAMap.h>
 #include <casinocoin/nodestore/Database.h>

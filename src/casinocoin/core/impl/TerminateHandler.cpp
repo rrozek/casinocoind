@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/TerminateHandler.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/beast/core/CurrentThreadName.h>

@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/beast/unit_test.h>
 #include <array>

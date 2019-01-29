@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/BasicConfig.h>
 #include <test/jtx/TestSuite.h>
 #include <casinocoin/overlay/Cluster.h>

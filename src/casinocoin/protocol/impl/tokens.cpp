@@ -25,7 +25,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/tokens.h>
 #include <casinocoin/protocol/digest.h>
 #include <boost/container/small_vector.hpp>

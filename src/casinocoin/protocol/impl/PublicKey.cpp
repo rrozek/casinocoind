@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/protocol/impl/secp256k1.h>

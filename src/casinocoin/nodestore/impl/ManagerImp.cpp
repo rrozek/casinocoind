@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/nodestore/impl/ManagerImp.h>
 #include <casinocoin/nodestore/impl/DatabaseNodeImp.h>
 

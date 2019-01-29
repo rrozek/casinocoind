@@ -26,7 +26,7 @@
 #ifndef CASINOCOIN_APP_CONSENSUS_CCLCONSENSUS_H_INCLUDED
 #define CASINOCOIN_APP_CONSENSUS_CCLCONSENSUS_H_INCLUDED
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/consensus/CCLCxLedger.h>
 #include <casinocoin/app/consensus/CCLCxPeerPos.h>
 #include <casinocoin/app/consensus/CCLCxTx.h>

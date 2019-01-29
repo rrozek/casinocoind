@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Serializer.h>
 #include <casinocoin/shamap/SHAMapItem.h>
 

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/overlay/impl/ConnectAttempt.h>
 #include <casinocoin/overlay/impl/PeerImp.h>
 #include <casinocoin/overlay/Cluster.h>

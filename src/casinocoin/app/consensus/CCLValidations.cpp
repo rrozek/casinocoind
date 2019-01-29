@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/consensus/CCLValidations.h>
 #include <casinocoin/app/ledger/InboundLedger.h>
 #include <casinocoin/app/ledger/InboundLedgers.h>

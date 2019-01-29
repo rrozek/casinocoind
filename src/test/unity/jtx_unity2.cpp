@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <test/jtx/impl/offer.cpp>
 #include <test/jtx/impl/owners.cpp>

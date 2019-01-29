@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/consensus/CCLConsensus.cpp>
 #include <casinocoin/app/consensus/CCLCxPeerPos.cpp>

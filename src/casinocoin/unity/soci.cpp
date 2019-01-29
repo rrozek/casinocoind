@@ -28,7 +28,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated"
 #endif
 
-#include <BeastConfig.h>
+ 
 
 // Core soci
 #include <core/common.cpp>

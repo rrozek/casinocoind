@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/ApplyViewImpl.h>
 #include <casinocoin/ledger/PaymentSandbox.h>
 #include <test/jtx/PathSet.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Seed.h>
 #include <casinocoin/basics/Buffer.h>
 #include <casinocoin/protocol/AccountID.h>

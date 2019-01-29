@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/SetTrust.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/Feature.h>

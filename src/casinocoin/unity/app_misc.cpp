@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/misc/CanonicalTXSet.cpp>
 #include <casinocoin/app/misc/FeeVoteImpl.cpp>

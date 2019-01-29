@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/beast/unit_test.h>

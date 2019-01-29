@@ -26,7 +26,7 @@
 #ifndef CASINOCOIN_APP_PATHS_IMPL_STRANDFLOW_H_INCLUDED
 #define CASINOCOIN_APP_PATHS_IMPL_STRANDFLOW_H_INCLUDED
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/Credit.h>
 #include <casinocoin/app/paths/Flow.h>
 #include <casinocoin/app/paths/impl/AmountSpec.h>

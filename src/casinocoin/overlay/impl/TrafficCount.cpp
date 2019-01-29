@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/overlay/impl/TrafficCount.h>
 
 namespace casinocoin {

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/beast/crypto/secure_erase.h>
 #include <casinocoin/crypto/GenerateDeterministicKey.h>

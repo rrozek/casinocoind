@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/AccountCurrencies.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/core/JobQueue.h>

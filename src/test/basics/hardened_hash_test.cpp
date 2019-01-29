@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/hardened_hash.h>
 #include <casinocoin/beast/unit_test.h>
 #include <boost/functional/hash.hpp>

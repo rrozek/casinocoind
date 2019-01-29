@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/basics/strHex.h>
 #include <algorithm>

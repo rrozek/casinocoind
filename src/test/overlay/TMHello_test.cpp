@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/overlay/impl/TMHello.h>
 #include <casinocoin/beast/unit_test.h>
 

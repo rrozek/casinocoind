@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/net/RPCErr.h>

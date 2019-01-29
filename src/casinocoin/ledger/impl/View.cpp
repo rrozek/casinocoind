@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/ledger/BookDirs.h>
 #include <casinocoin/ledger/ReadView.h>

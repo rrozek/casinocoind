@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/Job.h>
 #include <casinocoin/beast/core/CurrentThreadName.h>
 #include <cassert>

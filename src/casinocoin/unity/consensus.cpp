@@ -23,6 +23,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/consensus/Consensus.cpp>

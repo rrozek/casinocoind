@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <casinocoin/ledger/BookDirs.h>
 #include <casinocoin/protocol/Feature.h>

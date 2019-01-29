@@ -24,7 +24,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/basics/contract.h>

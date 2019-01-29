@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/protocol/st.h>
 #include <casinocoin/app/misc/FeeVote.h>
 #include <casinocoin/app/main/Application.h>

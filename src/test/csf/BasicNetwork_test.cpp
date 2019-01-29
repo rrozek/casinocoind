@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/unit_test.h>
 #include <set>
 #include <test/csf/BasicNetwork.h>

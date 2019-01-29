@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/basics/impl/BasicConfig.cpp>
 #include <casinocoin/basics/impl/CheckLibraryVersions.cpp>

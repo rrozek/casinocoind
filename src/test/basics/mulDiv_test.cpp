@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/beast/unit_test.h>
 

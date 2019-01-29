@@ -16,7 +16,7 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 //==============================================================================
-#include <BeastConfig.h>
+ 
 #include <test/jtx/JSONRPCClient.h>
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/json/to_string.h>

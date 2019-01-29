@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/types.h>
 #include <casinocoin/beast/unit_test.h>
 

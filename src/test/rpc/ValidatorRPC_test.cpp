@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/BasicApp.h>
 #include <casinocoin/app/misc/ValidatorSite.h>
 #include <casinocoin/beast/unit_test.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/CashDiff.h>
 #include <casinocoin/ledger/detail/ApplyStateTable.h>
 #include <casinocoin/protocol/st.h>

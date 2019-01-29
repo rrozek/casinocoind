@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/protocol/HashPrefix.h>
 #include <casinocoin/basics/contract.h>

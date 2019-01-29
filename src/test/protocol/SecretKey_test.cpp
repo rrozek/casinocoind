@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/crypto/csprng.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/SecretKey.h>

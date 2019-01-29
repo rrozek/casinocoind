@@ -24,7 +24,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/NetworkOPs.h>

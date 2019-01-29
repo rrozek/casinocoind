@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/Taker.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>

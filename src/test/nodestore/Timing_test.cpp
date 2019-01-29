@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/nodestore/TestBase.h>
 #include <casinocoin/nodestore/DummyScheduler.h>
 #include <casinocoin/nodestore/Manager.h>

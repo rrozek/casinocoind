@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/impl/SNTPClock.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/random.h>

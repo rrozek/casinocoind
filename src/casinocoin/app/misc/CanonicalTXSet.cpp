@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/misc/CanonicalTXSet.h>
 #include <boost/range/adaptor/transformed.hpp>
 

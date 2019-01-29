@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/misc/impl/AccountTxPaging.cpp>
 #include <casinocoin/app/misc/impl/AmendmentTable.cpp>

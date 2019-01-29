@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/CachedView.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/protocol/Serializer.h>

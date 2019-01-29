@@ -18,7 +18,7 @@
 //==============================================================================
 
 #if BEAST_INCLUDE_BEASTCONFIG
-#include "../../BeastConfig.h"
+
 #endif
 
 #include <casinocoin/beast/net/IPAddressV4.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/SetRegularKey.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/TxFlags.h>

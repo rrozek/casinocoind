@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/UptimeTimer.h>
 #include <casinocoin/beast/clock/chrono_util.h>

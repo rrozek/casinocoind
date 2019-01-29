@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/STBlob.h>
 #include <casinocoin/basics/StringUtilities.h>
 

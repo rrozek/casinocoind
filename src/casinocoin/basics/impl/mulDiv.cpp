@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/basics/contract.h>
 #include <boost/multiprecision/cpp_int.hpp>

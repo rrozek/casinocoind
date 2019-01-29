@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/overlay/impl/Cluster.cpp>
 #include <casinocoin/overlay/impl/ConnectAttempt.cpp>

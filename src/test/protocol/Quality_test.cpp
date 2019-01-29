@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Quality.h>
 #include <casinocoin/beast/unit_test.h>
 #include <type_traits>

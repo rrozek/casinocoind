@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/shamap/impl/SHAMap.cpp>
 #include <casinocoin/shamap/impl/SHAMapDelta.cpp>
 #include <casinocoin/shamap/impl/SHAMapItem.cpp>

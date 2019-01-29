@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/ledger/impl/InboundLedger.cpp>
 #include <casinocoin/app/ledger/impl/InboundLedgers.cpp>
