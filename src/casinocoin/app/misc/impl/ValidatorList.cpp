@@ -22,8 +22,8 @@
     2017-06-27  ajochems        Refactored for casinocoin
 */
 //==============================================================================
-
 #include <casinocoin/app/misc/ValidatorList.h>
+#include <casinocoin/basics/date.h>
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/json/json_reader.h>
@@ -496,9 +496,13 @@ ValidatorList::getJson() const
     if (auto when = expires())
     {
         if (*when == TimeKeeper::time_point::max())
+        {
             res[jss::validator_list_expires] = "never";
+        }
         else
+        {
             res[jss::validator_list_expires] = to_string(*when);
+        }
     }
     else
         res[jss::validator_list_expires] = "unknown";

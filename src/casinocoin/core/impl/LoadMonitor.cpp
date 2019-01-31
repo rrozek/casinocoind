@@ -26,7 +26,7 @@
  
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/UptimeTimer.h>
-#include <casinocoin/beast/clock/chrono_util.h>
+#include <casinocoin/basics/date.h>
 #include <casinocoin/core/LoadMonitor.h>
 
 namespace casinocoin {
@@ -114,14 +114,15 @@ void LoadMonitor::addLoadSample (LoadEvent const& s)
 
     auto const total = s.runTime() + s.waitTime();
     // Don't include "jitter" as part of the latency
-    auto const latency = total < 2ms ? 0ms : round<milliseconds>(total);
+    auto const latency = total < 2ms ? 0ms : date::round<milliseconds>(total);
 
     if (latency > 500ms)
     {
         auto mj = (latency > 1s) ? j_.warn() : j_.info();
         JLOG (mj) << "Job: " << s.name() <<
-            " run: " << round<milliseconds>(s.runTime()).count() << "ms" <<
-            " wait: " << round<milliseconds>(s.waitTime()).count() << "ms";
+            " run: " << date::round<milliseconds>(s.runTime()).count() <<
+            "ms" << " wait: " <<
+            date::round<milliseconds>(s.waitTime()).count() << "ms";
     }
 
     addSamples (1, latency);
@@ -202,3 +203,4 @@ LoadMonitor::Stats LoadMonitor::getStats ()
 }
 
 } // casinocoin
+

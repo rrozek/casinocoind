@@ -32,13 +32,14 @@
 #include <casinocoin/basics/impl/Log.cpp>
 #include <casinocoin/basics/impl/make_SSLContext.cpp>
 #include <casinocoin/basics/impl/mulDiv.cpp>
+#include <casinocoin/basics/impl/PerfLogImp.cpp>
 #include <casinocoin/basics/impl/ResolverAsio.cpp>
 #include <casinocoin/basics/impl/strHex.cpp>
 #include <casinocoin/basics/impl/StringUtilities.cpp>
 #include <casinocoin/basics/impl/Sustain.cpp>
-#include <casinocoin/basics/impl/Time.cpp>
 #include <casinocoin/basics/impl/UptimeTimer.cpp>
 
 #if DOXYGEN
 #include <casinocoin/basics/README.md>
 #endif
+

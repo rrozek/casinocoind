@@ -50,9 +50,9 @@ setup_ServerHandler (
 
 std::unique_ptr <ServerHandler>
 make_ServerHandler (Application& app, Stoppable& parent, boost::asio::io_service&,
-    JobQueue&, NetworkOPs&, Resource::Manager&,
-        CollectorManager& cm);
+    JobQueue&, NetworkOPs&, Resource::Manager&, CollectorManager& cm);
 
 } // casinocoin
 
 #endif
+

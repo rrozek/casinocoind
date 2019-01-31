@@ -23,7 +23,7 @@
 #include <casinocoin/beast/insight/Base.h>
 #include <casinocoin/beast/insight/EventImpl.h>
 
-#include <casinocoin/beast/clock/chrono_util.h>
+#include <casinocoin/basics/date.h>
 
 #include <chrono>
 #include <memory>
@@ -67,7 +67,7 @@ public:
     {
         using namespace std::chrono;
         if (m_impl)
-            m_impl->notify (ceil <value_type> (value));
+            m_impl->notify (date::ceil <value_type> (value));
     }
 
     std::shared_ptr <EventImpl> const& impl () const
@@ -83,3 +83,4 @@ private:
 }
 
 #endif
+

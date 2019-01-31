@@ -41,6 +41,7 @@ namespace casinocoin {
 namespace unl { class Manager; }
 namespace Resource { class Manager; }
 namespace NodeStore { class Database; class DatabaseShard; }
+namespace perf { class PerfLog; }
 
 // VFALCO TODO Fix forward declares required for header dependency loops
 class AmendmentTable;
@@ -158,6 +159,7 @@ public:
     virtual NetworkOPs&             getOPs () = 0;
     virtual OrderBookDB&            getOrderBookDB () = 0;
     virtual TransactionMaster&      getMasterTransaction () = 0;
+    virtual perf::PerfLog&          getPerfLog () = 0;
 
     virtual
     std::pair<PublicKey, SecretKey> const&

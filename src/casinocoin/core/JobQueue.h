@@ -37,6 +37,11 @@
 
 namespace casinocoin {
 
+namespace perf
+{
+    class PerfLog;
+}
+
 class Logs;
 struct Coro_create_t
 {
@@ -137,7 +142,8 @@ public:
     using JobFunction = std::function <void(Job&)>;
 
     JobQueue (beast::insight::Collector::ptr const& collector,
-        Stoppable& parent, beast::Journal journal, Logs& logs);
+        Stoppable& parent, beast::Journal journal, Logs& logs,
+        perf::PerfLog& perfLog);
     ~JobQueue ();
 
     /** Adds a job to the JobQueue.
@@ -228,17 +234,12 @@ private:
     Job::CancelCallback m_cancelCallback;
 
     // Statistics tracking
+    perf::PerfLog& perfLog_;
     beast::insight::Collector::ptr m_collector;
     beast::insight::Gauge job_count;
     beast::insight::Hook hook;
 
     std::condition_variable cv_;
-
-    static JobTypes const& getJobTypes()
-    {
-        static JobTypes types;
-        return types;
-    }
 
     void collect();
     JobTypeData& getJobTypeData (JobType type);
@@ -306,14 +307,6 @@ private:
     //  <none>
     void finishJob (JobType type);
 
-    template <class Rep, class Period>
-    void on_dequeue (JobType type,
-        std::chrono::duration <Rep, Period> const& value);
-
-    template <class Rep, class Period>
-    void on_execute (JobType type,
-        std::chrono::duration <Rep, Period> const& value);
-
     // Runs the next appropriate waiting Job.
     //
     // Pre-conditions:
@@ -324,7 +317,7 @@ private:
     //
     // Invariants:
     //  <none>
-    void processTask () override;
+    void processTask (int instance) override;
 
     // Returns the limit of running jobs for the given job type.
     // For jobs with no limit, we return the largest int. Hopefully that

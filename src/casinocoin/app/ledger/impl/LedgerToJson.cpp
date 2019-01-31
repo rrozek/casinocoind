@@ -26,6 +26,7 @@
 #include <casinocoin/app/ledger/LedgerToJson.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/basics/base_uint.h>
+#include <casinocoin/basics/date.h>
 
 namespace casinocoin {
 

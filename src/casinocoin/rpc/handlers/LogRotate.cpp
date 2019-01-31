@@ -26,13 +26,16 @@
  
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/PerfLog.h>
 #include <casinocoin/rpc/impl/Handler.h>
 
 namespace casinocoin {
 
 Json::Value doLogRotate (RPC::Context& context)
 {
+    context.app.getPerfLog().rotate();
     return RPC::makeObjectValue (context.app.logs().rotate());
 }
 
 } // casinocoin
+

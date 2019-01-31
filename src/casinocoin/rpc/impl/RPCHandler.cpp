@@ -33,6 +33,7 @@
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/PerfLog.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/json/Object.h>
@@ -43,7 +44,8 @@
 #include <casinocoin/resource/Fees.h>
 #include <casinocoin/rpc/Role.h>
 #include <casinocoin/resource/Fees.h>
-
+#include <atomic>
+#include <chrono>
 namespace casinocoin {
 namespace RPC {
 
@@ -204,14 +206,22 @@ template <class Object, class Method>
 Status callMethod (
     Context& context, Method method, std::string const& name, Object& result)
 {
+    static std::atomic<std::uint64_t> requestId {0};
+    auto& perfLog = context.app.getPerfLog();
+    std::uint64_t const curId = ++requestId;
     try
     {
+        perfLog.rpcStart(name, curId);
         auto v = context.app.getJobQueue().makeLoadEvent(
             jtGENERIC, "cmd:" + name);
-        return method (context, result);
+
+        auto ret = method (context, result);
+        perfLog.rpcFinish(name, curId);
+        return ret;
     }
     catch (std::exception& e)
     {
+        perfLog.rpcError(name, curId);
         JLOG (context.j.info()) << "Caught throw: " << e.what ();
 
         if (context.loadType == Resource::feeReferenceRPC)
@@ -289,3 +299,4 @@ Role roleRequired (std::string const& method)
 
 } // RPC
 } // casinocoin
+
