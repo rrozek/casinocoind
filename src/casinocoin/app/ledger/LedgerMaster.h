@@ -33,6 +33,7 @@
 #include <casinocoin/app/ledger/LedgerCleaner.h>
 #include <casinocoin/app/ledger/LedgerHistory.h>
 #include <casinocoin/app/ledger/LedgerHolder.h>
+#include <casinocoin/app/ledger/LedgerReplay.h>
 #include <casinocoin/app/misc/CanonicalTXSet.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/RangeSet.h>
@@ -53,13 +54,7 @@ namespace casinocoin {
 class Peer;
 class Transaction;
 
-struct LedgerReplay
-{
-    std::map< int, std::shared_ptr<STTx const> > txns_;
-    NetClock::time_point closeTime_;
-    int closeFlags_;
-    std::shared_ptr<Ledger const> prevLedger_;
-};
+
 
 // Tracks the current ledger and any ledgers in the process of closing
 // Tracks ledger history

@@ -316,7 +316,7 @@ class CCLConsensus
             can be retried in the next round.
             @param previousLedger Prior ledger building upon
             @param txns The set of transactions to apply to the ledger
-            @param closeTime The the ledger closed
+            @param closeTime The time the ledger closed
             @param closeTimeCorrect Whether consensus agreed on close time
             @param closeResolution Resolution used to determine consensus close
                                    time

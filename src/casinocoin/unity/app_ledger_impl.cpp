@@ -16,12 +16,13 @@
 //==============================================================================
 
  
-
+#include <casinocoin/app/ledger/impl/BuildLedger.cpp>
 #include <casinocoin/app/ledger/impl/InboundLedger.cpp>
 #include <casinocoin/app/ledger/impl/InboundLedgers.cpp>
 #include <casinocoin/app/ledger/impl/InboundTransactions.cpp>
 #include <casinocoin/app/ledger/impl/LedgerCleaner.cpp>
 #include <casinocoin/app/ledger/impl/LedgerMaster.cpp>
+#include <casinocoin/app/ledger/impl/LedgerReplay.cpp>
 #include <casinocoin/app/ledger/impl/LocalTxs.cpp>
 #include <casinocoin/app/ledger/impl/OpenLedger.cpp>
 #include <casinocoin/app/ledger/impl/LedgerToJson.cpp>
