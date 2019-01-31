@@ -43,7 +43,7 @@
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/TaggedCache.h>
-#include <casinocoin/basics/UptimeTimer.h>
+#include <casinocoin/basics/UptimeClock.h>
 #include <casinocoin/core/TimeKeeper.h>
 #include <casinocoin/nodestore/DatabaseShard.h>
 #include <casinocoin/overlay/Overlay.h>
@@ -1800,9 +1800,9 @@ LedgerMaster::makeFetchPack (
     std::weak_ptr<Peer> const& wPeer,
     std::shared_ptr<protocol::TMGetObjectByHash> const& request,
     uint256 haveLedgerHash,
-    std::uint32_t uUptime)
+     UptimeClock::time_point uptime)
 {
-    if (UptimeTimer::getInstance ().getElapsedSeconds () > (uUptime + 1))
+    if (UptimeClock::now() > uptime + 1s)
     {
         JLOG(m_journal.info()) << "Fetch pack request got stale";
         return;
@@ -1924,7 +1924,7 @@ LedgerMaster::makeFetchPack (
             wantLedger = getLedgerByHash (haveLedger->info().parentHash);
         }
         while (wantLedger &&
-               UptimeTimer::getInstance ().getElapsedSeconds () <= uUptime + 1);
+               UptimeClock::now() <= uptime + 1s);
 
         JLOG(m_journal.info())
             << "Built fetch pack with " << reply.objects ().size () << " nodes";

@@ -48,7 +48,7 @@
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/basics/PerfLog.h>
-#include <casinocoin/basics/UptimeTimer.h>
+#include <casinocoin/basics/UptimeClock.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/crypto/csprng.h>
 #include <casinocoin/crypto/RFC1751.h>
@@ -2332,7 +2332,7 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin, bool counters)
     }
 
     info[jss::state_accounting] = accounting_.json();
-    info[jss::uptime] = UptimeTimer::getInstance ().getElapsedSeconds ();
+    info[jss::uptime] = UptimeClock::now().time_since_epoch().count();
     info[jss::jq_trans_overflow] = std::to_string(
         app_.overlay().getJqTransOverflow());
     info[jss::peer_disconnects] = std::to_string(

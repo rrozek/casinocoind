@@ -37,7 +37,7 @@
 #include <casinocoin/basics/impl/strHex.cpp>
 #include <casinocoin/basics/impl/StringUtilities.cpp>
 #include <casinocoin/basics/impl/Sustain.cpp>
-#include <casinocoin/basics/impl/UptimeTimer.cpp>
+#include <casinocoin/basics/impl/UptimeClock.cpp>
 
 #if DOXYGEN
 #include <casinocoin/basics/README.md>

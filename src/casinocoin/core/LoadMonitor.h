@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_CORE_LOADMONITOR_H_INCLUDED
 #define CASINOCOIN_CORE_LOADMONITOR_H_INCLUDED
-
+#include <casinocoin/basics/UptimeClock.h>
 #include <casinocoin/core/LoadEvent.h>
 #include <casinocoin/beast/utility/Journal.h>
 #include <chrono>
@@ -79,10 +79,11 @@ private:
     std::chrono::milliseconds mLatencyMSPeak;
     std::chrono::milliseconds mTargetLatencyAvg;
     std::chrono::milliseconds mTargetLatencyPk;
-    int                       mLastUpdate;
+    UptimeClock::time_point   mLastUpdate;
     beast::Journal j_;
 };
 
 } // casinocoin
 
 #endif
+

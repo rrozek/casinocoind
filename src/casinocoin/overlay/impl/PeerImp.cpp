@@ -37,7 +37,7 @@
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/random.h>
-#include <casinocoin/basics/UptimeTimer.h>
+#include <casinocoin/basics/UptimeClock.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <casinocoin/beast/core/SemanticVersion.h>
 #include <casinocoin/nodestore/DatabaseShard.h>
@@ -1871,7 +1871,7 @@ PeerImp::doFetchPack (const std::shared_ptr<protocol::TMGetObjectByHash>& packet
     memcpy (hash.begin (), packet->ledgerhash ().data (), 32);
 
     std::weak_ptr<PeerImp> weak = shared_from_this();
-    auto elapsed = UptimeTimer::getInstance().getElapsedSeconds();
+    auto elapsed = UptimeClock::now();
     auto const pap = &app_;
     app_.getJobQueue ().addJob (
         jtPACK, "MakeFetchPack",
