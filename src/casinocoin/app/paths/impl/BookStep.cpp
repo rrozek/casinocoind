@@ -87,7 +87,7 @@ public:
     Book const& book() const
     {
         return book_;
-    };
+    }
 
     boost::optional<EitherAmount>
     cachedIn () const override

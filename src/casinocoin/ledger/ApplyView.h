@@ -230,7 +230,7 @@ public:
     virtual
     void adjustOwnerCountHook (AccountID const& account,
         std::uint32_t cur, std::uint32_t next)
-    {};
+    {}
 
     /** Append an entry to a directory
         Entries in the directory will be stored in order of insertion, i.e. new

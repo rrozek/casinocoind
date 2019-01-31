@@ -250,7 +250,7 @@ public:
     quorum () const
     {
         return quorum_;
-    };
+    }
 
     /** Returns `true` if public key is trusted
 

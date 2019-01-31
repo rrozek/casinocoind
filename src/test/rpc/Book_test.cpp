@@ -1095,7 +1095,7 @@ public:
             return false;
         // Make sure no other message is waiting
         return wsc->getMsg(timeout) == boost::none;
-    };
+    }
 
     void
     testCrossingSingleBookOffer()
