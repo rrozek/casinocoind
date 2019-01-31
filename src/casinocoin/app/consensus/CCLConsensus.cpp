@@ -89,7 +89,6 @@ CCLConsensus::Adaptor::Adaptor(
         , nodeID_{validatorKeys.nodeID}
         , valPublic_{validatorKeys.publicKey}
         , valSecret_{validatorKeys.secretKey}
-        , cookie_{validatorKeys.cookie}
 {
 }
 
@@ -860,10 +859,6 @@ CCLConsensus::Adaptor::validate(CCLCxLedger const& ledger,
         amendments = app_.getAmendmentTable().doValidation (getEnabledAmendments(*ledger.ledger_));
     }
 
-    boost::optional<std::uint64_t> maybeCookie;
-    if (ledgerMaster_.getValidatedRules().enabled(featureValidationCookies))
-        maybeCookie.emplace(cookie_);
-
     auto v = std::make_shared<STValidation>(
         ledger.id(),
         ledger.seq(),
@@ -874,8 +869,7 @@ CCLConsensus::Adaptor::validate(CCLCxLedger const& ledger,
         nodeID_,
         proposing /* full if proposed */,
         fees,
-        amendments,
-        maybeCookie);
+        amendments);
 
 
 

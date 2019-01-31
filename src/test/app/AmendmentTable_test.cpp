@@ -399,8 +399,7 @@ public:
                 calcNodeID(val.first),
                 true,
                 STValidation::FeeSettings{},
-                field,
-                boost::none);
+                field);
 
             validations.emplace_back(v);
         }

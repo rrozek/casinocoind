@@ -22,13 +22,11 @@
 
 #include <casinocoin/app/misc/Manifest.h>
 #include <casinocoin/basics/Log.h>
-#include <casinocoin/basics/random.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <beast/core/detail/base64.hpp>
 namespace casinocoin {
 ValidatorKeys::ValidatorKeys(Config const& config, beast::Journal j)
-    : cookie{rand_int<std::uint64_t>(1, std::numeric_limits<std::uint64_t>::max())}
 {
     if (config.exists(SECTION_VALIDATOR_TOKEN) &&
         config.exists(SECTION_VALIDATION_SEED))
