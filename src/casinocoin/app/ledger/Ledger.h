@@ -117,10 +117,13 @@ public:
         Config const& config,
         Family& family);
 
-    // Used for ledgers loaded from JSON files
+    /** Used for ledgers loaded from JSON files
+        @param acquire If true, acquires the ledger if not found locally
+    */
     Ledger (
         LedgerInfo const& info,
         bool& loaded,
+        bool acquire,
         Config const& config,
         Family& family,
         beast::Journal j);
@@ -367,16 +370,17 @@ pendSaveValidated(
 extern
 std::shared_ptr<Ledger>
 loadByIndex (std::uint32_t ledgerIndex,
-    Application& app);
+    Application& app, bool acquire = true);
 
 extern
 std::tuple<std::shared_ptr<Ledger>, std::uint32_t, uint256>
 loadLedgerHelper(std::string const& sqlSuffix,
-    Application& app);
+    Application& app, bool acquire = true);
 
 extern
 std::shared_ptr<Ledger>
-loadByHash (uint256 const& ledgerHash, Application& app);
+loadByHash (uint256 const& ledgerHash,
+    Application& app, bool acquire = true);
 
 extern
 uint256
@@ -430,3 +434,4 @@ cachedRead (ReadView const& ledger, uint256 const& key,
 } // casinocoin
 
 #endif
+

@@ -70,7 +70,7 @@ public:
     void
     import(Database& source) override
     {
-        importInternal(source, *backend_.get());
+        importInternal(*backend_.get(), source);
     }
 
     void
@@ -80,7 +80,7 @@ public:
     std::shared_ptr<NodeObject>
     fetch(uint256 const& hash, std::uint32_t seq) override
     {
-        return doFetch(hash, seq, pCache_, nCache_, false);
+        return doFetch(hash, seq, *pCache_, *nCache_, false);
     }
 
     bool
@@ -88,7 +88,11 @@ public:
         std::shared_ptr<NodeObject>& object) override;
 
     bool
-    copyLedger(std::shared_ptr<Ledger const> const& ledger) override;
+    copyLedger(std::shared_ptr<Ledger const> const& ledger) override
+    {
+        return Database::copyLedger(
+            *backend_, *ledger, pCache_, nCache_, nullptr);
+    }
 
     int
     getDesiredAsyncReadCount(std::uint32_t seq) override
