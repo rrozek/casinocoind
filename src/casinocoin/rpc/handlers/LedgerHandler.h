@@ -61,7 +61,7 @@ public:
     template <class Object>
     void writeResult (Object&);
 
-    static const char* const name()
+    static char const* name()
     {
         return "ledger";
     }
@@ -116,3 +116,4 @@ void LedgerHandler::writeResult (Object& value)
 } // casinocoin
 
 #endif
+
