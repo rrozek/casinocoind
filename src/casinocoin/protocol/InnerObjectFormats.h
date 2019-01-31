@@ -38,6 +38,10 @@ private:
     void addCommonFields (Item& item);
 
 public:
+    virtual ~InnerObjectFormats () = default;
+    InnerObjectFormats(InnerObjectFormats const&) = delete;
+    InnerObjectFormats& operator=(InnerObjectFormats const&) = delete;
+
     /** Create the object.
         This will load the object will all the known inner object formats.
     */
@@ -51,3 +55,4 @@ public:
 } // casinocoin
 
 #endif
+

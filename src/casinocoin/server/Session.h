@@ -48,6 +48,8 @@ class Session
 public:
     Session() = default;
     Session (Session const&) = delete;
+    Session& operator=(Session const&) = delete;
+    virtual ~Session () = default;
 
     /** A user-definable pointer.
         The initial value is always zero.
@@ -146,3 +148,4 @@ public:
 }  // casinocoin
 
 #endif
+

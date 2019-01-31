@@ -36,6 +36,11 @@ namespace NodeStore {
 class Manager
 {
 public:
+    virtual ~Manager () = default;
+    Manager() = default;
+    Manager(Manager const&) = delete;
+    Manager& operator=(Manager const&) = delete;
+
     /** Returns the instance of the manager singleton. */
     static
     Manager&

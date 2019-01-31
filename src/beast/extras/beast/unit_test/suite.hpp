@@ -180,7 +180,11 @@ public:
     {
     }
 
-    /* Invokes the test using the specified runner.
+    virtual ~suite() = default;
+    suite(suite const&) = delete;
+    suite& operator=(suite const&) = delete;
+
+    /** Invokes the test using the specified runner.
         Data members are set up here instead of the constructor as a
         convenience to writing the derived class to avoid repetition of
         forwarded constructor arguments to the base.
@@ -678,3 +682,4 @@ run(runner& r)
 //------------------------------------------------------------------------------
 
 #endif
+
