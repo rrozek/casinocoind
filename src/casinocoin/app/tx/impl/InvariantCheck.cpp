@@ -29,12 +29,66 @@
 namespace casinocoin {
 
 void
+TransactionFeeCheck::visitEntry(
+    uint256 const&,
+    bool,
+    std::shared_ptr<SLE const> const&,
+    std::shared_ptr<SLE const> const&)
+{
+    // nothing to do
+}
+
+bool
+TransactionFeeCheck::finalize(
+    STTx const& tx,
+    TER const result,
+    CSCAmount const fee,
+    beast::Journal const& j)
+{
+    // We should never charge a negative fee
+    if (fee.drops() < 0)
+    {
+        JLOG(j.fatal()) << "Invariant failed: fee paid was negative: " << fee.drops();
+        return false;
+    }
+
+    // We should never charge a fee that's greater than or equal to the
+    // entire CSC supply.
+    if (fee.drops() >= SYSTEM_CURRENCY_START)
+    {
+        JLOG(j.fatal()) << "Invariant failed: fee paid exceeds system limit: " << fee.drops();
+        return false;
+    }
+
+    // We should never charge more for a transaction than the transaction
+    // authorizes. It's possible to charge less in some circumstances.
+    if (fee > tx.getFieldAmount(sfFee).csc())
+    {
+        JLOG(j.fatal()) << "Invariant failed: fee paid is " << fee.drops() <<
+            " exceeds fee specified in transaction.";
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------------
+
+
+void
 CSCNotCreated::visitEntry(
     uint256 const&,
     bool isDelete,
     std::shared_ptr <SLE const> const& before,
     std::shared_ptr <SLE const> const& after)
 {
+    /* We go through all modified ledger entries, looking only at account roots,
+     * escrow payments, and payment channels. We remove from the total any
+     * previous CSC values and add to the total any new CSC values. The net
+     * balance of a payment channel is computed from two fields (amount and
+     * balance) and deletions are ignored for paychan and escrow because the
+     * amount fields have not been adjusted for those in the case of deletion.
+     */
     if(before)
     {
         switch (before->getType())
@@ -75,15 +129,31 @@ CSCNotCreated::visitEntry(
 }
 
 bool
-CSCNotCreated::finalize(STTx const& tx, TER /*tec*/, beast::Journal const& j)
+CSCNotCreated::finalize(
+    STTx const& tx,
+    TER const,
+    CSCAmount const fee,
+    beast::Journal const& j)
 {
-    auto fee = tx.getFieldAmount(sfFee).csc().drops();
-    if(-1*fee <= drops_ && drops_ <= 0)
-        return true;
+    // The net change should never be positive, as this would mean that the
+    // transaction created CSC out of thin air. That's not possible.
+    if (drops_ > 0)
+    {
+        JLOG(j.fatal()) <<
+            "Invariant failed: CSC net change was positive: " << drops_;
+        return false;
+    }
 
-    JLOG(j.fatal()) << "Invariant failed: CSC net change was " << drops_ <<
-        " on a fee of " << fee;
-    return false;
+    // The negative of the net change should be equal to actual fee charged.
+    if (-drops_ != fee.drops())
+    {
+        JLOG(j.fatal()) <<
+            "Invariant failed: CSC net change of " << drops_ <<
+            " doesn't match fee " << fee.drops();
+        return false;
+    }
+
+    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -122,7 +192,7 @@ CSCBalanceChecks::visitEntry(
 }
 
 bool
-CSCBalanceChecks::finalize(STTx const&, TER, beast::Journal const& j)
+CSCBalanceChecks::finalize(STTx const&, TER const, CSCAmount const, beast::Journal const& j)
 {
     if (bad_)
     {
@@ -163,7 +233,7 @@ NoBadOffers::visitEntry(
 }
 
 bool
-NoBadOffers::finalize(STTx const& tx, TER, beast::Journal const& j)
+NoBadOffers::finalize(STTx const& tx, TER const, CSCAmount const, beast::Journal const& j)
 {
     if (bad_)
     {
@@ -205,7 +275,7 @@ NoZeroEscrow::visitEntry(
 }
 
 bool
-NoZeroEscrow::finalize(STTx const& tx, TER, beast::Journal const& j)
+NoZeroEscrow::finalize(STTx const& tx, TER const, CSCAmount const, beast::Journal const& j)
 {
     if (bad_)
     {
@@ -230,7 +300,7 @@ AccountRootsNotDeleted::visitEntry(
 }
 
 bool
-AccountRootsNotDeleted::finalize(STTx const&, TER, beast::Journal const& j)
+AccountRootsNotDeleted::finalize(STTx const&, TER const, CSCAmount const, beast::Journal const& j)
 {
     if (! accountDeleted_)
         return true;
@@ -276,7 +346,7 @@ LedgerEntryTypesMatch::visitEntry(
 }
 
 bool
-LedgerEntryTypesMatch::finalize(STTx const&, TER, beast::Journal const& j)
+LedgerEntryTypesMatch::finalize(STTx const&, TER const, CSCAmount const, beast::Journal const& j)
 {
     if ((! typeMismatch_) && (! invalidTypeAdded_))
         return true;
@@ -315,7 +385,7 @@ NoCSCTrustLines::visitEntry(
 }
 
 bool
-NoCSCTrustLines::finalize(STTx const&, TER, beast::Journal const& j)
+NoCSCTrustLines::finalize(STTx const&, TER const, CSCAmount const, beast::Journal const& j)
 {
     if (! cscTrustLine_)
         return true;

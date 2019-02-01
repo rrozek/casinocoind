@@ -176,9 +176,10 @@ protected:
     virtual TER doApply () = 0;
 
 private:
+    CSCAmount reset(CSCAmount fee);
+
     void setSeq ();
     TER payFee ();
-    void claimFee (CSCAmount& fee, TER terResult, std::vector<uint256> const& removedOffers);
     static NotTEC checkSingleSign (PreclaimContext const& ctx);
     static NotTEC checkMultiSign (PreclaimContext const& ctx);
 };

@@ -53,15 +53,21 @@ class Invariants_test : public beast::unit_test::suite
     // this is common setup/method for running a failing invariant check. The
     // precheck function is used to manipulate the ApplyContext with view
     // changes that will cause the check to fail.
+    using Precheck = std::function <
+        bool (
+            test::jtx::Account const& a,
+            test::jtx::Account const& b,
+            ApplyContext& ac)>;
+
+    using TXMod = std::function <
+        void (STTx& tx)>;
+
     void
     doInvariantCheck( bool enabled,
         std::vector<std::string> const& expect_logs,
-        std::function <
-            bool (
-                test::jtx::Account const& a,
-                test::jtx::Account const& b,
-                ApplyContext& ac)>
-            const& precheck )
+        Precheck const& precheck,
+        CSCAmount fee = CSCAmount{},
+        TXMod txmod = [](STTx&){})
     {
         using namespace test::jtx;
         Env env {*this};
@@ -80,6 +86,7 @@ class Invariants_test : public beast::unit_test::suite
 
         // dummy/empty tx to setup the AccountContext
         auto tx = STTx {ttACCOUNT_SET, [](STObject&){  } };
+        txmod(tx);
         OpenView ov {*env.current()};
         TestSink sink;
         beast::Journal jlog {sink};
@@ -99,7 +106,7 @@ class Invariants_test : public beast::unit_test::suite
         // invoke check twice to cover tec and tef cases
         for (auto i : {0,1})
         {
-            tr = ac.checkInvariants(tr);
+            tr = ac.checkInvariants(tr, fee);
             if (enabled)
             {
                 BEAST_EXPECT(tr == (i == 0
@@ -145,7 +152,7 @@ class Invariants_test : public beast::unit_test::suite
         testcase << "checks " << (enabled ? "enabled" : "disabled") <<
             " - CSC created";
         doInvariantCheck (enabled,
-            {{ "CSC net change was 500 on a fee of 0" }},
+            {{ "CSC net change was positive: 500" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // put a single account in the view and "manufacture" some CSC
@@ -186,7 +193,7 @@ class Invariants_test : public beast::unit_test::suite
             " - LE types don't match";
         doInvariantCheck (enabled,
             {{ "ledger entry type mismatch" },
-             { "CSC net change was -1000000000 on a fee of 0" }},
+             { "CSC net change of -1000000000 doesn't match fee 0" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // replace an entry in the table with an SLE of a different type
@@ -259,7 +266,7 @@ class Invariants_test : public beast::unit_test::suite
 
         doInvariantCheck (enabled,
             {{ "incorrect account CSC balance" },
-             {  "CSC net change was 99999999000000001 on a fee of 0" }},
+             {  "CSC net change was positive: 99999999000000001" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // balance exceeds genesis amount
@@ -273,7 +280,7 @@ class Invariants_test : public beast::unit_test::suite
 
         doInvariantCheck (enabled,
             {{ "incorrect account CSC balance" },
-             { "CSC net change was -1000000001 on a fee of 0" }},
+             { "CSC net change of -1000000001 doesn't match fee 0" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // balance is negative
@@ -285,6 +292,37 @@ class Invariants_test : public beast::unit_test::suite
                 return true;
             });
     }
+
+    void
+    testTransactionFeeCheck(bool enabled)
+    {
+        using namespace test::jtx;
+        using namespace std::string_literals;
+        testcase << "checks " << (enabled ? "enabled" : "disabled") <<
+            " - Transaction fee checks";
+
+        doInvariantCheck (enabled,
+            {{ "fee paid was negative: -1" },
+             { "CSC net change of 0 doesn't match fee -1" }},
+            [](Account const&, Account const&, ApplyContext&) { return true; },
+            CSCAmount{-1});
+
+        doInvariantCheck (enabled,
+            {{ "fee paid exceeds system limit: "s +
+                std::to_string(SYSTEM_CURRENCY_START) },
+             { "CSC net change of 0 doesn't match fee "s +
+                std::to_string(SYSTEM_CURRENCY_START) }},
+            [](Account const&, Account const&, ApplyContext&) { return true; },
+            CSCAmount{SYSTEM_CURRENCY_START});
+
+         doInvariantCheck (enabled,
+            {{ "fee paid is 20 exceeds fee specified in transaction." },
+             { "CSC net change of 0 doesn't match fee 20" }},
+            [](Account const&, Account const&, ApplyContext&) { return true; },
+            CSCAmount{20},
+            [](STTx& tx) { tx.setFieldAmount(sfFee, CSCAmount{10}); } );
+    }
+
 
     void
     testNoBadOffers(bool enabled)
@@ -374,7 +412,7 @@ class Invariants_test : public beast::unit_test::suite
             });
 
         doInvariantCheck (enabled,
-            {{ "CSC net change was -1000000 on a fee of 0"},
+            {{ "CSC net change of -1000000 doesn't match fee 0"},
              {  "escrow specifies invalid amount" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
@@ -390,7 +428,7 @@ class Invariants_test : public beast::unit_test::suite
             });
 
         doInvariantCheck (enabled,
-            {{ "CSC net change was 100000000000000001 on a fee of 0" },
+            {{ "CSC net change was positive: 100000000000000001" },
              {  "escrow specifies invalid amount" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
@@ -419,6 +457,7 @@ public:
             testTypesMatch (b);
             testNoCSCTrustLine (b);
             testCSCBalanceCheck (b);
+            testTransactionFeeCheck(b);
             testNoBadOffers (b);
             testNoZeroEscrow (b);
         }
