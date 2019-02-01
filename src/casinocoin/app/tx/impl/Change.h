@@ -67,6 +67,8 @@ private:
     TER applyAmendment ();
 
     TER applyFee ();
+
+    TER applyConfiguration();
 };
 
 }

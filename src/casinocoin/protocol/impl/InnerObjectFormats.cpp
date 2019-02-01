@@ -46,6 +46,11 @@ InnerObjectFormats::InnerObjectFormats ()
         << SOElement (sfKYCTime,              SOE_REQUIRED)
         << SOElement (sfKYCVerifications,     SOE_OPTIONAL)
         ;
+
+    add (sfConfigEntry.getJsonName ().c_str (), sfConfigEntry.getCode ())
+        << SOElement (sfConfigID,             SOE_REQUIRED)
+        << SOElement (sfConfigData,           SOE_REQUIRED)
+        ;
 }
 
 void InnerObjectFormats::addCommonFields (Item& item)

@@ -56,6 +56,10 @@ getLedgerAmendmentIndex ();
 uint256
 getLedgerFeeIndex ();
 
+// get the index of the node that holds ledger dependent configuration
+uint256
+getLedgerConfigurationIndex ();
+
 uint256
 getAccountRootIndex (AccountID const& account);
 
@@ -142,6 +146,14 @@ struct fees_t
     Keylet operator()() const;
 };
 static fees_t const fees {};
+
+/** The ledger configuration */
+struct configuration_t
+{
+    // VFALCO This could maybe be constexpr
+    Keylet operator()() const;
+};
+static configuration_t const configuration {};
 
 /** The beginning of an order book */
 struct book_t
