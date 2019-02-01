@@ -45,7 +45,7 @@ CreateOffer::calculateMaxSpend(STTx const& tx)
         saTakerGets.csc() : beast::zero;
 }
 
-TER
+NotTEC
 CreateOffer::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);
@@ -205,7 +205,9 @@ CreateOffer::preclaim(PreclaimContext const& ctx)
         //
         // The return code change is attached to featureChecks as a convenience.
         // The change is not big enough to deserve its own amendment.
-        return ctx.view.rules().enabled(featureChecks) ? tecEXPIRED : tesSUCCESS;
+        return ctx.view.rules().enabled(featureChecks)
+            ? TER {tecEXPIRED}
+            : TER {tesSUCCESS};
     }
 
     // Make sure that we are authorized to hold what the taker will pay us.
@@ -238,8 +240,8 @@ CreateOffer::checkAcceptAsset(ReadView const& view,
             to_string (issue.account);
 
         return (flags & tapRETRY)
-            ? terNO_ACCOUNT
-            : tecNO_ISSUER;
+            ? TER {terNO_ACCOUNT}
+            : TER {tecNO_ISSUER};
     }
 
     // This code is attached to the FlowCross amendment as a matter of
@@ -257,8 +259,8 @@ CreateOffer::checkAcceptAsset(ReadView const& view,
         if (!trustLine)
         {
             return (flags & tapRETRY)
-                ? terNO_LINE
-                : tecNO_LINE;
+                ? TER {terNO_LINE}
+                : TER {tecNO_LINE};
         }
 
         // Entries have a canonical representation, determined by a
@@ -275,8 +277,8 @@ CreateOffer::checkAcceptAsset(ReadView const& view,
                 "delay: can't receive IOUs from issuer without auth.";
 
             return (flags & tapRETRY)
-                ? terNO_AUTH
-                : tecNO_AUTH;
+                ? TER {terNO_AUTH}
+                : TER {tecNO_AUTH};
         }
     }
 
@@ -1080,7 +1082,7 @@ CreateOffer::applyGuts (Sandbox& sb, Sandbox& sbCancel)
 
     auto viewJ = ctx_.app.journal("View");
 
-    auto result = tesSUCCESS;
+    TER result = tesSUCCESS;
 
     // Process a cancellation request that's passed along with an offer.
     if (cancelSequence)
@@ -1114,7 +1116,7 @@ CreateOffer::applyGuts (Sandbox& sb, Sandbox& sbCancel)
         // The return code change is attached to featureChecks as a convenience.
         // The change is not big enough to deserve its own amendment.
         TER const ter {ctx_.view().rules().enabled(
-            featureChecks) ? tecEXPIRED : tesSUCCESS};
+            featureChecks) ? TER {tecEXPIRED} : TER {tesSUCCESS}};
         return{ ter, true };
     }
 

@@ -55,7 +55,7 @@ public:
     calculateMaxSpend(STTx const& tx);
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     static

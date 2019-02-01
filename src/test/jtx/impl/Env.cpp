@@ -279,8 +279,7 @@ Env::parseResult(Json::Value const& jr)
     TER ter;
     if (jr.isObject() && jr.isMember(jss::result) &&
         jr[jss::result].isMember(jss::engine_result_code))
-        ter = static_cast<TER>(
-            jr[jss::result][jss::engine_result_code].asInt());
+        ter = TER::fromInt (jr[jss::result][jss::engine_result_code].asInt());
     else
         ter = temINVALID;
     return std::make_pair(ter,
@@ -480,3 +479,4 @@ Env::enableFeature(uint256 const feature)
 
 } // test
 } // casinocoin
+

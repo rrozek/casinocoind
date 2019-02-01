@@ -31,7 +31,7 @@
 
 namespace casinocoin {
 
-TER
+NotTEC
 CancelOffer::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);

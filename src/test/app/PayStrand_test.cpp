@@ -1382,7 +1382,7 @@ struct PayStrand_test : public beast::unit_test::suite
             env(offer(bob, CSC(100), USD(100)), txflags(tfPassive));
             env(offer(bob, USD(100), CSC(100)), txflags(tfPassive));
 
-            auto const expectedResult = [&] {
+            auto const expectedResult = [&] () -> TER {
                 if (features[featureFlow] && !features[fix1373])
                     return tesSUCCESS;
                 return temBAD_PATH_LOOP;
@@ -1501,3 +1501,4 @@ BEAST_DEFINE_TESTSUITE(PayStrand, app, ripple);
 
 }  // test
 }  // casinocoin
+

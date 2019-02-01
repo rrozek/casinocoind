@@ -51,7 +51,7 @@ Payment::calculateMaxSpend(STTx const& tx)
     return saDstAmount.native() ? saDstAmount.csc() : beast::zero;
 }
 
-TER
+NotTEC
 Payment::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);

@@ -55,7 +55,7 @@ SetRegularKey::calculateBaseFee (
     return Transactor::calculateBaseFee (ctx);
 }
 
-TER
+NotTEC
 SetRegularKey::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);

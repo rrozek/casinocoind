@@ -30,13 +30,13 @@
 
 namespace casinocoin {
 
-TER
+NotTEC
 CashCheck::preflight (PreflightContext const& ctx)
 {
     if (! ctx.rules.enabled (featureChecks))
         return temDISABLED;
 
-    TER const ret {preflight1 (ctx)};
+    NotTEC const ret {preflight1 (ctx)};
     if (! isTesSuccess (ret))
         return ret;
 

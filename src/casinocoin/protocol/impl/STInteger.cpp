@@ -55,7 +55,7 @@ STUInt8::getText () const
     {
         std::string token, human;
 
-        if (transResultInfo (static_cast<TER> (value_), token, human))
+        if (transResultInfo (TER::fromInt (value_), token, human))
             return human;
 
         JLOG (debugLog().error())
@@ -73,7 +73,7 @@ STUInt8::getJson (int) const
     {
         std::string token, human;
 
-        if (transResultInfo (static_cast<TER> (value_), token, human))
+        if (transResultInfo (TER::fromInt (value_), token, human))
             return token;
 
         JLOG (debugLog().error())
@@ -207,3 +207,4 @@ STUInt64::getJson (int) const
 }
 
 } // casinocoin
+

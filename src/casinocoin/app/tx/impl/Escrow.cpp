@@ -91,7 +91,7 @@ EscrowCreate::calculateMaxSpend(STTx const& tx)
     return tx[sfAmount].csc();
 }
 
-TER
+NotTEC
 EscrowCreate::preflight (PreflightContext const& ctx)
 {
     if (! ctx.rules.enabled(featureEscrow))
@@ -292,7 +292,7 @@ checkCondition (Slice f, Slice c)
     return validate (*fulfillment, *condition);
 }
 
-TER
+NotTEC
 EscrowFinish::preflight (PreflightContext const& ctx)
 {
     if (! ctx.rules.enabled(featureEscrow))
@@ -502,7 +502,7 @@ EscrowFinish::doApply()
 
 //------------------------------------------------------------------------------
 
-TER
+NotTEC
 EscrowCancel::preflight (PreflightContext const& ctx)
 {
     if (! ctx.rules.enabled(featureEscrow))

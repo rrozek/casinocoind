@@ -1025,7 +1025,8 @@ struct Escrow_test : public beast::unit_test::suite
             auto const seq = env.seq(alice);
             env(escrow(alice, carol, CSC(1000)), finish_time(env.now() + 1s));
 
-            BEAST_EXPECT((*env.meta())[sfTransactionResult] == tesSUCCESS);
+            BEAST_EXPECT((*env.meta())[sfTransactionResult] ==
+                static_cast<std::uint8_t>(tesSUCCESS));
 
             auto const escrow = env.le(keylet::escrow(alice.id(), seq));
             BEAST_EXPECT(escrow);
@@ -1048,7 +1049,8 @@ struct Escrow_test : public beast::unit_test::suite
 
             env(escrow(alice, alice, CSC(1000)),
                 finish_time(env.now() + 1s), cancel_time(env.now() + 500s));
-            BEAST_EXPECT((*env.meta())[sfTransactionResult] == tesSUCCESS);
+            BEAST_EXPECT((*env.meta())[sfTransactionResult] ==
+                static_cast<std::uint8_t>(tesSUCCESS));
             env.close(5s);
             auto const aa = env.le(keylet::escrow(alice.id(), aseq));
             BEAST_EXPECT(aa);
@@ -1061,7 +1063,8 @@ struct Escrow_test : public beast::unit_test::suite
 
             env(escrow(bruce, bruce, CSC(1000)),
                 finish_time(env.now() + 1s), cancel_time(env.now() + 2s));
-            BEAST_EXPECT((*env.meta())[sfTransactionResult] == tesSUCCESS);
+            BEAST_EXPECT((*env.meta())[sfTransactionResult] ==
+                static_cast<std::uint8_t>(tesSUCCESS));
             env.close(5s);
             auto const bb = env.le(keylet::escrow(bruce.id(), bseq));
             BEAST_EXPECT(bb);
@@ -1076,7 +1079,8 @@ struct Escrow_test : public beast::unit_test::suite
             env(finish(alice, alice, aseq));
             {
                 BEAST_EXPECT(!env.le(keylet::escrow(alice.id(), aseq)));
-                BEAST_EXPECT((*env.meta())[sfTransactionResult] == tesSUCCESS);
+                BEAST_EXPECT((*env.meta())[sfTransactionResult] ==
+                    static_cast<std::uint8_t>(tesSUCCESS));
 
                 casinocoin::Dir aod(*env.current(), keylet::ownerDir(alice.id()));
                 BEAST_EXPECT(std::distance(aod.begin(), aod.end()) == 0);
@@ -1091,7 +1095,8 @@ struct Escrow_test : public beast::unit_test::suite
             env(cancel(bruce, bruce, bseq));
             {
                 BEAST_EXPECT(!env.le(keylet::escrow(bruce.id(), bseq)));
-                BEAST_EXPECT((*env.meta())[sfTransactionResult] == tesSUCCESS);
+                BEAST_EXPECT((*env.meta())[sfTransactionResult] ==
+                    static_cast<std::uint8_t>(tesSUCCESS));
 
                 casinocoin::Dir bod(*env.current(), keylet::ownerDir(bruce.id()));
                 BEAST_EXPECT(std::distance(bod.begin(), bod.end()) == 0);
@@ -1108,11 +1113,13 @@ struct Escrow_test : public beast::unit_test::suite
             auto const bseq = env.seq(bruce);
 
             env(escrow(alice, bruce, CSC(1000)), finish_time(env.now() + 1s));
-            BEAST_EXPECT((*env.meta())[sfTransactionResult] == tesSUCCESS);
+            BEAST_EXPECT((*env.meta())[sfTransactionResult] ==
+                static_cast<std::uint8_t>(tesSUCCESS));
             env.close(5s);
             env(escrow(bruce, carol, CSC(1000)),
                 finish_time(env.now() + 1s), cancel_time(env.now() + 2s));
-            BEAST_EXPECT((*env.meta())[sfTransactionResult] == tesSUCCESS);
+            BEAST_EXPECT((*env.meta())[sfTransactionResult] ==
+                static_cast<std::uint8_t>(tesSUCCESS));
             env.close(5s);
 
             auto const ab = env.le(keylet::escrow(alice.id(), aseq));

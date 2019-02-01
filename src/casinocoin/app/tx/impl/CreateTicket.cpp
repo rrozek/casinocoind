@@ -32,7 +32,7 @@
 #include <casinocoin/protocol/TxFlags.h>
 namespace casinocoin {
 
-TER
+NotTEC
 CreateTicket::preflight (PreflightContext const& ctx)
 {
     if (! ctx.rules.enabled(featureTickets))

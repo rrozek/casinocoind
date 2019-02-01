@@ -35,13 +35,13 @@ namespace detail {
 
 static
 std::unordered_map<
-    std::underlying_type_t<TER>,
+    TERUnderlyingType,
     std::pair<char const* const, char const* const>> const&
 transResults()
 {
     static
     std::unordered_map<
-        std::underlying_type_t<TER>,
+        TERUnderlyingType,
         std::pair<char const* const, char const* const>> const
     results
     {
@@ -169,8 +169,7 @@ bool transResultInfo (TER code, std::string& token, std::string& text)
 {
     auto& results = detail::transResults();
 
-    auto const r = results.find (
-        static_cast<std::underlying_type_t<TER>> (code));
+    auto const r = results.find (TERtoInt (code));
 
     if (r == results.end())
         return false;
@@ -214,7 +213,7 @@ transCode(std::string const& token)
         );
         std::unordered_map<
             std::string,
-            std::underlying_type_t<TER>> const
+            TERUnderlyingType> const
         byToken(tRange.begin(), tRange.end());
         return byToken;
     }();
@@ -224,7 +223,8 @@ transCode(std::string const& token)
     if (r == results.end())
         return boost::none;
 
-    return static_cast<TER>(r->second);
+    return TER::fromInt (r->second);
 }
 
 } // casinocoin
+

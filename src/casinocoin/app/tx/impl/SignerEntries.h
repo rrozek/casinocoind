@@ -26,9 +26,10 @@
 #ifndef CASINOCOIN_TX_IMPL_SIGNER_ENTRIES_H_INCLUDED
 #define CASINOCOIN_TX_IMPL_SIGNER_ENTRIES_H_INCLUDED
 
-#include <casinocoin/protocol/STTx.h>      // STTx::maxMultiSigners
-#include <casinocoin/protocol/UintTypes.h> // AccountID
-#include <casinocoin/protocol/TER.h>       // temMALFORMED
+#include <casinocoin/app/tx/impl/Transactor.h>    // NotTEC
+#include <casinocoin/protocol/STTx.h>             // STTx::maxMultiSigners
+#include <casinocoin/protocol/UintTypes.h>        // AccountID
+#include <casinocoin/protocol/TER.h>              // temMALFORMED
 #include <casinocoin/beast/utility/Journal.h>     // beast::Journal
 
 namespace casinocoin {
@@ -66,7 +67,7 @@ public:
 
     // Deserialize a SignerEntries array from the network or from the ledger.
     static
-    std::pair<std::vector<SignerEntry>, TER>
+    std::pair<std::vector<SignerEntry>, NotTEC>
     deserialize (
         STObject const& obj,
         beast::Journal journal,

@@ -50,7 +50,7 @@ public:
     }
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     static

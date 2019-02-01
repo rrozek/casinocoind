@@ -47,7 +47,7 @@
 namespace casinocoin {
 
 static
-TER
+NotTEC
 invoke_preflight (PreflightContext const& ctx)
 {
     switch(ctx.tx.getTxnType())

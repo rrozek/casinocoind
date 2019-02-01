@@ -754,8 +754,9 @@ struct Flow_test : public beast::unit_test::suite
             env (offer (bob, CSC (50), USD (50)));
             env (offer (bob, CSC (100), USD (50)));
 
-            auto expectedResult =
-                closeTime < fix1141Time () ? tecPATH_DRY : tesSUCCESS;
+            TER const expectedResult = closeTime < fix1141Time ()
+                ? TER {tecPATH_DRY}
+                : TER {tesSUCCESS};
             env (pay (alice, carol, USD (100)), path (~USD), sendmax (CSC (100)),
                 txflags (tfNoCasinocoinDirect | tfPartialPayment | tfLimitQuality),
                 ter (expectedResult));
@@ -1132,7 +1133,7 @@ struct Flow_test : public beast::unit_test::suite
 
         env(pay(alice, alice, CSC(1)), path(gw, bob, ~CSC),
             sendmax(gw["USD"](1000)), txflags(tfNoCasinocoinDirect),
-            ter(withFix ? tecPATH_DRY : tesSUCCESS));
+            ter(withFix ? TER {tecPATH_DRY} : TER {tesSUCCESS}));
         env.close();
 
         if (withFix)
@@ -1146,7 +1147,7 @@ struct Flow_test : public beast::unit_test::suite
 
         env(pay (carol, carol, gw["USD"](1000)), path(~bob["USD"], gw),
             sendmax(CSC(100000)), txflags(tfNoCasinocoinDirect),
-            ter(withFix ? tecPATH_DRY : tesSUCCESS));
+            ter(withFix ? TER {tecPATH_DRY} : TER {tesSUCCESS}));
         env.close();
 
         pass();
@@ -1190,7 +1191,7 @@ struct Flow_test : public beast::unit_test::suite
 
         env(pay(alice, alice, USD(1000)), path(~bob["USD"], bob, gw),
             sendmax(CSC(1)), txflags(tfNoCasinocoinDirect),
-            ter(withFix ? tecPATH_DRY : tesSUCCESS));
+            ter(withFix ? TER {tecPATH_DRY} : TER {tesSUCCESS}));
         env.close();
     }
 
@@ -1327,3 +1328,4 @@ BEAST_DEFINE_TESTSUITE_MANUAL(Flow_manual,app,ripple);
 
 } // test
 } // casinocoin
+

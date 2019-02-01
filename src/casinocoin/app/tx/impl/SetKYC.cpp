@@ -35,7 +35,7 @@
 
 namespace casinocoin {
 
-TER
+NotTEC
 SetKYC::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);

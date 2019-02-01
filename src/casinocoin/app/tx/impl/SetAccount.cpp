@@ -55,7 +55,7 @@ SetAccount::affectsSubsequentTransactionAuth(STTx const& tx)
             *uClearFlag == asfAccountTxnID);
 }
 
-TER
+NotTEC
 SetAccount::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);
@@ -197,7 +197,7 @@ SetAccount::preclaim(PreclaimContext const& ctx)
             keylet::ownerDir(id)))
         {
             JLOG(ctx.j.trace()) << "Retry: Owner directory not empty.";
-            return (ctx.flags & tapRETRY) ? terOWNERS : tecOWNERS;
+            return (ctx.flags & tapRETRY) ? TER {terOWNERS} : TER {tecOWNERS};
         }
     }
 

@@ -42,7 +42,7 @@ namespace casinocoin {
 // setting the sfSignerListID to zero in all cases.
 static std::uint32_t const defaultSignerListID_ = 0;
 
-std::tuple<TER, std::uint32_t,
+std::tuple<NotTEC, std::uint32_t,
     std::vector<SignerEntries::SignerEntry>,
         SetSignerList::Operation>
 SetSignerList::determineOperation(STTx const& tx,
@@ -76,7 +76,7 @@ SetSignerList::determineOperation(STTx const& tx,
     return std::make_tuple(tesSUCCESS, quorum, sign, op);
 }
 
-TER
+NotTEC
 SetSignerList::preflight (PreflightContext const& ctx)
 {
     if (! ctx.rules.enabled(featureMultiSign))
@@ -102,7 +102,7 @@ SetSignerList::preflight (PreflightContext const& ctx)
     {
         // Validate our settings.
         auto const account = ctx.tx.getAccountID(sfAccount);
-        TER const ter =
+        NotTEC const ter =
             validateQuorumAndSignerEntries(std::get<1>(result),
                 std::get<2>(result), account, ctx.j);
         if (ter != tesSUCCESS)
@@ -148,7 +148,7 @@ SetSignerList::preCompute()
     return Transactor::preCompute();
 }
 
-TER
+NotTEC
 SetSignerList::validateQuorumAndSignerEntries (
     std::uint32_t quorum,
         std::vector<SignerEntries::SignerEntry> const& signers,
@@ -356,3 +356,4 @@ SetSignerList::ownerCountDelta (std::size_t entryCount)
 }
 
 } // namespace casinocoin
+

@@ -42,7 +42,7 @@ public:
     }
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     TER doApply () override;
