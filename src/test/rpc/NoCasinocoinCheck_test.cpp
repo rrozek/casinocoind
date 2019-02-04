@@ -17,6 +17,7 @@
 */
 //==============================================================================
 
+#include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <test/jtx.h>
@@ -273,9 +274,20 @@ class noCasinocoinCheckLimits_test : public beast::unit_test::suite
                             {steady_clock::now()};
                 }
             }
+
+            auto& txq = env.app().getTxQ();
             auto const gw = Account {"gw" + std::to_string(i)};
-            env.fund (CSC (1000), gw);
-            env (trust (alice, gw["USD"](10)));
+            env.memoize(gw);
+            env (pay (env.master, gw, CSC(1000)),
+                seq (autofill),
+                fee (txq.getMetrics(*env.current())->expFeeLevel + 1),
+                sig (autofill));
+            env (fset (gw, asfDefaultCasinocoin),
+                seq (autofill),
+                fee (txq.getMetrics(*env.current())->expFeeLevel + 1),
+                sig (autofill));
+            env (trust (alice, gw["USD"](10)),
+                fee (txq.getMetrics(*env.current())->expFeeLevel + 1));
             env.close();
         }
 
@@ -328,7 +340,7 @@ BEAST_DEFINE_TESTSUITE(noCasinocoinCheck, app, ripple);
 // offer/account setup, so making them manual -- the additional coverage provided
 // by them is minimal
 
-BEAST_DEFINE_TESTSUITE_MANUAL(noCasinocoinCheckLimits, app, ripple);
+BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(noCasinocoinCheckLimits, app, ripple, 1);
 
 } // casinocoin
 

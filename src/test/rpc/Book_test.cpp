@@ -1648,7 +1648,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Book,app,ripple);
+BEAST_DEFINE_TESTSUITE_PRIO(Book,app,ripple,1);
 
 } // test
 } // casinocoin
