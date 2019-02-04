@@ -84,7 +84,7 @@ private:
     }
 
 public:
-    void run()
+    void run() override
     {
         test_OK ();
         test_error ();
@@ -201,7 +201,7 @@ private:
     }
 
 public:
-    void run()
+    void run() override
     {
         test_OK ();
         test_error ();

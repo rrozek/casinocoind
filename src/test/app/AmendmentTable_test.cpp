@@ -758,7 +758,7 @@ public:
         BEAST_EXPECT(table->hasUnsupportedEnabled());
     }
 
-    void run ()
+    void run () override
     {
         testConstruct();
         testGet ();

@@ -624,7 +624,7 @@ public:
         lastRotated = ledgerSeq - 1;
     }
 
-    void run()
+    void run() override
     {
         testClear();
         testAutomatic();

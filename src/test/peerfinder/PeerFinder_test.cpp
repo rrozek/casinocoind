@@ -150,7 +150,7 @@ public:
         BEAST_EXPECT(n <= (seconds+59)/60);
     }
 
-    void run ()
+    void run () override
     {
         test_backoff1();
         test_backoff2();

@@ -87,7 +87,7 @@ public:
         BEAST_EXPECT(result == "hello");
     }
 
-    void run ()
+    void run () override
     {
         testParseUrl ();
         testUnHex ();

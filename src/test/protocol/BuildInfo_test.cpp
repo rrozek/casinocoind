@@ -85,7 +85,7 @@ public:
         BEAST_EXPECT(to_packed (from_version (65535, 65535)) == 4294967295);
     }
 
-    void run ()
+    void run () override
     {
         testValues ();
         testStringVersion ();

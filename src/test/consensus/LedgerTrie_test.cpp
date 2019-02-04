@@ -645,7 +645,7 @@ class LedgerTrie_test : public beast::unit_test::suite
     }
 
     void
-    run()
+    run() override
     {
         testInsert();
         testRemove();

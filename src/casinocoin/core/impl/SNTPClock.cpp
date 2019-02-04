@@ -130,7 +130,7 @@ public:
     {
     }
 
-    ~SNTPClientImp ()
+    ~SNTPClientImp () override
     {
         if (thread_.joinable())
         {

@@ -398,7 +398,7 @@ public:
     }
 
     void
-    run()
+    run() override
     {
         testPrivileges();
         testStaticUNL();

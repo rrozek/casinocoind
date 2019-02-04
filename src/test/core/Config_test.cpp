@@ -853,7 +853,7 @@ trustthesevalidators.gov
         }
     }
 
-    void run ()
+    void run () override
     {
         testLegacy ();
         testDbPath ();

@@ -457,7 +457,7 @@ public:
 
     //--------------------------------------------------------------------------
 
-    void run()
+    void run() override
     {
         testcase ("Currency");
         testUnsigned <Currency> ();

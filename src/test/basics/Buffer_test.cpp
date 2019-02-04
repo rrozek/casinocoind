@@ -35,7 +35,7 @@ struct Buffer_test : beast::unit_test::suite
         return b.data() != nullptr;
     }
 
-    void run()
+    void run() override
     {
         std::uint8_t const data[] =
         {

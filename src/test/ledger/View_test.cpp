@@ -764,7 +764,7 @@ class View_test
         }
     }
 
-    void run()
+    void run() override
     {
         // This had better work, or else
         BEAST_EXPECT(k(0).key < k(1).key);

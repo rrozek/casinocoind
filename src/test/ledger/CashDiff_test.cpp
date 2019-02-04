@@ -92,7 +92,7 @@ class CashDiff_test : public beast::unit_test::suite
     }
 
 public:
-    void run ()
+    void run () override
     {
         testDust();
     }

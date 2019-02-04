@@ -72,7 +72,7 @@ public:
     {
     }
 
-    ~ManagerImp()
+    ~ManagerImp() override
     {
         close();
     }

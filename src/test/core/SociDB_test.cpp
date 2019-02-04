@@ -368,7 +368,7 @@ public:
         testSQLiteSelect ();
         testSQLiteDeleteWithSubselect();
     }
-    void run ()
+    void run () override
     {
         testSQLite ();
     }

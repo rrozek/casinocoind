@@ -81,7 +81,7 @@ public:
     }
 
     void
-    StartThread (void (*f)(void*), void* a)
+    StartThread (void (*f)(void*), void* a) override
     {
         ThreadParams* const p (new ThreadParams (f, a));
         EnvWrapper::StartThread (&RocksDBEnv::thread_entry, p);
@@ -208,7 +208,7 @@ public:
         JLOG(m_journal.debug()) << "RocksDB CFOptions: " << s2;
     }
 
-    ~RocksDBBackend ()
+    ~RocksDBBackend () override
     {
         close();
     }
@@ -434,13 +434,13 @@ public:
         Manager::instance().insert(*this);
     }
 
-    ~RocksDBFactory ()
+    ~RocksDBFactory () override
     {
         Manager::instance().erase(*this);
     }
 
     std::string
-    getName () const
+    getName () const override
     {
         return "RocksDB";
     }
@@ -450,7 +450,7 @@ public:
         size_t keyBytes,
         Section const& keyValues,
         Scheduler& scheduler,
-        beast::Journal journal)
+        beast::Journal journal) override
     {
         return std::make_unique <RocksDBBackend> (
             keyBytes, keyValues, scheduler, journal, &m_env);

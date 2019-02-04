@@ -28,7 +28,7 @@ namespace casinocoin {
 class KeyCache_test : public beast::unit_test::suite
 {
 public:
-    void run ()
+    void run () override
     {
         TestStopwatch clock;
         clock.set (0);

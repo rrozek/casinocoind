@@ -102,7 +102,7 @@ class SkipList_test : public beast::unit_test::suite
         }
     }
 
-    void run()
+    void run() override
     {
         testSkipList();
     }

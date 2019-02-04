@@ -74,7 +74,7 @@ public:
     }
 
     void
-    send(Json::Value const& jv, bool)
+    send(Json::Value const& jv, bool) override
     {
         auto sp = ws_.lock();
         if(! sp)

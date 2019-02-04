@@ -258,7 +258,7 @@ public:
     }
 
     void
-    run()
+    run() override
     {
         auto testAll = [this](FeatureBitset features) {
             testStepLimit(features);
