@@ -652,7 +652,7 @@ struct PayChan_test : public beast::unit_test::suite
         {
             // Claim to a channel where dst disallows CSC
             // (channel is created before disallow csc is set)
-            Env env (*this);
+            Env env (*this,  supported_amendments());
             env.fund (CSC (10000), alice, bob);
             env (fset (bob, asfDisallowCSC));
             env (create (alice, bob, CSC (1000), 3600s, alice.pk()));
@@ -678,7 +678,7 @@ struct PayChan_test : public beast::unit_test::suite
             // Claim to a channel where dst disallows XRP (channel is
             // created before disallow xrp is set).  Ignore that flag
             // since it is just advisory.
-            Env env (*this);
+            Env env (*this, supported_amendments());
             env.fund (CSC (10000), alice, bob);
             env (create (alice, bob, CSC (1000), 3600s, alice.pk()));
             auto const chan = channel (*env.current (), alice, bob);
@@ -725,10 +725,11 @@ struct PayChan_test : public beast::unit_test::suite
 
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
+        auto const carol = Account ("carol");
         auto USDA = alice["USD"];
         {
             Env env (*this);
-            env.fund (CSC (10000), alice, bob);
+            env.fund (CSC (10000), alice, bob, carol);
 
             env (fset (bob, asfDepositAuth));
             env.close();
@@ -766,22 +767,76 @@ struct PayChan_test : public beast::unit_test::suite
                 env.close();
                 BEAST_EXPECT (env.balance (bob) == preBob);
 
+                // bob claims but omits the signature.  Fails because only
+                // alice can claim without a signature.
+                env (claim (bob, chan, delta, delta), ter (temBAD_SIGNATURE));
+                env.close();
+
                 // bob claims with signature.  Succeeds even though bob's
-                // lsfDepositAuth flag is set since bob signed the transaction.
+                // lsfDepositAuth flag is set since bob submitted the
+                // transaction.
                 env (claim (bob, chan, delta, delta, Slice (sig), pk));
                 env.close();
                 BEAST_EXPECT (env.balance (bob) == preBob + delta - baseFee);
             }
+            {
+                // Explore the limits of deposit preauthorization.
+                auto const delta = CSC (600).value();
+                auto const sig = signClaimAuth (pk, alice.sk (), chan, delta);
 
-            // bob clears lsfDepositAuth.  Now alice can use an unsigned claim.
-            env (fclear (bob, asfDepositAuth));
-            env.close();
+                // carol claims and fails.  Only channel participants (bob or
+                // alice) may claim.
+                env (claim (carol, chan,
+                    delta, delta, Slice (sig), pk), ter (tecNO_PERMISSION));
+                env.close();
 
-            // alice claims successfully.
-            env (claim (alice, chan, CSC (800).value(), CSC (800).value()));
-            env.close();
-            BEAST_EXPECT (
-                env.balance (bob) == preBob + CSC (800) - (2 * baseFee));
+                // bob preauthorizes carol for deposit.  But after that carol
+                // still can't claim since only channel participants may claim.
+                env(deposit::auth (bob, carol));
+                env.close();
+
+                env (claim (carol, chan,
+                    delta, delta, Slice (sig), pk), ter (tecNO_PERMISSION));
+
+                // Since alice is not preauthorized she also may not claim
+                // for bob.
+                env (claim (alice, chan, delta, delta,
+                    Slice (sig), pk), ter (tecNO_PERMISSION));
+                env.close();
+
+                // However if bob preauthorizes alice for deposit then she can
+                // successfully submit a claim.
+                env(deposit::auth (bob, alice));
+                env.close();
+
+                env (claim (alice, chan, delta, delta, Slice (sig), pk));
+                env.close();
+
+                BEAST_EXPECT (
+                    env.balance (bob) == preBob + delta - (3 * baseFee));
+            }
+            {
+                // bob removes preauthorization of alice.  Once again she
+                // cannot submit a claim.
+                auto const delta = CSC (800).value();
+
+                env(deposit::unauth (bob, alice));
+                env.close();
+
+                // alice claims and fails since she is no longer preauthorized.
+                env (claim (alice, chan, delta, delta), ter (tecNO_PERMISSION));
+                env.close();
+
+                // bob clears lsfDepositAuth.  Now alice can claim.
+                env (fclear (bob, asfDepositAuth));
+                env.close();
+
+                // alice claims successfully.
+                env (claim (alice, chan, delta, delta));
+                env.close();
+                BEAST_EXPECT (
+                    env.balance (bob) == preBob + CSC (800) - (5 * baseFee));
+            }
         }
     }
 

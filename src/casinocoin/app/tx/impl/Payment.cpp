@@ -357,18 +357,33 @@ Payment::doApply ()
     bool const reqDepositAuth = sleDst->getFlags() & lsfDepositAuth &&
         view().rules().enabled(featureDepositAuth);
 
+    bool const depositPreauth = view().rules().enabled(featureDepositPreauth);
+
     bool const bCasinocoin = paths || sendMax || !saDstAmount.native ();
-    // XXX Should sendMax be sufficient to imply casinocoin?
 
     // If the destination has lsfDepositAuth set, then only direct XRP
     // payments (no intermediate steps) are allowed to the destination.
-    if (bCasinocoin && reqDepositAuth)
+    if (!depositPreauth && bCasinocoin && reqDepositAuth)
         return tecNO_PERMISSION;
 
     if (bCasinocoin)
     {
         // Casinocoin payment with at least one intermediate step and uses
         // transitive balances.
+
+        if (depositPreauth && reqDepositAuth)
+        {
+            // If depositPreauth is enabled, then an account that requires
+            // authorization has two ways to get an IOU Payment in:
+            //  1. If Account == Destination, or
+            //  2. If Account is deposit preauthorized by destination.
+            if (uDstAccountID != account_)
+            {
+                if (! view().exists (
+                    keylet::depositPreauth (uDstAccountID, account_)))
+                    return tecNO_PERMISSION;
+            }
+        }
 
         // Copy paths into an editable class.
         STPathSet spsPaths = ctx_.tx.getFieldPathSet (sfPaths);
@@ -457,15 +472,16 @@ Payment::doApply ()
     // source account has authority to deposit to the destination.
     if (reqDepositAuth)
     {
-        // Get the base reserve.
-        CSCAmount const dstReserve {view().fees().accountReserve (0)};
-
-        // If the destination's XRP balance is
-        //  1. below the base reserve and
-        //  2. the deposit amount is also below the base reserve,
+        // If depositPreauth is enabled, then an account that requires
+        // authorization has three ways to get an XRP Payment in:
+        //  1. If Account == Destination, or
+        //  2. If Account is deposit preauthorized by destination, or
+        //  3. If the destination's XRP balance is
+        //    a. less than or equal to the base reserve and
+        //    b. the deposit amount is less than or equal to the base reserve,
         // then we allow the deposit.
         //
-        // This rule is designed to keep an account from getting wedged
+        // Rule 3 is designed to keep an account from getting wedged
         // in an unusable state if it sets the lsfDepositAuth flag and
         // then consumes all of its XRP.  Without the rule if an
         // account with lsfDepositAuth set spent all of its XRP, it
@@ -474,9 +490,19 @@ Payment::doApply ()
         // We choose the base reserve as our bound because it is
         // a small number that seldom changes but is always sufficient
         // to get the account un-wedged.
-        if (saDstAmount > dstReserve ||
-            sleDst->getFieldAmount (sfBalance) > dstReserve)
-                return tecNO_PERMISSION;
+        if (uDstAccountID != account_)
+        {
+            if (! view().exists (
+                keylet::depositPreauth (uDstAccountID, account_)))
+            {
+                // Get the base reserve.
+                CSCAmount const dstReserve {view().fees().accountReserve (0)};
+
+                if (saDstAmount > dstReserve ||
+                    sleDst->getFieldAmount (sfBalance) > dstReserve)
+                        return tecNO_PERMISSION;
+            }
+        }
     }
 
     // Do the arithmetic for the transfer and make the ledger change.

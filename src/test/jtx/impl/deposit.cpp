@@ -1,12 +1,10 @@
 //------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
-    Copyright (c) 2012, 2013 Ripple Labs Inc.
-
+    Copyright (c) 2018 Ripple Labs Inc.
     Permission to use, copy, modify, and/or distribute this software for any
     purpose  with  or without fee is hereby granted, provided that the above
     copyright notice and this permission notice appear in all copies.
-
     THE  SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
     WITH  REGARD  TO  THIS  SOFTWARE  INCLUDING  ALL  IMPLIED  WARRANTIES  OF
     MERCHANTABILITY  AND  FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -17,44 +15,40 @@
 */
 //==============================================================================
 
-//==============================================================================
-/*
-    2017-06-29  ajochems        Refactored for casinocoin
-*/
-//==============================================================================
-
-#ifndef CASINOCOIN_TX_SETTRUST_H_INCLUDED
-#define CASINOCOIN_TX_SETTRUST_H_INCLUDED
-
-#include <casinocoin/protocol/Quality.h>
-#include <casinocoin/app/tx/impl/Transactor.h>
-#include <casinocoin/basics/Log.h>
-#include <casinocoin/protocol/Indexes.h>
-#include <casinocoin/protocol/TxFlags.h>
+#include <test/jtx/deposit.h>
+#include <casinocoin/protocol/JsonFields.h>
 
 namespace casinocoin {
+namespace test {
+namespace jtx {
 
-class SetTrust
-    : public Transactor
+namespace deposit {
+
+// Add DepositPreauth.
+Json::Value
+auth (jtx::Account const& account, jtx::Account const& auth)
 {
-public:
-    explicit SetTrust (ApplyContext& ctx)
-        : Transactor(ctx)
-    {
-    }
+    Json::Value jv;
+    jv[sfAccount.jsonName] = account.human();
+    jv[sfAuthorize.jsonName] = auth.human();
+    jv[sfTransactionType.jsonName] = "DepositPreauth";
+    return jv;
+}
 
-    static
-    NotTEC
-    preflight (PreflightContext const& ctx);
+// Remove DepositPreauth.
+Json::Value
+unauth (jtx::Account const& account, jtx::Account const& unauth)
+{
+    Json::Value jv;
+    jv[sfAccount.jsonName] = account.human();
+    jv[sfUnauthorize.jsonName] = unauth.human();
+    jv[sfTransactionType.jsonName] = "DepositPreauth";
+    return jv;
+}
 
-    static
-    TER
-    preclaim(PreclaimContext const& ctx);
+} // deposit
 
-    TER doApply () override;
-};
-
+} // jtx
+} // test
 } // casinocoin
-
-#endif
 

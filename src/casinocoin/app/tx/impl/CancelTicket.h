@@ -36,7 +36,7 @@ class CancelTicket
     : public Transactor
 {
 public:
-    CancelTicket (ApplyContext& ctx)
+    explicit CancelTicket (ApplyContext& ctx)
         : Transactor(ctx)
     {
     }

@@ -37,7 +37,7 @@ class CancelOffer
     : public Transactor
 {
 public:
-    CancelOffer (ApplyContext& ctx)
+    explicit CancelOffer (ApplyContext& ctx)
         : Transactor(ctx)
     {
     }

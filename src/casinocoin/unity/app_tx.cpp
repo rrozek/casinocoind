@@ -36,6 +36,7 @@
 #include <casinocoin/app/tx/impl/CreateCheck.cpp>
 #include <casinocoin/app/tx/impl/CreateOffer.cpp>
 #include <casinocoin/app/tx/impl/CreateTicket.cpp>
+#include <casinocoin/app/tx/impl/DepositPreauth.cpp>
 #include <casinocoin/app/tx/impl/Escrow.cpp>
 #include <casinocoin/app/tx/impl/InvariantCheck.cpp>
 #include <casinocoin/app/tx/impl/OfferStream.cpp>
