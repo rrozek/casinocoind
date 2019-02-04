@@ -330,7 +330,7 @@ public:
         for (auto withFix : {false, true})
         {
             if (!withFix &&
-                features[featureFlow] && features[featureFeeEscalation])
+                (features[featureFlow] || features[featureFeeEscalation]))
                 continue;
 
             Env env {*this, features};
@@ -4664,3 +4664,4 @@ BEAST_DEFINE_TESTSUITE_MANUAL (Offer_manual, tx, ripple);
 
 }  // test
 }  // casinocoin
+
