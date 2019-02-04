@@ -20,7 +20,7 @@
  
 #include <test/jtx/Account.h>
 #include <test/jtx/amount.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 
 namespace casinocoin {
 namespace test {

@@ -29,7 +29,7 @@
 #include <casinocoin/app/tx/impl/Transactor.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 
 namespace casinocoin {
 

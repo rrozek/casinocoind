@@ -33,7 +33,7 @@
 #include <casinocoin/protocol/STAccount.h>
 #include <casinocoin/protocol/STArray.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>

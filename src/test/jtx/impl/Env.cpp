@@ -47,7 +47,7 @@
 #include <casinocoin/protocol/SystemParameters.h>
 #include <casinocoin/protocol/TER.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/protocol/Feature.h>
 #include <memory>
 

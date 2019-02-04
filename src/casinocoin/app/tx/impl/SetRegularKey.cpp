@@ -27,7 +27,7 @@
 #include <casinocoin/app/tx/impl/SetRegularKey.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 
 namespace casinocoin {
 

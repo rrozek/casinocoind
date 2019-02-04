@@ -30,7 +30,7 @@
 #include <casinocoin/app/misc/Transaction.h>
 #include <casinocoin/app/misc/impl/AccountTxPaging.h>
 #include <casinocoin/protocol/Serializer.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <boost/format.hpp>
 #include <memory>
 

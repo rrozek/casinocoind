@@ -40,7 +40,7 @@
 #include <casinocoin/protocol/STPathSet.h>
 #include <casinocoin/protocol/TER.h>
 #include <casinocoin/protocol/TxFormats.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/protocol/impl/STVar.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <cassert>

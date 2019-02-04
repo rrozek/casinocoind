@@ -39,7 +39,7 @@
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/SystemParameters.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/rpc/ServerHandler.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <beast/core/string.hpp>

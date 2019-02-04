@@ -29,7 +29,7 @@
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/JsonFields.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 
 namespace casinocoin {
 

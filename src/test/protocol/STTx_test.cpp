@@ -21,7 +21,7 @@
 #include <casinocoin/protocol/Sign.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/STParsedJSON.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/basics/Slice.h>

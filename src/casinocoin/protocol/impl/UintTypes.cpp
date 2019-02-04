@@ -27,7 +27,7 @@
 #include <casinocoin/protocol/Serializer.h>
 #include <casinocoin/protocol/SystemParameters.h>
 #include <casinocoin/protocol/UintTypes.h>
-#include <casinocoin/protocol/types.h>
+
 
 namespace casinocoin {
 

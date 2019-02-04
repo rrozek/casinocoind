@@ -27,7 +27,7 @@
 #define CASINOCOIN_APP_PATHS_ACCOUNTCURRENCIES_H_INCLUDED
 
 #include <casinocoin/app/paths/CasinocoinLineCache.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 
 namespace casinocoin {
 

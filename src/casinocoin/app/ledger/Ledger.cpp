@@ -52,7 +52,7 @@
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/protocol/HashPrefix.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <boost/optional.hpp>
 #include <cassert>

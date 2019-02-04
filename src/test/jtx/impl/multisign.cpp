@@ -23,7 +23,7 @@
 #include <casinocoin/protocol/HashPrefix.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/Sign.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/basics/contract.h>
 
 namespace casinocoin {

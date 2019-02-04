@@ -18,7 +18,7 @@
 //==============================================================================
 
  
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/beast/unit_test.h>
 
 namespace casinocoin {

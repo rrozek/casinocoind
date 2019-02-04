@@ -36,7 +36,7 @@
 #include <casinocoin/ledger/View.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/protocol/Protocol.h>
 namespace casinocoin {
 

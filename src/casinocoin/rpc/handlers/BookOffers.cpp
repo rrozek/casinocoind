@@ -31,7 +31,7 @@
 #include <casinocoin/net/RPCErr.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/JsonFields.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/resource/Fees.h>
 #include <casinocoin/rpc/Context.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
