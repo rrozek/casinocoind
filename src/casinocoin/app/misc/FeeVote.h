@@ -46,10 +46,10 @@ public:
     struct Setup
     {
         /** The cost of a reference transaction in drops. */
-        std::uint64_t reference_fee = 1000000;
+        std::uint64_t reference_fee = 100000;
 
         /** The cost of a reference transaction in fee units. */
-        std::uint64_t const reference_fee_units = 1000000;
+        std::uint64_t const reference_fee_units = 1000;
 
         /** The account reserve requirement in drops. */
         std::uint64_t account_reserve = 10 * SYSTEM_CURRENCY_PARTS;
