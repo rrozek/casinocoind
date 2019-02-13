@@ -370,6 +370,7 @@ int PathRequest::parseJson (Json::Value const& jvParams)
             Currency srcCurrencyID;
             if (! c.isObject() ||
                 ! c.isMember(jss::currency) ||
+                ! c[jss::currency].isString() ||
                 ! to_currency(srcCurrencyID, c[jss::currency].asString()))
             {
                 jvStatus = rpcError (rpcSRC_CUR_MALFORMED);
@@ -728,3 +729,4 @@ InfoSub::pointer PathRequest::getSubscriber ()
 }
 
 } // casinocoin
+

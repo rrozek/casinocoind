@@ -2,11 +2,9 @@
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012, 2013 Ripple Labs Inc.
-
     Permission to use, copy, modify, and/or distribute this software for any
     purpose  with  or without fee is hereby granted, provided that the above
     copyright notice and this permission notice appear in all copies.
-
     THE  SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
     WITH  REGARD  TO  THIS  SOFTWARE  INCLUDING  ALL  IMPLIED  WARRANTIES  OF
     MERCHANTABILITY  AND  FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -17,20 +15,21 @@
 */
 //==============================================================================
 
-//==============================================================================
-/*
-    2017-06-30  ajochems        Refactored for casinocoin
-*/
-//==============================================================================
+#ifndef CASINOCOIN_JSON_JSON_ERRORS_H_INCLUDED
+#define CASINOCOIN_JSON_JSON_ERRORS_H_INCLUDED
 
-#ifndef CASINOCOIN_JSON_JSON_ASSERT_H_INCLUDED
-#define CASINOCOIN_JSON_JSON_ASSERT_H_INCLUDED
+#include <stdexcept>
 
-#include "casinocoin/json/json_errors.h"
+namespace Json
+{
 
-#define JSON_ASSERT_UNREACHABLE assert( false )
-#define JSON_ASSERT( condition ) assert( condition );  // @todo <= change this into an exception throw
-#define JSON_ASSERT_MESSAGE( condition, message ) if (!( condition )) casinocoin::Throw<Json::error> ( message );
+struct error : std::runtime_error
+{
+    using std::runtime_error::runtime_error;
+};
 
-#endif
+} // namespace Json
+
+
+#endif // JSON_FORWARDS_H_INCLUDED
 
