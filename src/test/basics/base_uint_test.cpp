@@ -23,6 +23,8 @@
 #include <casinocoin/beast/unit_test.h>
 #include <boost/algorithm/string.hpp>
 
+#include <type_traits>
+
 namespace casinocoin {
 namespace test {
 
@@ -51,6 +53,8 @@ struct nonhash
 struct base_uint_test : beast::unit_test::suite
 {
     using test96 = base_uint<96>;
+    static_assert(std::is_copy_constructible<test96>::value, "");
+    static_assert(std::is_copy_assignable<test96>::value, "");
 
     void run() override
     {
@@ -199,3 +203,4 @@ BEAST_DEFINE_TESTSUITE(base_uint, ripple_basics, ripple);
 
 }  // namespace test
 }  // namespace casinocoin
+
