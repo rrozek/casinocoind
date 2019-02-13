@@ -341,7 +341,7 @@ public:
     */
     void setStateTimer () override;
 
-    void needNetworkLedger () override
+    void setNeedNetworkLedger () override
     {
         needNetworkLedger_ = true;
     }
