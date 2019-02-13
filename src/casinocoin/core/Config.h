@@ -34,7 +34,6 @@
 #include <casinocoin/beast/net/IPEndpoint.h>
 #include <beast/core/string.hpp>
 #include <casinocoin/beast/utility/Journal.h>
-#include <boost/asio/ip/tcp.hpp> // VFALCO FIX: This include should not be here
 #include <boost/filesystem.hpp> // VFALCO FIX: This include should not be here
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
@@ -187,8 +186,7 @@ public:
     std::size_t                 WORKERS = 0;
 
     // These override the command line client settings
-    boost::optional<boost::asio::ip::address_v4> rpc_ip;
-    boost::optional<std::uint16_t> rpc_port;
+    boost::optional<beast::IP::Endpoint> rpc_ip;
 
     std::unordered_set<uint256, beast::uhash<>> features;
 

@@ -55,7 +55,7 @@ public:
         {
             beast::IP::Endpoint ep (beast::IP::Endpoint::from_string (m_strings [i]));
             if (is_unspecified (ep))
-                ep = beast::IP::Endpoint::from_string_altform (m_strings [i]);
+                ep = beast::IP::Endpoint::from_string (m_strings [i]);
             if (! is_unspecified (ep))
                 results.addresses.push_back (ep);
         }
@@ -76,3 +76,4 @@ SourceStrings::New (std::string const& name, Strings const& strings)
 
 }
 }
+
