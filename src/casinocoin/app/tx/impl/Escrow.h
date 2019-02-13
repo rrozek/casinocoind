@@ -70,7 +70,9 @@ public:
 
     static
     std::uint64_t
-    calculateBaseFee (PreclaimContext const& ctx);
+    calculateBaseFee (
+        ReadView const& view,
+        STTx const& tx);
 
     TER
     doApply() override;
