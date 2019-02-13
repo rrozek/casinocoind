@@ -32,8 +32,9 @@
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/protocol/SystemParameters.h> // VFALCO Breaks levelization
 #include <casinocoin/beast/net/IPEndpoint.h>
-#include <beast/core/detail/ci_char_traits.hpp>
+#include <casinocoin/json/json_value.h>
 #include <casinocoin/beast/utility/Journal.h>
+#include <beast/core/detail/ci_char_traits.hpp>
 #include <boost/asio/ip/tcp.hpp> // VFALCO FIX: This include should not be here
 #include <boost/filesystem.hpp> // VFALCO FIX: This include should not be here
 #include <boost/lexical_cast.hpp>
@@ -89,6 +90,7 @@ public:
     static char const* const databaseDirName;
     static char const* const validatorsFileName;
     static char const* const votingFileName;
+    static char const* const votableConfigFileName;
 
     /** Returns the full path and filename of the debug log file. */
     boost::filesystem::path getDebugLogFile () const;
@@ -210,6 +212,7 @@ public:
         bool bSilent, bool bStandalone);
 
     bool reloadFeeVoteParams();
+    Json::Value reloadConfigurationVoteParams();
     /**
      *  Load the config from the contents of the string.
      *

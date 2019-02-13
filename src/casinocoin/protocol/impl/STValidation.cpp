@@ -167,6 +167,7 @@ SOTemplate const& STValidation::getFormat ()
             format.push_back (SOElement (sfSigningTime,     SOE_REQUIRED));
             format.push_back (SOElement (sfSigningPubKey,   SOE_REQUIRED));
             format.push_back (SOElement (sfSignature,       SOE_OPTIONAL));
+            format.push_back (SOElement (sfConfigHashes,    SOE_OPTIONAL));
         }
     };
 

@@ -391,6 +391,7 @@ extern SF_U32 const sfFinishAfter;
 extern SF_U32 const sfSignerListID;
 extern SF_U32 const sfSettleDelay;
 extern SF_U32 const sfConfigID;
+extern SF_U32 const sfConfigType;
 
 // 64-bit integers
 extern SF_U64 const sfIndexNext;
@@ -485,6 +486,7 @@ extern SField const sfPaths;
 extern SF_Vec256 const sfIndexes;
 extern SF_Vec256 const sfHashes;
 extern SF_Vec256 const sfAmendments;
+extern SF_Vec256 const sfConfigHashes;
 
 // vector of 128-bit
 extern SF_Vec128 const sfKYCVerifications;

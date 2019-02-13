@@ -49,6 +49,7 @@ InnerObjectFormats::InnerObjectFormats ()
 
     add (sfConfigEntry.getJsonName ().c_str (), sfConfigEntry.getCode ())
         << SOElement (sfConfigID,             SOE_REQUIRED)
+        << SOElement (sfConfigType,           SOE_REQUIRED)
         << SOElement (sfConfigData,           SOE_REQUIRED)
         ;
 }

@@ -139,6 +139,7 @@ SF_U32 const sfFinishAfter         = make::one<SF_U32::type>(&sfFinishAfter,    
 SF_U32 const sfSignerListID        = make::one<SF_U32::type>(&sfSignerListID,        STI_UINT32, 38, "SignerListID");
 SF_U32 const sfSettleDelay         = make::one<SF_U32::type>(&sfSettleDelay,         STI_UINT32, 39, "SettleDelay");
 SF_U32 const sfConfigID            = make::one<SF_U32::type>(&sfConfigID,            STI_UINT32, 40, "ConfigID");
+SF_U32 const sfConfigType          = make::one<SF_U32::type>(&sfConfigType,          STI_UINT32, 41, "ConfigType");
 
 // 64-bit integers
 SF_U64 const sfIndexNext     = make::one<SF_U64::type>(&sfIndexNext,     STI_UINT64, 1, "IndexNext");
@@ -231,9 +232,10 @@ SF_Account const sfRegularKey  = make::one<SF_Account::type>(&sfRegularKey,  STI
 SField const sfPaths = make::one(&sfPaths, STI_PATHSET, 1, "Paths");
 
 // vector of 256-bit
-SF_Vec256 const sfIndexes    = make::one<SF_Vec256::type>(&sfIndexes,    STI_VECTOR256, 1, "Indexes", SField::sMD_Never);
-SF_Vec256 const sfHashes     = make::one<SF_Vec256::type>(&sfHashes,     STI_VECTOR256, 2, "Hashes");
-SF_Vec256 const sfAmendments = make::one<SF_Vec256::type>(&sfAmendments, STI_VECTOR256, 3, "Amendments");
+SF_Vec256 const sfIndexes           = make::one<SF_Vec256::type>(&sfIndexes,        STI_VECTOR256, 1, "Indexes", SField::sMD_Never);
+SF_Vec256 const sfHashes            = make::one<SF_Vec256::type>(&sfHashes,         STI_VECTOR256, 2, "Hashes");
+SF_Vec256 const sfAmendments        = make::one<SF_Vec256::type>(&sfAmendments,     STI_VECTOR256, 3, "Amendments");
+SF_Vec256 const sfConfigHashes      = make::one<SF_Vec256::type>(&sfConfigHashes,   STI_VECTOR256, 4, "ConfigHashes");
 
 SF_Vec128 const sfKYCVerifications = make::one<SF_Vec128::type>(&sfKYCVerifications, STI_VECTOR128, 1, "Verifications");
 

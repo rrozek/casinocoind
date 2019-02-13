@@ -47,6 +47,7 @@
 #include <casinocoin/app/misc/SHAMapStore.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/app/misc/ValidatorSite.h>
+#include <casinocoin/app/misc/VotableConfiguration.h>
 #include <casinocoin/app/paths/PathRequests.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/ResolverAsio.h>
@@ -336,6 +337,7 @@ public:
     std::unique_ptr <HashRouter> mHashRouter;
     std::unique_ptr <Validations> mValidations;
     std::unique_ptr <LoadManager> m_loadManager;
+    std::unique_ptr <VotableConfiguration> m_votableConfig;
     std::unique_ptr <TxQ> txQ_;
     DeadlineTimer m_sweepTimer;
     DeadlineTimer m_entropyTimer;
@@ -674,6 +676,11 @@ public:
     HashRouter& getHashRouter () override
     {
         return *mHashRouter;
+    }
+
+    VotableConfiguration& getVotableConfig() override
+    {
+        return *m_votableConfig;
     }
 
     Validations& getValidations () override
@@ -1041,6 +1048,16 @@ bool ApplicationImp::setup()
             logs_->journal("Amendments"));
     }
 
+    // Load votable configuration for the server
+    {
+        auto const& votableJson = config_->reloadConfigurationVoteParams();
+        m_votableConfig = make_VotableConfig(
+                    *this,
+                    MAJORITY_FRACTION,
+                    votableJson,
+                    logs_->journal("VotableConfig"));
+    }
+
     Pathfinder::initPathTable();
 
     auto const startUp = config_->START_UP;
@@ -1251,7 +1268,6 @@ bool ApplicationImp::setup()
             JLOG(m_journal.fatal()) << "Result: " << jvResult << std::endl;
         }
     }
-
     return true;
 }
 

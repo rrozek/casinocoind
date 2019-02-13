@@ -270,8 +270,9 @@ Change::applyConfiguration()
         view().insert(configObject);
     }
 
-    uint32_t txObjId = ctx_.tx.getFieldU32(sfConfigID);
-    Blob txConfigData = ctx_.tx.getFieldVL(sfConfigData);
+    const uint32_t txObjId = ctx_.tx.getFieldU32(sfConfigID);
+    const uint32_t txObjType = ctx_.tx.getFieldU32(sfConfigType);
+    const Blob txConfigData = ctx_.tx.getFieldVL(sfConfigData);
 
     STArray ledgerConfigArray(sfConfiguration);
     if (configObject->isFieldPresent(sfConfiguration))
@@ -284,12 +285,14 @@ Change::applyConfiguration()
         });
     if (ledgerConfigArrayIter != ledgerConfigArray.end())
     {
-        if ((*ledgerConfigArrayIter).getFieldVL(sfConfigData) == txConfigData)
+        if ((*ledgerConfigArrayIter).getFieldVL(sfConfigData) == txConfigData
+             && (*ledgerConfigArrayIter).getFieldU32(sfConfigType) == txObjType)
         {
             JLOG(j_.info()) << "applyConfiguration: no change";
             return tefALREADY;
         }
         // we are updating existing config entry
+        (*ledgerConfigArrayIter).setFieldU32(sfConfigType, txObjType);
         (*ledgerConfigArrayIter).setFieldVL(sfConfigData, txConfigData);
     }
     else
@@ -297,7 +300,8 @@ Change::applyConfiguration()
         // we are adding new config entry
         ledgerConfigArray.push_back(STObject(sfConfigEntry));
         auto& entry = ledgerConfigArray.back();
-        entry.emplace_back(STUInt32(sfConfigID, ctx_.tx.getFieldU32(sfConfigID)));
+        entry.emplace_back(STUInt32(sfConfigID, txObjId));
+        entry.emplace_back(STUInt32(sfConfigType, txObjType));
         entry.emplace_back(STBlob(sfConfigData, txConfigData.data(), txConfigData.size()));
     }
 

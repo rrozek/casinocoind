@@ -156,6 +156,7 @@ TxFormats::TxFormats ()
     add ("SetConfiguration", ttCONFIG)
         << SOElement (sfLedgerSequence,      SOE_OPTIONAL)
         << SOElement (sfConfigID,            SOE_REQUIRED)
+        << SOElement (sfConfigType,          SOE_REQUIRED)
         << SOElement (sfConfigData,          SOE_REQUIRED)
         ;
 }
