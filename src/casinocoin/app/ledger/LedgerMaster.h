@@ -47,7 +47,7 @@
 #include <casinocoin/beast/utility/PropertyStream.h>
 #include <mutex>
 
-#include "casinocoin.pb.h"
+#include <casinocoin/protocol/messages.h>
 
 namespace casinocoin {
 

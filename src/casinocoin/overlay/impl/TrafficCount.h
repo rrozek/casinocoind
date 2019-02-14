@@ -26,7 +26,7 @@
 #ifndef CASINOCOIN_OVERLAY_TRAFFIC_H_INCLUDED
 #define CASINOCOIN_OVERLAY_TRAFFIC_H_INCLUDED
 
-#include "casinocoin.pb.h"
+#include <casinocoin/protocol/messages.h>
 
 #include <atomic>
 #include <map>

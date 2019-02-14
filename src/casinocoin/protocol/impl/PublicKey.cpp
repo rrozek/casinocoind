@@ -29,7 +29,6 @@
 #include <casinocoin/protocol/impl/secp256k1.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/strHex.h>
-#include <casinocoin/beast/core/ByteOrder.h>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <ed25519-donna/ed25519.h>
 #include <type_traits>

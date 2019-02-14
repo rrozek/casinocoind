@@ -31,11 +31,11 @@
 #ifndef CASINOCOIN_BASICS_BASE_UINT_H_INCLUDED
 #define CASINOCOIN_BASICS_BASE_UINT_H_INCLUDED
 
-#include <casinocoin/basics/ByteOrder.h>
 #include <casinocoin/basics/Blob.h>
 #include <casinocoin/basics/strHex.h>
 #include <casinocoin/basics/hardened_hash.h>
 #include <casinocoin/beast/utility/Zero.h>
+#include <boost/endian/conversion.hpp>
 #include <boost/functional/hash.hpp>
 #include <array>
 #include <functional>
@@ -91,6 +91,7 @@ public:
     pointer data() { return reinterpret_cast<pointer>(pn.data ()); }
     const_pointer data() const { return reinterpret_cast<const_pointer>(pn.data ()); }
 
+
     iterator begin() { return data(); }
     iterator end()   { return data()+bytes; }
     const_iterator begin()  const { return data(); }
@@ -102,18 +103,6 @@ public:
         The seed prevents crafted inputs from causing degenerate parent containers.
     */
     using hasher = hardened_hash <>;
-
-    /** Container equality testing function. */
-    class key_equal
-    {
-    public:
-        explicit key_equal() = default;
-
-        bool operator() (base_uint const& lhs, base_uint const& rhs) const
-        {
-            return lhs == rhs;
-        }
-    };
 
     //--------------------------------------------------------------------------
 
@@ -209,7 +198,7 @@ public:
             std::uint64_t ul;
         };
         // Put in least significant bits.
-        ul = htobe64 (uHost);
+        ul = boost::endian::native_to_big(uHost);
         pn[WIDTH-2] = u[0];
         pn[WIDTH-1] = u[1];
         return *this;
@@ -239,17 +228,12 @@ public:
         return *this;
     }
 
-    // be32toh and htobe32 are macros that somehow cause shadowing
-    // warnings in this header file, so we hide them...
-    static uint32_t bigendToHost (uint32_t x) { return be32toh(x); }
-    static uint32_t hostToBigend (uint32_t x) { return htobe32(x); }
-
     base_uint& operator++ ()
     {
         // prefix operator
         for (int i = WIDTH - 1; i >= 0; --i)
         {
-            pn[i] = hostToBigend (bigendToHost (pn[i]) + 1);
+            pn[i] = boost::endian::native_to_big (boost::endian::big_to_native(pn[i]) + 1);
 
             if (pn[i] != 0)
                 break;
@@ -272,7 +256,7 @@ public:
         for (int i = WIDTH - 1; i >= 0; --i)
         {
             auto prev = pn[i];
-            pn[i] = hostToBigend (bigendToHost (pn[i]) - 1);
+            pn[i] = boost::endian::native_to_big (boost::endian::big_to_native(pn[i]) - 1);
 
             if (prev != 0)
                 break;
@@ -296,10 +280,10 @@ public:
 
         for (int i = WIDTH; i--;)
         {
-            std::uint64_t n = carry + bigendToHost (pn[i]) +
-                    bigendToHost (b.pn[i]);
+            std::uint64_t n = carry + boost::endian::big_to_native(pn[i]) +
+                boost::endian::big_to_native(b.pn[i]);
 
-            pn[i] = hostToBigend (n & 0xffffffff);
+            pn[i] = boost::endian::native_to_big (static_cast<std::uint32_t>(n));
             carry = n >> 32;
         }
 

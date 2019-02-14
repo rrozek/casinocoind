@@ -25,7 +25,7 @@
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/basics/Slice.h>
-#include "casinocoin.pb.h"
+#include <casinocoin/protocol/messages.h>
 
 namespace casinocoin {
 

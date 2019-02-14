@@ -38,7 +38,7 @@
 #include <deque>
 #include <tuple>
 
-#include "casinocoin.pb.h"
+#include <casinocoin/protocol/messages.h>
 
 namespace casinocoin {
 

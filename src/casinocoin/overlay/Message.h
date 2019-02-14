@@ -26,7 +26,7 @@
 #ifndef CASINOCOIN_OVERLAY_MESSAGE_H_INCLUDED
 #define CASINOCOIN_OVERLAY_MESSAGE_H_INCLUDED
 
-#include "casinocoin.pb.h"
+#include <casinocoin/protocol/messages.h>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/buffers_iterator.hpp>
 #include <algorithm>

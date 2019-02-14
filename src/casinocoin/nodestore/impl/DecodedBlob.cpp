@@ -25,7 +25,6 @@
 
  
 #include <casinocoin/nodestore/impl/DecodedBlob.h>
-#include <casinocoin/beast/core/ByteOrder.h>
 #include <algorithm>
 #include <cassert>
 

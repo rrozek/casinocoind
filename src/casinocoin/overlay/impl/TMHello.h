@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_OVERLAY_TMHELLO_H_INCLUDED
 #define CASINOCOIN_OVERLAY_TMHELLO_H_INCLUDED
-#include "casinocoin.pb.h"
+#include <casinocoin/protocol/messages.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/beast/utility/Journal.h>
 #include <casinocoin/protocol/BuildInfo.h>

@@ -26,9 +26,9 @@
 #ifndef CASINOCOIN_BASICS_STRINGUTILITIES_H_INCLUDED
 #define CASINOCOIN_BASICS_STRINGUTILITIES_H_INCLUDED
 
-#include <casinocoin/basics/ByteOrder.h>
 #include <casinocoin/basics/Blob.h>
 #include <casinocoin/basics/strHex.h>
+#include <boost/endian/conversion.hpp>
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 #include <sstream>
@@ -49,7 +49,7 @@ inline std::string strHex (Blob const& vucData)
 
 inline std::string strHex (const std::uint64_t uiHost)
 {
-    uint64_t    uBig    = htobe64 (uiHost);
+    uint64_t    uBig    = boost::endian::native_to_big (uiHost);
 
     return strHex ((unsigned char*) &uBig, sizeof (uBig));
 }

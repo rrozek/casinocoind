@@ -26,6 +26,7 @@
  
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/protocol/Indexes.h>
+#include <boost/endian/conversion.hpp>
 #include <cassert>
 
 namespace casinocoin {
@@ -132,7 +133,7 @@ getQualityIndex (uint256 const& uBase, const std::uint64_t uNodeDir)
 
     // TODO(tom): there must be a better way.
     // VFALCO [base_uint] This assumes a certain storage format
-    ((std::uint64_t*) uNode.end ())[-1] = htobe64 (uNodeDir);
+    ((std::uint64_t*) uNode.end ())[-1] = boost::endian::native_to_big (uNodeDir);
 
     return uNode;
 }
@@ -149,7 +150,7 @@ std::uint64_t
 getQuality (uint256 const& uBase)
 {
     // VFALCO [base_uint] This assumes a certain storage format
-    return be64toh (((std::uint64_t*) uBase.end ())[-1]);
+    return boost::endian::big_to_native (((std::uint64_t*) uBase.end ())[-1]);
 }
 
 uint256
