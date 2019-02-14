@@ -27,8 +27,7 @@
 #define CASINOCOIN_PEERFINDER_SOURCESTRINGS_H_INCLUDED
 
 #include <casinocoin/peerfinder/impl/Source.h>
-#include <casinocoin/beast/core/SharedPtr.h>
-
+#include <memory>
 namespace casinocoin {
 namespace PeerFinder {
 
@@ -40,7 +39,8 @@ public:
 
     using Strings = std::vector <std::string>;
 
-    static beast::SharedPtr <Source> New (std::string const& name, Strings const& strings);
+    static std::shared_ptr<Source>
+    New (std::string const& name, Strings const& strings);
 };
 
 }

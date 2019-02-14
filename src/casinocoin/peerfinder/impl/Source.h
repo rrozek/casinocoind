@@ -27,7 +27,6 @@
 #define CASINOCOIN_PEERFINDER_SOURCE_H_INCLUDED
 
 #include <casinocoin/peerfinder/PeerfinderManager.h>
-#include <casinocoin/beast/core/SharedObject.h>
 #include <boost/system/error_code.hpp>
 
 namespace casinocoin {
@@ -41,7 +40,7 @@ namespace PeerFinder {
     be updated automatically. Another solution is to use a custom DNS server
     that hands out peer IP addresses when name lookups are performed.
 */
-class Source : public beast::SharedObject
+class Source
 {
 public:
     /** The results of a fetch. */
