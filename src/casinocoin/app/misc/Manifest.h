@@ -160,6 +160,22 @@ enum class ManifestDisposition
     invalid
 };
 
+inline std::string
+to_string(ManifestDisposition m)
+{
+    switch (m)
+    {
+        case ManifestDisposition::accepted:
+            return "accepted";
+        case ManifestDisposition::stale:
+            return "stale";
+        case ManifestDisposition::invalid:
+            return "invalid";
+        default:
+            return "unknown";
+    }
+}
+
 class DatabaseCon;
 
 /** Remembers manifests with the highest sequence number. */
@@ -335,3 +351,4 @@ public:
 } // casinocoin
 
 #endif
+

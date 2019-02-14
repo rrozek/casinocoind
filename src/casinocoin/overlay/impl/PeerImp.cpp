@@ -731,11 +731,12 @@ PeerImp::doProtocolStart()
 
     app_.validatorManifests ().for_each_manifest (
         [&tm](std::size_t s){tm.mutable_list()->Reserve(s);},
-        [&tm](Manifest const& manifest)
+        [&tm, &hr = app_.getHashRouter()](Manifest const& manifest)
         {
             auto const& s = manifest.serialized;
             auto& tm_e = *tm.add_list();
             tm_e.set_stobject(s.data(), s.size());
+            hr.addSuppression(manifest.hash());
         });
 
     if (tm.list_size() > 0)
@@ -1315,13 +1316,6 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMProposeSet> const& m)
     if (! app_.getHashRouter ().addSuppressionPeer (suppression, id_))
     {
         JLOG(p_journal_.trace()) << "Proposal: duplicate";
-        return;
-    }
-
-    if (!app_.getValidationPublicKey().empty() &&
-        publicKey == app_.getValidationPublicKey())
-    {
-        JLOG(p_journal_.trace()) << "Proposal: self";
         return;
     }
 
@@ -2053,7 +2047,9 @@ PeerImp::checkValidation (STValidation::pointer val,
         if (app_.getOPs ().recvValidation(val, std::to_string(id())) ||
             cluster())
         {
-            overlay_.relay(*packet, signingHash);
+            auto const suppression = sha512Half(
+                makeSlice(val->getSerialized()));
+            overlay_.relay(*packet, suppression);
         }
     }
     catch (std::exception const&)

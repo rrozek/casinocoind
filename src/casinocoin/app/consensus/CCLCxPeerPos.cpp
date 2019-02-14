@@ -102,7 +102,7 @@ CCLCxPeerPos::Data::Data(
     Proposal&& proposal)
     : publicKey_{publicKey}
     , signature_{signature}
-    , supression_{suppress}
+    , suppression_{suppress}
     , proposal_{std::move(proposal)}
 {
 }
