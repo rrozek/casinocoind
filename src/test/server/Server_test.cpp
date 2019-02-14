@@ -74,7 +74,7 @@ public:
         beast::unit_test::suite& suite_;
 
     public:
-        TestSink (beast::unit_test::suite& suite)
+        explicit TestSink (beast::unit_test::suite& suite)
             : Sink (beast::severities::kWarning, false)
             , suite_ (suite)
         {
@@ -398,7 +398,7 @@ public:
         std::string& result_;
 
     public:
-        CaptureLogs(std::string& result)
+        explicit CaptureLogs(std::string& result)
             : Logs (beast::severities::kInfo)
             , result_(result)
         {

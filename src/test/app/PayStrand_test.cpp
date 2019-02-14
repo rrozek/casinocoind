@@ -370,7 +370,7 @@ struct ExistingElementPool
         ExistingElementPool& p_;
         ResetState state_;
 
-        StateGuard(ExistingElementPool& p) : p_{p}, state_{p.getResetState()}
+        explicit StateGuard(ExistingElementPool& p) : p_{p}, state_{p.getResetState()}
         {
         }
         ~StateGuard()

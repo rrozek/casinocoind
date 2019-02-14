@@ -37,7 +37,7 @@ private:
     class CerrRedirect
     {
     public:
-        CerrRedirect (std::stringstream& sStream)
+        explicit CerrRedirect (std::stringstream& sStream)
         : old_ (std::cerr.rdbuf (sStream.rdbuf()))
         { }
 
@@ -54,7 +54,7 @@ private:
     class ThreadNameGuard
     {
     public:
-        ThreadNameGuard (std::string const& newName)
+        explicit ThreadNameGuard (std::string const& newName)
         : old_ (beast::getCurrentThreadName ())
         {
             beast::setCurrentThreadName (newName);
