@@ -118,9 +118,9 @@ public:
     StatsDEventImpl (std::string const& name,
         std::shared_ptr <StatsDCollectorImp> const& impl);
 
-    ~StatsDEventImpl () override;
+    ~StatsDEventImpl () = default;;
 
-    void notify (EventImpl::value_type const& alue) override;
+    void notify (EventImpl::value_type const& value) override;
 
     void do_notify (EventImpl::value_type const& value);
     void do_process ();
@@ -529,9 +529,7 @@ StatsDEventImpl::StatsDEventImpl (std::string const& name,
 {
 }
 
-StatsDEventImpl::~StatsDEventImpl ()
-{
-}
+
 
 void StatsDEventImpl::notify (EventImpl::value_type const& value)
 {

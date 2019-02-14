@@ -46,9 +46,9 @@ public:
     void
     missing_backend();
 
-    ManagerImp();
+    ManagerImp() = default;
 
-    ~ManagerImp();
+    ~ManagerImp() = default;
 
     Factory*
     find (std::string const& name) override;

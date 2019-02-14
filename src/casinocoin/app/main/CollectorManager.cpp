@@ -59,9 +59,7 @@ public:
         m_groups = beast::insight::make_Groups (m_collector);
     }
 
-    ~CollectorManagerImp () override
-    {
-    }
+    ~CollectorManagerImp() = default;
 
     beast::insight::Collector::ptr const& collector () override
     {
@@ -76,9 +74,7 @@ public:
 
 //------------------------------------------------------------------------------
 
-CollectorManager::~CollectorManager ()
-{
-}
+CollectorManager::~CollectorManager() = default;
 
 std::unique_ptr<CollectorManager> CollectorManager::New(Section const& params,
     beast::Journal journal)

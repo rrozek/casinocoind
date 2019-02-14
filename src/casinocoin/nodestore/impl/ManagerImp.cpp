@@ -46,13 +46,6 @@ ManagerImp::missing_backend()
         );
 }
 
-ManagerImp::ManagerImp()
-{
-}
-
-ManagerImp::~ManagerImp()
-{
-}
 
 std::unique_ptr <Backend>
 ManagerImp::make_Backend (

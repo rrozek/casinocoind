@@ -22,9 +22,7 @@
 namespace beast {
 namespace insight {
 
-Collector::~Collector ()
-{
-}
+Collector::~Collector () = default;
 
 }
 }

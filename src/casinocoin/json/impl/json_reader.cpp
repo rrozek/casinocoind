@@ -79,9 +79,7 @@ codePointToUTF8 (unsigned int cp)
 // Class Reader
 // //////////////////////////////////////////////////////////////////
 
-Reader::Reader ()
-{
-}
+
 
 
 bool
