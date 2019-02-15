@@ -102,7 +102,7 @@ public:
 protected:
     std::mutex mutex_;
 
-    std::map<ObjectHash,ConfigEntry> entryList_;
+    std::map<ObjectHash,ConfigObjectEntry> entryList_;
 
     // The amount of support that an amendment must receive
     // 0 = 0% and 256 = 100%
@@ -145,7 +145,7 @@ void VotableConfigurationImpl::doValidation(std::shared_ptr<const ReadView> cons
     for (auto const& it : entryList_)
     {
         JLOG (j_.debug())
-            << "VotableConfigurationImpl::doValidation configID: " << it.second.entryID
+            << "VotableConfigurationImpl::doValidation configID: " << it.second.getId()
             << " hash: " << to_string(it.first);
         ourConfig.push_back(it.first);
     }
@@ -167,8 +167,7 @@ void VotableConfigurationImpl::doVoting(std::shared_ptr<const ReadView> const& l
 
     auto configVote = std::make_unique<ObjectHashSet>();
 
-    // based on other votes, conclude what in our POV elibigible nodes should look like
-    for ( auto const& singleValidation : parentValidations)
+    for (auto const& singleValidation : parentValidations)
     {
         if (!(singleValidation.second->isTrusted()))
             continue;
@@ -194,21 +193,21 @@ void VotableConfigurationImpl::doVoting(std::shared_ptr<const ReadView> const& l
     {
         if (!(configVote->votes (it.first) >= configVote->mThreshold))
         {
-            JLOG (j_.info()) << "configId: " << it.second.entryID << " hash: " << to_string(it.first) << " didn't reach majority";
+            JLOG (j_.info()) << "configId: " << it.second.getId() << " hash: " << to_string(it.first) << " didn't reach majority";
             continue;
         }
 
-        JLOG (j_.warn()) << "We are voting for: configId: " << it.second.entryID << " hash: " << to_string(it.first);
+        JLOG (j_.warn()) << "We are voting for: configId: " << it.second.getId() << " hash: " << to_string(it.first);
 
-        //jrojek TODO: missing -> cast entryData (union) to blob and fill the tx in
         Blob configData;
+        it.second.toBytes(configData);
         STTx configVoteTx (ttCONFIG,
             [seq, &it, configData](auto& obj)
             {
                 obj[sfAccount] = AccountID();
                 obj[sfLedgerSequence] = seq;
-                obj[sfConfigID] = it.second.entryID;
-                obj[sfConfigType] = it.second.entryType;
+                obj[sfConfigID] = it.second.getId();
+                obj[sfConfigType] = it.second.getType();
                 obj.setFieldVL(sfConfigData, configData);
             });
 
@@ -242,32 +241,28 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
 
     if (jvVotableConfig.isObject())
     {
-        ConfigEntry entry(jvVotableConfig);
+        ConfigObjectEntry entry;
+        entry.fromJson(jvVotableConfig);
 
-        Slice objSlice;
-        Json::stream(jvVotableConfig,
-            [&objSlice](auto const dataPointer, auto const dataSize)
-            {
-                objSlice = Slice(dataPointer, dataSize);
-            });
-        ObjectHash hash = sha512Half(objSlice);
-        JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition added " << entry.entryID << " with hash: " << to_string(hash);
+        Blob objData;
+        entry.toBytes(objData);
+        ObjectHash hash = sha512Half(makeSlice(objData));
+
+        JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition added " << entry.getId() << " with hash: " << to_string(hash);
         entryList_[hash] = entry;
     }
     else if (jvVotableConfig.isArray())
     {
         for (Json::UInt index = 0; index < jvVotableConfig.size(); index++)
         {
-            ConfigEntry anEntry(jvVotableConfig[index]);
+            ConfigObjectEntry anEntry;
+            anEntry.fromJson(jvVotableConfig[index]);
 
-            Slice objSlice;
-            Json::stream(jvVotableConfig[index],
-                [&objSlice](auto const dataPointer, auto const dataSize)
-                {
-                    objSlice = Slice(dataPointer, dataSize);
-                });
-            ObjectHash hash = sha512Half(objSlice);
-            JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition added " << anEntry.entryID << " with hash: " << to_string(hash);
+            Blob objData;
+            anEntry.toBytes(objData);
+            ObjectHash hash = sha512Half(makeSlice(objData));
+
+            JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition added " << anEntry.getId() << " with hash: " << to_string(hash);
             entryList_[hash] = anEntry;
         }
     }
