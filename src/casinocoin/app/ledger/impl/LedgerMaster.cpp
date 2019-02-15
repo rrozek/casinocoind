@@ -1289,7 +1289,7 @@ std::string
 LedgerMaster::getCompleteLedgers ()
 {
     ScopedLockType sl (mCompleteLock);
-    return mCompleteLedgers.toString ();
+    return mCompleteLedgers.toSingleRangeString ();
 }
 
 void LedgerMaster::addLostLedgerToRangeSet (std::uint32_t seq)
