@@ -25,6 +25,9 @@
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/protocol/PublicKey.h>
 
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+#define OPENSSL_OLD 1
+#endif
 namespace casinocoin {
 
 // ECIES functions. These throw on failure

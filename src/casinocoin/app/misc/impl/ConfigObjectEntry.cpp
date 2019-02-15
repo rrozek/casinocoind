@@ -157,7 +157,7 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
         return false;
 
     mId = data.get(sfConfigID.getName(), Json::nullValue).asInt();
-    mType = typeMap.left[data.get(sfConfigType.getName(),Json::nullValue).asString()];
+    mType = typeMap.left.at(data.get(sfConfigType.getName(),Json::nullValue).asString());
 
     switch(mType)
     {
@@ -231,7 +231,7 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
 bool ConfigObjectEntry::toJson(Json::Value& result) const
 {
     result[sfConfigID.getName()] = mId;
-    result[sfConfigType.getName()] = typeMap.right[sfConfigType.getName()];
+    result[sfConfigType.getName()] = typeMap.right.at(mType);
 
     Json::Value jvData(Json::arrayValue);
     switch(mType)
@@ -275,7 +275,7 @@ bool ConfigObjectEntry::toJson(Json::Value& result) const
 
 bool ConfigObjectEntry::fromBytes(Blob const& data)
 {
-    Json::Value jvData(data.data(), data.size());
+    Json::Value jvData(reinterpret_cast<const char*>(data.data()), reinterpret_cast<const char*>(data.data()) + data.size());
     return fromJson(jvData);
 }
 
@@ -287,8 +287,8 @@ bool ConfigObjectEntry::toBytes(Blob& result) const
     Json::stream(data,
         [&result](auto const dataPointer, auto const dataSize)
         {
-            Slice sli(dataPointer, dataSize);
-            result = Blob(sli.data(), sli.size());
+            Slice slice(dataPointer, dataSize);
+            result = Blob(slice.data(), slice.data() + slice.size());
         });
     return true;
 }

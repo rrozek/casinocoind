@@ -88,7 +88,7 @@ public:
     bimap_string_type typeMap;
     static bimap_string_type initializeTypeMap();
 
-    union Field
+    struct Field
     {
         std::vector<AccountID> kycAccountList;
         std::vector<PublicKey> msgDestPubKey;
