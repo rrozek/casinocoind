@@ -242,12 +242,21 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
     if (jvVotableConfig.isObject())
     {
         ConfigObjectEntry entry;
-        entry.fromJson(jvVotableConfig);
+        if (!entry.fromJson(jvVotableConfig))
+        {
+            JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition failed to parse json, return";
+            return;
+        }
 
         Blob objData;
-        entry.toBytes(objData);
+        if (!entry.toBytes(objData))
+        {
+            JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition failed to convert json to binary, continue";
+            return;
+        }
         ObjectHash hash = sha512Half(makeSlice(objData));
 
+        JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition json: " << jvVotableConfig;
         JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition added " << entry.getId() << " with hash: " << to_string(hash);
         entryList_[hash] = entry;
     }
@@ -256,12 +265,20 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
         for (Json::UInt index = 0; index < jvVotableConfig.size(); index++)
         {
             ConfigObjectEntry anEntry;
-            anEntry.fromJson(jvVotableConfig[index]);
+            if (!anEntry.fromJson(jvVotableConfig[index]))
+            {
+                JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition failed to parse json, continue";
+                continue;
+            }
 
             Blob objData;
-            anEntry.toBytes(objData);
+            if (!anEntry.toBytes(objData))
+            {
+                JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition failed to convert json to binary, continue";
+                continue;
+            }
             ObjectHash hash = sha512Half(makeSlice(objData));
-
+            JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition json: " << jvVotableConfig[index];
             JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition added " << anEntry.getId() << " with hash: " << to_string(hash);
             entryList_[hash] = anEntry;
         }

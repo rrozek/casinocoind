@@ -305,7 +305,14 @@ Change::applyConfiguration()
         entry.emplace_back(STBlob(sfConfigData, txConfigData.data(), txConfigData.size()));
     }
 
+    if (ledgerConfigArray.empty())
+        configObject->makeFieldAbsent(sfConfiguration);
+    else
+        configObject->setFieldArray(sfConfiguration, ledgerConfigArray);
+    JLOG(j_.info()) << "applyConfiguration: update view";
+
     view().update(configObject);
+    JLOG(j_.info()) << "applyConfiguration: tesSUCCESS";
     return tesSUCCESS;
 }
 

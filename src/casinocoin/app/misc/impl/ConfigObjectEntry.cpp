@@ -284,12 +284,9 @@ bool ConfigObjectEntry::toBytes(Blob& result) const
     Json::Value data(Json::objectValue);
     if (!toJson(data))
         return false;
-    Json::stream(data,
-        [&result](auto const dataPointer, auto const dataSize)
-        {
-            Slice slice(dataPointer, dataSize);
-            result = Blob(slice.data(), slice.data() + slice.size());
-        });
+    Json::FastWriter writer;
+    std::string stringified = writer.write(data);
+    result = Blob(stringified.begin(), stringified.end());
     return true;
 }
 
