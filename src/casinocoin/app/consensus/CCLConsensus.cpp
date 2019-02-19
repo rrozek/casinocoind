@@ -36,7 +36,7 @@
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/app/misc/ValidatorList.h>
-#include <casinocoin/app/misc/VotableConfiguration.h>
+#include <casinocoin/app/misc/configuration/VotableConfiguration.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/make_lock.h>
 #include <casinocoin/beast/core/LexicalCast.h>

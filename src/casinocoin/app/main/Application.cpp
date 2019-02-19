@@ -47,7 +47,7 @@
 #include <casinocoin/app/misc/SHAMapStore.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/app/misc/ValidatorSite.h>
-#include <casinocoin/app/misc/VotableConfiguration.h>
+#include <casinocoin/app/misc/configuration/VotableConfiguration.h>
 #include <casinocoin/app/paths/PathRequests.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/ResolverAsio.h>

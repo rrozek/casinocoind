@@ -23,7 +23,7 @@
 
 #include <BeastConfig.h>
 #include <casinocoin/app/main/Application.h>
-#include <casinocoin/app/misc/VotableConfiguration.h>
+#include <casinocoin/app/misc/configuration/VotableConfiguration.h>
 #include <casinocoin/app/misc/Validations.h>
 #include <casinocoin/core/DatabaseCon.h>
 #include <casinocoin/core/ConfigSections.h>
@@ -31,7 +31,6 @@
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/Feature.h>
-#include <casinocoin/app/misc/FeeVote.h>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 #include <algorithm>

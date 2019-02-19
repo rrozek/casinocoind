@@ -28,7 +28,7 @@
 
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/app/misc/Validations.h>
-#include <casinocoin/app/misc/ConfigObjectEntry.h>
+#include <casinocoin/app/misc/configuration/ConfigObjectEntry.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/json/json_value.h>

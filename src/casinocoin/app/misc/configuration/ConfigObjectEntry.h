@@ -37,39 +37,22 @@
 
 #include <boost/bimap.hpp>
 #include <boost/assign/list_of.hpp>
-/** Fee schedule to vote for.
-    During voting ledgers, the FeeVote logic will try to move towards
-    these values when injecting fee-setting transactions.
-    A default-constructed Setup contains recommended values.
-*/
 
 namespace casinocoin
 {
 
-struct TokenDescription
+struct TokenDescriptor;
+struct KYC_SignerDescriptor;
+struct Message_PubKeyDescriptor;
 
+struct DataDescriptorInterface
 {
-    enum TokenFlags
-    {
-        KYCRequired = 0x0001,
-        AuthRequired = 0x0002,
-        FeesRequired = 0x0004
-    };
+    DataDescriptorInterface() {}
+    DataDescriptorInterface(const TokenDescriptor& other) {}
+    DataDescriptorInterface& operator=(const TokenDescriptor& /*other*/) { return *this; }
 
-    TokenDescription();
-    TokenDescription(const TokenDescription& other);
-    TokenDescription& operator=(const TokenDescription& other);
-
-    bool fromJson(Json::Value const& data);
-    bool toJson(Json::Value& result) const;
-
-    std::string fullName;
-    STAmount totalSupply;
-    TokenFlags flags;
-    std::string website;
-    std::string contactEmail;
-    std::string iconURL;
-    std::string apiEndpoint;
+    virtual bool fromJson(Json::Value const& data) = 0;
+    virtual bool toJson(Json::Value& result) const = 0;
 };
 
 class ConfigObjectEntry
@@ -92,7 +75,7 @@ public:
     {
         std::vector<AccountID> kycAccountList;
         std::vector<PublicKey> msgDestPubKey;
-        std::vector<TokenDescription> tokenList;
+        std::vector<TokenDescriptor> tokenList;
     };
 
     // helper methods
@@ -122,7 +105,56 @@ private:
 
     uint32_t mId;
     Type mType;
-    Field mData;
+    std::vector<DataDescriptorInterface*> mData;
+};
+
+struct TokenDescriptor : public DataDescriptorInterface
+{
+    enum TokenFlags
+    {
+        KYCRequired = 0x0001,
+        AuthRequired = 0x0002,
+        FeesRequired = 0x0004
+    };
+
+    TokenDescriptor();
+    TokenDescriptor(const TokenDescriptor& other);
+    TokenDescriptor& operator=(const TokenDescriptor& other);
+
+    bool fromJson(Json::Value const& data) override;
+    bool toJson(Json::Value& result) const override;
+
+    std::string fullName;
+    STAmount totalSupply;
+    TokenFlags flags;
+    std::string website;
+    std::string contactEmail;
+    std::string iconURL;
+    std::string apiEndpoint;
+};
+
+struct KYC_SignerDescriptor : public DataDescriptorInterface
+{
+    KYC_SignerDescriptor();
+    KYC_SignerDescriptor(const KYC_SignerDescriptor& other);
+    KYC_SignerDescriptor& operator=(const KYC_SignerDescriptor& other);
+
+    bool fromJson(Json::Value const& data) override;
+    bool toJson(Json::Value& result) const override;
+
+    AccountID kycSigner;
+};
+
+struct Message_PubKeyDescriptor : public DataDescriptorInterface
+{
+    Message_PubKeyDescriptor();
+    Message_PubKeyDescriptor(const Message_PubKeyDescriptor& other);
+    Message_PubKeyDescriptor& operator=(const Message_PubKeyDescriptor& other);
+
+    bool fromJson(Json::Value const& data) override;
+    bool toJson(Json::Value& result) const override;
+
+    PublicKey pubKey;
 };
 
 } // casinocoin
