@@ -22,6 +22,7 @@
 #endif
 
 #include <casinocoin/beast/net/IPEndpoint.h>
+#include <boost/algorithm/string.hpp>
 
 namespace beast {
 namespace IP {
@@ -39,7 +40,7 @@ Endpoint::Endpoint (Address const& addr, Port port)
 
 std::pair <Endpoint, bool> Endpoint::from_string_checked (std::string const& s)
 {
-    std::stringstream is (s);
+    std::stringstream is (boost::trim_copy(s));
     Endpoint endpoint;
     is >> endpoint;
     if (! is.fail() && is.rdbuf()->in_avail() == 0)
