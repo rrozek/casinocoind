@@ -27,6 +27,7 @@
 #define CASINOCOIN_PEERFINDER_LIVECACHE_H_INCLUDED
 
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/random.h>
 #include <casinocoin/peerfinder/PeerfinderManager.h>
 #include <casinocoin/peerfinder/impl/iosformat.h>
 #include <casinocoin/peerfinder/impl/Tuning.h>
@@ -35,6 +36,7 @@
 #include <boost/intrusive/list.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
+#include <algorithm>
 namespace casinocoin {
 namespace PeerFinder {
 
@@ -488,7 +490,7 @@ Livecache <Allocator>::hops_t::shuffle()
         v.reserve (list.size());
         std::copy (list.begin(), list.end(),
             std::back_inserter (v));
-        std::random_shuffle (v.begin(), v.end());
+        std::shuffle (v.begin(), v.end(), default_prng());
         list.clear();
         for (auto& e : v)
             list.push_back (e);

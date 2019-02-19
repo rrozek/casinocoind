@@ -27,6 +27,7 @@
 #define CASINOCOIN_PEERFINDER_LOGIC_H_INCLUDED
 
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/random.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/beast/container/aged_container_utility.h>
 #include <casinocoin/beast/net/IPAddressConversion.h>
@@ -41,6 +42,7 @@
 #include <casinocoin/peerfinder/impl/Source.h>
 #include <casinocoin/peerfinder/impl/Store.h>
 #include <casinocoin/peerfinder/impl/iosformat.h>
+#include <algorithm>
 #include <functional>
 #include <map>
 #include <memory>
@@ -596,7 +598,7 @@ public:
                         if (value.second->state() == Slot::active)
                             slots.emplace_back (value.second);
                     });
-                std::random_shuffle (slots.begin(), slots.end());
+                std::shuffle (slots.begin(), slots.end(), default_prng());
 
                 // build target vector
                 targets.reserve (slots.size());
