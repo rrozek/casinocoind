@@ -21,7 +21,7 @@
 #include <casinocoin/basics/Buffer.h>
 #include <casinocoin/beast/unit_test.h>
 #include <cstdint>
-
+#include <type_traits>
 namespace casinocoin {
 namespace test {
 
@@ -109,6 +109,9 @@ struct Buffer_test : beast::unit_test::suite
         // Check move constructor & move assignments:
         {
             testcase ("Move Construction / Assignment");
+ 
+            static_assert(std::is_nothrow_move_constructible<Buffer>::value, "");
+            static_assert(std::is_nothrow_move_assignable<Buffer>::value, "");
 
             { // Move-construct from empty buf
                 Buffer x;
@@ -272,3 +275,4 @@ BEAST_DEFINE_TESTSUITE(Buffer, ripple_basics, ripple);
 
 }  // namespace test
 }  // namespace casinocoin
+

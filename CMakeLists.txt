@@ -224,6 +224,7 @@ beast_test_unity2.cpp
 conditions_test_unity.cpp
 consensus_test_unity.cpp
 core_test_unity.cpp
+crypto_test_unity.cpp
 json_test_unity.cpp
 ledger_test_unity.cpp
 overlay_test_unity.cpp
@@ -279,8 +280,8 @@ foreach(curdir
         app
         basics
         conditions
-        crypto
         consensus
+        crypto
         json
         ledger
         legacy
@@ -316,6 +317,7 @@ foreach(curdir
         conditions
         consensus
         core
+        crypto
         csf
         json
         jtx

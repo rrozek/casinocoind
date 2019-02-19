@@ -88,7 +88,7 @@ public:
     /** Move-construct.
         The other buffer is reset.
     */
-    Buffer (Buffer&& other)
+    Buffer (Buffer&& other) noexcept
         : p_ (std::move(other.p_))
         , size_ (other.size_)
     {
@@ -98,7 +98,7 @@ public:
     /** Move-assign.
         The other buffer is reset.
     */
-    Buffer& operator= (Buffer&& other)
+    Buffer& operator= (Buffer&& other) noexcept
     {
         if (this != &other)
         {
