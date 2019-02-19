@@ -395,6 +395,16 @@ private:
         return jvRequest;
     }
 
+    Json::Value parseConfigInfo (Json::Value const& jvParams)
+    {
+        Json::Value     jvRequest (Json::objectValue);
+
+        if (jvParams == 1 && !jvParseLedger (jvRequest, jvParams[0u].asString ()))
+            return rpcError (rpcLGR_IDX_MALFORMED);
+
+        return jvRequest;
+    }
+
     // connect <ip> [port]
     Json::Value parseConnect (Json::Value const& jvParams)
     {
@@ -1085,6 +1095,7 @@ public:
             {   "can_delete",           &RPCParser::parseCanDelete,             0,  1   },
             {   "channel_authorize",    &RPCParser::parseChannelAuthorize,      3,  3   },
             {   "channel_verify",       &RPCParser::parseChannelVerify,         4,  4   },
+            {   "config_info",          &RPCParser::parseConfigInfo,            0,  1   },
             {   "connect",              &RPCParser::parseConnect,               1,  2   },
             {   "consensus_info",       &RPCParser::parseAsIs,                  0,  0   },
             {   "decrypt_msg",          &RPCParser::parseDecryptMsg,            2,  2   },

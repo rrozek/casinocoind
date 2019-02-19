@@ -139,6 +139,7 @@ void printHelp (const po::options_description& desc)
            "     can_delete [<ledgerid>|<ledgerhash>|now|always|never]\n"
            "     channel_authorize <private_key> <channel_id> <drops>\n"
            "     channel_verify <public_key> <channel_id> <drops> <signature>\n"
+           "     config_info [<ledger>]"
            "     connect <ip> [<port>]\n"
            "     consensus_info\n"
            "     decrypt_msg <secret> <message>\n"

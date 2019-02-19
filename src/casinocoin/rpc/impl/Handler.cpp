@@ -119,6 +119,7 @@ Handler handlerArray[] {
     {   "channel_authorize",    byRef (&doChannelAuthorize),    Role::USER,  NO_CONDITION               },
     {   "channel_verify",       byRef (&doChannelVerify),       Role::USER,  NO_CONDITION               },
     {   "casinocoin_path_find", byRef (&doCasinocoinPathFind),  Role::USER,  NO_CONDITION               },
+    {   "config_info",          byRef (&doConfigInfo),          Role::USER,  NO_CONDITION               },
     {   "connect",              byRef (&doConnect),             Role::ADMIN, NO_CONDITION               },
     {   "consensus_info",       byRef (&doConsensusInfo),       Role::ADMIN, NO_CONDITION               },
     {   "decrypt_msg",          byRef (&doDecryptMsg),          Role::USER,  NO_CONDITION               },
