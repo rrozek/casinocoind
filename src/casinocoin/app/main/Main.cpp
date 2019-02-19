@@ -737,9 +737,6 @@ int main (int argc, char** argv)
         "GCC version 5.1.0 or later is required to compile casinocoind.");
 #endif
 
-    static_assert (BOOST_VERSION >= 105700,
-        "Boost version 1.57 or later is required to compile casinocoind");
-
     //
     // These debug heap calls do nothing in release or non Visual Studio builds.
     //
