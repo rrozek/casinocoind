@@ -34,6 +34,16 @@ namespace casinocoin {
 class Application;
 class STTx;
 
+/** Return true if the transaction can claim a fee (tec),
+    and the `ApplyFlags` do not allow soft failures.
+ */
+inline
+bool
+isTecClaimHardFail(TER ter, ApplyFlags flags)
+{
+    return isTecClaim(ter) && !(flags & tapRETRY);
+}
+
 /** Describes the results of the `preflight` check
 
     @note All members are const to make it more difficult
@@ -104,7 +114,7 @@ public:
         , j(ctx_.j)
         , ter(ter_)
         , likelyToClaimFee(ter == tesSUCCESS
-            || isTecClaim(ter))
+            || isTecClaimHardFail(ter, flags))
     {
     }
 

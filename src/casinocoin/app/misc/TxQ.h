@@ -341,7 +341,7 @@ private:
                     PreflightResult const& pfresult);
 
         std::pair<TER, bool>
-        apply(Application& app, OpenView& view);
+        apply(Application& app, OpenView& view, beast::Journal j);
     };
 
     class GreaterFee
