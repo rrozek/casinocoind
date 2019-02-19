@@ -25,15 +25,17 @@
 
  
 #include <casinocoin/app/tx/impl/SetSignerList.h>
+
 #include <casinocoin/app/ledger/Ledger.h>
-#include <casinocoin/protocol/Feature.h>
-#include <casinocoin/protocol/STObject.h>
-#include <casinocoin/protocol/STArray.h>
-#include <casinocoin/protocol/STTx.h>
-#include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/basics/Log.h>
-#include <cstdint>
+#include <casinocoin/ledger/ApplyView.h>
+#include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/Indexes.h>
+#include <casinocoin/protocol/STArray.h>
+#include <casinocoin/protocol/STObject.h>
+#include <casinocoin/protocol/STTx.h>
 #include <algorithm>
+#include <cstdint>
 
 namespace casinocoin {
 
@@ -294,17 +296,19 @@ SetSignerList::removeSignersFromLedger (Keylet const& accountKeylet,
     // Remove the node from the account directory.
     auto const hint = (*signers)[sfOwnerNode];
 
-    auto viewJ = ctx_.app.journal ("View");
-    TER const result  = dirDelete(ctx_.view(), false, hint,
-        ownerDirKeylet, signerListKeylet.key, false, (hint == 0), viewJ);
+    if (! ctx_.view().dirRemove(
+            ownerDirKeylet, hint, signerListKeylet.key, false))
+    {
+        return tefBAD_LEDGER;
+    }
 
-    if (result == tesSUCCESS)
-        adjustOwnerCount(view(),
-            view().peek(accountKeylet), removeFromOwnerCount, viewJ);
+    auto viewJ = ctx_.app.journal("View");
+    adjustOwnerCount(
+        view(), view().peek(accountKeylet), removeFromOwnerCount, viewJ);
 
     ctx_.view().erase (signers);
 
-    return result;
+    return tesSUCCESS;
 }
 
 void

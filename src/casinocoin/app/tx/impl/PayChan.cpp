@@ -25,18 +25,20 @@
 
  
 #include <casinocoin/app/tx/impl/PayChan.h>
-
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/ledger/ApplyView.h>
+#include <casinocoin/ledger/View.h>
 #include <casinocoin/protocol/digest.h>
-#include <casinocoin/protocol/st.h>
+
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/PayChan.h>
 #include <casinocoin/protocol/PublicKey.h>
+#include <casinocoin/protocol/st.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/CSCAmount.h>
-#include <casinocoin/ledger/View.h>
+
 
 namespace casinocoin {
 
@@ -140,10 +142,10 @@ closeChannel (
     // Remove PayChan from owner directory
     {
         auto const page = (*slep)[sfOwnerNode];
-        TER const ter = dirDelete (view, true, page, keylet::ownerDir (src),
-            key, false, page == 0, j);
-        if (!isTesSuccess (ter))
-            return ter;
+        if (! view.dirRemove(keylet::ownerDir(src), page, key, true))
+        {
+            return tefBAD_LEDGER;
+        }
     }
 
     // Transfer amount back to owner, decrement owner count

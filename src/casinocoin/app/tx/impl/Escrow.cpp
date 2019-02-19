@@ -30,13 +30,14 @@
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/conditions/Condition.h>
 #include <casinocoin/conditions/Fulfillment.h>
+#include <casinocoin/ledger/ApplyView.h>
+#include <casinocoin/ledger/View.h>
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/protocol/st.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/CSCAmount.h>
-#include <casinocoin/ledger/View.h>
 
 // During an EscrowFinish, the transaction must specify both
 // a condition and a fulfillment. We track whether that
@@ -475,21 +476,21 @@ EscrowFinish::doApply()
     // Remove escrow from owner directory
     {
         auto const page = (*slep)[sfOwnerNode];
-        TER const ter = dirDelete(ctx_.view(), true,
-            page, keylet::ownerDir(account),
-                k.key, false, page == 0, ctx_.app.journal ("View"));
-        if (! isTesSuccess(ter))
-            return ter;
+        if (! ctx_.view().dirRemove(
+                keylet::ownerDir(account), page, k.key, true))
+        {
+            return tefBAD_LEDGER;
+        }
     }
 
     // Remove escrow from recipient's owner directory, if present.
     if (ctx_.view ().rules().enabled(fix1523) && (*slep)[~sfDestinationNode])
     {
-        TER const ter = dirDelete(ctx_.view(), true,
-            (*slep)[sfDestinationNode], keylet::ownerDir(destID),
-            k.key, false, false, ctx_.app.journal ("View"));
-        if (! isTesSuccess(ter))
-            return ter;
+        auto const page = (*slep)[sfDestinationNode];
+        if (! ctx_.view().dirRemove(keylet::ownerDir(destID), page, k.key, true))
+        {
+            return tefBAD_LEDGER;
+        }
     }
 
     // Transfer amount to destination
@@ -560,21 +561,22 @@ EscrowCancel::doApply()
     // Remove escrow from owner directory
     {
         auto const page = (*slep)[sfOwnerNode];
-        TER const ter = dirDelete(ctx_.view(), true,
-            page, keylet::ownerDir(account),
-                k.key, false, page == 0, ctx_.app.journal ("View"));
-        if (! isTesSuccess(ter))
-            return ter;
+        if (! ctx_.view().dirRemove(
+                keylet::ownerDir(account), page, k.key, true))
+        {
+            return tefBAD_LEDGER;
+        }
     }
 
     // Remove escrow from recipient's owner directory, if present.
     if (ctx_.view ().rules().enabled(fix1523) && (*slep)[~sfDestinationNode])
     {
-        TER const ter = dirDelete(ctx_.view(), true,
-            (*slep)[sfDestinationNode], keylet::ownerDir((*slep)[sfDestination]),
-            k.key, false, false, ctx_.app.journal ("View"));
-        if (! isTesSuccess(ter))
-            return ter;
+        auto const page = (*slep)[sfDestinationNode];
+        if (! ctx_.view().dirRemove(
+                keylet::ownerDir((*slep)[sfDestination]), page, k.key, true))
+        {
+            return tefBAD_LEDGER;
+        }
     }
 
     // Transfer amount back to owner, decrement owner count

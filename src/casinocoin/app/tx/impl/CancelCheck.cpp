@@ -17,8 +17,10 @@
 
  
 #include <casinocoin/app/tx/impl/CancelCheck.h>
+
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/ledger/ApplyView.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/STAccount.h>
@@ -103,22 +105,18 @@ CancelCheck::doApply ()
     if (srcId != dstId)
     {
         std::uint64_t const page {(*sleCheck)[sfDestinationNode]};
-        TER const ter {dirDelete (view(), true, page,
-            keylet::ownerDir (dstId), checkId, false, false, viewJ)};
-        if (! isTesSuccess (ter))
+        if (! view().dirRemove (keylet::ownerDir(dstId), page, checkId, true))
         {
             JLOG(j_.warn()) << "Unable to delete check from destination.";
-            return ter;
+            return tefBAD_LEDGER;
         }
     }
     {
         std::uint64_t const page {(*sleCheck)[sfOwnerNode]};
-        TER const ter {dirDelete (view(), true, page,
-            keylet::ownerDir (srcId), checkId, false, false, viewJ)};
-        if (! isTesSuccess (ter))
+        if (! view().dirRemove (keylet::ownerDir(srcId), page, checkId, true))
         {
             JLOG(j_.warn()) << "Unable to delete check from owner.";
-            return ter;
+            return tefBAD_LEDGER;
         }
     }
 
