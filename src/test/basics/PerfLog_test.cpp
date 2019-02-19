@@ -16,6 +16,7 @@
 //==============================================================================
 
 #include <casinocoin/basics/PerfLog.h>
+#include <casinocoin/basics/random.h>
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/protocol/JsonFields.h>
@@ -46,9 +47,6 @@ class PerfLog_test : public beast::unit_test::suite
     // coverage in unit tests.
     test::jtx::Env env_ {*this};
     beast::Journal j_ {env_.app().journal ("PerfLog_test")};
-
-    // Use this to make calls to random_shuffle() less predictable.
-    std::default_random_engine shuffler_ {std::random_device{}()};
 
     // A PerfLog needs a Parent that is a Stoppable and a function to
     // call if it wants to shutdown the system.  This class provides both.
@@ -369,7 +367,7 @@ public:
         // Get the all the labels we can use for RPC interfaces without
         // causing an assert.
         std::vector<char const*> labels {casinocoin::RPC::getHandlerNames()};
-        std::shuffle (labels.begin(), labels.end(), shuffler_);
+        std::shuffle (labels.begin(), labels.end(), default_prng());
 
         // Get two IDs to associate with each label.  Errors tend to happen at
         // boundaries, so we pick IDs starting from zero and ending at
@@ -382,7 +380,7 @@ public:
         std::generate_n (std::back_inserter (ids), labels.size(),
             [i = std::numeric_limits<std::uint64_t>::max()]()
             mutable { return i--; });
-        std::shuffle (ids.begin(), ids.end(), shuffler_);
+        std::shuffle (ids.begin(), ids.end(), default_prng());
 
         // Start all of the RPC commands twice to show they can all be tracked
         // simultaneously.
@@ -590,7 +588,7 @@ public:
                 jobs.emplace_back (job.first, job.second.name());
             }
         }
-        std::shuffle (jobs.begin(), jobs.end(), shuffler_);
+        std::shuffle (jobs.begin(), jobs.end(), default_prng());
 
         // Walk through all of the jobs, enqueuing every job once.  Check
         // the jobs data with every addition.
@@ -925,7 +923,7 @@ public:
 
             std::uniform_int_distribution<> dis(0, jobTypes.size() - 1);
             auto iter {jobTypes.begin()};
-            std::advance (iter, dis (shuffler_));
+            std::advance (iter, dis (default_prng()));
 
             jobType = iter->second.type();
             jobTypeName = iter->second.name();
