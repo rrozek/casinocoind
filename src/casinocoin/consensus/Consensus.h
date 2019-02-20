@@ -839,6 +839,7 @@ Consensus<Adaptor>::simulate(
     NetClock::time_point const& now,
     boost::optional<std::chrono::milliseconds> consensusDelay)
 {
+    using namespace std::chrono_literals;
     JLOG(j_.info()) << "Simulating consensus";
     now_ = now;
     closeLedger();

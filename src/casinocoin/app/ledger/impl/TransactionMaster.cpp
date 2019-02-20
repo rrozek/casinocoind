@@ -35,7 +35,7 @@ namespace casinocoin {
 
 TransactionMaster::TransactionMaster (Application& app)
     : mApp (app)
-    , mCache ("TransactionCache", 65536, 30min, stopwatch(),
+    , mCache ("TransactionCache", 65536, std::chrono::minutes {30}, stopwatch(),
         mApp.journal("TaggedCache"))
 {
 }

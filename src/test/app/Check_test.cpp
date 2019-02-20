@@ -334,6 +334,7 @@ class Check_test : public beast::unit_test::suite
         // expected interaction between these optional fields; other than
         // the expiration, they are just plopped into the ledger.  So I'm
         // not looking at interactions.
+        using namespace std::chrono_literals;
         std::size_t const aliceCount {checksOnAccount (env, alice).size()};
         std::size_t const bobCount   {checksOnAccount (env,   bob).size()};
         env (check::create (alice, bob, USD(50)), expiration (env.now() + 1s));
@@ -539,6 +540,7 @@ class Check_test : public beast::unit_test::suite
             expiration (env.now()), ter (tecEXPIRED));
         env.close();
 
+        using namespace std::chrono_literals;
         env (check::create (alice, bob, USD(50)), expiration (env.now() + 1s));
         env.close();
 
@@ -1340,6 +1342,7 @@ class Check_test : public beast::unit_test::suite
         env (check::create (alice, bob, CSC(10)));
         env.close();
 
+        using namespace std::chrono_literals;
         uint256 const chkIdExp {getCheckIndex (alice, env.seq (alice))};
         env (check::create (alice, bob, CSC(10)), expiration (env.now() + 1s));
         env.close();
@@ -1614,6 +1617,7 @@ class Check_test : public beast::unit_test::suite
         env.close();
 
         // Three checks that expire in 10 minutes.
+        using namespace std::chrono_literals;
         uint256 const chkIdNotExp1 {getCheckIndex (alice, env.seq (alice))};
         env (check::create (alice, bob, CSC(10)), expiration (env.now()+600s));
         env.close();

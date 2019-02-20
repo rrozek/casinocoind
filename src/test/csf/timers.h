@@ -43,12 +43,12 @@ class HeartbeatTimer
 
 public:
     HeartbeatTimer(
-            Scheduler& sched,
-            SimDuration interval = std::chrono::seconds(60s),
-            std::ostream& out = std::cerr)
-            : scheduler_{sched}, interval_{interval}, out_{out},
-              startRealTime_{RealClock::now()},
-              startSimTime_{sched.now()}
+        Scheduler& sched,
+        SimDuration interval = std::chrono::seconds {60},
+        std::ostream& out = std::cerr)
+        : scheduler_{sched}, interval_{interval}, out_{out},
+          startRealTime_{RealClock::now()},
+          startSimTime_{sched.now()}
     {
     }
 
@@ -82,3 +82,4 @@ public:
 }  // namespace casinocoin
 
 #endif
+

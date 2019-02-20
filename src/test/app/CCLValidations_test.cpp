@@ -100,6 +100,7 @@ public:
         std::vector<std::shared_ptr<Ledger const>> altHistory(
             history.begin(), history.begin() + diverge);
         // advance clock to get new ledgers
+        using namespace std::chrono_literals;
         env.timeKeeper().set(env.timeKeeper().now() + 1200s);
         prev = altHistory.back();
         bool forceHash = true;

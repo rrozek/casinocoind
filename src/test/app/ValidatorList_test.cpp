@@ -409,6 +409,7 @@ private:
                 manifest1, expiredblob, expiredSig, version));
 
         // apply single list
+        using namespace std::chrono_literals;
         NetClock::time_point const expiration =
             env.timeKeeper().now() + 3600s;
         auto const blob1 = makeList (
@@ -765,6 +766,7 @@ private:
             // do not apply expired list
             auto const version = 1;
             auto const sequence = 1;
+            using namespace std::chrono_literals;
             NetClock::time_point const expiration =
                 env.timeKeeper().now() + 60s;
             auto const blob = makeList (
@@ -931,6 +933,7 @@ private:
 
                 auto const version = 1;
                 auto const sequence = 1;
+                using namespace std::chrono_literals;
                 NetClock::time_point const expiration =
                     env.timeKeeper().now() + 3600s;
                 auto const blob = makeList (
@@ -1013,6 +1016,7 @@ private:
                 NetClock::time_point expiration;
             };
 
+            using namespace std::chrono_literals;
             auto addPublishedList = [this, &env, &trustedKeys, &validators]()
             {
                 auto const publisherSecret = randomSecretKey();

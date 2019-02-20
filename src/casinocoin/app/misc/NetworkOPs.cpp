@@ -773,6 +773,7 @@ void NetworkOPsImp::processHeartbeatTimer ()
 
 void NetworkOPsImp::processClusterTimer ()
 {
+    using namespace std::chrono_literals;
     bool const update = app_.cluster().update(
         app_.nodeIdentity().first,
         "",
@@ -1787,6 +1788,7 @@ void NetworkOPsImp::pubPeerStatus (
 
 void NetworkOPsImp::setMode (OperatingMode om)
 {
+    using namespace std::chrono_literals;
     if (om == omCONNECTED)
     {
         if (app_.getLedgerMaster ().getValidatedLedgerAge () < 6min)
@@ -2311,6 +2313,7 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin, bool counters)
             auto closeTime = app_.timeKeeper().closeTime();
             if (lCloseTime <= closeTime)
             {
+                using namespace std::chrono_literals;
                 auto age = closeTime - lCloseTime;
                 if (age < 1000000s)
                     l[jss::age] = Json::UInt (age.count());

@@ -265,7 +265,7 @@ class TrustAndBalance_test : public beast::unit_test::suite
             BEAST_EXPECT(jv[jss::status] == "success");
 
             env.close();
-
+            using namespace std::chrono_literals;
             BEAST_EXPECT(wsc->findMsg(5s,
                 [](auto const& jv)
                 {
@@ -470,7 +470,7 @@ class TrustAndBalance_test : public beast::unit_test::suite
             "0000000000000000"
             "00000000DEADBEEF");
         env.close();
-
+        using namespace std::chrono_literals;
         BEAST_EXPECT(wsc->findMsg(2s,
             [](auto const& jv)
             {

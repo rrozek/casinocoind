@@ -667,6 +667,7 @@ class LedgerRPC_test : public beast::unit_test::suite
             return jv;
         };
 
+        using namespace std::chrono_literals;
         env (escrowCreate (alice, alice, CSC(333), env.now() + 2s));
         env.close();
 
