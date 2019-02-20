@@ -145,16 +145,18 @@ bool ConfigObjectEntry::fromBytes(Blob const& data)
     const uint8_t SIZE_AMEND = 4;
     int inputSize = 0;
     auto reverseIter = data.rbegin();
-    for (uint8_t i = 0; i < SIZE_AMEND; ++i, ++reverseIter)
+    for (uint8_t i = 1; i <= SIZE_AMEND; ++i, ++reverseIter)
     {
-        inputSize += *reverseIter << (i*8);
+        inputSize += *reverseIter << ((SIZE_AMEND-i)*8);
     }
+
     std::string stringified;
-    stringified.resize(inputSize + 16);
+    stringified.resize(inputSize);
     int outBufSize = LZ4_decompress_safe(reinterpret_cast<const char*>(&data.front()), &stringified.front(), data.size() - SIZE_AMEND, stringified.size());
     if (outBufSize <= 0)
         return false;
     stringified.resize(outBufSize);
+
     Json::Reader reader;
     Json::Value jvData;
     if (!reader.parse(stringified,jvData))
@@ -175,10 +177,10 @@ bool ConfigObjectEntry::toBytes(Blob& result) const
     int finalResultSize = LZ4_compress_default(stringified.data(), reinterpret_cast<char*>(&result.front()), stringified.size(), result.size());
     if (finalResultSize <= 0)
         return false;
-    result.resize(finalResultSize + SIZE_AMEND);
+    result.resize(finalResultSize);
     for (uint8_t i = 0; i < SIZE_AMEND; ++i)
     {
-        result.push_back(finalResultSize >> (i*8) & 0xFF);
+        result.push_back(stringified.size() >> (i*8) & 0xFF);
     }
     return true;
 }

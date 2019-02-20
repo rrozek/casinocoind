@@ -399,7 +399,7 @@ private:
     {
         Json::Value     jvRequest (Json::objectValue);
 
-        if (jvParams == 1 && !jvParseLedger (jvRequest, jvParams[0u].asString ()))
+        if (jvParams.size() == 1 && !jvParseLedger (jvRequest, jvParams[0u].asString ()))
             return rpcError (rpcLGR_IDX_MALFORMED);
 
         return jvRequest;

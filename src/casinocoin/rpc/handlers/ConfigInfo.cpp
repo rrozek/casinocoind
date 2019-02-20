@@ -32,6 +32,7 @@
 
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/json/json_reader.h>
 
 namespace casinocoin {
 
@@ -64,13 +65,13 @@ Json::Value doConfigInfo (RPC::Context& context)
                 if (!entry.fromBytes((*iter).getFieldVL(sfConfigData)))
                 {
                     RPC::inject_error(rpcLGR_IDX_MALFORMED, result);
-                    break;
+                    continue;
                 }
 
                 if (!entry.toJson(singleObj))
                 {
                     RPC::inject_error(rpcLGR_IDX_MALFORMED, result);
-                    break;
+                    continue;
                 }
                 configJson.append(singleObj);
             }

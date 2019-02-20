@@ -34,6 +34,7 @@
 #include <casinocoin/protocol/STAmount.h>
 
 #include <casinocoin/json/json_value.h>
+#include <casinocoin/basics/Log.h>
 
 #include <boost/bimap.hpp>
 #include <boost/assign/list_of.hpp>
@@ -70,13 +71,6 @@ public:
     static
     bimap_string_type typeMap;
     static bimap_string_type initializeTypeMap();
-
-    struct Field
-    {
-        std::vector<AccountID> kycAccountList;
-        std::vector<PublicKey> msgDestPubKey;
-        std::vector<TokenDescriptor> tokenList;
-    };
 
     // helper methods
     // internally does bytes->json->classStructure
