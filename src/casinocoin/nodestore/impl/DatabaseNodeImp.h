@@ -41,9 +41,9 @@ public:
         beast::Journal j)
         : Database(name, parent, scheduler, readThreads, config, j)
         , pCache_(std::make_shared<TaggedCache<uint256, NodeObject>>(
-            name, cacheTargetSize, cacheTargetSeconds, stopwatch(), j))
+            name, cacheTargetSize, cacheTargetAge, stopwatch(), j))
         , nCache_(std::make_shared<KeyCache<uint256>>(
-            name, stopwatch(), cacheTargetSize, cacheTargetSeconds))
+            name, stopwatch(), cacheTargetSize, cacheTargetAge))
         , backend_(std::move(backend))
     {
         assert(backend_);
@@ -107,7 +107,7 @@ public:
     getCacheHitRate() override {return pCache_->getHitRate();}
 
     void
-    tune(int size, int age) override;
+    tune(int size, std::chrono::seconds age) override;
 
     void
     sweep() override;

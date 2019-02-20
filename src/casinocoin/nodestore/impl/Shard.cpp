@@ -27,7 +27,7 @@ namespace casinocoin {
 namespace NodeStore {
 
 Shard::Shard(DatabaseShard const& db, std::uint32_t index,
-    int cacheSz, PCache::clock_type::rep cacheAge, beast::Journal& j)
+    int cacheSz, std::chrono::seconds cacheAge, beast::Journal& j)
     : index_(index)
     , firstSeq_(db.firstLedgerSeq(index))
     , lastSeq_(std::max(firstSeq_, db.lastLedgerSeq(index)))
@@ -227,8 +227,8 @@ Shard::validate(Application& app)
         "-" << lastSeq_;
 
     // Use a short age to keep memory consumption low
-    PCache::clock_type::rep const savedAge {pCache_->getTargetAge()};
-    pCache_->setTargetAge(1);
+    auto const savedAge {pCache_->getTargetAge()};
+    pCache_->setTargetAge(1s);
 
     // Validate every ledger stored in this shard
     std::shared_ptr<Ledger const> next;
