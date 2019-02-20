@@ -3073,7 +3073,7 @@ void NetworkOPsImp::getBookPage (
                             uOfferOwnerID, book.out.currency,
                                 book.out.account, fhZERO_IF_FROZEN, viewJ);
 
-                        if (saOwnerFunds < zero)
+                        if (saOwnerFunds < beast::zero)
                         {
                             // Treat negative funds as zero.
 

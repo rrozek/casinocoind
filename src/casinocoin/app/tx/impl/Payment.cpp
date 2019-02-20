@@ -89,7 +89,7 @@ Payment::preflight (PreflightContext const& ctx)
         maxSourceAmount = STAmount (
             { saDstAmount.getCurrency (), account },
             saDstAmount.mantissa(), saDstAmount.exponent (),
-            saDstAmount < zero);
+            saDstAmount < beast::zero);
 
     auto const& uSrcCurrency = maxSourceAmount.getCurrency ();
     auto const& uDstCurrency = saDstAmount.getCurrency ();
@@ -108,13 +108,13 @@ Payment::preflight (PreflightContext const& ctx)
             "Payment destination account not specified.";
         return temDST_NEEDED;
     }
-    if (bMax && maxSourceAmount <= zero)
+    if (bMax && maxSourceAmount <= beast::zero)
     {
         JLOG(j.trace()) << "Malformed transaction: " <<
             "bad max amount: " << maxSourceAmount.getFullText ();
         return temBAD_AMOUNT;
     }
-    if (saDstAmount <= zero)
+    if (saDstAmount <= beast::zero)
     {
         JLOG(j.trace()) << "Malformed transaction: "<<
             "bad dst amount: " << saDstAmount.getFullText ();
@@ -182,7 +182,7 @@ Payment::preflight (PreflightContext const& ctx)
         }
 
         auto const dMin = *deliverMin;
-        if (!isLegalNet(dMin) || dMin <= zero)
+        if (!isLegalNet(dMin) || dMin <= beast::zero)
         {
             JLOG(j.trace()) << "Malformed transaction: Invalid " <<
                 jss::DeliverMin.c_str() << " amount. " <<
@@ -327,7 +327,7 @@ Payment::doApply ()
         maxSourceAmount = STAmount (
             {saDstAmount.getCurrency (), account_},
             saDstAmount.mantissa(), saDstAmount.exponent (),
-            saDstAmount < zero);
+            saDstAmount < beast::zero);
 
     JLOG(j_.trace()) <<
         "maxSourceAmount=" << maxSourceAmount.getFullText () <<

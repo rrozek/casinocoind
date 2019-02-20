@@ -35,7 +35,6 @@
 #include <string>
 #include <type_traits>
 
-using beast::zero;
 
 namespace casinocoin {
 

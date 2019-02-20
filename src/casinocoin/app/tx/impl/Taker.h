@@ -86,6 +86,8 @@ protected:
 
         bool sanity_check () const
         {
+             using beast::zero;
+
             if (isCSC (order.in) && isCSC (order.out))
                 return false;
 

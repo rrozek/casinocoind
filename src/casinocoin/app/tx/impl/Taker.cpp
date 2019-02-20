@@ -57,8 +57,8 @@ BasicTaker::BasicTaker (
     , cross_type_ (cross_type)
     , journal_ (journal)
 {
-    assert (remaining_.in > zero);
-    assert (remaining_.out > zero);
+    assert (remaining_.in > beast::zero);
+    assert (remaining_.out > beast::zero);
 
     assert (m_rate_in.value != 0);
     assert (m_rate_out.value != 0);
@@ -102,7 +102,7 @@ BasicTaker::effective_rate (
 bool
 BasicTaker::unfunded () const
 {
-    if (get_funds (account(), remaining_.in) > zero)
+    if (get_funds (account(), remaining_.in) > beast::zero)
         return false;
 
     JLOG(journal_.debug()) << "Unfunded: taker is out of funds.";
@@ -113,7 +113,7 @@ bool
 BasicTaker::done () const
 {
     // We are done if we have consumed all the input currency
-    if (remaining_.in <= zero)
+    if (remaining_.in <= beast::zero)
     {
         JLOG(journal_.debug()) << "Done: all the input currency has been consumed.";
         return true;
@@ -121,7 +121,7 @@ BasicTaker::done () const
 
     // We are done if using buy semantics and we received the
     // desired amount of output currency
-    if (!sell_ && (remaining_.out <= zero))
+    if (!sell_ && (remaining_.out <= beast::zero))
     {
         JLOG(journal_.debug()) << "Done: the desired amount has been received.";
         return true;
@@ -150,14 +150,14 @@ BasicTaker::remaining_offer () const
 
     if (sell_)
     {
-        assert (remaining_.in > zero);
+        assert (remaining_.in > beast::zero);
 
         // We scale the output based on the remaining input:
         return Amounts (remaining_.in, divRound (
             remaining_.in, quality_.rate (), issue_out_, true));
     }
 
-    assert (remaining_.out > zero);
+    assert (remaining_.out > beast::zero);
 
     // We scale the input based on the remaining output:
     return Amounts (mulRound (
@@ -405,7 +405,7 @@ BasicTaker::do_cross (Amounts offer, Quality quality, AccountID const& owner)
     remaining_.out -= result.order.out;
     remaining_.in -= result.order.in;
 
-    assert (remaining_.in >= zero);
+    assert (remaining_.in >= beast::zero);
 
     return result;
 }
@@ -552,10 +552,10 @@ Taker::Taker (CrossType cross_type, ApplyView& view,
 void
 Taker::consume_offer (Offer& offer, Amounts const& order)
 {
-    if (order.in < zero)
+    if (order.in < beast::zero)
         Throw<std::logic_error> ("flow with negative input.");
 
-    if (order.out < zero)
+    if (order.out < beast::zero)
         Throw<std::logic_error> ("flow with negative output.");
 
     JLOG(journal_.debug()) << "Consuming from offer " << offer;
@@ -589,7 +589,7 @@ TER Taker::transferCSC (
         return tesSUCCESS;
 
     // Transferring zero is equivalent to not doing a transfer
-    if (amount == zero)
+    if (amount == beast::zero)
         return tesSUCCESS;
 
     return casinocoin::transferCSC (view_, from, to, amount, journal_);
@@ -607,17 +607,17 @@ TER Taker::redeemIOU (
         return tesSUCCESS;
 
     // Transferring zero is equivalent to not doing a transfer
-    if (amount == zero)
+    if (amount == beast::zero)
         return tesSUCCESS;
 
     // If we are trying to redeem some amount, then the account
     // must have a credit balance.
-    if (get_funds (account, amount) <= zero)
+    if (get_funds (account, amount) <= beast::zero)
         Throw<std::logic_error> ("redeemIOU has no funds to redeem");
 
     auto ret = casinocoin::redeemIOU (view_, account, amount, issue, journal_);
 
-    if (get_funds (account, amount) < zero)
+    if (get_funds (account, amount) < beast::zero)
         Throw<std::logic_error> ("redeemIOU redeemed more funds than available");
 
     return ret;
@@ -635,7 +635,7 @@ TER Taker::issueIOU (
         return tesSUCCESS;
 
     // Transferring zero is equivalent to not doing a transfer
-    if (amount == zero)
+    if (amount == beast::zero)
         return tesSUCCESS;
 
     return casinocoin::issueIOU (view_, account, amount, issue, journal_);

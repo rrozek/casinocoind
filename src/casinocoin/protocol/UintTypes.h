@@ -29,6 +29,7 @@
 #include <casinocoin/basics/UnorderedContainers.h>
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/protocol/AccountID.h>
+#include <casinocoin/beast/utility/Zero.h>
 
 namespace casinocoin {
 namespace detail {
@@ -75,7 +76,7 @@ Currency const& badCurrency();
 
 inline bool isCSC(Currency const& c)
 {
-    return c == zero;
+    return c == beast::zero;
 }
 
 /** Returns "", "CSC", or three letter ISO code. */

@@ -46,7 +46,7 @@ IOUAmount::normalize ()
 {
     if (mantissa_ == 0)
     {
-        *this = zero;
+        *this = beast::zero;
         return;
     }
 
@@ -72,7 +72,7 @@ IOUAmount::normalize ()
 
     if ((exponent_ < minExponent) || (mantissa_ < minMantissa))
     {
-        *this = zero;
+        *this = beast::zero;
         return;
     }
 
@@ -86,10 +86,10 @@ IOUAmount::normalize ()
 IOUAmount&
 IOUAmount::operator+= (IOUAmount const& other)
 {
-    if (other == zero)
+    if (other == beast::zero)
         return *this;
 
-    if (*this == zero)
+    if (*this == beast::zero)
     {
         *this = other;
         return *this;
@@ -116,7 +116,7 @@ IOUAmount::operator+= (IOUAmount const& other)
 
     if (mantissa_ >= -10 && mantissa_ <= 10)
     {
-        *this = zero;
+        *this = beast::zero;
         return *this;
     }
 
@@ -159,7 +159,7 @@ std::string
 to_string (IOUAmount const& amount)
 {
     // keep full internal accuracy, but make more human friendly if possible
-    if (amount == zero)
+    if (amount == beast::zero)
         return "0";
 
     int const exponent = amount.exponent ();

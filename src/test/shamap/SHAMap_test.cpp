@@ -251,7 +251,7 @@ public:
             if (! backed)
                 map.setUnbacked ();
 
-            BEAST_EXPECT(map.getHash() == zero);
+            BEAST_EXPECT(map.getHash() == beast::zero);
             for (int k = 0; k < keys.size(); ++k)
             {
                 SHAMapItem item (keys[k], IntToVUC (k));
@@ -283,7 +283,7 @@ public:
                 BEAST_EXPECT(map.delItem (keys[k]));
                 map.invariants();
             }
-            BEAST_EXPECT(map.getHash() == zero);
+            BEAST_EXPECT(map.getHash() == beast::zero);
         }
 
         if (backed)

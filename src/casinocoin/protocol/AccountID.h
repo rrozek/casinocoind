@@ -126,7 +126,7 @@ inline
 bool
 isCSC(AccountID const& c)
 {
-    return c == zero;
+    return c == beast::zero;
 }
 
 // DEPRECATED

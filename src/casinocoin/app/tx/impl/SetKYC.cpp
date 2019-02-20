@@ -70,7 +70,7 @@ SetKYC::preflight (PreflightContext const& ctx)
     }
 
     auto const id = tx.getAccountID(sfAccount);
-    if (id == zero)
+    if (id == beast::zero)
         return temBAD_SRC_ACCOUNT;
 
     bool bIsTrusted = false;
