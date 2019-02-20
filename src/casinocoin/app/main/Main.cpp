@@ -235,15 +235,15 @@ static int runUnitTests(
     bool quiet,
     bool log,
     bool child,
-    bool ipv4,
+    bool ipv6,
     std::size_t num_jobs,
     int argc,
     char** argv)
 {
     using namespace beast::unit_test;
     using namespace casinocoin::test;
-    if (ipv4)
-        casinocoin::test::envUseIPv4 = true;
+
+    casinocoin::test::envUseIPv4 = (! ipv6);
 
 #if HAS_BOOST_PROCESS
     if (!child && num_jobs == 1)
@@ -401,7 +401,7 @@ int run (int argc, char** argv)
         "argument is handled individually by any suite that accesses it -- "
         "as such, it typically only make sense to provide this when running "
         "a single suite.")
-    ("unittest-ipv4", "Use IPv4 localhost when running unittests (default is IPv6).")
+    ("unittest-ipv6", "Use IPv6 localhost when running unittests (default is IPv4).")
     ("unittest-log",
         "Force unit test log message output. Only useful in combination with "
         "--quiet, in which case log messages will print but suite/case names "
@@ -486,7 +486,7 @@ int run (int argc, char** argv)
             bool (vm.count ("quiet")),
             bool (vm.count ("unittest-log")),
             unittestChild,
-            bool (vm.count ("unittest-ipv4")),
+            bool (vm.count ("unittest-ipv6")),
             numJobs,
             argc,
             argv);
