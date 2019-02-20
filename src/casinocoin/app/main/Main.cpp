@@ -28,12 +28,14 @@
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/app/main/Application.h>
+#include <casinocoin/app/main/DBInit.h>
 #include <casinocoin/basics/CheckLibraryVersions.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/basics/Sustain.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
+#include <casinocoin/core/DatabaseCon.h>
 #include <casinocoin/core/TerminateHandler.h>
 #include <casinocoin/core/TimeKeeper.h>
 #include <casinocoin/crypto/csprng.h>
@@ -54,7 +56,9 @@
 
 #include <google/protobuf/stubs/common.h>
 
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <boost/system/error_code.hpp>
 #include <boost/version.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -368,6 +372,9 @@ int run (int argc, char** argv)
     ("nodetoshard", "Import node store into shards")
     ("replay","Replay a ledger close.")
     ("start", "Start from a fresh Ledger.")
+    ("vacuum", po::value<std::string>(),
+        "VACUUM the transaction db. Mandatory string argument specifies "
+        "temporary directory path.")
     ("valid", "Consider the initial ledger a valid network ledger.")
     ("validateShards", shardsText.c_str ())
     ;
@@ -518,6 +525,81 @@ int run (int argc, char** argv)
         auto entropy = getEntropyFile (*config);
         if (!entropy.empty ())
             crypto_prng().load_state(entropy.string ());
+    }
+
+    if (vm.count("vacuum"))
+    {
+        DatabaseCon::Setup dbSetup = setup_DatabaseCon(*config);
+        if (dbSetup.standAlone)
+        {
+            std::cerr << "vacuum not applicable in standalone mode.\n";
+            return -1;
+        }
+        boost::filesystem::path dbPath = dbSetup.dataDir / TxnDBName;
+        auto txnDB = std::make_unique<DatabaseCon> (dbSetup, TxnDBName,
+            TxnDBInit, TxnDBCount);
+        if (txnDB.get() == nullptr)
+        {
+            std::cerr << "Cannot create connection to " << dbPath.string() <<
+                '\n';
+            return -1;
+        }
+        boost::system::error_code ec;
+        uintmax_t dbSize = boost::filesystem::file_size(dbPath, ec);
+        if (ec)
+        {
+            std::cerr << "Error checking size of " << dbPath.string() << ": "
+                << ec.message() << '\n';
+            return -1;
+        }
+
+        assert(dbSize != static_cast<uintmax_t>(-1));
+
+        std::string tmpDir = vm["vacuum"].as<std::string>();
+        boost::filesystem::path tmpPath = tmpDir;
+        if (boost::filesystem::space(tmpPath, ec).available < dbSize)
+        {
+            if (ec)
+            {
+                std::cerr << "Error checking status of " << tmpPath.string()
+                    << ": " << ec.message() << '\n';
+            }
+            else
+            {
+                std::cerr << "A valid directory for vacuuming must be "
+                             "specified on a filesystem with at least "
+                             "as much free space as the size of " <<
+                             dbPath.string() << ", which is " <<
+                             dbSize << " bytes. The filesystem for " <<
+                             tmpPath.string() << " only has " <<
+                             boost::filesystem::space(tmpPath, ec).available
+                             << " bytes.\n";
+            }
+            return -1;
+        }
+
+        auto db = txnDB->checkoutDb();
+        std::uint32_t pageSize;
+        try
+        {
+            *db << "PRAGMA page_size;", soci::into(pageSize);
+            std::cout << "VACUUM beginning. page_size: " << pageSize
+                << std::endl;
+            *db << "PRAGMA journal_mode=OFF;";
+            *db << "PRAGMA temp_store_directory=\"" << tmpPath.string()
+                << "\";";
+            *db << "VACUUM;";
+            *db << "PRAGMA journal_mode=WAL;";
+            *db << "PRAGMA page_size;", soci::into(pageSize);
+        }
+        catch (soci::soci_error const& e)
+        {
+            std::cerr << "SQLite error: " << e.what() << '\n';
+            return 1;
+        }
+        std::cout << "VACUUM finished. page_size: " << pageSize << std::endl;
+
+        return 0;
     }
 
     if (vm.count ("start"))
