@@ -34,6 +34,7 @@
 #include <casinocoin/protocol/STAmount.h>
 
 #include <casinocoin/json/json_value.h>
+#include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/basics/Log.h>
 
 #include <boost/bimap.hpp>
@@ -48,12 +49,15 @@ struct Message_PubKeyDescriptor;
 
 struct DataDescriptorInterface
 {
-    DataDescriptorInterface() {}
-    DataDescriptorInterface(const TokenDescriptor& other) {}
-    DataDescriptorInterface& operator=(const TokenDescriptor& /*other*/) { return *this; }
+    DataDescriptorInterface();
+    DataDescriptorInterface(beast::Journal const& journal);
+    DataDescriptorInterface(const DataDescriptorInterface& other);
+    DataDescriptorInterface& operator=(const DataDescriptorInterface& /*other*/);
 
     virtual bool fromJson(Json::Value const& data) = 0;
     virtual bool toJson(Json::Value& result) const = 0;
+
+    beast::Journal mJournal;
 };
 
 class ConfigObjectEntry
@@ -68,24 +72,15 @@ public:
     };
 
     using bimap_string_type = boost::bimap<std::string, Type>;
-    static
-    bimap_string_type typeMap;
+    static bimap_string_type typeMap;
     static bimap_string_type initializeTypeMap();
 
-    // helper methods
-    // internally does bytes->json->classStructure
-    static bool fromBytes(ConfigObjectEntry& result, Blob const& data);
-    // internally does classStructure->json->bytes
-    static bool toBytes(Blob& result, ConfigObjectEntry const& data);
-
-    static bool fromJson(ConfigObjectEntry& result, Json::Value const& data);
-    static bool toJson(Json::Value& result, ConfigObjectEntry const& data);
-
     ConfigObjectEntry();
+    ConfigObjectEntry(beast::Journal const& journal);
     virtual ~ConfigObjectEntry();
 
-    ConfigObjectEntry(const ConfigObjectEntry& other);
-    ConfigObjectEntry& operator=(const ConfigObjectEntry& other);
+    ConfigObjectEntry(ConfigObjectEntry const& other);
+    ConfigObjectEntry& operator=(ConfigObjectEntry const& other);
 
     bool fromJson(Json::Value const& data);
     bool toJson(Json::Value& result) const;
@@ -100,6 +95,7 @@ private:
     uint32_t mId;
     Type mType;
     std::vector<DataDescriptorInterface*> mData;
+    beast::Journal mJournal;
 };
 
 struct TokenDescriptor : public DataDescriptorInterface
@@ -111,7 +107,7 @@ struct TokenDescriptor : public DataDescriptorInterface
         FeesRequired = 0x0004
     };
 
-    TokenDescriptor();
+    TokenDescriptor(beast::Journal const& journal);
     TokenDescriptor(const TokenDescriptor& other);
     TokenDescriptor& operator=(const TokenDescriptor& other);
 
@@ -129,7 +125,7 @@ struct TokenDescriptor : public DataDescriptorInterface
 
 struct KYC_SignerDescriptor : public DataDescriptorInterface
 {
-    KYC_SignerDescriptor();
+    KYC_SignerDescriptor(beast::Journal const& journal);
     KYC_SignerDescriptor(const KYC_SignerDescriptor& other);
     KYC_SignerDescriptor& operator=(const KYC_SignerDescriptor& other);
 
@@ -141,7 +137,7 @@ struct KYC_SignerDescriptor : public DataDescriptorInterface
 
 struct Message_PubKeyDescriptor : public DataDescriptorInterface
 {
-    Message_PubKeyDescriptor();
+    Message_PubKeyDescriptor(beast::Journal const& journal);
     Message_PubKeyDescriptor(const Message_PubKeyDescriptor& other);
     Message_PubKeyDescriptor& operator=(const Message_PubKeyDescriptor& other);
 

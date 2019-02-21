@@ -33,6 +33,7 @@
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/json/json_reader.h>
+#include <stdexcept>
 
 namespace casinocoin {
 
@@ -61,17 +62,19 @@ Json::Value doConfigInfo (RPC::Context& context)
             for (STArray::const_iterator iter = ledgerConfigArray.begin(); iter != ledgerConfigArray.end(); ++iter)
             {
                 Json::Value singleObj(Json::objectValue);
-                ConfigObjectEntry entry;
+                ConfigObjectEntry entry(j);
                 if (!entry.fromBytes((*iter).getFieldVL(sfConfigData)))
                 {
+                    JLOG(j.info()) << "doConfigInfo parsing entry fromBytes failed";
                     RPC::inject_error(rpcLGR_IDX_MALFORMED, result);
-                    continue;
+                    break;;
                 }
 
                 if (!entry.toJson(singleObj))
                 {
+                    JLOG(j.info()) << "doConfigInfo converting entry toJson failed";
                     RPC::inject_error(rpcLGR_IDX_MALFORMED, result);
-                    continue;
+                    break;;
                 }
                 configJson.append(singleObj);
             }
@@ -79,11 +82,13 @@ Json::Value doConfigInfo (RPC::Context& context)
         }
         else
         {
+            JLOG(j.info()) << "doConfigInfo Configuration field in Configuration Ledger Object not found. return rpcLGR_IDX_MALFORMED";
             RPC::inject_error(rpcLGR_IDX_MALFORMED, result);
         }
     }
     else
     {
+        JLOG(j.info()) << "doConfigInfo Configuration Ledger Object not found. return rpcLGR_IDXS_INVALID";
         RPC::inject_error (rpcLGR_IDXS_INVALID, result);
     }
     return result;

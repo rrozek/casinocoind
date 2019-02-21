@@ -44,29 +44,17 @@ ConfigObjectEntry::bimap_string_type ConfigObjectEntry::initializeTypeMap()
     return aMap;
 }
 
-    bool ConfigObjectEntry::fromBytes(ConfigObjectEntry& result, Blob const& data)
-{
-    return result.fromBytes(data);
-}
-
-bool ConfigObjectEntry::toBytes(Blob& result, ConfigObjectEntry const& data)
-{
-    return data.toBytes(result);
-}
-
-bool ConfigObjectEntry::fromJson(ConfigObjectEntry& result, Json::Value const& data)
-{
-    return result.fromJson(data);
-}
-
-bool ConfigObjectEntry::toJson(Json::Value& result, ConfigObjectEntry const& data)
-{
-    return data.toJson(result);
-}
-
 ConfigObjectEntry::ConfigObjectEntry()
     : mId(0)
     , mType(Invalid)
+{
+
+}
+
+ConfigObjectEntry::ConfigObjectEntry(beast::Journal const& journal)
+    : mId(0)
+    , mType(Invalid)
+    , mJournal(journal)
 {}
 
 ConfigObjectEntry::~ConfigObjectEntry()
@@ -76,6 +64,7 @@ ConfigObjectEntry::ConfigObjectEntry(const ConfigObjectEntry &other)
     : mId(other.mId)
     , mType(other.mType)
     , mData(other.mData)
+    , mJournal(other.mJournal)
 {}
 
 ConfigObjectEntry& ConfigObjectEntry::operator=(ConfigObjectEntry const& other)
@@ -94,6 +83,7 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
     mId = data.get(sfConfigID.getName(), Json::nullValue).asInt();
     mType = typeMap.left.at(data.get(sfConfigType.getName(),Json::nullValue).asString());
 
+
     Json::Value jvSrcArray = data.get(sfConfigData.getName(), Json::arrayValue);
     if (!jvSrcArray.isArray())
         return false;
@@ -103,21 +93,24 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
         DataDescriptorInterface* pItem = nullptr;
         switch(mType)
         {
-        case KYC_Signer: // array of base58 accountIds or single accountId
-            pItem = new KYC_SignerDescriptor;
+        case KYC_Signer:
+            pItem = new KYC_SignerDescriptor(mJournal);
             break;
-        case Message_PubKey: //array of hex pubkeys or single hex pubkey
-            pItem = new Message_PubKeyDescriptor;
+        case Message_PubKey:
+            pItem = new Message_PubKeyDescriptor(mJournal);
             break;
-        case Token: // array of jsonified  STAmounts {"value":123.45, "currency":"TST", "issuer":<base58AccountID>}
-            pItem = new TokenDescriptor;
+        case Token:
+            pItem = new TokenDescriptor(mJournal);
             break;
         case Invalid:
             return false;
         }
 
-        if (!pItem->fromJson(jvSrcArray[index]))
+        if (pItem == nullptr || !pItem->fromJson(jvSrcArray[index]))
+        {
+            JLOG(mJournal.info()) << "ConfigObjectEntry::fromJson pItem " << pItem << " failed to parse json";
             continue;
+        }
         mData.push_back(pItem);
     }
     return true;
@@ -132,7 +125,11 @@ bool ConfigObjectEntry::toJson(Json::Value& result) const
     for (DataDescriptorInterface* pItem : mData)
     {
         Json::Value jvObject(Json::objectValue);
-        pItem->toJson(jvObject);
+        if (!pItem->toJson(jvObject))
+        {
+            JLOG(mJournal.info()) << "ConfigObjectEntry::toJson failed to create json";
+            continue;
+        }
         jvData.append(jvObject);
     }
 
@@ -142,6 +139,7 @@ bool ConfigObjectEntry::toJson(Json::Value& result) const
 
 bool ConfigObjectEntry::fromBytes(Blob const& data)
 {
+
     const uint8_t SIZE_AMEND = 4;
     int inputSize = 0;
     auto reverseIter = data.rbegin();
@@ -150,17 +148,25 @@ bool ConfigObjectEntry::fromBytes(Blob const& data)
         inputSize += *reverseIter << ((SIZE_AMEND-i)*8);
     }
 
+    JLOG(mJournal.debug()) << "ConfigObjectEntry::fromBytes inputSize " <<inputSize;
     std::string stringified;
     stringified.resize(inputSize);
-    int outBufSize = LZ4_decompress_safe(reinterpret_cast<const char*>(&data.front()), &stringified.front(), data.size() - SIZE_AMEND, stringified.size());
+    int outBufSize = LZ4_decompress_safe(reinterpret_cast<const char*>(&data.front()),
+                                         &stringified.front(),
+                                         data.size() - SIZE_AMEND,
+                                         stringified.size());
     if (outBufSize <= 0)
+    {
+        JLOG(mJournal.info()) << "ConfigObjectEntry::fromBytes invalid outBufSize " <<outBufSize;
         return false;
+    }
     stringified.resize(outBufSize);
 
     Json::Reader reader;
     Json::Value jvData;
     if (!reader.parse(stringified,jvData))
         return false;
+
     return fromJson(jvData);
 }
 
@@ -185,7 +191,9 @@ bool ConfigObjectEntry::toBytes(Blob& result) const
     return true;
 }
 
-KYC_SignerDescriptor::KYC_SignerDescriptor() {}
+KYC_SignerDescriptor::KYC_SignerDescriptor(beast::Journal const& journal)
+    : DataDescriptorInterface(journal)
+{}
 
 KYC_SignerDescriptor::KYC_SignerDescriptor(KYC_SignerDescriptor const& other)
 {
@@ -203,18 +211,23 @@ bool KYC_SignerDescriptor::fromJson(Json::Value const& data)
     if (!data.isObject())
         return false;
 
-    if (!to_issuer(kycSigner, data["KYC_Signer"].asString()))
+    if (!data.isMember(jss::account))
+        return false;
+
+    if (!to_issuer(kycSigner, data[jss::account].asString()))
         return false;
     return true;
 }
 
 bool KYC_SignerDescriptor::toJson(Json::Value &result) const
 {
-    result["KYC_Signer"] = toBase58(kycSigner);
+    result[jss::account] = toBase58(kycSigner);
     return true;
 }
 
-Message_PubKeyDescriptor::Message_PubKeyDescriptor() {}
+Message_PubKeyDescriptor::Message_PubKeyDescriptor(beast::Journal const& journal)
+    : DataDescriptorInterface(journal)
+{}
 
 Message_PubKeyDescriptor::Message_PubKeyDescriptor(Message_PubKeyDescriptor const& other)
 {
@@ -229,10 +242,14 @@ Message_PubKeyDescriptor& Message_PubKeyDescriptor::operator=(Message_PubKeyDesc
 
 bool Message_PubKeyDescriptor::fromJson(Json::Value const& data)
 {
+
     if (!data.isObject())
         return false;
 
-    auto unHexedPubKey = strUnHex(data["Message_PubKey"].asString());
+    if (!data.isMember(jss::public_key_hex))
+        return false;
+
+    auto unHexedPubKey = strUnHex(data[jss::public_key_hex].asString());
     if (!unHexedPubKey.second)
         return false;
     pubKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
@@ -242,11 +259,14 @@ bool Message_PubKeyDescriptor::fromJson(Json::Value const& data)
 
 bool Message_PubKeyDescriptor::toJson(Json::Value &result) const
 {
-    result["Message_PubKey"] = strHex(pubKey.data(), pubKey.size());
+
+    result[jss::public_key_hex] = strHex(pubKey.data(), pubKey.size());
     return true;
 }
 
-TokenDescriptor::TokenDescriptor() {}
+TokenDescriptor::TokenDescriptor(beast::Journal const& journal)
+    : DataDescriptorInterface(journal)
+{}
 
 TokenDescriptor::TokenDescriptor(TokenDescriptor const& other)
 {
@@ -284,30 +304,57 @@ bool TokenDescriptor::fromJson(Json::Value const& data)
     if (!data.isObject())
         return false;
 
-    fullName = data["fullName"].asString();
-    flags = static_cast<TokenFlags>(data["flags"].asInt());
-    website = data["website"].asString();
-    contactEmail = data["contactEmail"].asString();
-    iconURL = data["iconURL"].asString();
-    apiEndpoint = data["apiEndpoint"].asString();
-    if (data.isMember("totalSupply"))
-        amountFromJsonNoThrow(totalSupply, data["totalSupply"]);
-    else
-        amountFromJsonNoThrow(totalSupply, data);
+    fullName = data[jss::fullName].asString();
+    flags = static_cast<TokenFlags>(data[jss::flags].asInt());
+    website = data[jss::website].asString();
+    contactEmail = data[jss::contactEmail].asString();
+    iconURL = data[jss::iconURL].asString();
+    apiEndpoint = data[jss::apiEndpoint].asString();
 
-    return true;
+    Json::Value combinedAmountObj(Json::objectValue);
+    combinedAmountObj[jss::value] = data[jss::totalSupply];
+    combinedAmountObj[jss::currency] = data[jss::token];
+    combinedAmountObj[jss::issuer] = data[jss::issuer];
+
+    JLOG(mJournal.debug()) << "TokenDescriptor::fromJson combinedAmountObj" << combinedAmountObj;
+    return amountFromJsonNoThrow(totalSupply, combinedAmountObj);
 }
 
 bool TokenDescriptor::toJson(Json::Value &result) const
 {
-    result["totalSupply"] = totalSupply.getJson(0);
-    result["fullName"] = fullName;
-    result["flags"] = flags;
-    result["website"] = website;
-    result["contactEmail"] = contactEmail;
-    result["iconURL"] = iconURL;
-    result["apiEndpoint"] = apiEndpoint;
+    if (totalSupply.isDefault())
+    {
+        JLOG(mJournal.info()) << "TokenDescriptor::toJson STAmount is not defined";
+        return false;
+    }
+    Json::Value combinedAmountObj(Json::objectValue);
+    combinedAmountObj = totalSupply.getJson(0);
+    result[jss::totalSupply] = combinedAmountObj[jss::value];
+    result[jss::token] = combinedAmountObj[jss::currency];
+    result[jss::issuer] = combinedAmountObj[jss::issuer];
+
+    result[jss::fullName] = fullName;
+    result[jss::flags] = flags;
+    result[jss::website] = website;
+    result[jss::contactEmail] = contactEmail;
+    result[jss::iconURL] = iconURL;
+    result[jss::apiEndpoint] = apiEndpoint;
     return true;
+}
+
+DataDescriptorInterface::DataDescriptorInterface() {}
+
+DataDescriptorInterface::DataDescriptorInterface(beast::Journal const& journal)
+    : mJournal(journal)
+{}
+
+DataDescriptorInterface::DataDescriptorInterface(const DataDescriptorInterface &other)
+    : mJournal(other.mJournal)
+{}
+
+DataDescriptorInterface &DataDescriptorInterface::operator=(DataDescriptorInterface const& other)
+{
+    return *this;
 }
 
 } // casinocoin

@@ -240,12 +240,13 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
 
     if (jvVotableConfig.isObject())
     {
-        ConfigObjectEntry entry;
+        ConfigObjectEntry entry(j_);
         if (!entry.fromJson(jvVotableConfig))
         {
             JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition failed to parse json, return";
             return;
         }
+        JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition json parsed ok." << entry.getId();
 
         Blob objData;
         if (!entry.toBytes(objData))
@@ -263,12 +264,13 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
     {
         for (Json::UInt index = 0; index < jvVotableConfig.size(); index++)
         {
-            ConfigObjectEntry anEntry;
+            ConfigObjectEntry anEntry(j_);
             if (!anEntry.fromJson(jvVotableConfig[index]))
             {
                 JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition failed to parse json, continue";
                 continue;
             }
+            JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition json parsed ok." << anEntry.getId();
 
             Blob objData;
             if (!anEntry.toBytes(objData))

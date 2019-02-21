@@ -89,6 +89,7 @@ JSS ( alternatives );               // out: PathRequest, CasinocoinPathFind
 JSS ( amendment_blocked );          // out: NetworkOPs
 JSS ( amendments );                 // in: AccountObjects, out: NetworkOPs
 JSS ( amount );                     // out: AccountChannels
+JSS ( apiEndpoint );                // out: Configuration
 JSS ( asks );                       // out: Subscribe
 JSS ( assets );                     // out: GatewayBalances
 JSS ( authorized );                 // out: AccountLines
@@ -130,6 +131,7 @@ JSS ( complete );                   // out: NetworkOPs, InboundLedger
 JSS ( complete_ledgers );           // out: NetworkOPs, PeerImp
 JSS ( configuration );              // out: RPCHandler
 JSS ( consensus );                  // out: NetworkOPs, LedgerConsensus
+JSS ( contactEmail );              // in/out: Configuration
 JSS ( converge_time );              // out: NetworkOPs
 JSS ( converge_time_s );            // out: NetworkOPs
 JSS ( count );                      // in: AccountTx*
@@ -193,6 +195,7 @@ JSS ( freeze );                     // out: AccountLines
 JSS ( freeze_peer );                // out: AccountLines
 JSS ( frozen_balances );            // out: GatewayBalances
 JSS ( full );                       // in: LedgerClearer, handlers/Ledger
+JSS ( fullName );                   // out: Configuration
 JSS ( full_reply );                 // out: PathFind
 JSS ( fullbelow_size );             // in: GetCounts
 JSS ( generator );                  // in: LedgerEntry
@@ -206,6 +209,7 @@ JSS ( have_transactions );          // out: InboundLedger
 JSS ( highest_sequence );           // out: AccountInfo
 JSS ( hostid );                     // out: NetworkOPs
 JSS ( hotwallet );                  // in: GatewayBalances
+JSS ( iconURL );                    // out: Configuration
 JSS ( id );                         // websocket.
 JSS ( ident );                      // in: AccountCurrencies, AccountInfo,
                                     //     OwnerInfo
@@ -416,8 +420,10 @@ JSS ( threshold );                  // in: Blacklist
 JSS ( ticket );                     // in: AccountObjects
 JSS ( timeouts );                   // out: InboundLedger
 JSS ( traffic );                    // out: Overlay
+JSS ( token );                      // out: RPC token
 JSS ( totalCoins );                 // out: LedgerToJson
 JSS ( total_coins );                // out: LedgerToJson
+JSS ( totalSupply );                // out: Configuration
 JSS ( transTreeHash );              // out: ledger/Ledger.cpp
 JSS ( transaction );                // in: Tx
                                     // out: NetworkOPs, AcceptedLedgerTx,
@@ -465,6 +471,7 @@ JSS ( version );                    // out: RPCVersion
 JSS ( vetoed );                     // out: AmendmentTableImpl
 JSS ( vote );                       // in: Feature
 JSS ( warning );                    // rpc:
+JSS ( website );                    // out: Configuration
 JSS ( write_load );                 // out: GetCounts
 
 #undef JSS
