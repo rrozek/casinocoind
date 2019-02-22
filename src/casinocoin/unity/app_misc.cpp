@@ -35,7 +35,6 @@
 #include <casinocoin/app/misc/impl/AccountTxPaging.cpp>
 #include <casinocoin/app/misc/impl/AmendmentTable.cpp>
 #include <casinocoin/app/misc/impl/configuration/VotableConfiguration.cpp>
-#include <casinocoin/app/misc/impl/configuration/ConfigObjectEntry.cpp>
 #include <casinocoin/app/misc/impl/LoadFeeTrack.cpp>
 #include <casinocoin/app/misc/impl/Manifest.cpp>
 #include <casinocoin/app/misc/impl/Transaction.cpp>

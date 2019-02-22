@@ -34,6 +34,7 @@
 #include <casinocoin/protocol/STLedgerEntry.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/CSCAmount.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/beast/hash/uhash.h>
 #include <casinocoin/beast/utility/Journal.h>
 #include <boost/optional.hpp>
@@ -172,6 +173,16 @@ public:
     }
 };
 
+struct LedgerConfig
+{
+    LedgerConfig() = default;
+    LedgerConfig (LedgerConfig const&) = default;
+    LedgerConfig& operator= (LedgerConfig const&) = default;
+
+    LedgerIndex lastUpdateIndex = 0;
+    std::vector<ConfigObjectEntry> entries;
+};
+
 //------------------------------------------------------------------------------
 
 /** A view into a ledger.
@@ -266,6 +277,11 @@ public:
     virtual
     Rules const&
     rules() const = 0;
+
+    /** Returns the ledger configuration data. */
+    virtual
+    LedgerConfig const&
+    ledgerConfig() const = 0;
 
     /** Determine if a state item exists.
 
