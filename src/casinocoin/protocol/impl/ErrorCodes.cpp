@@ -72,7 +72,8 @@ public:
         add (rpcBAD_SYNTAX,            "badSyntax",         "Syntax error.");
         add (rpcCHANNEL_MALFORMED,     "channelMalformed",  "Payment channel is malformed.");
         add (rpcCHANNEL_AMT_MALFORMED, "channelAmtMalformed","Payment channel amount is malformed.");
-        add (rpcCOMMAND_MISSING,       "commandMissing",    "Missing command entry.");
+        add (rpcDST_ACT_MISSING,       "dstActMissing",     "Destination account not provided.");
+        add (rpcDST_ACT_NOT_FOUND,     "dstActNotFound",    "Destination account not found.");
         add (rpcDST_ACT_MALFORMED,     "dstActMalformed",   "Destination account is malformed.");
         add (rpcDST_ACT_MISSING,       "dstActMissing",     "Destination account does not exist.");
         add (rpcDST_AMT_MALFORMED,     "dstAmtMalformed",   "Destination amount/currency/issuer is malformed.");
