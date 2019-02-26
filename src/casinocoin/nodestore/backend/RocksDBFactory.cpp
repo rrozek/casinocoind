@@ -119,7 +119,6 @@ public:
             Throw<std::runtime_error> ("Missing path in RocksDBFactory backend");
 
         rocksdb::BlockBasedTableOptions table_options;
-        m_options.create_if_missing = true;
         m_options.env = env;
 
         if (keyValues.exists ("cache_mb"))
@@ -214,7 +213,7 @@ public:
     }
 
     void
-    open() override
+    open(bool createIfMissing) override
     {
         if (m_db)
         {
@@ -224,6 +223,7 @@ public:
             return;
         }
         rocksdb::DB* db = nullptr;
+        m_options.create_if_missing = createIfMissing;
         rocksdb::Status status = rocksdb::DB::Open(m_options, m_name, &db);
         if (!status.ok() || !db)
             Throw<std::runtime_error>(

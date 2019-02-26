@@ -185,7 +185,7 @@ public:
     }
 
     void
-    open() override
+    open(bool createIfMissing) override
     {
         if (m_db)
         {
