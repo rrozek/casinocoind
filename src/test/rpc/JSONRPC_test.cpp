@@ -21,6 +21,7 @@
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/basics/contract.h>
+#include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/Feature.h>
@@ -1949,6 +1950,7 @@ public:
         using namespace test::jtx;
         Env env {*this, envconfig([](std::unique_ptr<Config> cfg)
             {
+                cfg->loadFromString ("[" SECTION_SIGNING_SUPPORT "]\ntrue");
                 cfg->section("transaction_queue")
                     .set("minimum_txn_in_ledger_standalone", "3");
                 return cfg;

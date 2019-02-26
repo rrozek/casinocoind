@@ -435,6 +435,9 @@ void Config::loadFromString (std::string const& fileContents)
         }
     }
 
+    if (getSingleSection (secConfig, SECTION_SIGNING_SUPPORT, strTemp, j_))
+        signingEnabled_     = beast::lexicalCastThrow <bool> (strTemp);
+
     if (getSingleSection (secConfig, SECTION_ELB_SUPPORT, strTemp, j_))
         ELB_SUPPORT         = beast::lexicalCastThrow <bool> (strTemp);
 
@@ -677,3 +680,4 @@ boost::filesystem::path Config::getDebugLogFile () const
 }
 
 } // casinocoin
+

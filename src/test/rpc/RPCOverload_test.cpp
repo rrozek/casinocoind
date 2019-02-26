@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
- 
+#include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <test/jtx/WSClient.h>
 #include <test/jtx/JSONRPCClient.h>
@@ -32,7 +32,11 @@ public:
     {
         testcase << "Overload " << (useWS ? "WS" : "HTTP") << " RPC client";
         using namespace jtx;
-        Env env {*this, envconfig(no_admin)};
+        Env env {*this, envconfig([](std::unique_ptr<Config> cfg)
+            {
+                cfg->loadFromString ("[" SECTION_SIGNING_SUPPORT "]\ntrue");
+                return no_admin(std::move(cfg));
+            })};
 
         Account const alice {"alice"};
         Account const bob {"bob"};
@@ -85,3 +89,4 @@ BEAST_DEFINE_TESTSUITE(RPCOverload,app,ripple);
 
 } // test
 } // casinocoin
+

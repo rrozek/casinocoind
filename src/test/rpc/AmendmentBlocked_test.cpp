@@ -16,6 +16,7 @@
 //==============================================================================
 
 #include <test/jtx.h>
+#include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <test/jtx/WSClient.h>
@@ -27,7 +28,11 @@ class AmendmentBlocked_test : public beast::unit_test::suite
     void testBlockedMethods()
     {
         using namespace test::jtx;
-        Env env {*this};
+        Env env {*this, envconfig([](std::unique_ptr<Config> cfg)
+            {
+                cfg->loadFromString ("[" SECTION_SIGNING_SUPPORT "]\ntrue");
+                return cfg;
+            })};
         auto const gw = Account {"gateway"};
         auto const USD = gw["USD"];
         auto const alice = Account {"alice"};
