@@ -27,10 +27,10 @@
 #include <casinocoin/overlay/impl/TMHello.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/main/Application.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <casinocoin/protocol/digest.h>
-#include <beast/core/detail/base64.hpp>
 #include <boost/regex.hpp>
 #include <algorithm>
 
@@ -159,7 +159,7 @@ appendHello (beast::http::fields& h,
 
     h.insert ("Public-Key", hello.nodepublic());
 
-    h.insert ("Session-Signature", beast::detail::base64_encode (
+    h.insert ("Session-Signature", base64_encode (
         hello.nodeproof()));
 
     if (hello.has_nettime())
@@ -169,11 +169,11 @@ appendHello (beast::http::fields& h,
         h.insert ("Ledger", std::to_string (hello.ledgerindex()));
 
     if (hello.has_ledgerclosed())
-        h.insert ("Closed-Ledger", beast::detail::base64_encode (
+        h.insert ("Closed-Ledger", base64_encode (
             hello.ledgerclosed()));
 
     if (hello.has_ledgerprevious())
-        h.insert ("Previous-Ledger", beast::detail::base64_encode (
+        h.insert ("Previous-Ledger", base64_encode (
             hello.ledgerprevious()));
 
     if (hello.has_local_ip_str())
@@ -258,7 +258,7 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         if (iter == h.end())
             return boost::none;
         // TODO Security Review
-        hello.set_nodeproof (beast::detail::base64_decode (iter->value().to_string()));
+        hello.set_nodeproof (base64_decode (iter->value().to_string()));
     }
 
     {
@@ -293,13 +293,13 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
     {
         auto const iter = h.find ("Closed-Ledger");
         if (iter != h.end())
-            hello.set_ledgerclosed (beast::detail::base64_decode (iter->value().to_string()));
+            hello.set_ledgerclosed (base64_decode (iter->value().to_string()));
     }
 
     {
         auto const iter = h.find ("Previous-Ledger");
         if (iter != h.end())
-            hello.set_ledgerprevious (beast::detail::base64_decode (iter->value().to_string()));
+            hello.set_ledgerprevious (base64_decode (iter->value().to_string()));
     }
 
     {

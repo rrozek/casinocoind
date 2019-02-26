@@ -26,10 +26,10 @@
 #include <casinocoin/app/misc/ValidatorSite.h>
 #include <casinocoin/app/misc/detail/WorkPlain.h>
 #include <casinocoin/app/misc/detail/WorkSSL.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/protocol/JsonFields.h>
-#include <beast/core/detail/base64.hpp>
 #include <boost/regex.hpp>
 
 namespace casinocoin {

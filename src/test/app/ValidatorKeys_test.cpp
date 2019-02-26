@@ -18,10 +18,10 @@
 //==============================================================================
 
 #include <casinocoin/app/misc/ValidatorKeys.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
-#include <beast/core/detail/base64.hpp>
 #include <string>
 
 namespace casinocoin {
@@ -89,7 +89,7 @@ public:
             derivePublicKey(KeyType::secp256k1, tokenSecretKey);
 
         auto const m = Manifest::make_Manifest(
-                beast::detail::base64_decode(tokenManifest));
+                base64_decode(tokenManifest));
         BEAST_EXPECT(m);
         NodeID const tokenNodeID = calcNodeID(m->masterKey);
 

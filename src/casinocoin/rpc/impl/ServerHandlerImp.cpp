@@ -26,6 +26,7 @@
  
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/beast/net/IPAddressConversion.h>
 #include <casinocoin/json/json_reader.h>
@@ -46,7 +47,6 @@
 #include <casinocoin/rpc/impl/Tuning.h>
 #include <casinocoin/rpc/RPCHandler.h>
 #include <casinocoin/server/SimpleWriter.h>
-#include <beast/core/detail/base64.hpp>
 #include <beast/http/fields.hpp>
 #include <beast/http/string_body.hpp>
 #include <boost/algorithm/string.hpp>
@@ -104,7 +104,7 @@ authorized (
         return false;
     std::string strUserPass64 = it->second.substr (6);
     boost::trim (strUserPass64);
-    std::string strUserPass = beast::detail::base64_decode (strUserPass64);
+    std::string strUserPass = base64_decode (strUserPass64);
     std::string::size_type nColon = strUserPass.find (":");
     if (nColon == std::string::npos)
         return false;

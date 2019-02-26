@@ -17,8 +17,8 @@
 */
 //==============================================================================
 
-#include <beast/core/detail/base64.hpp>
 #include <casinocoin/app/misc/ValidatorSite.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/basics/strHex.h>
 #include <casinocoin/protocol/digest.h>
@@ -67,7 +67,7 @@ private:
         Serializer s;
         st.add(s);
 
-        return beast::detail::base64_encode (std::string(
+        return base64_encode (std::string(
             static_cast<char const*> (s.data()), s.size()));
     }
 

@@ -27,6 +27,7 @@
 
 #include <casinocoin/basics/impl/BasicConfig.cpp>
 #include <casinocoin/basics/impl/CheckLibraryVersions.cpp>
+#include <casinocoin/basics/impl/base64.cpp>
 #include <casinocoin/basics/impl/contract.cpp>
 #include <casinocoin/basics/impl/CountedObject.cpp>
 #include <casinocoin/basics/impl/Log.cpp>

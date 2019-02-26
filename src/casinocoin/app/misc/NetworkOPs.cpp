@@ -46,6 +46,7 @@
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/app/misc/impl/AccountTxPaging.h>
 #include <casinocoin/app/tx/apply.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/basics/PerfLog.h>
 #include <casinocoin/basics/UptimeClock.h>
@@ -62,7 +63,6 @@
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <casinocoin/beast/utility/rngfill.h>
 #include <casinocoin/basics/make_lock.h>
-#include <beast/core/detail/base64.hpp>
 #include <casinocoin/basics/mulDiv.h>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/ip/host_name.hpp>

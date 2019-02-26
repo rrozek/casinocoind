@@ -27,6 +27,7 @@
 #include <test/jtx/JSONRPCClient.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
+#include <casinocoin/basics/base64.h>
 #include <beast/http.hpp>
 #include <beast/test/yield_to.hpp>
 #include <beast/websocket/detail/mask.hpp>
@@ -553,7 +554,7 @@ class ServerStatus_test :
         doHTTPRequest(env, yield, secure, resp, ec, to_string(jr), auth);
         BEAST_EXPECT(resp.result() == beast::http::status::forbidden);
 
-        auth.set("Authorization", "Basic " + beast::detail::base64_encode("me:badpass"));
+        auth.set("Authorization", "Basic " + base64_encode("me:badpass"));
         doHTTPRequest(env, yield, secure, resp, ec, to_string(jr), auth);
         BEAST_EXPECT(resp.result() == beast::http::status::forbidden);
 
@@ -569,7 +570,7 @@ class ServerStatus_test :
 
         // finally if we use the correct user/pass encoded, we should get a 200
         auth.set("Authorization", "Basic " +
-            beast::detail::base64_encode(user + ":" + pass));
+            base64_encode(user + ":" + pass));
         doHTTPRequest(env, yield, secure, resp, ec, to_string(jr), auth);
         BEAST_EXPECT(resp.result() == beast::http::status::ok);
         BEAST_EXPECT(! resp.body.empty());

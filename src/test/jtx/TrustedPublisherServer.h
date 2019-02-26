@@ -17,14 +17,13 @@
 #ifndef CASINOCOIN_TEST_TRUSTED_PUBLISHER_SERVER_H_INCLUDED
 #define CASINOCOIN_TEST_TRUSTED_PUBLISHER_SERVER_H_INCLUDED
 
-#include <beast/core/detail/base64.hpp>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/protocol/Sign.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/strHex.h>
 #include <test/jtx/envconfig.h>
 #include <boost/asio.hpp>
-#include <beast/core/detail/base64.hpp>
 #include <beast/http.hpp>
 
 namespace casinocoin {
@@ -79,7 +78,7 @@ public:
         }
         data.pop_back();
         data += "]}";
-        std::string blob = beast::detail::base64_encode(data);
+        std::string blob = base64_encode(data);
 
         list_ = "{\"blob\":\"" + blob + "\"";
 

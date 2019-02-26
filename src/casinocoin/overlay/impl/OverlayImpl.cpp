@@ -29,6 +29,7 @@
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/ValidatorList.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/make_SSLContext.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <casinocoin/core/DatabaseCon.h>
@@ -772,7 +773,7 @@ OverlayImpl::crawl()
     for_each ([&](std::shared_ptr<PeerImp>&& sp)
     {
         auto& pv = av.append(Json::Value(Json::objectValue));
-        pv[jss::public_key] = beast::detail::base64_encode(
+        pv[jss::public_key] = base64_encode(
             sp->getNodePublic().data(),
                 sp->getNodePublic().size());
         pv[jss::type] = sp->slot()->inbound() ?

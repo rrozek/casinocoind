@@ -21,10 +21,10 @@
 #include <casinocoin/app/misc/ValidatorKeys.h>
 
 #include <casinocoin/app/misc/Manifest.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
-#include <beast/core/detail/base64.hpp>
 namespace casinocoin {
 ValidatorKeys::ValidatorKeys(Config const& config, beast::Journal j)
 {
@@ -45,7 +45,7 @@ ValidatorKeys::ValidatorKeys(Config const& config, beast::Journal j)
             auto const pk = derivePublicKey(
                 KeyType::secp256k1, token->validationSecret);
             auto const m = Manifest::make_Manifest(
-                beast::detail::base64_decode(token->manifest));
+                base64_decode(token->manifest));
             if (! m || pk != m->signingKey)
             {
                 configInvalid_ = true;

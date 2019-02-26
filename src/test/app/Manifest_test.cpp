@@ -19,6 +19,7 @@
 
 #include <casinocoin/app/misc/Manifest.h>
 #include <casinocoin/app/misc/ValidatorList.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <test/jtx.h>
@@ -27,7 +28,6 @@
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/protocol/Sign.h>
 #include <casinocoin/protocol/STExchange.h>
-#include <beast/core/detail/base64.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/utility/in_place_factory.hpp>
@@ -123,7 +123,7 @@ public:
         Serializer s;
         st.add(s);
 
-        return beast::detail::base64_encode (std::string(
+        return base64_encode (std::string(
             static_cast<char const*> (s.data()), s.size()));
     }
 
@@ -176,7 +176,7 @@ public:
         Serializer s;
         st.add(s);
 
-        return beast::detail::base64_encode (std::string(
+        return base64_encode (std::string(
             static_cast<char const*> (s.data()), s.size()));
     }
 

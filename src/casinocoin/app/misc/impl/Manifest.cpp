@@ -24,6 +24,7 @@
 //==============================================================================
 
 #include <casinocoin/app/misc/Manifest.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
@@ -32,7 +33,6 @@
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/Sign.h>
-#include <beast/core/detail/base64.hpp>
 #include <boost/regex.hpp>
 #include <numeric>
 #include <stdexcept>
@@ -188,7 +188,7 @@ ValidatorToken::make_ValidatorToken(std::vector<std::string> const& tokenBlob)
         for (auto const& line : tokenBlob)
             tokenStr += beast::rfc2616::trim(line);
 
-        tokenStr = beast::detail::base64_decode(tokenStr);
+        tokenStr = base64_decode(tokenStr);
 
         Json::Reader r;
         Json::Value token;
@@ -390,7 +390,7 @@ ManifestCache::load (
     if (! configManifest.empty())
     {
         auto mo = Manifest::make_Manifest (
-            beast::detail::base64_decode(configManifest));
+            base64_decode(configManifest));
         if (! mo)
         {
             JLOG (j_.error()) << "Malformed validator_token in config";
@@ -425,7 +425,7 @@ ManifestCache::load (
             revocationStr += beast::rfc2616::trim(line);
 
         auto mo = Manifest::make_Manifest (
-            beast::detail::base64_decode(revocationStr));
+            base64_decode(revocationStr));
 
         if (! mo || ! mo->revoked() ||
             applyManifest (std::move(*mo)) == ManifestDisposition::invalid)

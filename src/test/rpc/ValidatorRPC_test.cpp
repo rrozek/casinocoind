@@ -18,12 +18,12 @@
  
 #include <casinocoin/app/main/BasicApp.h>
 #include <casinocoin/app/misc/ValidatorSite.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/json/json_value.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/Sign.h>
-#include <beast/core/detail/base64.hpp>
 #include <test/jtx.h>
 #include <test/jtx/TrustedPublisherServer.h>
 
@@ -74,7 +74,7 @@ class ValidatorRPC_test : public beast::unit_test::suite
         Serializer s;
         st.add(s);
 
-        return beast::detail::base64_encode(
+        return base64_encode(
             std::string(static_cast<char const*>(s.data()), s.size()));
     }
 

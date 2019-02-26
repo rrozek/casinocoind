@@ -28,6 +28,7 @@
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/net/RPCCall.h>
 #include <casinocoin/net/RPCErr.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/core/Config.h>
@@ -1531,7 +1532,7 @@ void fromNetwork (
     }
 
     // HTTP basic authentication
-    auto const auth = beast::detail::base64_encode(strUsername + ":" + strPassword);
+    auto const auth = base64_encode(strUsername + ":" + strPassword);
 
     std::map<std::string, std::string> mapRequestHeaders;
 
