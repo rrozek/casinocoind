@@ -73,5 +73,6 @@ uint256 const featureEnforceInvariants = feature("EnforceInvariants");
 uint256 const featureKYC = feature("KYC");
 uint256 const featureKYCIPTracking = feature("KYCIPTracking");
 uint256 const featureConfigObject = feature("ConfigObject");
+uint256 const featureWLT = feature("WLT");
 
 } // casinocoin

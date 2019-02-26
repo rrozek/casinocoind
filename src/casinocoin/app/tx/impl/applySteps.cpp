@@ -100,6 +100,11 @@ invoke_preclaim(PreclaimContext const& ctx)
         if (result != tesSUCCESS)
             return { result, baseFee };
 
+        result = T::checkWLT(ctx);
+
+        if (result != tesSUCCESS)
+            return { result, baseFee };
+
         result = T::checkSign(ctx);
 
         if (result != tesSUCCESS)

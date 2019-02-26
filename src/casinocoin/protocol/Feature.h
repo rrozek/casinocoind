@@ -62,6 +62,7 @@ extern uint256 const featureEnforceInvariants;
 extern uint256 const featureKYC;
 extern uint256 const featureKYCIPTracking;
 extern uint256 const featureConfigObject;
+extern uint256 const featureWLT;
 
 } // casinocoin
 
