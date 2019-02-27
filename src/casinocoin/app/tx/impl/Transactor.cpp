@@ -348,6 +348,114 @@ Transactor::checkSign (PreclaimContext const& ctx)
 }
 
 TER
+Transactor::checkWLT (PreclaimContext const& ctx)
+{
+    // Narrow allowed tokens only if WLT amendment is enabled
+    if (ctx.view.rules().enabled(featureWLT))
+    {
+        if (ctx.tx.isNative())
+        {
+            return tesSUCCESS;
+        }
+        if (ctx.tx.getTxnType() == ttCONFIG)
+        {
+            JLOG(ctx.j.info()) << "checkWLT() SetConfiguration tx can operate on non-WLT for obvious reason.";
+            return tesSUCCESS;
+        }
+
+        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+        auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                            ledgerConfiguration.entries.end(),
+                                            [](ConfigObjectEntry const& obj)
+            {
+                return obj.getType() == ConfigObjectEntry::Token;
+            });
+        if (tokenConfigIter == ledgerConfiguration.entries.end())
+        {
+            JLOG(ctx.j.info()) << "No WLT entries found. tx forbidden.";
+            return tefNOT_WLT;
+        }
+
+        std::function<TER(STObject const&)> recursiveAmountCheckLambda;
+        recursiveAmountCheckLambda = [&](STObject const& obj) -> TER
+        {
+            TER terWLTCompliant = tesSUCCESS;
+            for (auto iter = obj.begin(); iter != obj.end(); ++iter)
+            {
+                if ((*iter).getSType() == STI_AMOUNT)
+                {
+                    terWLTCompliant = isWLTCompliant(static_cast<STAmount const&>((*iter)), *tokenConfigIter, ctx.j);
+                }
+                else if ((*iter).getSType() == STI_OBJECT)
+                {
+                    terWLTCompliant = recursiveAmountCheckLambda(static_cast<STObject const&>((*iter)));
+                }
+                else if ((*iter).getSType() == STI_ARRAY)
+                {
+                    for( auto const& stObj : static_cast<STArray const&>((*iter)))
+                    {
+                        terWLTCompliant = recursiveAmountCheckLambda(stObj);
+                        if (terWLTCompliant != tesSUCCESS)
+                        {
+                            return terWLTCompliant;
+                        }
+                    }
+                }
+                if (terWLTCompliant != tesSUCCESS)
+                {
+                    return terWLTCompliant;
+                }
+            }
+            return tesSUCCESS;
+        };
+
+
+        return recursiveAmountCheckLambda(ctx.tx);
+    }
+
+    return tesSUCCESS;
+}
+
+TER
+Transactor::isWLTCompliant(STAmount const& amount, ConfigObjectEntry const& tokenConfig, beast::Journal const& j)
+{
+    if (isCSC(amount))
+    {
+        return tesSUCCESS;
+    }
+    if (tokenConfig.getType() != ConfigObjectEntry::Token)
+    {
+        JLOG(j.warn()) << "isWLTCompliant() non-Token config object passed";
+        return tefFAILURE;
+    }
+
+    auto const& definedTokens = tokenConfig.getData();
+    for (auto const entry : definedTokens)
+    {
+        const TokenDescriptor* token = static_cast<const TokenDescriptor*>(entry);
+        try
+        {
+            if (token->totalSupply.issue() == amount.issue()
+                    && token->totalSupply >= amount)
+            {
+                JLOG(j.debug()) << "isWLTCompliant() found matching entry, return OK";
+                return tesSUCCESS;
+            }
+        }
+        catch( std::runtime_error const& err)
+        {
+            JLOG(j.warn()) << "isWLTCompliant() caught exception. what: " << err.what();
+            return tefNOT_WLT;
+        }
+    }
+
+    JLOG(j.info()) << "isWLTCompliant() not compliant"
+                    << " token: " << to_string(amount.issue().currency)
+                    << " issuer: " << toBase58(amount.issue().account);
+    return tefNOT_WLT;
+}
+
+TER
 Transactor::checkSingleSign (PreclaimContext const& ctx)
 {
     auto const id = ctx.tx.getAccountID(sfAccount);

@@ -572,6 +572,33 @@ const STArray& STObject::getFieldArray (SField const& field) const
     return getFieldByConstRef <STArray> (field, empty);
 }
 
+bool STObject::isNative() const
+{
+    for (detail::STVar const& elem : v_)
+    {
+        STBase const& base = elem.get();
+        if (base.getSType() == STI_AMOUNT)
+        {
+            if (!isCSC(static_cast<STAmount const&>(base)))
+                return false;
+        }
+        else if (base.getSType() == STI_OBJECT)
+        {
+            if (!(static_cast<STObject const&>(base).isNative()))
+                return false;
+        }
+        else if (base.getSType() == STI_ARRAY)
+        {
+            for( auto const& stObj : static_cast<STArray const&>(base))
+            {
+                if (!stObj.isNative())
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
 void
 STObject::set (std::unique_ptr<STBase> v)
 {

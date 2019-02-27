@@ -448,6 +448,9 @@ public:
     const STObject& getFieldObject (SField const& field) const;
     const STArray& getFieldArray (SField const& field) const;
 
+    // checks if all object STAmount fields are native CSC
+    bool isNative() const;
+
     /** Return the value of a field.
 
         Throws:
