@@ -60,6 +60,8 @@ extern uint256 const featureCryptoConditionsSuite;
 extern uint256 const fix1373;
 extern uint256 const featureEnforceInvariants;
 extern uint256 const featureKYC;
+extern uint256 const featureKYCIPTracking;
+extern uint256 const featureConfigObject;
 
 } // casinocoin
 

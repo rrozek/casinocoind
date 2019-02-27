@@ -36,6 +36,7 @@
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/app/misc/ValidatorList.h>
+#include <casinocoin/app/misc/configuration/VotableConfiguration.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/make_lock.h>
 #include <casinocoin/beast/core/LexicalCast.h>
@@ -335,6 +336,12 @@ CCLConsensus::onClose(
             feeVote_->doVoting(prevLedger, validations, initialSet);
             app_.getAmendmentTable().doVoting(
                 prevLedger, validations, initialSet);
+
+            if (ledger.ledger_->rules().enabled(featureConfigObject))
+            {
+                app_.getVotableConfig().doVoting(
+                    prevLedger, validations, initialSet);
+            }
         }
     }
 
@@ -845,6 +852,13 @@ CCLConsensus::validate(CCLCxLedger const& ledger, bool proposing)
         feeVote_->updatePosition(setup_FeeVote(app_.config().section ("voting")));
         feeVote_->doValidation(ledger.ledger_, *v);
         app_.getAmendmentTable().doValidation(ledger.ledger_, *v);
+
+        if (ledger.ledger_->rules().enabled(featureConfigObject))
+        {
+            Json::Value const& jvVotableConfig = app_.config().reloadConfigurationVoteParams();
+            app_.getVotableConfig().updatePosition(jvVotableConfig);
+            app_.getVotableConfig().doValidation(ledger.ledger_, *v);
+        }
     }
 
     auto const signingHash = v->sign(valSecret_);

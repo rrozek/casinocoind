@@ -63,6 +63,7 @@ enum TxType
 
     ttAMENDMENT         = 100,
     ttFEE               = 101,
+    ttCONFIG            = 102
 };
 
 /** Manages the list of known transaction formats.

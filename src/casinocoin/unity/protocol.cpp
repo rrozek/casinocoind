@@ -50,6 +50,7 @@
 #include <casinocoin/protocol/impl/tokens.cpp>
 #include <casinocoin/protocol/impl/TxFormats.cpp>
 #include <casinocoin/protocol/impl/UintTypes.cpp>
+#include <casinocoin/protocol/impl/ConfigObjectEntry.cpp>
 
 #include <casinocoin/protocol/impl/STAccount.cpp>
 #include <casinocoin/protocol/impl/STArray.cpp>

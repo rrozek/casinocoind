@@ -95,6 +95,12 @@ public:
         return base_.rules();
     }
 
+    LedgerConfig const&
+    ledgerConfig() const override
+    {
+        return base_.ledgerConfig();
+    }
+
     boost::optional<key_type>
     succ (key_type const& key, boost::optional<
         key_type> const& last = boost::none) const override

@@ -25,6 +25,7 @@
 
 #include <BeastConfig.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
+#include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/Transaction.h>
 #include <casinocoin/ledger/View.h>
 #include <casinocoin/net/RPCErr.h>
@@ -163,6 +164,25 @@ getAccountObjects(ReadView const& ledger, AccountID const& account,
             return true;
         }
     }
+}
+
+std::shared_ptr<const casinocoin::SLE>
+getAccountSLE ( LedgerMaster& ledgerMaster, std::string const& strIdent, LedgerIndex ledgerSeq, bool bStrict)
+{
+    AccountID uAccount;
+    if (accountFromString(uAccount, strIdent, bStrict))
+        return std::shared_ptr<const casinocoin::SLE>();
+
+    auto const accountKeylet = keylet::account (uAccount);
+
+    std::shared_ptr<Ledger const> queriedLedger;
+    if (ledgerSeq == 0)
+        queriedLedger = ledgerMaster.getValidatedLedger();
+    else
+        queriedLedger = ledgerMaster.getLedgerBySeq(ledgerSeq);
+    if (queriedLedger)
+        return queriedLedger->read(accountKeylet);
+    return std::shared_ptr<const casinocoin::SLE>();
 }
 
 namespace {
@@ -488,6 +508,33 @@ injectSLE(Json::Value& jv, SLE const& sle)
     {
         jv[jss::Invalid] = true;
     }
+}
+
+bool
+injectClientIP (Context& context)
+{
+    if (context.params.isMember (jss::tx_json))
+    {
+        // only check it if KYC feature and KYCIPTracking feature are enabled
+        LedgerMaster& ledgerMaster = context.app.getLedgerMaster();
+        if (ledgerMaster.getValidatedRules().enabled (featureKYC)
+            && ledgerMaster.getValidatedRules().enabled (featureKYCIPTracking))
+        {
+            // only add if account is KYC-validated
+            // TODO: This adds much work for tx submit process.
+            //      Some KYC accounts cache might be useful
+            std::shared_ptr<const casinocoin::SLE> sleSender =
+                    getAccountSLE(ledgerMaster, context.params[jss::tx_json][jss::Account].asString());
+            if (sleSender && (sleSender->isFlag(lsfKYCValidated)))
+            {
+                // TODO: jrojek apply ECIES with PubKey from CSCFoundationObject
+                context.params[jss::tx_json][jss::ClientIP]
+                        = context.clientAddress.address().to_string();
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 boost::optional<Json::Value>

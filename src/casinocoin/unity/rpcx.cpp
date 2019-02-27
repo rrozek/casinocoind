@@ -48,8 +48,11 @@
 #include <casinocoin/rpc/handlers/BlackList.cpp>
 #include <casinocoin/rpc/handlers/BookOffers.cpp>
 #include <casinocoin/rpc/handlers/CanDelete.cpp>
+#include <casinocoin/rpc/handlers/ConfigInfo.cpp>
 #include <casinocoin/rpc/handlers/Connect.cpp>
 #include <casinocoin/rpc/handlers/ConsensusInfo.cpp>
+#include <casinocoin/rpc/handlers/DecryptMsgHandler.cpp>
+#include <casinocoin/rpc/handlers/EncryptMsgHandler.cpp>
 #include <casinocoin/rpc/handlers/Feature1.cpp>
 #include <casinocoin/rpc/handlers/Fee1.cpp>
 #include <casinocoin/rpc/handlers/FetchInfo.cpp>

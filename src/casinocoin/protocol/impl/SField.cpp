@@ -138,6 +138,8 @@ SF_U32 const sfCancelAfter         = make::one<SF_U32::type>(&sfCancelAfter,    
 SF_U32 const sfFinishAfter         = make::one<SF_U32::type>(&sfFinishAfter,         STI_UINT32, 37, "FinishAfter");
 SF_U32 const sfSignerListID        = make::one<SF_U32::type>(&sfSignerListID,        STI_UINT32, 38, "SignerListID");
 SF_U32 const sfSettleDelay         = make::one<SF_U32::type>(&sfSettleDelay,         STI_UINT32, 39, "SettleDelay");
+SF_U32 const sfConfigID            = make::one<SF_U32::type>(&sfConfigID,            STI_UINT32, 40, "ConfigID");
+SF_U32 const sfConfigType          = make::one<SF_U32::type>(&sfConfigType,          STI_UINT32, 41, "ConfigType");
 
 // 64-bit integers
 SF_U64 const sfIndexNext     = make::one<SF_U64::type>(&sfIndexNext,     STI_UINT64, 1, "IndexNext");
@@ -209,12 +211,13 @@ SF_Blob const sfCreateCode      = make::one<SF_Blob::type>(&sfCreateCode,    STI
 SF_Blob const sfMemoType        = make::one<SF_Blob::type>(&sfMemoType,      STI_VL, 12, "MemoType");
 SF_Blob const sfMemoData        = make::one<SF_Blob::type>(&sfMemoData,      STI_VL, 13, "MemoData");
 SF_Blob const sfMemoFormat      = make::one<SF_Blob::type>(&sfMemoFormat,    STI_VL, 14, "MemoFormat");
-SF_Blob const sfClientIP        = make::one<SF_Blob::type>(&sfClientIP,      STI_VL, 15, "ClientIP");
+SF_Blob const sfClientIP        = make::one<SF_Blob::type>(&sfClientIP,      STI_VL, 15, "ClientIP", SField::sMD_Default, SField::notSigningNotHashed);
 
 // variable length (uncommon)
 SF_Blob const sfFulfillment     = make::one<SF_Blob::type>(&sfFulfillment,     STI_VL, 16, "Fulfillment");
 SF_Blob const sfCondition       = make::one<SF_Blob::type>(&sfCondition,       STI_VL, 17, "Condition");
 SF_Blob const sfMasterSignature = make::one<SF_Blob::type>(&sfMasterSignature, STI_VL, 18, "MasterSignature", SField::sMD_Default, SField::notSigning);
+SF_Blob const sfConfigData      = make::one<SF_Blob::type>(&sfConfigData,      STI_VL, 19, "ConfigData");
 
 
 // account
@@ -229,9 +232,10 @@ SF_Account const sfRegularKey  = make::one<SF_Account::type>(&sfRegularKey,  STI
 SField const sfPaths = make::one(&sfPaths, STI_PATHSET, 1, "Paths");
 
 // vector of 256-bit
-SF_Vec256 const sfIndexes    = make::one<SF_Vec256::type>(&sfIndexes,    STI_VECTOR256, 1, "Indexes", SField::sMD_Never);
-SF_Vec256 const sfHashes     = make::one<SF_Vec256::type>(&sfHashes,     STI_VECTOR256, 2, "Hashes");
-SF_Vec256 const sfAmendments = make::one<SF_Vec256::type>(&sfAmendments, STI_VECTOR256, 3, "Amendments");
+SF_Vec256 const sfIndexes           = make::one<SF_Vec256::type>(&sfIndexes,        STI_VECTOR256, 1, "Indexes", SField::sMD_Never);
+SF_Vec256 const sfHashes            = make::one<SF_Vec256::type>(&sfHashes,         STI_VECTOR256, 2, "Hashes");
+SF_Vec256 const sfAmendments        = make::one<SF_Vec256::type>(&sfAmendments,     STI_VECTOR256, 3, "Amendments");
+SF_Vec256 const sfConfigHashes      = make::one<SF_Vec256::type>(&sfConfigHashes,   STI_VECTOR256, 4, "ConfigHashes");
 
 SF_Vec128 const sfKYCVerifications = make::one<SF_Vec128::type>(&sfKYCVerifications, STI_VECTOR128, 1, "Verifications");
 
@@ -253,6 +257,7 @@ SField const sfSigner              = make::one(&sfSigner,              STI_OBJEC
 //                                                                                 17 has not been used yet...
 SField const sfMajority            = make::one(&sfMajority,            STI_OBJECT, 18, "Majority");
 SField const sfKYC                 = make::one(&sfKYC,                 STI_OBJECT, 19, "KYC");
+SField const sfConfigEntry         = make::one(&sfConfigEntry,         STI_OBJECT, 20, "ConfigEntry");
 
 // array of objects
 // ARRAY/1 is reserved for end of array
@@ -267,6 +272,7 @@ SField const sfMemos           = make::one(&sfMemos,           STI_ARRAY, 9, "Me
 
 // array of objects (uncommon)
 SField const sfMajorities      = make::one(&sfMajorities,      STI_ARRAY, 16, "Majorities");
+SField const sfConfiguration   = make::one(&sfConfiguration,   STI_ARRAY, 17, "Configuration");
 
 SField::SField (SerializedTypeID tid, int fv, const char* fn,
                 int meta, IsSigning signing)
