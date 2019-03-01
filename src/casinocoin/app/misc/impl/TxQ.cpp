@@ -1391,10 +1391,10 @@ TxQ::getMetrics(OpenView const& view, std::uint32_t txCountPadding) const
     result.txInLedger = view.txCount();
     result.txPerLedger = snapshot.txnsExpected;
     result.referenceFeeLevel = baseLevel;
-    result.minFeeLevel = isFull() ? byFee_.rbegin()->feeLevel + 1 :
+    result.minProcessingFeeLevel = isFull() ? byFee_.rbegin()->feeLevel + 1 :
         baseLevel;
     result.medFeeLevel = snapshot.escalationMultiplier;
-    result.expFeeLevel = FeeMetrics::scaleFeeLevel(
+    result.openLedgerFeeLevel = FeeMetrics::scaleFeeLevel(
         j_,snapshot, view, txCountPadding);
 
     return result;
@@ -1498,9 +1498,9 @@ TxQ::doRPC(Application& app) const
         ret[jss::max_queue_size] = to_string(*metrics->txQMaxSize);
 
     levels[jss::reference_level] = to_string(metrics->referenceFeeLevel);
-    levels[jss::minimum_level] = to_string(metrics->minFeeLevel);
+    levels[jss::minimum_level] = to_string(metrics->minProcessingFeeLevel);
     levels[jss::median_level] = to_string(metrics->medFeeLevel);
-    levels[jss::open_ledger_level] = to_string(metrics->expFeeLevel);
+    levels[jss::open_ledger_level] = to_string(metrics->openLedgerFeeLevel);
 
     auto const baseFee = view->fees().base;
     auto& drops = ret[jss::drops] = Json::Value();
@@ -1510,16 +1510,16 @@ TxQ::doRPC(Application& app) const
         metrics->referenceFeeLevel, baseFee,
             metrics->referenceFeeLevel).second);
     drops[jss::minimum_fee] = to_string(mulDiv(
-        metrics->minFeeLevel, baseFee,
+        metrics->minProcessingFeeLevel, baseFee,
             metrics->referenceFeeLevel).second);
     drops[jss::median_fee] = to_string(mulDiv(
         metrics->medFeeLevel, baseFee,
             metrics->referenceFeeLevel).second);
     auto escalatedFee = mulDiv(
-        metrics->expFeeLevel, baseFee,
+        metrics->openLedgerFeeLevel, baseFee,
             metrics->referenceFeeLevel).second;
     if (mulDiv(escalatedFee, metrics->referenceFeeLevel,
-            baseFee).second < metrics->expFeeLevel)
+            baseFee).second < metrics->openLedgerFeeLevel)
         ++escalatedFee;
 
     drops[jss::open_ledger_fee] = to_string(escalatedFee);

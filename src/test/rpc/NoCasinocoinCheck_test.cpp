@@ -290,14 +290,14 @@ class noCasinocoinCheckLimits_test : public beast::unit_test::suite
             env.memoize(gw);
             env (pay (env.master, gw, CSC(1000)),
                 seq (autofill),
-                fee (txq.getMetrics(*env.current())->expFeeLevel + 1),
+                fee (txq.getMetrics(*env.current())->openLedgerFeeLevel + 1),
                 sig (autofill));
             env (fset (gw, asfDefaultCasinocoin),
                 seq (autofill),
-                fee (txq.getMetrics(*env.current())->expFeeLevel + 1),
+                fee (txq.getMetrics(*env.current())->openLedgerFeeLevel + 1),
                 sig (autofill));
             env (trust (alice, gw["USD"](10)),
-                fee (txq.getMetrics(*env.current())->expFeeLevel + 1));
+                fee (txq.getMetrics(*env.current())->openLedgerFeeLevel + 1));
             env.close();
         }
 
