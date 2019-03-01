@@ -324,9 +324,14 @@ SetTrust::doApply ()
         std::uint32_t const uFlagsIn (sleCasinocoinState->getFieldU32 (sfFlags));
         std::uint32_t uFlagsOut (uFlagsIn);
 
-        if (bSetNoCasinocoin && !bClearNoCasinocoin && (bHigh ? saHighBalance : saLowBalance) >= beast::zero)
+        if (bSetNoCasinocoin && !bClearNoCasinocoin)
         {
-            uFlagsOut |= (bHigh ? lsfHighNoCasinocoin : lsfLowNoCasinocoin);
+            if ((bHigh ? saHighBalance : saLowBalance) >= beast::zero)
+                uFlagsOut |= (bHigh ? lsfHighNoCasinocoin : lsfLowNoCasinocoin);
+
+            else if (view().rules().enabled(fix1578))
+                // Cannot set noCasinocoin on a negative balance.
+                return tecNO_PERMISSION;
         }
         else if (bClearNoCasinocoin && !bSetNoCasinocoin)
         {
