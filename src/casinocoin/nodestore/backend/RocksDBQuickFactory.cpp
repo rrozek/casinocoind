@@ -29,6 +29,7 @@
 #if CASINOCOIN_ROCKSDB_AVAILABLE
 
 #include <casinocoin/basics/contract.h>
+#include <casinocoin/basics/ByteUtilities.h>
 #include <casinocoin/core/Config.h> // VFALCO Bad dependency
 #include <casinocoin/nodestore/Factory.h>
 #include <casinocoin/nodestore/Manager.h>
@@ -115,7 +116,7 @@ public:
                 "Missing path in RocksDBQuickFactory backend");
 
         // Defaults
-        std::uint64_t budget = 512 * 1024 * 1024;  // 512MB
+        std::uint64_t budget = megabytes(512);
         std::string style("level");
         std::uint64_t threads=4;
 
@@ -134,7 +135,7 @@ public:
             m_options.OptimizeUniversalStyleCompaction(budget);
 
         if (style == "point")
-            m_options.OptimizeForPointLookup(budget / 1024 / 1024);  // In MB
+            m_options.OptimizeForPointLookup(budget / megabytes(1)); // In MB
 
         m_options.IncreaseParallelism(threads);
 

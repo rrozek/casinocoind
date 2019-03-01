@@ -30,6 +30,7 @@
 
  
 #include <casinocoin/basics/contract.h>
+#include <casinocoin/basics/ByteUtilities.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/core/SociDB.h>
 #include <casinocoin/core/Config.h>
@@ -135,7 +136,7 @@ size_t getKBUsedAll (soci::session& s)
 {
     if (! getConnection (s))
         Throw<std::logic_error> ("No connection found.");
-    return static_cast <size_t> (sqlite_api::sqlite3_memory_used () / 1024);
+    return static_cast <size_t> (sqlite_api::sqlite3_memory_used () / kilobytes(1));
 }
 
 size_t getKBUsedDB (soci::session& s)
@@ -146,7 +147,7 @@ size_t getKBUsedDB (soci::session& s)
         int cur = 0, hiw = 0;
         sqlite_api::sqlite3_db_status (
             conn, SQLITE_DBSTATUS_CACHE_USED, &cur, &hiw, 0);
-        return cur / 1024;
+        return cur / kilobytes(1);
     }
     Throw<std::logic_error> ("");
     return 0; // Silence compiler warning.
@@ -165,7 +166,6 @@ void convert (soci::blob& from, std::string& to)
     std::vector<std::uint8_t> tmp;
     convert (from, tmp);
     to.assign (tmp.begin (), tmp.end());
-
 }
 
 void convert (std::vector<std::uint8_t> const& from, soci::blob& to)
@@ -285,3 +285,4 @@ std::unique_ptr <Checkpointer> makeCheckpointer (
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
+

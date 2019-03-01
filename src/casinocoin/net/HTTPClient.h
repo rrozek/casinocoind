@@ -26,6 +26,7 @@
 #ifndef CASINOCOIN_NET_HTTPCLIENT_H_INCLUDED
 #define CASINOCOIN_NET_HTTPCLIENT_H_INCLUDED
 
+#include <casinocoin/basics/ByteUtilities.h>
 #include <casinocoin/core/Config.h>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/streambuf.hpp>
@@ -40,10 +41,7 @@ class HTTPClient
 public:
     explicit HTTPClient() = default;
 
-    enum
-    {
-        maxClientHeaderBytes = 32 * 1024
-    };
+    static constexpr auto maxClientHeaderBytes = kilobytes(32);
 
     static void initializeSSLContext (Config const& config, beast::Journal j);
 

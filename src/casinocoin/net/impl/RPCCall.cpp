@@ -26,6 +26,7 @@
  
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/basics/ByteUtilities.h>
 #include <casinocoin/net/RPCCall.h>
 #include <casinocoin/net/RPCErr.h>
 #include <casinocoin/basics/base64.h>
@@ -1542,7 +1543,7 @@ void fromNetwork (
 
     // Number of bytes to try to receive if no
     // Content-Length header received
-    const int RPC_REPLY_MAX_BYTES (256*1024*1024);
+    constexpr auto RPC_REPLY_MAX_BYTES = megabytes(256);
 
     using namespace std::chrono_literals;
     auto constexpr RPC_NOTIFY = 10min;

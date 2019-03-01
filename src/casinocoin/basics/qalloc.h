@@ -27,6 +27,7 @@
 #define CASINOCOIN_BASICS_QALLOC_H_INCLUDED
 
 #include <casinocoin/basics/contract.h>
+#include <casinocoin/basics/ByteUtilities.h>
 #include <boost/intrusive/list.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -73,10 +74,7 @@ private:
     block* free_ = nullptr;
 
 public:
-    enum
-    {
-        block_size = 256 * 1024
-    };
+    static constexpr auto block_size = kilobytes(256);
 
     qalloc_impl() = default;
     qalloc_impl (qalloc_impl const&) = delete;

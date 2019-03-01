@@ -25,6 +25,7 @@
 
  
 #include <casinocoin/basics/contract.h>
+#include <casinocoin/basics/ByteUtilities.h>
 #include <casinocoin/crypto/csprng.h>
 #include <openssl/rand.h>
 #include <array>
@@ -62,7 +63,7 @@ csprng_engine::load_state (std::string const& file)
     if (!file.empty())
     {
         std::lock_guard<std::mutex> lock (mutex_);
-        RAND_load_file (file.c_str (), 1024);
+        RAND_load_file (file.c_str (), kilobytes(1));
         RAND_write_file (file.c_str ());
     }
 }
@@ -142,3 +143,4 @@ csprng_engine& crypto_prng()
 }
 
 }
+
