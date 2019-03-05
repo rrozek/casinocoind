@@ -160,6 +160,9 @@ enum LedgerSpecificFlags
     lsfHighNoCasinocoin  = 0x00200000,
     lsfLowFreeze         = 0x00400000,   // True, low side has set freeze flag
     lsfHighFreeze        = 0x00800000,   // True, high side has set freeze flag
+
+    // ltSIGNER_LIST
+    lsfOneOwnerCount    = 0x00010000,   // True, uses only one OwnerCount
 };
 
 //------------------------------------------------------------------------------
@@ -181,3 +184,4 @@ private:
 } // casinocoin
 
 #endif
+
