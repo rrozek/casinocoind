@@ -53,6 +53,8 @@ private:
     std::size_t size_ = 0;
 
 public:
+    using const_iterator = std::uint8_t const*;
+
     /** Default constructed Slice has length 0. */
     Slice() noexcept = default;
 
@@ -120,6 +122,31 @@ public:
         return temp += n;
     }
     /** @} */
+
+
+    const_iterator
+    begin() const noexcept
+    {
+        return data_;
+    }
+
+    const_iterator
+    cbegin() const noexcept
+    {
+        return data_;
+    }
+
+    const_iterator
+    end() const noexcept
+    {
+        return data_ + size_;
+    }
+
+    const_iterator
+    cend() const noexcept
+    {
+        return data_ + size_;
+    }
 };
 
 //------------------------------------------------------------------------------
@@ -165,7 +192,7 @@ operator< (Slice const& lhs, Slice const& rhs) noexcept
 template <class Stream>
 Stream& operator<<(Stream& s, Slice const& v)
 {
-    s << strHex(v.data(), v.size());
+    s << strHex(v);
     return s;
 }
 
@@ -197,9 +224,6 @@ makeSlice (std::basic_string<char, Traits, Alloc> const& s)
 {
     return Slice(s.data(), s.size());
 }
-
-std::string
-strHex (Slice const& slice);
 
 } // casinocoin
 

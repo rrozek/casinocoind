@@ -126,7 +126,7 @@ public:
     STPathElement(STPathElement const&) = default;
     STPathElement& operator=(STPathElement const&) = default;
 
-    int
+    auto
     getNodeType () const
     {
         return mType;
@@ -403,3 +403,4 @@ private:
 } // casinocoin
 
 #endif
+

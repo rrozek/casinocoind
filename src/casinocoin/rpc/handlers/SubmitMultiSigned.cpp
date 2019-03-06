@@ -66,7 +66,7 @@ Json::Value doSubmitMultiSigned (RPC::Context& context)
                 {
                     // jrojek 28.02.2018 enrich tx_json with clientIP
                     std::string clientIPStr = context.clientAddress.address().to_string();
-                    Json::Value ipAddress(strHex(clientIPStr.begin(), clientIPStr.size()));
+                    Json::Value ipAddress(strHex(clientIPStr));
                     context.params[jss::tx_json][jss::ClientIP] = ipAddress;
                 }
             }

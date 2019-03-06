@@ -69,7 +69,7 @@ std::string to_string(Currency const& currency)
         }
     }
 
-    return strHex (currency.begin (), currency.size ());
+    return strHex (currency);
 }
 
 bool to_currency(Currency& currency, std::string const& code)
