@@ -240,6 +240,7 @@ JSS ( last );                       // out: RPCVersion
 JSS ( last_close );                 // out: NetworkOPs
 JSS ( last_refresh_time );          // out: ValidatorSite
 JSS ( last_refresh_status );        // out: ValidatorSite
+JSS ( last_refresh_message );       // out: ValidatorSite
 JSS ( ledger );                     // in: NetworkOPs, LedgerCleaner,
                                     //     RPCHelpers
                                     // out: NetworkOPs, PeerImp
@@ -312,6 +313,7 @@ JSS ( name );                       // out: AmendmentTableImpl, PeerImp
 JSS ( needed_state_hashes );        // out: InboundLedger
 JSS ( needed_transaction_hashes );  // out: InboundLedger
 JSS ( network_ledger );             // out: NetworkOPs
+JSS ( next_refresh_time );          // out: ValidatorSite
 JSS ( no_casinocoin );                  // out: AccountLines
 JSS ( no_casinocoin_peer );             // out: AccountLines
 JSS ( node );                       // out: LedgerEntry
