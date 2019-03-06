@@ -46,6 +46,7 @@
 #include <casinocoin/rpc/handlers/CanDelete.cpp>
 #include <casinocoin/rpc/handlers/Connect.cpp>
 #include <casinocoin/rpc/handlers/ConsensusInfo.cpp>
+#include <casinocoin/rpc/handlers/CrawlShards.cpp>
 #include <casinocoin/rpc/handlers/DepositAuthorized.cpp>
 #include <casinocoin/rpc/handlers/Feature1.cpp>
 #include <casinocoin/rpc/handlers/Fee1.cpp>

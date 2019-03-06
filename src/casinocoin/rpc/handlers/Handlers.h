@@ -74,6 +74,7 @@ Json::Value doServerInfo            (RPC::Context&); // for humans
 Json::Value doServerState           (RPC::Context&); // for machines
 Json::Value doSign                  (RPC::Context&);
 Json::Value doSignFor               (RPC::Context&);
+Json::Value doCrawlShards           (RPC::Context&);
 Json::Value doSignMsg               (RPC::Context&);
 Json::Value doStop                  (RPC::Context&);
 Json::Value doSubmit                (RPC::Context&);

@@ -24,6 +24,8 @@
 #include <casinocoin/basics/random.h>
 #include <casinocoin/nodestore/DummyScheduler.h>
 #include <casinocoin/nodestore/Manager.h>
+#include <casinocoin/overlay/Overlay.h>
+#include <casinocoin/overlay/predicates.h>
 #include <casinocoin/protocol/HashPrefix.h>
 
 namespace casinocoin {
@@ -512,6 +514,14 @@ DatabaseShardImp::setStored(std::shared_ptr<Ledger const> const& ledger)
         complete_.emplace(incomplete_->index(), std::move(incomplete_));
         incomplete_.reset();
         updateStats(l);
+
+        // Update peers with new shard index
+        protocol::TMShardInfo message;
+        PublicKey const& publicKey {app_.nodeIdentity().first};
+        message.set_nodepubkey(publicKey.data(), publicKey.size());
+        message.set_shardindexes(std::to_string(shardIndex));
+        app_.overlay().foreach(send_always(
+            std::make_shared<Message>(message, protocol::mtSHARD_INFO)));
     }
 }
 
