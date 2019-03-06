@@ -28,6 +28,7 @@
 #include <casinocoin/nodestore/Factory.h>
 #include <casinocoin/nodestore/Manager.h>
 #include <beast/core/string.hpp>
+#include <boost/core/ignore_unused.hpp>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -96,6 +97,7 @@ public:
         : name_ (get<std::string>(keyValues, "path"))
         , journal_ (journal)
     {
+        boost::ignore_unused (journal_); // Keep unused journal_ just in case.
         if (name_.empty())
             Throw<std::runtime_error> ("Missing path in Memory backend");
     }

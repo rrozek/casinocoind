@@ -37,7 +37,7 @@
 namespace casinocoin {
 
 CCLValidatedLedger::CCLValidatedLedger(MakeGenesis)
-    : ledgerID_{0}, ledgerSeq_{0}
+    : ledgerID_{0}, ledgerSeq_{0}, j_{beast::Journal::getNullSink()}
 {
 }
 

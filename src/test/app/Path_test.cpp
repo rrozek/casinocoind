@@ -232,7 +232,7 @@ public:
         Resource::Charge loadType = Resource::feeReferenceRPC;
         Resource::Consumer c;
         beast::IP::Endpoint dummy;
-        RPC::Context context {beast::Journal(), {}, app, loadType,
+        RPC::Context context {env.journal, {}, app, loadType,
             app.getOPs(), app.getLedgerMaster(), c, dummy, Role::USER, {}};
 
         Json::Value params = Json::objectValue;
@@ -331,7 +331,7 @@ public:
         Resource::Charge loadType = Resource::feeReferenceRPC;
         Resource::Consumer c;
         beast::IP::Endpoint dummy;
-        RPC::Context context {beast::Journal(), {}, app, loadType,
+        RPC::Context context {env.journal, {}, app, loadType,
             app.getOPs(), app.getLedgerMaster(), c, dummy, Role::USER, {}};
         Json::Value result;
         gate g;

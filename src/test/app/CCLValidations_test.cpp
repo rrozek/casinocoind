@@ -20,8 +20,9 @@
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/ledger/View.h>
-#include <test/jtx.h>
 #include <casinocoin/beast/unit_test.h>
+#include <test/jtx.h>
+
 
 namespace casinocoin {
 namespace test {
@@ -63,7 +64,6 @@ public:
     testCCLValidatedLedger()
     {
         testcase("CCLValidatedLedger ancestry");
-        beast::Journal j;
 
         using Seq = CCLValidatedLedger::Seq;
         using ID = CCLValidatedLedger::ID;
@@ -135,7 +135,7 @@ public:
         // Full history ledgers
         {
             std::shared_ptr<Ledger const> ledger = history.back();
-            CCLValidatedLedger a{ledger, j};
+            CCLValidatedLedger a{ledger, env.journal};
             BEAST_EXPECT(a.seq() == ledger->info().seq);
             BEAST_EXPECT(
                 a.minSeq() == a.seq() - maxAncestors);
@@ -158,17 +158,17 @@ public:
             for (auto ledger : {history.back(),
                                 history[maxAncestors - 1]})
             {
-                CCLValidatedLedger b{ledger, j};
+                CCLValidatedLedger b{ledger, env.journal};
                 BEAST_EXPECT(mismatch(a, b) == 1);
                 BEAST_EXPECT(mismatch(b, a) == 1);
             }
         }
         // Same chains, different seqs
         {
-            CCLValidatedLedger a{history.back(), j};
+            CCLValidatedLedger a{history.back(), env.journal};
             for(Seq s = a.seq(); s > 0; s--)
             {
-                CCLValidatedLedger b{history[s-1], j};
+                CCLValidatedLedger b{history[s-1], env.journal};
                 if(s >= a.minSeq())
                 {
                     BEAST_EXPECT(mismatch(a, b) == b.seq() + 1);
@@ -187,8 +187,8 @@ public:
             // Alt history diverged at history.size()/2
             for(Seq s = 1; s < history.size(); ++s)
             {
-                CCLValidatedLedger a{history[s-1], j};
-                CCLValidatedLedger b{altHistory[s-1], j};
+                CCLValidatedLedger a{history[s-1], env.journal};
+                CCLValidatedLedger b{altHistory[s-1], env.journal};
 
                 BEAST_EXPECT(a.seq() == b.seq());
                 if(s <= diverge)
@@ -208,10 +208,10 @@ public:
         // Different chains, different seqs
         {
             // Compare around the divergence point
-            CCLValidatedLedger a{history[diverge], j};
+            CCLValidatedLedger a{history[diverge], env.journal};
             for(Seq offset = diverge/2; offset < 3*diverge/2; ++offset)
             {
-                CCLValidatedLedger b{altHistory[offset-1], j};
+                CCLValidatedLedger b{altHistory[offset-1], env.journal};
                 if(offset <= diverge)
                 {
                     BEAST_EXPECT(mismatch(a,b) == b.seq() + 1);

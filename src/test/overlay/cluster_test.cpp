@@ -17,23 +17,29 @@
 */
 //==============================================================================
 
- 
 #include <casinocoin/basics/BasicConfig.h>
-#include <test/jtx/TestSuite.h>
 #include <casinocoin/overlay/Cluster.h>
 #include <casinocoin/overlay/ClusterNode.h>
 #include <casinocoin/protocol/SecretKey.h>
+#include <test/jtx/TestSuite.h>
+#include <test/unit_test/SuiteJournal.h>
 
 namespace casinocoin {
 namespace tests {
 
 class cluster_test : public casinocoin::TestSuite
 {
+    test::SuiteJournal journal_;
+
 public:
+    cluster_test ()
+    : journal_ ("cluster_test", *this)
+    { }
+
     std::unique_ptr<Cluster>
     create (std::vector<PublicKey> const& nodes)
     {
-        auto cluster = std::make_unique <Cluster> (beast::Journal ());
+        auto cluster = std::make_unique <Cluster> (journal_);
 
         for (auto const& n : nodes)
             cluster->update (n, "Test");
@@ -189,7 +195,7 @@ public:
     {
         testcase ("Config Load");
 
-        auto c = std::make_unique <Cluster> (beast::Journal ());
+        auto c = std::make_unique <Cluster> (journal_);
 
         // The servers on the network
         std::vector<PublicKey> network;

@@ -199,7 +199,9 @@ public:
     std::vector<std::string> KYCTrustedAccounts;
 
 public:
-    Config() = default;
+    Config()
+    : j_ {beast::Journal::getNullSink()}
+    { }
 
     int getSize (SizedItemName) const;
     /* Be very careful to make sure these bool params

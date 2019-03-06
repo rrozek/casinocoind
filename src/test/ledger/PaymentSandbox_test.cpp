@@ -298,13 +298,11 @@ class PaymentSandbox_test : public beast::unit_test::suite
         testcase ("Reserve");
         using namespace jtx;
 
-        beast::Journal dj;
-
-        auto accountFundsCSC = [&dj](
-            ReadView const& view, AccountID const& id) -> CSCAmount
+        auto accountFundsCSC = [](ReadView const& view,
+            AccountID const& id, beast::Journal j) -> CSCAmount
         {
             return toAmount<CSCAmount> (accountHolds (
-                view, id, cscCurrency (), cscAccount (), fhZERO_IF_FROZEN, dj));
+                view, id, cscCurrency (), cscAccount (), fhZERO_IF_FROZEN, j));
         };
 
         auto reserve = [](jtx::Env& env, std::uint32_t count) -> CSCAmount
@@ -327,9 +325,10 @@ class PaymentSandbox_test : public beast::unit_test::suite
             // to drop below the reserve. Make sure her funds are zero (there was a bug that
             // caused her funds to become negative).
 
-            accountSend (sb, cscAccount (), alice, CSC(100), dj);
-            accountSend (sb, alice, cscAccount (), CSC(100), dj);
-            BEAST_EXPECT(accountFundsCSC (sb, alice) == beast::zero);
+            accountSend (sb, cscAccount (), alice, CSC(100), env.journal);
+            accountSend (sb, alice, cscAccount (), CSC(100), env.journal);
+            BEAST_EXPECT(
+                accountFundsCSC (sb, alice, env.journal) == beast::zero);
         }
     }
 
@@ -389,3 +388,4 @@ BEAST_DEFINE_TESTSUITE (PaymentSandbox, ledger, ripple);
 
 }  // test
 }  // ripple
+

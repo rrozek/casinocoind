@@ -17,21 +17,22 @@
 */
 //==============================================================================
 
- 
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/random.h>
 #include <casinocoin/beast/unit_test.h>
-#include <boost/utility/base_from_member.hpp>
 #include <casinocoin/resource/Consumer.h>
 #include <casinocoin/resource/impl/Entry.h>
 #include <casinocoin/resource/impl/Logic.h>
+#include <test/unit_test/SuiteJournal.h>
+
+#include <boost/utility/base_from_member.hpp>
 
 
 
 namespace casinocoin {
 namespace Resource {
 
-class Manager_test : public beast::unit_test::suite
+class ResourceManager_test : public beast::unit_test::suite
 {
 public:
     class TestLogic
@@ -247,16 +248,17 @@ public:
 
     void run() override
     {
-        beast::Journal j;
+        using namespace beast::severities;
+        test::SuiteJournal journal ("ResourceManager_test", *this);
 
-        testDrop (j);
-        testCharges (j);
-        testImports (j);
-        testImport (j);
+        testDrop (journal);
+        testCharges (journal);
+        testImports (journal);
+        testImport (journal);
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Manager,resource,ripple);
+BEAST_DEFINE_TESTSUITE(ResourceManager,resource,ripple);
 
 }
 }

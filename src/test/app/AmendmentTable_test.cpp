@@ -23,13 +23,14 @@
 #include <casinocoin/basics/BasicConfig.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/beast/unit_test.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/beast/unit_test.h>
+#include <test/unit_test/SuiteJournal.h>
 
 namespace casinocoin
 {
@@ -90,12 +91,15 @@ private:
 
     Section const emptySection;
 
+    test::SuiteJournal journal;
+
 public:
     AmendmentTable_test ()
         : m_set1 (createSet (1, 12))
         , m_set2 (createSet (2, 12))
         , m_set3 (createSet (3, 12))
         , m_set4 (createSet (4, 12))
+        , journal ("AmendmentTable_test", *this)
     {
     }
 
@@ -112,7 +116,7 @@ public:
             supported,
             enabled,
             vetoed,
-            beast::Journal{});
+            journal);
     }
 
     std::unique_ptr<AmendmentTable>

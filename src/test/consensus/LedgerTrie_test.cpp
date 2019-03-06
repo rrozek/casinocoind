@@ -26,9 +26,7 @@ namespace test {
 
 class LedgerTrie_test : public beast::unit_test::suite
 {
-    beast::Journal j;
-
-
+    
     void
     testInsert()
     {
