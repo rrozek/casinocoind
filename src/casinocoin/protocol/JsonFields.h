@@ -489,6 +489,7 @@ JSS ( username );                   // in: Subscribe
 JSS ( validated );                  // out: NetworkOPs, RPCHelpers, AccountTx*
                                     //      Tx
 JSS ( validator_list_expires );     // out: NetworkOps, ValidatorList
+JSS ( validator_list );             // out: NetworkOps, ValidatorList
 JSS ( validated_ledger );           // out: NetworkOPs
 JSS ( validated_ledgers );          // out: NetworkOPs
 JSS ( validation_key );             // out: ValidationCreate, ValidationSeed
