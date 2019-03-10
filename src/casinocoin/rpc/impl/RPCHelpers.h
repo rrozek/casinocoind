@@ -29,6 +29,7 @@
 #include <casinocoin/beast/core/SemanticVersion.h>
 #include <casinocoin/ledger/TxMeta.h>
 #include <casinocoin/protocol/Protocol.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/rpc/impl/Tuning.h>
 #include <casinocoin/rpc/Status.h>
@@ -123,6 +124,9 @@ injectSLE(Json::Value& jv, SLE const& sle);
 
 bool
 injectClientIP (Context& context);
+
+bool
+injectClientIP (Context& context, STTx* stpTrans);
 
 /** Retrieve the limit value from a Context, or set a default -
     then restrict the limit by max and min if not an ADMIN request.
