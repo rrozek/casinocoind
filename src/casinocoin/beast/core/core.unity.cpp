@@ -158,7 +158,6 @@
 
 #include <casinocoin/beast/core/CurrentThreadName.cpp>
 #include <casinocoin/beast/core/SemanticVersion.cpp>
-#include <casinocoin/beast/core/WaitableEvent.cpp>
 
 #ifdef _CRTDBG_MAP_ALLOC
 #pragma pop_macro("calloc")

@@ -38,7 +38,7 @@ Workers::Workers (
         : m_callback (callback)
         , perfLog_ (perfLog)
         , m_threadNames (threadNames)
-        , m_allPaused (true, true)
+        , m_allPaused (true)
         , m_semaphore (0)
         , m_numberOfThreads (0)
         , m_activeCount (0)
@@ -117,7 +117,9 @@ void Workers::pauseAllThreadsAndWait ()
 {
     setNumberOfThreads (0);
 
-    m_allPaused.wait ();
+    std::unique_lock<std::mutex> lk{m_mut};
+    m_cv.wait(lk, [this]{return m_allPaused;});
+    lk.unlock();
 
     assert (numberOfCurrentlyRunningTasks () == 0);
 }
@@ -191,7 +193,10 @@ void Workers::Worker::run ()
         // we are the first one then reset the "all paused" event
         //
         if (++m_workers.m_activeCount == 1)
-            m_workers.m_allPaused.reset ();
+        {
+            std::lock_guard<std::mutex> lk{m_workers.m_mut};
+            m_workers.m_allPaused = false;
+        }
 
         for (;;)
         {
@@ -242,7 +247,11 @@ void Workers::Worker::run ()
         // are the last one then signal the "all paused" event.
         //
         if (--m_workers.m_activeCount == 0)
-            m_workers.m_allPaused.signal ();
+        {
+            std::lock_guard<std::mutex> lk{m_workers.m_mut};
+            m_workers.m_allPaused = true;
+            m_workers.m_cv.notify_all();
+        }
 
         // Set inactive thread name.
         beast::setCurrentThreadName ("(" + threadName_ + ")");

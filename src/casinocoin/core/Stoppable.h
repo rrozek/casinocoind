@@ -28,7 +28,6 @@
 
 #include <casinocoin/beast/core/LockFreeStack.h>
 #include <casinocoin/beast/utility/Journal.h>
-#include <casinocoin/beast/core/WaitableEvent.h>
 #include <casinocoin/core/Job.h>
 #include <casinocoin/core/ClosureCounter.h>
 #include <atomic>
@@ -318,7 +317,9 @@ private:
     std::atomic<bool> m_stopped {false};
     std::atomic<bool> m_childrenStopped {false};
     Children m_children;
-    beast::WaitableEvent m_stoppedEvent;
+    std::condition_variable m_cv;
+    std::mutex              m_mut;
+    bool                    m_is_stopping = false;
 };
 
 //------------------------------------------------------------------------------
