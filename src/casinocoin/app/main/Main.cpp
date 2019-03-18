@@ -38,7 +38,6 @@
 #include <casinocoin/core/DatabaseCon.h>
 #include <casinocoin/core/TerminateHandler.h>
 #include <casinocoin/core/TimeKeeper.h>
-#include <casinocoin/crypto/csprng.h>
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/net/RPCCall.h>
 #include <casinocoin/resource/Fees.h>
@@ -84,15 +83,6 @@
 namespace po = boost::program_options;
 
 namespace casinocoin {
-
-boost::filesystem::path
-getEntropyFile(Config const& config)
-{
-    auto const path = config.legacy("database_path");
-    if (path.empty ())
-        return {};
-    return boost::filesystem::path (path) / "random.seed";
-}
 
 bool
 adjustDescriptorLimit(int needed, beast::Journal j)
@@ -520,13 +510,6 @@ int run (int argc, char** argv)
     config->setup (configFile, bool (vm.count ("quiet")),
         bool(vm.count("silent")), bool(vm.count("standalone")));
 
-    {
-        // Stir any previously saved entropy into the pool:
-        auto entropy = getEntropyFile (*config);
-        if (!entropy.empty ())
-            crypto_prng().load_state(entropy.string ());
-    }
-
     if (vm.count("vacuum"))
     {
         DatabaseCon::Setup dbSetup = setup_DatabaseCon(*config);
@@ -768,11 +751,6 @@ int run (int argc, char** argv)
 
         // Block until we get a stop RPC.
         app->run();
-
-        // Try to write out some entropy to use the next time we start.
-        auto entropy = getEntropyFile (app->config());
-        if (!entropy.empty ())
-            crypto_prng().save_state(entropy.string ());
 
         return 0;
     }
