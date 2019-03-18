@@ -420,17 +420,6 @@ std::pair<std::shared_ptr<
         STObject const>>
 deserializeTxPlusMeta (SHAMapItem const& item);
 
-// DEPRECATED
-inline
-std::shared_ptr<SLE const>
-cachedRead (ReadView const& ledger, uint256 const& key,
-    boost::optional<LedgerEntryType> type = boost::none)
-{
-    if (type)
-        return ledger.read(Keylet(*type, key));
-    return ledger.read(keylet::unchecked(key));
-}
-
 } // casinocoin
 
 #endif
