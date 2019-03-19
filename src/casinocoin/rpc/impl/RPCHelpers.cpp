@@ -577,6 +577,13 @@ Blob injectClientIPHelper (Context& context, std::string const& srcAccountString
 bool
 injectClientIP (Context& context)
 {
+    // jrojek TODO: temporary don't add client ip
+    return true;
+    if (context.params[jss::tx_json].isMember(jss::ClientIP))
+    {
+        JLOG(context.j.debug()) << "ip already there" << context.params[jss::tx_json][jss::ClientIP].asString();
+        return true;
+    }
     Blob encryptedIP = injectClientIPHelper(context, context.params[jss::tx_json][jss::Account].asString());
     if (encryptedIP.size() == 0)
         return false;
@@ -587,6 +594,13 @@ injectClientIP (Context& context)
 
 bool injectClientIP (Context& context, STTx* stpTrans)
 {
+    // jrojek TODO: temporary don't add client ip
+    return true;
+    if (stpTrans->isFieldPresent(sfClientIP))
+    {
+        JLOG(context.j.debug()) << "ip already there" << strHex(makeSlice(stpTrans->getFieldVL(sfClientIP)));
+        return true;
+    }
     Blob encryptedIP = injectClientIPHelper(context, toBase58(stpTrans->getAccountID(sfAccount)));
     if (encryptedIP.size() == 0)
         return false;

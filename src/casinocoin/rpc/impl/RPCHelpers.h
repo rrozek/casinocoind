@@ -44,6 +44,7 @@ namespace casinocoin {
 class ReadView;
 class Transaction;
 class LedgerMaster;
+class STTx;
 
 namespace RPC {
 

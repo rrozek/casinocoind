@@ -363,7 +363,7 @@ public:
 
     void addWithoutSigningFields (Serializer & s) const
     {
-        add (s, false);
+        add (s, false, false);
     }
 
     // VFALCO NOTE does this return an expensive copy of an object with a
