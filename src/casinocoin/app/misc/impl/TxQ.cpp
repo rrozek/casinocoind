@@ -157,14 +157,13 @@ TxQ::FeeMetrics::update(Application& app,
 
 std::uint64_t
 TxQ::FeeMetrics::scaleFeeLevel(beast::Journal const& journal,
-    Snapshot const& snapshot, OpenView const& view,
-    std::uint32_t txCountPadding)
+    Snapshot const& snapshot, OpenView const& view)
 {
     JLOG(journal.debug()) << "scaleFeeLevel escalation is disabled.";
     return baseLevel;
     // CODE BELOW IS NEVER EXECUTED
     // Transactions in the open ledger so far
-    auto const current = view.txCount() + txCountPadding;
+    auto const current = view.txCount();
 
     auto const target = snapshot.txnsExpected;
     auto const multiplier = snapshot.escalationMultiplier;
@@ -1377,7 +1376,7 @@ TxQ::accept(Application& app,
 }
 
 auto
-TxQ::getMetrics(OpenView const& view, std::uint32_t txCountPadding) const
+TxQ::getMetrics(OpenView const& view) const
     -> boost::optional<Metrics>
 {
     auto const allowEscalation =
@@ -1400,7 +1399,7 @@ TxQ::getMetrics(OpenView const& view, std::uint32_t txCountPadding) const
         baseLevel;
     result.medFeeLevel = snapshot.escalationMultiplier;
     result.openLedgerFeeLevel = FeeMetrics::scaleFeeLevel(
-        j_,snapshot, view, txCountPadding);
+        j_,snapshot, view);
 
     return result;
 }
