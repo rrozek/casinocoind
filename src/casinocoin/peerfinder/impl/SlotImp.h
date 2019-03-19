@@ -28,7 +28,6 @@
 
 #include <casinocoin/peerfinder/Slot.h>
 #include <casinocoin/peerfinder/PeerfinderManager.h>
-#include <casinocoin/beast/core/CompilerConfig.h>
 #include <casinocoin/beast/container/aged_unordered_map.h>
 #include <casinocoin/beast/container/aged_container_utility.h>
 #include <boost/optional.hpp>

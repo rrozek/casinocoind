@@ -45,7 +45,6 @@
 #include <casinocoin/protocol/BuildInfo.h>
 #include <casinocoin/beast/clock/basic_seconds_clock.h>
 #include <casinocoin/beast/core/CurrentThreadName.h>
-#include <casinocoin/beast/utility/Debug.h>
 
 #include <beast/unit_test/dstream.hpp>
 #include <beast/unit_test/global_suites.hpp>
@@ -795,26 +794,6 @@ int main (int argc, char** argv)
 
     static_assert (gccver >= 50100,
         "GCC version 5.1.0 or later is required to compile casinocoind.");
-#endif
-
-    //
-    // These debug heap calls do nothing in release or non Visual Studio builds.
-    //
-
-    // Checks the heap at every allocation and deallocation (slow).
-    //
-    //beast::Debug::setAlwaysCheckHeap (false);
-
-    // Keeps freed memory blocks and fills them with a guard value.
-    //
-    //beast::Debug::setHeapDelayedFree (false);
-
-    // At exit, reports all memory blocks which have not been freed.
-    //
-#if CASINOCOIN_DUMP_LEAKS_ON_EXIT
-    beast::Debug::setHeapReportLeaks (true);
-#else
-    beast::Debug::setHeapReportLeaks (false);
 #endif
 
     atexit(&google::protobuf::ShutdownProtobufLibrary);

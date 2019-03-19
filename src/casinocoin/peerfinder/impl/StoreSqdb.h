@@ -28,7 +28,6 @@
 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/core/SociDB.h>
-#include <casinocoin/beast/utility/Debug.h>
 #include <boost/optional.hpp>
 
 namespace casinocoin {
