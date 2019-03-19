@@ -179,7 +179,6 @@ void printHelp (const po::options_description& desc)
            "     submit_multisigned <tx_json>\n"
            "     tx <id>\n"
            "     validation_create [<seed>|<pass_phrase>|<key>]\n"
-           "     validation_seed [<seed>|<pass_phrase>|<key>]\n"
            "     verify_msg <message> <signature> <public_key_hex>\n"
            "     wallet_propose [<passphrase>]\n";
 }

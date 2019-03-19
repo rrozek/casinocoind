@@ -49,7 +49,6 @@
 #include <casinocoin/rpc/handlers/ValidationCreate.cpp>
 #include <casinocoin/rpc/handlers/Validators.cpp>
 #include <casinocoin/rpc/handlers/ValidatorListSites.cpp>
-#include <casinocoin/rpc/handlers/ValidationSeed.cpp>
 #include <casinocoin/rpc/handlers/WalletPropose.cpp>
 
 #include <casinocoin/rpc/impl/Handler.cpp>
