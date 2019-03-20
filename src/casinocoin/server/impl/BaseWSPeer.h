@@ -174,6 +174,7 @@ BaseWSPeer(
         io_service, journal)
     , request_(std::move(request))
     , timer_(io_service)
+    , payload_ ("12345678") // ensures size is 8 bytes
 {
 }
 
@@ -475,3 +476,4 @@ fail(error_code ec, String const& what)
 } // casinocoin
 
 #endif
+
