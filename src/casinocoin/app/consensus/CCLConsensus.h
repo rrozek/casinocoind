@@ -30,6 +30,7 @@
 #include <casinocoin/app/consensus/CCLCxLedger.h>
 #include <casinocoin/app/consensus/CCLCxPeerPos.h>
 #include <casinocoin/app/consensus/CCLCxTx.h>
+#include <casinocoin/app/consensus/CCLCensorshipDetector.h>
 #include <casinocoin/app/misc/FeeVote.h>
 #include <casinocoin/basics/CountedObject.h>
 #include <casinocoin/basics/Log.h>
@@ -42,6 +43,7 @@
 #include <casinocoin/shamap/SHAMap.h>
 #include <atomic>
 #include <mutex>
+#include <set>
 namespace casinocoin {
 
 class InboundTransactions;
@@ -53,6 +55,12 @@ class ValidatorKeys;
 */
 class CCLConsensus
 {
+    /** Warn for transactions that haven't been included every so many ledgers. */
+    constexpr static unsigned int censorshipWarnInternal = 15;
+
+    /** Stop warning after several warnings. */
+    constexpr static unsigned int censorshipMaxWarnings = 5;
+
     // Implements the Adaptor template interface required by Consensus.
     class Adaptor
     {
@@ -81,6 +89,8 @@ class CCLConsensus
         std::atomic<std::chrono::milliseconds> prevRoundTime_{
             std::chrono::milliseconds{0}};
         std::atomic<ConsensusMode> mode_{ConsensusMode::observing};
+
+        CCLCensorshipDetector<TxID, LedgerIndex> censorshipDetector_;
 
     public:
         using Ledger_t = CCLCxLedger;
@@ -142,7 +152,7 @@ class CCLConsensus
         //---------------------------------------------------------------------
         // The following members implement the generic Consensus requirements
         // and are marked private to indicate ONLY Consensus<Adaptor> will call
-        // them (via friendship). Since they are callled only from Consenus<Adaptor>
+        // them (via friendship). Since they are called only from Consenus<Adaptor>
         // methods and since CCLConsensus::consensus_ should only be accessed
         // under lock, these will only be called under lock.
         //
@@ -154,11 +164,11 @@ class CCLConsensus
 
         /** Attempt to acquire a specific ledger.
             If not available, asynchronously acquires from the network.
-            @param ledger The ID/hash of the ledger acquire
+            @param hash The ID/hash of the ledger acquire
             @return Optional ledger, will be seated if we locally had the ledger
         */
         boost::optional<CCLCxLedger>
-        acquireLedger(LedgerHash const& ledger);
+        acquireLedger(LedgerHash const& hash);
 
         /** Share the given proposal with all peers
             @param peerPos The peer position to share.
@@ -315,27 +325,29 @@ class CCLConsensus
             ledger, this function also populates retriableTxs with those that
             can be retried in the next round.
             @param previousLedger Prior ledger building upon
-            @param txns The set of transactions to apply to the ledger
+            @param retriableTxs On entry, the set of transactions to apply to
+                                the ledger; on return, the set of transactions
+                                to retry in the next round.
             @param closeTime The time the ledger closed
             @param closeTimeCorrect Whether consensus agreed on close time
             @param closeResolution Resolution used to determine consensus close
                                    time
             @param roundTime Duration of this consensus rorund
-            @param retriableTxs Populate with transactions to retry in next
-                                round
+            @param failedTxs Populate with transactions that we could not
+                             successfully apply.
             @return The newly built ledger
       */
         CCLCxLedger
         buildLCL(
             CCLCxLedger const& previousLedger,
-            CCLTxSet const& txns,
+            CanonicalTXSet& retriableTxs,
             NetClock::time_point closeTime,
             bool closeTimeCorrect,
             NetClock::duration closeResolution,
             std::chrono::milliseconds roundTime,
-            CanonicalTXSet& retriableTxs);
+            std::set<TxID>& failedTxs);
 
-        /** Validate the given ledger and share with peers as necessary
+        /** Validate the given ledger and share with peers as necessary 
             @param ledger The ledger to validate
             @param txns The consensus transaction set
             @param proposing Whether we were proposing transactions while
@@ -346,7 +358,6 @@ class CCLConsensus
         */
         void
         validate(CCLCxLedger const& ledger, CCLTxSet const& txns, bool proposing);
-
     };
 
 public:

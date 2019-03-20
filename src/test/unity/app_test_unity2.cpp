@@ -22,6 +22,7 @@
 #include <test/app/PayChan_test.cpp>
 #include <test/app/PayStrand_test.cpp>
 #include <test/app/PseudoTx_test.cpp>
+#include <test/app/CCLCensorshipDetector_test.cpp>
 #include <test/app/CCLValidations_test.cpp>
 #include <test/app/Regression_test.cpp>
 #include <test/app/SetAuth_test.cpp>
