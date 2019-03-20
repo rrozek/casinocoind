@@ -375,7 +375,7 @@ void
 Door<Handler>::
 do_accept(boost::asio::yield_context do_yield)
 {
-    for(;;)
+    while (acceptor_.is_open())
     {
         error_code ec;
         endpoint_type remote_address;
@@ -409,3 +409,4 @@ do_accept(boost::asio::yield_context do_yield)
 } // casinocoin
 
 #endif
+
