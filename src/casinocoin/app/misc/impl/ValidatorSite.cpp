@@ -377,71 +377,72 @@ ValidatorSite::onSiteFetch(
     std::size_t siteIdx)
 {
     Site::ResourcePtr newLocation;
-    bool shouldRetry = false;
     {
         std::lock_guard <std::mutex> lock_sites{sites_mutex_};
-        try
+        auto onError = [&](std::string const& errMsg, bool retry)
         {
-            if (ec)
-            {
-                JLOG (j_.warn()) <<
+            sites_[siteIdx].lastRefreshStatus.emplace(
+                Site::Status{clock_type::now(),
+                            ListDisposition::invalid,
+                            errMsg});
+            if (retry)
+                sites_[siteIdx].nextRefresh =
+                        clock_type::now() + ERROR_RETRY_INTERVAL;
+        };
+        if (ec)
+        {
+            JLOG (j_.warn()) <<
                     "Problem retrieving from " <<
                     sites_[siteIdx].activeResource->uri <<
                     " " <<
                     ec.value() <<
                     ":" <<
                     ec.message();
-                shouldRetry = true;
-                throw std::runtime_error{"fetch error"};
-            }
-            else
+            onError("fetch error", true);
+        }
+        else
+        {
+            try
             {
                 using namespace beast::http;
-                if (res.result() == status::ok)
+                switch (res.result())
                 {
+                case status::ok:
                     parseJsonResponse(res, siteIdx, lock_sites);
-                }
-                else if (res.result() == status::moved_permanently  ||
-                         res.result() == status::permanent_redirect ||
-                         res.result() == status::found              ||
-                         res.result() == status::temporary_redirect)
+                    break;
+                case status::moved_permanently :
+                case status::permanent_redirect :
+                case status::found :
+                case status::temporary_redirect :
                 {
-                    newLocation = processRedirect (res, siteIdx, lock_sites);
+                    auto newLocation =
+                        processRedirect (res, siteIdx, lock_sites);
+                    assert(newLocation);
                     // for perm redirects, also update our starting URI
                     if (res.result() == status::moved_permanently ||
                         res.result() == status::permanent_redirect)
                     {
                         sites_[siteIdx].startingResource = newLocation;
                     }
+                    makeRequest(newLocation, siteIdx, lock_sites);
+                    return; // we are still fetching, so skip
+                            // state update/notify below
                 }
-                else
+                default:
                 {
                     JLOG (j_.warn()) <<
                         "Request for validator list at " <<
                         sites_[siteIdx].activeResource->uri <<
                         " returned bad status: " <<
                         res.result_int();
-                    shouldRetry = true;
-                    throw std::runtime_error{"bad result code"};
+                    onError("bad result code", true);
                 }
-
-                if (newLocation)
-                {
-                    makeRequest(newLocation, siteIdx, lock_sites);
-                    return; // we are still fetching, so skip
-                            // state update/notify below
                 }
             }
-        }
-        catch (std::exception& ex)
-        {
-            sites_[siteIdx].lastRefreshStatus.emplace(
-                Site::Status{clock_type::now(),
-                ListDisposition::invalid,
-                ex.what()});
-            if (shouldRetry)
-                sites_[siteIdx].nextRefresh =
-                    clock_type::now() + ERROR_RETRY_INTERVAL;
+            catch (std::exception& ex)
+            {
+                onError(ex.what(), false);
+            }
         }
         sites_[siteIdx].activeResource.reset();
     }
