@@ -36,7 +36,6 @@
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/core/DatabaseCon.h>
-#include <casinocoin/core/TerminateHandler.h>
 #include <casinocoin/core/TimeKeeper.h>
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/net/RPCCall.h>
@@ -796,8 +795,6 @@ int main (int argc, char** argv)
 #endif
 
     atexit(&google::protobuf::ShutdownProtobufLibrary);
-
-    std::set_terminate(casinocoin::terminateHandler);
 
     auto const result (casinocoin::run (argc, argv));
 

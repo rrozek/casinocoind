@@ -33,7 +33,6 @@
 #include <casinocoin/core/impl/JobQueue.cpp>
 #include <casinocoin/core/impl/SNTPClock.cpp>
 #include <casinocoin/core/impl/Stoppable.cpp>
-#include <casinocoin/core/impl/TerminateHandler.cpp>
 #include <casinocoin/core/impl/TimeKeeper.cpp>
 #include <casinocoin/core/impl/Workers.cpp>
 
