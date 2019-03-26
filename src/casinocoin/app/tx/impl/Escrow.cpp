@@ -266,7 +266,7 @@ EscrowCreate::doApply()
 
     // Deduct owner's balance, increment owner count
     (*sle)[sfBalance] = (*sle)[sfBalance] - ctx_.tx[sfAmount];
-    (*sle)[sfOwnerCount] = (*sle)[sfOwnerCount] + 1;
+    adjustOwnerCount(ctx_.view(), sle, 1, ctx_.journal);
     ctx_.view().update(sle);
 
     return tesSUCCESS;
@@ -500,7 +500,7 @@ EscrowFinish::doApply()
     // Adjust source owner count
     auto const sle = ctx_.view().peek(
         keylet::account(account));
-    (*sle)[sfOwnerCount] = (*sle)[sfOwnerCount] - 1;
+    adjustOwnerCount(ctx_.view(), sle, -1, ctx_.journal);
     ctx_.view().update(sle);
 
     // Remove escrow from ledger
@@ -583,7 +583,7 @@ EscrowCancel::doApply()
     auto const sle = ctx_.view().peek(
         keylet::account(account));
     (*sle)[sfBalance] = (*sle)[sfBalance] + (*slep)[sfAmount];
-    (*sle)[sfOwnerCount] = (*sle)[sfOwnerCount] - 1;
+    adjustOwnerCount(ctx_.view(), sle, -1, ctx_.journal);
     ctx_.view().update(sle);
 
     // Remove escrow from ledger
