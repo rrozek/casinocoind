@@ -360,6 +360,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Quality,protocol,ripple);
+BEAST_DEFINE_TESTSUITE(Quality,protocol,casinocoin);
 
 }

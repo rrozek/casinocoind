@@ -457,7 +457,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Stoppable,core,ripple);
+BEAST_DEFINE_TESTSUITE(Stoppable,core,casinocoin);
 
 }
 }

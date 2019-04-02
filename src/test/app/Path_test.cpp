@@ -153,7 +153,7 @@ Json::Value
 rpf(jtx::Account const& src, jtx::Account const& dst, std::uint32_t num_src)
 {
     Json::Value jv = Json::objectValue;
-    jv[jss::command] = "ripple_path_find";
+    jv[jss::command] = "casinocoin_path_find";
     jv[jss::source_account] = toBase58(src);
 
     if (num_src > 0)
@@ -236,7 +236,7 @@ public:
             app.getOPs(), app.getLedgerMaster(), c, dummy, Role::USER, {}};
 
         Json::Value params = Json::objectValue;
-        params[jss::command] = "ripple_path_find";
+        params[jss::command] = "casinocoin_path_find";
         params[jss::source_account] = toBase58 (src);
         params[jss::destination_account] = toBase58 (dst);
         params[jss::destination_amount] = saDstAmount.getJson(0);
@@ -783,13 +783,13 @@ public:
         Json::Reader().parse(R"({
                 "Balance" : {
                     "currency" : "USD",
-                    "issuer" : "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                    "issuer" : "ccccccccccccccccccccBZbvji",
                     "value" : "0"
                 },
                 "Flags" : 131072,
                 "HighLimit" : {
                     "currency" : "USD",
-                    "issuer" : "rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK",
+                    "issuer" : "cPMh7Pi9rt699iZUTWaytJUoHrJ7rgyziK",
                     "value" : "1000"
                 },
                 "HighNode" : "0000000000000000",
@@ -798,7 +798,7 @@ public:
                 "LedgerEntryType" : "CasinocoinState",
                 "LowLimit" : {
                     "currency" : "USD",
-                    "issuer" : "rG1QQv2nh2gr7RCZ1P8YYcBUKCCN633jCn",
+                    "issuer" : "cG1QQv2nh2gc7RCZ1P8YYrBUKCCN633jCn",
                     "value" : "0"
                 },
                 "LowNode" : "0000000000000000"
@@ -807,7 +807,14 @@ public:
         auto const jv_l = env.le(keylet::line(Account("bob").id(),
             Account("alice")["USD"].issue()))->getJson(0);
         for (auto it = jv.begin(); it != jv.end(); ++it)
+        {
+            if (*it != jv_l[it.memberName()])
+            {
+                log << "*it: " << *it << std::endl;
+                log << "jv_l[it.memberName()]: " << jv_l[it.memberName()] << std::endl;
+            }
             BEAST_EXPECT(*it == jv_l[it.memberName()]);
+        }
     }
 
     void
@@ -824,20 +831,20 @@ public:
         Json::Reader().parse(R"({
                 "Balance" : {
                     "currency" : "USD",
-                    "issuer" : "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                    "issuer" : "ccccccccccccccccccccBZbvji",
                     "value" : "0"
                 },
                 "Flags" : 196608,
                 "HighLimit" : {
                     "currency" : "USD",
-                    "issuer" : "rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK",
+                    "issuer" : "cPMh7Pi9rt699iZUTWaytJUoHrJ7rgyziK",
                     "value" : "1000"
                 },
                 "HighNode" : "0000000000000000",
                 "LedgerEntryType" : "CasinocoinState",
                 "LowLimit" : {
                     "currency" : "USD",
-                    "issuer" : "rG1QQv2nh2gr7RCZ1P8YYcBUKCCN633jCn",
+                    "issuer" : "cG1QQv2nh2gc7RCZ1P8YYrBUKCCN633jCn",
                     "value" : "1000"
                 },
                 "LowNode" : "0000000000000000"
@@ -846,7 +853,14 @@ public:
         auto const jv_l = env.le(keylet::line(Account("bob").id(),
             Account("alice")["USD"].issue()))->getJson(0);
         for (auto it = jv.begin(); it != jv.end(); ++it)
+        {
+            if (*it != jv_l[it.memberName()])
+            {
+                log << "*it: " << *it << std::endl;
+                log << "jv_l[it.memberName()]: " << jv_l[it.memberName()] << std::endl;
+            }
             BEAST_EXPECT(*it == jv_l[it.memberName()]);
+        }
 
         env.trust(Account("bob")["USD"](0), "alice");
         env.trust(Account("alice")["USD"](0), "bob");
@@ -870,14 +884,14 @@ public:
                 "Balance" :
                 {
                     "currency" : "USD",
-                    "issuer" : "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                    "issuer" : "ccccccccccccccccccccBZbvji",
                     "value" : "50"
                 },
                 "Flags" : 65536,
                 "HighLimit" :
                 {
                     "currency" : "USD",
-                    "issuer" : "rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK",
+                    "issuer" : "cPMh7Pi9rt699iZUTWaytJUoHrJ7rgyziK",
                     "value" : "0"
                 },
                 "HighNode" : "0000000000000000",
@@ -885,7 +899,7 @@ public:
                 "LowLimit" :
                 {
                     "currency" : "USD",
-                    "issuer" : "rG1QQv2nh2gr7RCZ1P8YYcBUKCCN633jCn",
+                    "issuer" : "cG1QQv2nh2gc7RCZ1P8YYrBUKCCN633jCn",
                     "value" : "0"
                 },
                 "LowNode" : "0000000000000000"
@@ -894,7 +908,14 @@ public:
         auto const jv_l = env.le(keylet::line(Account("alice").id(),
             Account("bob")["USD"].issue()))->getJson(0);
         for (auto it = jv.begin(); it != jv.end(); ++it)
+        {
+            if (*it != jv_l[it.memberName()])
+            {
+                log << "*it: " << *it << std::endl;
+                log << "jv_l[it.memberName()]: " << jv_l[it.memberName()] << std::endl;
+            }
             BEAST_EXPECT(*it == jv_l[it.memberName()]);
+        }
 
         env(pay("alice", "bob", Account("alice")["USD"](50)));
         BEAST_EXPECT(env.le(keylet::line(Account("alice").id(),
@@ -1026,6 +1047,8 @@ public:
     void path_find_03()
     {
         testcase("Path Find: CNY");
+        log << "this test is really stupid. regards, jrojek" << std::endl;
+
         using namespace jtx;
         Env env(*this);
         Account A1 {"A1"};
@@ -1035,6 +1058,13 @@ public:
         Account GATEWAY_DST {"GATEWAY_DST"};
         Account MONEY_MAKER_1 {"MONEY_MAKER_1"};
         Account MONEY_MAKER_2 {"MONEY_MAKER_2"};
+        log << A1.name() << " : " << A1.human() << std::endl;
+        log << A2.name() << " : " << A2.human() << std::endl;
+        log << A3.name() << " : " << A3.human() << std::endl;
+        log << SRC.name() << " : " << SRC.human() << std::endl;
+        log << GATEWAY_DST.name() << " : " << GATEWAY_DST.human() << std::endl;
+        log << MONEY_MAKER_1.name() << " : " << MONEY_MAKER_1.human() << std::endl;
+        log << MONEY_MAKER_2.name() << " : " << MONEY_MAKER_2.human() << std::endl;
 
         env.fund(CSC(4999.999898), SRC);
         env.fund(CSC(10846.168060), GATEWAY_DST);
@@ -1090,12 +1120,12 @@ public:
         std::tie(st, sa, da) = find_paths(env, SRC, GATEWAY_DST, send_amt,
             boost::none, cscCurrency());
         BEAST_EXPECT(equal(da, send_amt));
-        BEAST_EXPECT(equal(sa, CSC(288.571429)));
+        BEAST_EXPECT(equal(sa, CSC(288.57142858)));
         BEAST_EXPECT(same(st,
             stpath(IPE(MONEY_MAKER_1["CNY"]), MONEY_MAKER_1, A3),
             stpath(IPE(MONEY_MAKER_1["CNY"]), MONEY_MAKER_1, MONEY_MAKER_2),
             stpath(IPE(MONEY_MAKER_1["CNY"]), MONEY_MAKER_1, A2),
-            stpath(IPE(MONEY_MAKER_1["CNY"]), MONEY_MAKER_1, A1)
+            stpath(IPE(GATEWAY_DST["CNY"]))
         ));
     }
 
@@ -1390,7 +1420,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Path,app,ripple);
+BEAST_DEFINE_TESTSUITE(Path,app,casinocoin);
 
 } // test
 } // casinocoin

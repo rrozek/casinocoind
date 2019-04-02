@@ -98,7 +98,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE (CashDiff, ledger, ripple);
+BEAST_DEFINE_TESTSUITE (CashDiff, ledger, casinocoin);
 
 }  // test
 }  // ripple

@@ -190,7 +190,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(STTx,ripple_app,ripple);
-BEAST_DEFINE_TESTSUITE(InnerObjectFormatsSerializer,ripple_app,ripple);
+BEAST_DEFINE_TESTSUITE(STTx,casinocoin_app,casinocoin);
+BEAST_DEFINE_TESTSUITE(InnerObjectFormatsSerializer,casinocoin_app,casinocoin);
 
 } // casinocoin

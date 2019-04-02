@@ -77,7 +77,7 @@ struct Directory_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Directory,ledger,ripple);
+BEAST_DEFINE_TESTSUITE(Directory,ledger,casinocoin);
 
 } // test
 } // casinocoin

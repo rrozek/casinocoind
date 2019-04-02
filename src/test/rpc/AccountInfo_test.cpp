@@ -41,7 +41,7 @@ public:
         {
             // account_info with a malformed account sting.
             auto const info = env.rpc ("json", "account_info", "{\"account\": "
-                "\"n94JNrQYkDrpt62bbSR7nVEhdyAvcJXRAsjEkFYyqRkh9SUTYEqV\"}");
+                "\"n94JNcQYkDcpt62bbSR7nVEhdyAvrJXRAsjEkFYyqRkh9SUTYEqV\"}");
             BEAST_EXPECT(info[jss::result][jss::error_message] ==
                 "Disallowed seed.");
         }
@@ -299,7 +299,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(AccountInfo,app,ripple);
+BEAST_DEFINE_TESTSUITE(AccountInfo,app,casinocoin);
 
 }
 }

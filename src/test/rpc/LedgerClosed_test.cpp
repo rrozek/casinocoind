@@ -35,20 +35,20 @@ public:
         env.fund(CSC(10000), alice);
 
         auto lc_result = env.rpc("ledger_closed") [jss::result];
-        BEAST_EXPECT(lc_result[jss::ledger_hash]  == "8AEDBB96643962F1D40F01E25632ABB3C56C9F04B0231EE4B18248B90173D189");
+        BEAST_EXPECT(lc_result[jss::ledger_hash]  == "4BE3C23DC8B17F0AF2385F7C9C49772390012AA97E3743C705DA86614DE12DDC");
         BEAST_EXPECT(lc_result[jss::ledger_index] == 2);
 
         env.close();
         auto const ar_master = env.le(env.master);
         BEAST_EXPECT(ar_master->getAccountID(sfAccount) == env.master.id());
-        BEAST_EXPECT((*ar_master)[sfBalance] == drops( 99999989999999980 ));
+        BEAST_EXPECT((*ar_master)[sfBalance] == drops( 3999998999998000000 ));
 
         auto const ar_alice = env.le(alice);
         BEAST_EXPECT(ar_alice->getAccountID(sfAccount) == alice.id());
         BEAST_EXPECT((*ar_alice)[sfBalance] == CSC( 10000 ));
 
         lc_result = env.rpc("ledger_closed") [jss::result];
-        BEAST_EXPECT(lc_result[jss::ledger_hash]  == "7C3EEDB3124D92E49E75D81A8826A2E65A75FD71FC3FD6F36FEB803C5F1D812D");
+        BEAST_EXPECT(lc_result[jss::ledger_hash]  == "44753D8A0C037534947DD8E3EF0DAE4AD0FF30EA47742C6649C90A923C8D911C");
         BEAST_EXPECT(lc_result[jss::ledger_index] == 3);
     }
 
@@ -58,7 +58,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(LedgerClosed,app,ripple);
+BEAST_DEFINE_TESTSUITE(LedgerClosed,app,casinocoin);
 
 }
 

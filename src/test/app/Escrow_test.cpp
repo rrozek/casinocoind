@@ -209,9 +209,9 @@ struct Escrow_test : public beast::unit_test::suite
             auto const seq = env.seq("alice");
 
             env(condpay("alice", "bob", CSC(1000),
-                makeSlice (cb1), env.now() + 1s), fee(1500));
+                makeSlice (cb1), env.now() + 1s), fee(150000000));
             env(finish("bob", "alice", seq,
-                makeSlice(cb1), makeSlice(fb1)), fee(1500));
+                makeSlice(cb1), makeSlice(fb1)), fee(150000000));
         }
     }
 
@@ -337,7 +337,7 @@ struct Escrow_test : public beast::unit_test::suite
             j["CancelAfter"] = j.removeMember ("FinishAfter");
             env (j);
             env(finish("ivan", "ivan", seq,
-                makeSlice(cb1), makeSlice(fb1)), fee(1500),   ter (tecCRYPTOCONDITION_ERROR));
+                makeSlice(cb1), makeSlice(fb1)), fee(150000000),   ter (tecCRYPTOCONDITION_ERROR));
         }
     }
 
@@ -354,7 +354,7 @@ struct Escrow_test : public beast::unit_test::suite
             env.fund(CSC(5000), "alice", "bob");
             auto const seq = env.seq("alice");
             env(lockup("alice", "alice", CSC(1000), env.now() + 1s));
-            env.require(balance("alice", CSC(4000) - drops(10)));
+            env.require(balance("alice", CSC(4000) - drops(1000000)));
 
             env(cancel("bob", "alice", seq),                ter(tecNO_PERMISSION));
             env(finish("bob", "alice", seq),                ter(tecNO_PERMISSION));
@@ -369,12 +369,12 @@ struct Escrow_test : public beast::unit_test::suite
             env.fund(CSC(5000), "alice", "bob");
             auto const seq = env.seq("alice");
             env(lockup("alice", "alice", CSC(1000), makeSlice(cb2), env.now() + 1s));
-            env.require(balance("alice", CSC(4000) - drops(10)));
+            env.require(balance("alice", CSC(4000) - drops(1000000)));
 
             env(cancel("bob", "alice", seq),                ter(tecNO_PERMISSION));
             env(finish("bob", "alice", seq),                ter(tecNO_PERMISSION));
             env(finish("bob", "alice", seq,
-                makeSlice(cb2), makeSlice(fb2)), fee(1500), ter(tecNO_PERMISSION));
+                makeSlice(cb2), makeSlice(fb2)), fee(150000000), ter(tecNO_PERMISSION));
             env.close();
 
             env(cancel("bob", "alice", seq),                ter(tecNO_PERMISSION));
@@ -383,7 +383,7 @@ struct Escrow_test : public beast::unit_test::suite
             env.close();
 
             env(finish("bob", "alice", seq,
-                makeSlice(cb2), makeSlice(fb2)), fee(1500));
+                makeSlice(cb2), makeSlice(fb2)), fee(150000000));
         }
     }
 
@@ -406,7 +406,7 @@ struct Escrow_test : public beast::unit_test::suite
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 0);
             env(condpay("alice", "carol", CSC(1000), makeSlice(cb1), T(S{1})));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
-            env.require(balance("alice", CSC(4000) - drops(10)));
+            env.require(balance("alice", CSC(4000) - drops(1000000)));
             env.require(balance("carol", CSC(5000)));
             env(cancel("bob", "alice", seq),                                 ter(tecNO_PERMISSION));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
@@ -416,24 +416,24 @@ struct Escrow_test : public beast::unit_test::suite
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
 
             // Attempt to finish with a condition instead of a fulfillment
-            env(finish("bob", "alice", seq, makeSlice(cb1), makeSlice(cb1)), fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+            env(finish("bob", "alice", seq, makeSlice(cb1), makeSlice(cb1)), fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
-            env(finish("bob", "alice", seq, makeSlice(cb1), makeSlice(cb2)), fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+            env(finish("bob", "alice", seq, makeSlice(cb1), makeSlice(cb2)), fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
-            env(finish("bob", "alice", seq, makeSlice(cb1), makeSlice(cb3)), fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+            env(finish("bob", "alice", seq, makeSlice(cb1), makeSlice(cb3)), fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
 
             // Attempt to finish with an incorrect condition and various
             // combinations of correct and incorrect fulfillments.
-            env(finish("bob", "alice", seq, makeSlice(cb2), makeSlice(fb1)), fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+            env(finish("bob", "alice", seq, makeSlice(cb2), makeSlice(fb1)), fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
-            env(finish("bob", "alice", seq, makeSlice(cb2), makeSlice(fb2)), fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+            env(finish("bob", "alice", seq, makeSlice(cb2), makeSlice(fb2)), fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
-            env(finish("bob", "alice", seq, makeSlice(cb2), makeSlice(fb3)), fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+            env(finish("bob", "alice", seq, makeSlice(cb2), makeSlice(fb3)), fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
 
             // Attempt to finish with the correct condition & fulfillment
-            env(finish("bob", "alice", seq, makeSlice(cb1), makeSlice(fb1)), fee(1500));
+            env(finish("bob", "alice", seq, makeSlice(cb1), makeSlice(fb1)), fee(150000000));
             // SLE removed on finish
             BEAST_EXPECT(! env.le(keylet::escrow(Account("alice").id(), seq)));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 0);
@@ -454,10 +454,10 @@ struct Escrow_test : public beast::unit_test::suite
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 0);
             env(condpay("alice", "carol", CSC(1000), makeSlice(cb2), T(S{1})));
             env.close();
-            env.require(balance("alice", CSC(4000) - drops(10)));
+            env.require(balance("alice", CSC(4000) - drops(1000000)));
             // balance restored on cancel
             env(cancel("bob", "alice", seq));
-            env.require(balance("alice", CSC(5000) - drops(10)));
+            env.require(balance("alice", CSC(5000) - drops(1000000)));
             // SLE removed on cancel
             BEAST_EXPECT(! env.le(keylet::escrow(Account("alice").id(), seq)));
         }
@@ -477,7 +477,7 @@ struct Escrow_test : public beast::unit_test::suite
             env.close();
             // finish fails after expiration
             env(finish("bob", "alice", seq, makeSlice(cb3), makeSlice(fb3)),
-                fee(1500),                                                    ter(tecNO_PERMISSION));
+                fee(150000000),                                                    ter(tecNO_PERMISSION));
             BEAST_EXPECT((*env.le("alice"))[sfOwnerCount] == 1);
             env.require(balance("carol", CSC(5000)));
         }
@@ -514,11 +514,11 @@ struct Escrow_test : public beast::unit_test::suite
 
             auto const seq = env.seq("alice");
             env(condpay("alice", "carol", CSC(1000),
-                Slice{p + 1, s - 2}, T(S{1})), fee(100));
+                Slice{p + 1, s - 2}, T(S{1})), fee(10000000));
             env(finish("bob", "alice", seq,
-                makeSlice(cb1), makeSlice(fb1)), fee(1500));
-            env.require(balance("alice", CSC(4000) - drops(100)));
-            env.require(balance("bob", CSC(5000) - drops(1500)));
+                makeSlice(cb1), makeSlice(fb1)), fee(150000000));
+            env.require(balance("alice", CSC(4000) - drops(10000000)));
+            env.require(balance("bob", CSC(5000) - drops(150000000)));
             env.require(balance("carol", CSC(6000)));
         }
 
@@ -562,48 +562,48 @@ struct Escrow_test : public beast::unit_test::suite
 
             auto const seq = env.seq("alice");
             env(condpay("alice", "carol", CSC(1000),
-                Slice{cp + 1, cs - 2}, T(S{1})), fee(100));
+                Slice{cp + 1, cs - 2}, T(S{1})), fee(10000000));
 
             // Now, try to fulfill using the same sequence of
             // malformed conditions.
             env(finish("bob", "alice", seq, Slice{cp, cs}, Slice{fp, fs}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp, cs - 1}, Slice{fp, fs}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp, cs - 2}, Slice{fp, fs}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 1}, Slice{fp, fs}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 3}, Slice{fp, fs}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 2, cs - 2}, Slice{fp, fs}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 2, cs - 3}, Slice{fp, fs}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
 
             // Now, using the correct condition, try malformed
             // fulfillments:
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 2}, Slice{fp, fs}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 2}, Slice{fp, fs - 1}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 2}, Slice{fp, fs - 2}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 2}, Slice{fp + 1, fs - 1}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 2}, Slice{fp + 1, fs - 3}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 2}, Slice{fp + 1, fs - 3}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 2}, Slice{fp + 2, fs - 2}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, Slice{cp + 1, cs - 2}, Slice{fp + 2, fs - 3}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
 
             // Now try for the right one
             env(finish("bob", "alice", seq,
-                makeSlice(cb2), makeSlice(fb2)), fee(1500));
-            env.require(balance("alice", CSC(4000) - drops(100)));
+                makeSlice(cb2), makeSlice(fb2)), fee(150000000));
+            env.require(balance("alice", CSC(4000) - drops(10000000)));
             env.require(balance("carol", CSC(6000)));
         }
 
@@ -620,11 +620,11 @@ struct Escrow_test : public beast::unit_test::suite
             env(condpay("alice", "carol", CSC(1000), makeSlice(cb3), T(S{1})));
 
             env(finish("bob", "alice", seq, {}, {}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, makeSlice(cb3), {}),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
             env(finish("bob", "alice", seq, {}, makeSlice(fb3)),
-                fee(1500), ter(tecCRYPTOCONDITION_ERROR));
+                fee(150000000), ter(tecCRYPTOCONDITION_ERROR));
 
             auto correctFinish = finish("bob", "alice", seq,
                 makeSlice(cb3), makeSlice(fb3));
@@ -642,9 +642,9 @@ struct Escrow_test : public beast::unit_test::suite
                 env (finishNoFulfillment, ter(temMALFORMED));
             }
 
-            env(correctFinish, fee(1500));
+            env(correctFinish, fee(150000000));
             env.require(balance ("carol", CSC(6000)));
-            env.require(balance ("alice", CSC(4000) - drops(10)));
+            env.require(balance ("alice", CSC(4000) - drops(1000000)));
         }
 
         { // Test a condition other than PreimageSha256, which
@@ -701,25 +701,25 @@ struct Escrow_test : public beast::unit_test::suite
             auto const jtx = env.jt(
                 condpay("alice", "carol", CSC(1000),
                     makeSlice(cb1), env.now() + 1s),
-                seq(1), fee(10));
+                seq(1), fee(1000000));
             auto const pf = preflight(env.app(), env.current()->rules(),
                 *jtx.stx, tapNONE, env.journal);
             BEAST_EXPECT(pf.ter == tesSUCCESS);
             auto const conseq = calculateConsequences(pf);
             BEAST_EXPECT(conseq.category == TxConsequences::normal);
-            BEAST_EXPECT(conseq.fee == drops(10));
+            BEAST_EXPECT(conseq.fee == drops(1000000));
             BEAST_EXPECT(conseq.potentialSpend == CSC(1000));
         }
 
         {
             auto const jtx = env.jt(cancel("bob", "alice", 3),
-                seq(1), fee(10));
+                seq(1), fee(1000000));
             auto const pf = preflight(env.app(), env.current()->rules(),
                 *jtx.stx, tapNONE, env.journal);
             BEAST_EXPECT(pf.ter == tesSUCCESS);
             auto const conseq = calculateConsequences(pf);
             BEAST_EXPECT(conseq.category == TxConsequences::normal);
-            BEAST_EXPECT(conseq.fee == drops(10));
+            BEAST_EXPECT(conseq.fee == drops(1000000));
             BEAST_EXPECT(conseq.potentialSpend == CSC(0));
         }
 
@@ -727,13 +727,13 @@ struct Escrow_test : public beast::unit_test::suite
             auto const jtx = env.jt(
                 finish("bob", "alice", 3,
                     makeSlice(cb1), makeSlice(fb1)),
-                seq(1), fee(10));
+                seq(1), fee(1000000));
             auto const pf = preflight(env.app(), env.current()->rules(),
                 *jtx.stx, tapNONE, env.journal);
             BEAST_EXPECT(pf.ter == tesSUCCESS);
             auto const conseq = calculateConsequences(pf);
             BEAST_EXPECT(conseq.category == TxConsequences::normal);
-            BEAST_EXPECT(conseq.fee == drops(10));
+            BEAST_EXPECT(conseq.fee == drops(1000000));
             BEAST_EXPECT(conseq.potentialSpend == CSC(0));
         }
     }
@@ -750,7 +750,7 @@ struct Escrow_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Escrow,app,ripple);
+BEAST_DEFINE_TESTSUITE(Escrow,app,casinocoin);
 
 } // test
 } // casinocoin

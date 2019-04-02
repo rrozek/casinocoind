@@ -201,6 +201,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(CSCAmount,protocol,ripple);
+BEAST_DEFINE_TESTSUITE(CSCAmount,protocol,casinocoin);
 
 } // casinocoin

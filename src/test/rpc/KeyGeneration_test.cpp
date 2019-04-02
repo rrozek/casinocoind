@@ -53,11 +53,11 @@ static char const* master_seed_hex = "BE6A670A19B209E112146D0A7ED2AAD7";
 
 static key_strings const secp256k1_strings =
 {
-    "r4Vtj2jrfmTVZGfSP3gH9hQPMqFPQFin8f",
+    "c4Vtj2jcfmTVZGfSP3gH9hQPMqFPQFin8f",
     common::master_key,
     common::master_seed,
     common::master_seed_hex,
-    "aBQxK2YFNqzmAaXNczYcjqDjfiKkLsJUizsr1UBf44RCF8FHdrmX",
+    "aBQxK2YFNqzmAaXNrzYrjqDjfiKkLsJUizsc1UBf44RCF8FHdcmX",
     "038AAE247B2344B1837FBED8F57389C8C11774510A3F7D784F2A09F0CB6843236C",
     "1949ECD889EA71324BC7A30C8E81F4E93CB73EE19D59E9082111E78CC3DDABC2",
     common::passphrase,
@@ -68,11 +68,11 @@ static key_strings const secp256k1_strings =
 
 static key_strings const ed25519_strings =
 {
-    "r4qV6xTXerqaZav3MJfSY79ynmc1BSBev1",
+    "c4qV6xTXecqaZav3MJfSY79ynmr1BSBev1",
     common::master_key,
     common::master_seed,
     common::master_seed_hex,
-    "aKEQmgLMyZPMruJFejUuedp169LgW6DbJt1rej1DJ5hWUMH4pHJ7",
+    "aKEQmgLMyZPMcuJFejUuedp169LgW6DbJt1cej1DJ5hWUMH4pHJ7",
     "ED54C3F5BEDA8BD588B203D23A27398FAD9D20F88A974007D6994659CD7273FE1D",
     "77AAED2698D56D6676323629160F4EEF21CFD9EE3D0745CC78FA291461F98278",
     common::passphrase,
@@ -83,11 +83,11 @@ static key_strings const ed25519_strings =
 
 static key_strings const strong_brain_strings =
 {
-    "rBcvXmNb7KPkNdMkpckdWPpbvkWgcV3nir",
+    "cBrvXmNb7KPkNdMkprkdWPpbvkWgrV3nic",
     "TED AVON CAVE HOUR BRAG JEFF RIFT NEAL TOLD FAT SEW SAN",
-    "shKdhWka8hS7Es3bpctCZXBiAwfUN",
+    "shKdhWka8hS7Es3bprtCZXBiAwfUN",
     "74BA8389B44F98CF41E795CD91F9C93F",
-    "aBRL2sqVuzrsM6zikPB4v8UBHGn1aKkrsxhYEffhcQxB2LKyywE5",
+    "aBRL2sqVuzcsM6zikPB4v8UBHGn1aKkcsxhYEffhrQxB2LKyywE5",
     "03BD334FB9E06C58D69603E9922686528B18A754BC2F2E1ADA095FFE67DE952C64",
     "84262FB16AA25BE407174C7EDAB531220C30FA4D8A28AA9D564673FB3D34502C",
     "A4yKIRGdzrw0YQ$2%TFKYG9HP*&ok^!sy7E@RwICs",
@@ -726,7 +726,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(WalletPropose,ripple_basics,ripple);
+BEAST_DEFINE_TESTSUITE(WalletPropose,casinocoin_basics,casinocoin);
 
 } // RPC
 } // casinocoin

@@ -864,6 +864,6 @@ trustthesevalidators.gov
     }
 };
 
-BEAST_DEFINE_TESTSUITE (Config, core, ripple);
+BEAST_DEFINE_TESTSUITE (Config, core, casinocoin);
 
 }  // ripple

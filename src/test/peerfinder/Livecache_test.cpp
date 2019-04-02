@@ -68,7 +68,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Livecache,peerfinder,ripple);
+BEAST_DEFINE_TESTSUITE(Livecache,peerfinder,casinocoin);
 
 }
 }

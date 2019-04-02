@@ -106,23 +106,23 @@ public:
         auto const jro = env.rpc("account_offers", bob.human())[jss::result][jss::offers];
         if(BEAST_EXPECT(checkArraySize(jro, 3u)))
         {
-            BEAST_EXPECT(jro[0u][jss::quality]                   == "100000000");
+            BEAST_EXPECT(jro[0u][jss::quality]                   == "10000000000");
             BEAST_EXPECT(jro[0u][jss::taker_gets][jss::currency] == "USD");
             BEAST_EXPECT(jro[0u][jss::taker_gets][jss::issuer]   == bob.human());
             BEAST_EXPECT(jro[0u][jss::taker_gets][jss::value]    == "1");
-            BEAST_EXPECT(jro[0u][jss::taker_pays]                == "100000000");
+            BEAST_EXPECT(jro[0u][jss::taker_pays]                == "10000000000");
 
-            BEAST_EXPECT(jro[1u][jss::quality]                   == "100000000");
+            BEAST_EXPECT(jro[1u][jss::quality]                   == "10000000000");
             BEAST_EXPECT(jro[1u][jss::taker_gets][jss::currency] == "USD");
             BEAST_EXPECT(jro[1u][jss::taker_gets][jss::issuer]   == gw.human());
             BEAST_EXPECT(jro[1u][jss::taker_gets][jss::value]    == "1");
-            BEAST_EXPECT(jro[1u][jss::taker_pays]                == "100000000");
+            BEAST_EXPECT(jro[1u][jss::taker_pays]                == "10000000000");
 
-            BEAST_EXPECT(jro[2u][jss::quality]                   == "5000000");
+            BEAST_EXPECT(jro[2u][jss::quality]                   == "500000000");
             BEAST_EXPECT(jro[2u][jss::taker_gets][jss::currency] == "USD");
             BEAST_EXPECT(jro[2u][jss::taker_gets][jss::issuer]   == gw.human());
             BEAST_EXPECT(jro[2u][jss::taker_gets][jss::value]    == "2");
-            BEAST_EXPECT(jro[2u][jss::taker_pays]                == "10000000");
+            BEAST_EXPECT(jro[2u][jss::taker_pays]                == "1000000000");
         }
 
         {
@@ -277,7 +277,7 @@ public:
 
 };
 
-BEAST_DEFINE_TESTSUITE(AccountOffers,app,ripple);
+BEAST_DEFINE_TESTSUITE(AccountOffers,app,casinocoin);
 
 }
 }
