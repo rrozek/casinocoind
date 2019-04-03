@@ -353,7 +353,7 @@ public:
 
             auto const pk2 = parseBase58<PublicKey> (
                 TOKEN_NODE_PUBLIC,
-                "nHUeeJCSY2dM71oxM8Cgjouf5ekTuev2mwDpc374aLMxzDLXNmjf");
+                "nHUeeJCSY2dM71oxM8Cgjouf5ekTuev2mwDpr374aLMxzDLXNmjf");
             BEAST_EXPECT(pk2);
 
             BEAST_EXPECT(pk1 == *pk2);
@@ -390,6 +390,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(PublicKey,protocol,ripple);
+BEAST_DEFINE_TESTSUITE(PublicKey,protocol,casinocoin);
 
 } // casinocoin

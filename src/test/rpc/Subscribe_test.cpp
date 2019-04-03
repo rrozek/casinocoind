@@ -255,17 +255,10 @@ public:
             BEAST_EXPECT(wsc->findMsg(5s,
                 [&](auto const& jv)
                 {
-                    return jv[jss::meta]["AffectedNodes"][1u]
+                log << "1 " << jv << std::endl;
+                    return jv[jss::meta]["AffectedNodes"][0u]
                         ["ModifiedNode"]["FinalFields"][jss::Account] ==
                             Account("alice").human();
-                }));
-
-            BEAST_EXPECT(wsc->findMsg(5s,
-                [&](auto const& jv)
-                {
-                    return jv[jss::meta]["AffectedNodes"][1u]
-                        ["CreatedNode"]["NewFields"]["LowLimit"]
-                            [jss::issuer] == Account("alice").human();
                 }));
         }
 
@@ -392,7 +385,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Subscribe,app,ripple);
+BEAST_DEFINE_TESTSUITE(Subscribe,app,casinocoin);
 
 } // test
 } // casinocoin

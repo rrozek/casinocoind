@@ -151,6 +151,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE (Discrepancy, app, ripple);
+BEAST_DEFINE_TESTSUITE (Discrepancy, app, casinocoin);
 
 } // casinocoin

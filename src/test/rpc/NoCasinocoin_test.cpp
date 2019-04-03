@@ -81,14 +81,30 @@ public:
 
         env.fund(CSC(10000), gw, alice, bob, carol);
 
-        env.trust(alice["USD"](100), bob);
-        env.trust(bob["USD"](100), carol);
+        env(trust(
+            bob, alice["USD"](100), alice, tfClearNoCasinocoin));
+        env(trust(
+            carol, bob["USD"](100), bob, tfClearNoCasinocoin));
         env.close();
 
+        // After this payment alice has a -50 USD balance with bob, and
+        // bob has a -50 USD balance with carol.  So neither alice nor
+        // bob should be able to clear the noCasinocoin flag. Tx returns 'tesSUCCESS' though...
         env(pay(alice, carol, carol["USD"](50)), path(bob));
 
-        env(trust(alice, bob["USD"](100), bob, tfSetNoCasinocoin));
-        env(trust(bob, carol["USD"](100), carol, tfSetNoCasinocoin));
+        auto getAccountLines = [&env] (Account const& acct)
+        {
+            Json::Value jv;
+            jv[jss::account] = acct.human();
+            auto const resp =
+                env.rpc("json", "account_lines", to_string(jv));
+            return resp[jss::result][jss::lines];
+        };
+
+        env(trust(
+            alice, bob["USD"](100), bob, tfSetNoCasinocoin));
+        env(trust(
+            bob, carol["USD"](100), carol, tfSetNoCasinocoin));
         env.close();
 
         Json::Value params;
@@ -102,15 +118,20 @@ public:
             return dest_amt;
         }();
 
-        auto const resp = env.rpc("json", "ripple_path_find", to_string(params));
+        auto const resp = env.rpc("json", "casinocoin_path_find", to_string(params));
         BEAST_EXPECT(resp[jss::result][jss::alternatives].size()==1);
 
-        Json::Value account_alice;
-        account_alice[jss::account] = alice.human();
-        auto const res = env.rpc("json", "account_lines", to_string(account_alice));
-        auto const& lines = res[jss::result][jss::lines];
-        BEAST_EXPECT(lines.size() == 1);
-        BEAST_EXPECT(!lines[0u].isMember(jss::no_casinocoin));
+
+        {
+            auto const aliceLines = getAccountLines (alice);
+            BEAST_EXPECT(aliceLines.size() == 1);
+            BEAST_EXPECT(!aliceLines[0u].isMember(jss::no_casinocoin));
+
+            auto const bobLines = getAccountLines (bob);
+            BEAST_EXPECT(bobLines.size() == 2);
+            BEAST_EXPECT(!bobLines[0u].isMember(jss::no_casinocoin));
+            BEAST_EXPECT(!bobLines[1u].isMember(jss::no_casinocoin));
+        }
     }
 
     void testPairwise(std::initializer_list<uint256> fs)
@@ -144,7 +165,7 @@ public:
             return dest_amt;
         }();
 
-        auto const resp = env.rpc("json", "ripple_path_find", to_string(params));
+        auto const resp = env.rpc("json", "casinocoin_path_find", to_string(params));
         BEAST_EXPECT(resp[jss::result][jss::alternatives].size() == 0);
 
         env(pay(alice, carol, bob["USD"](50)), ter(tecPATH_DRY));
@@ -224,7 +245,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(noCasinocoin,app,ripple);
+BEAST_DEFINE_TESTSUITE(noCasinocoin,app,casinocoin);
 
 } // RPC
 } // casinocoin

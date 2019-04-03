@@ -169,49 +169,50 @@ public:
         env.close();
 
         auto result = env.rpc ( "ledger_request", "1" ) [jss::result];
+
         BEAST_EXPECT(result[jss::ledger][jss::ledger_index]     == "1");
-        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "100000000000000000");
+        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "4000000000000000000");
         BEAST_EXPECT(result[jss::ledger][jss::closed]           == true);
-        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "AB868A6CFEEC779C2FF845C0AF00A642259986AF40C01976A7F842B6918936C7");
+        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "C7AAD8A09ADA998B963A56ADAD4CC35F501CD183DD4F19087C5A466D55676FF4");
         BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "0000000000000000000000000000000000000000000000000000000000000000");
-        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "A21ED30C04C88046FC61DB9DC19375EEDBD365FD8C17286F27127DF804E9CAA6");
+        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "D8939DBDA628BC984D65B08CDA1DCC351A06B53204A4E4F62D0BBB796FAA146E");
         BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "0000000000000000000000000000000000000000000000000000000000000000");
 
         result = env.rpc ( "ledger_request", "2" ) [jss::result];
         BEAST_EXPECT(result[jss::ledger][jss::ledger_index]     == "2");
-        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "100000000000000000");
+        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "4000000000000000000");
         BEAST_EXPECT(result[jss::ledger][jss::closed]           == true);
-        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "8AEDBB96643962F1D40F01E25632ABB3C56C9F04B0231EE4B18248B90173D189");
-        BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "AB868A6CFEEC779C2FF845C0AF00A642259986AF40C01976A7F842B6918936C7");
-        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "183D5235C7C1FB5AE67AD2F6CC3B28F5FB86E8C4F89DB50DD85641A96470534E");
+        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "4BE3C23DC8B17F0AF2385F7C9C49772390012AA97E3743C705DA86614DE12DDC");
+        BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "C7AAD8A09ADA998B963A56ADAD4CC35F501CD183DD4F19087C5A466D55676FF4");
+        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "C6F8AE44160CCC21A233080DC4BBA63EA640AE758B09F06CCD9637297EC30AB1");
         BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "0000000000000000000000000000000000000000000000000000000000000000");
 
         result = env.rpc ( "ledger_request", "3" ) [jss::result];
         BEAST_EXPECT(result[jss::ledger][jss::ledger_index]     == "3");
-        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "99999999999999980");
+        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "3999999999998000000");
         BEAST_EXPECT(result[jss::ledger][jss::closed]           == true);
-        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "D2EE1E2A7288AAD43D6FA8AD8007FD1A95646F365EF3A1AD608A03258F11CF18");
-        BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "8AEDBB96643962F1D40F01E25632ABB3C56C9F04B0231EE4B18248B90173D189");
-        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "22565DC00D1A30F2C15871714E512976EF476281E5E87FF63D3E129C9069F4F4");
-        BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "0213EC486C058B3942FBE3DAC6839949A5C5B02B8B4244C8998EFDF04DBD8222");
+        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "E7054DA21007FC2C02F57CAE1821C3E30169884F2745380D4AA50E2BB1E7631D");
+        BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "4BE3C23DC8B17F0AF2385F7C9C49772390012AA97E3743C705DA86614DE12DDC");
+        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "B5681057FE6D20FEF088B0D1F09AF94441F8E35A2F3C762FC2D2364859D27A4D");
+        BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "8CC09BA8E76A55D651C454A758954E58EFE82BE6C454A496C4CF89E669275158");
 
         result = env.rpc ( "ledger_request", "4" ) [jss::result];
         BEAST_EXPECT(result[jss::ledger][jss::ledger_index]     == "4");
-        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "99999999999999960");
+        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "3999999999996000000");
         BEAST_EXPECT(result[jss::ledger][jss::closed]           == true);
-        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "8F9032390CDD4C9D7A5B216AFDA3B525A3B39D7589C69D90D4C6BCA4619DD33C");
-        BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "D2EE1E2A7288AAD43D6FA8AD8007FD1A95646F365EF3A1AD608A03258F11CF18");
-        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "C3335CA14E712CB28F2A7C09BEB9A24BF30BBFA5528F156C19F6665D7A588FEA");
-        BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "3CBDB8F42E04333E1642166BFB93AC9A7E1C6C067092CD5D881D6F3AB3D67E76");
+        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "2F48424AEAF3CD2102E66877E056AF7221EF76EE6FD4C6ABB0A2284771B02094");
+        BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "E7054DA21007FC2C02F57CAE1821C3E30169884F2745380D4AA50E2BB1E7631D");
+        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "213516122552D4D51E2EB0D408768A6D19C8240EE9BBAC277D53D1409C8525AD");
+        BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "4F3ED0AE9BAB74F27A8E663460AF5014C9876474C7E33A98EED4581D810A809F");
 
         result = env.rpc ( "ledger_request", "5" ) [jss::result];
         BEAST_EXPECT(result[jss::ledger][jss::ledger_index]     == "5");
-        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "99999999999999940");
+        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "3999999999994000000");
         BEAST_EXPECT(result[jss::ledger][jss::closed]           == true);
-        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "3EDEB201735867A8EEECBC79A75902C05A7E3F192E4C12E02E67BFDDE5566CCE");
-        BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "8F9032390CDD4C9D7A5B216AFDA3B525A3B39D7589C69D90D4C6BCA4619DD33C");
-        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "7C77B1E9EB86410D84EE0CD50716AAA21192F19CF533194AD705798895248212");
-        BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "C3D086CD6BDB9E97AD1D513B2C049EF2840BD21D0B3E22D84EBBB89B6D2EF59D");
+        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "5EDBE8FB65A3CF570C8F132B54E8B6A82559DF0097238BF4768DCF39F4565F09");
+        BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "2F48424AEAF3CD2102E66877E056AF7221EF76EE6FD4C6ABB0A2284771B02094");
+        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "88BD3CB08056ADE3C29FD076D2D6C82D1065FC6B3CBE97CAC063B0179FC1964D");
+        BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "994EE05311F1B81B1585FF8F63FEA2FC56251FD105C736726C95D58A3ED2E2D2");
 
         result = env.rpc ( "ledger_request", "6" ) [jss::result];
         BEAST_EXPECT(result[jss::error]         == "invalidParams");
@@ -232,6 +233,7 @@ public:
         jvParams[jss::ledger_hash] = "AB868A6CFEEC779C2FF845C0AF00A642259986AF40C01976A7F842B6918936C7";
         jvParams[jss::ledger_index] = "1";
         auto result = env.rpc ("json", "ledger_request", jvParams.toStyledString()) [jss::result];
+
         BEAST_EXPECT(result[jss::error]         == "invalidParams");
         BEAST_EXPECT(result[jss::status]        == "error");
         BEAST_EXPECT(result[jss::error_message] == "Exactly one of ledger_hash and ledger_index can be set.");
@@ -266,11 +268,11 @@ public:
 
         auto result = env.rpc ( "ledger_request", "1" ) [jss::result];
         BEAST_EXPECT(result[jss::ledger][jss::ledger_index]     == "1");
-        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "100000000000000000");
+        BEAST_EXPECT(result[jss::ledger][jss::total_coins]      == "4000000000000000000");
         BEAST_EXPECT(result[jss::ledger][jss::closed]           == true);
-        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "AB868A6CFEEC779C2FF845C0AF00A642259986AF40C01976A7F842B6918936C7");
+        BEAST_EXPECT(result[jss::ledger][jss::ledger_hash]      == "C7AAD8A09ADA998B963A56ADAD4CC35F501CD183DD4F19087C5A466D55676FF4");
         BEAST_EXPECT(result[jss::ledger][jss::parent_hash]      == "0000000000000000000000000000000000000000000000000000000000000000");
-        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "A21ED30C04C88046FC61DB9DC19375EEDBD365FD8C17286F27127DF804E9CAA6");
+        BEAST_EXPECT(result[jss::ledger][jss::account_hash]     == "D8939DBDA628BC984D65B08CDA1DCC351A06B53204A4E4F62D0BBB796FAA146E");
         BEAST_EXPECT(result[jss::ledger][jss::transaction_hash] == "0000000000000000000000000000000000000000000000000000000000000000");
     }
 
@@ -301,7 +303,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(LedgerRequestRPC,app,ripple);
+BEAST_DEFINE_TESTSUITE(LedgerRequestRPC,app,casinocoin);
 
 } // RPC
 } // casinocoin

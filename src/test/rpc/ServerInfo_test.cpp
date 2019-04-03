@@ -30,17 +30,17 @@ namespace test {
 
 namespace validator_data {
 static auto const public_key =
-    "nHBt9fsb4849WmZiCds4r5TXyBeQjqnH5kzPtqgMAQMgi39YZRPa";
+    "nHD3pRojfDnPNyzMXsaj5hJkVRSTzG6RG5XJPq1EercmGAEyAe8Y";
 
 static auto const token =
-    "eyJ2YWxpZGF0aW9uX3NlY3JldF9rZXkiOiI5ZWQ0NWY4NjYyNDFjYzE4YTI3NDdiNT\n"
-    "QzODdjMDYyNTkwNzk3MmY0ZTcxOTAyMzFmYWE5Mzc0NTdmYTlkYWY2IiwibWFuaWZl\n"
-    "c3QiOiJKQUFBQUFGeEllMUZ0d21pbXZHdEgyaUNjTUpxQzlnVkZLaWxHZncxL3ZDeE\n"
-    "hYWExwbGMyR25NaEFrRTFhZ3FYeEJ3RHdEYklENk9NU1l1TTBGREFscEFnTms4U0tG\n"
-    "bjdNTzJmZGtjd1JRSWhBT25ndTlzQUtxWFlvdUorbDJWMFcrc0FPa1ZCK1pSUzZQU2\n"
-    "hsSkFmVXNYZkFpQnNWSkdlc2FhZE9KYy9hQVpva1MxdnltR21WcmxIUEtXWDNZeXd1\n"
-    "NmluOEhBU1FLUHVnQkQ2N2tNYVJGR3ZtcEFUSGxHS0pkdkRGbFdQWXk1QXFEZWRGdj\n"
-    "VUSmEydzBpMjFlcTNNWXl3TFZKWm5GT3I3QzBrdzJBaVR6U0NqSXpkaXRROD0ifQ==\n";
+        "eyJtYW5pZmVzdCI6IkpBQUFBQUZ4SWUzbzhEeGhCMjhsejdOa0xCMWY0UkVEbHNWTlVESUpk\n"
+        "SWFzbjkwaGRTVCtFbk1oQTN2dEpxbmtDdHM4cUgxZnpSRjdZUzVMTEtpYWpTMzBMdWJPQVlx\n"
+        "UVYvY0Nka2N3UlFJaEFLSStDc2c4ZENYcGJ4T1o2WnFndndpRVBFeHd6YlR2c1MyK0I2WGdF\n"
+        "V1FxQWlBcE83Rm1kNGwzNGxzNmw2TEZ1SHJ6VDc1K2pKTm04QXV1Skk3SUh5RXNoWEFTUUo3\n"
+        "YVI2c2FjWEQ5bXNqVS93NmtiWVFnR1c4ZlIrSnF2b2JmakxPUXBDbkJEcGxTVUloM2pKSHBn\n"
+        "dldYQTNnREUzbjNJTzZOYnhjTXJ3K0JqVHA0amdjPSIsInZhbGlkYXRpb25fc2VjcmV0X2tl\n"
+        "eSI6IkFGRDlDOTJCMzFDQzk1NkQ1Q0QzQUYwN0UxMUZBRDFBRDEzNzQwRTk5MDkyQUZDNjQ4\n"
+        "MDlENzEzRkU5Q0M2ODgifQ==\n";
 }
 
 class ServerInfo_test : public beast::unit_test::suite
@@ -95,7 +95,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(ServerInfo,app,ripple);
+BEAST_DEFINE_TESTSUITE(ServerInfo,app,casinocoin);
 
 } // test
 } // casinocoin

@@ -267,7 +267,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(cluster,overlay,ripple);
+BEAST_DEFINE_TESTSUITE(cluster,overlay,casinocoin);
 
 } // tests
 } // casinocoin

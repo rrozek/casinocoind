@@ -38,13 +38,14 @@ class MultiSign_test : public beast::unit_test::suite
 public:
     void test_noReserve()
     {
+        testcase ("noReserve");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::secp256k1};
 
         // Pay alice enough to meet the initial reserve, but not enough to
         // meet the reserve for a SignerListSet.
-        env.fund(CSC(200), alice);
+        env.fund(CSC(10), alice);
         env.close();
         env.require (owners (alice, 0));
 
@@ -56,7 +57,7 @@ public:
             env.require (owners (alice, 0));
 
             // Fund alice enough to set the signer list, then attach signers.
-            env(pay(env.master, alice, CSC(151)));
+            env(pay(env.master, alice, CSC(15.1)));
             env.close();
             env(smallSigners);
             env.close();
@@ -72,7 +73,7 @@ public:
             env.require (owners (alice, 3));
 
             // Fund alice and succeed.
-            env(pay(env.master, alice, CSC(350)));
+            env(pay(env.master, alice, CSC(35)));
             env.close();
             env(bigSigners);
             env.close();
@@ -86,6 +87,7 @@ public:
 
     void test_signerListSet()
     {
+        testcase ("signerListSet");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::ed25519};
@@ -131,6 +133,7 @@ public:
 
     void test_phantomSigners()
     {
+        testcase ("phantomSigners");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::ed25519};
@@ -190,6 +193,7 @@ public:
     void
     test_enablement()
     {
+        testcase ("enablement");
         using namespace jtx;
         Env env(*this);
         Account const alice {"alice", KeyType::ed25519};
@@ -232,6 +236,7 @@ public:
 
     void test_fee ()
     {
+        testcase ("fee");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::ed25519};
@@ -282,6 +287,7 @@ public:
 
     void test_misorderedSigners()
     {
+        testcase ("misorderedSigners");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::ed25519};
@@ -304,6 +310,7 @@ public:
 
     void test_masterSigners()
     {
+        testcase ("masterSigners");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::ed25519};
@@ -356,6 +363,7 @@ public:
 
     void test_regularSigners()
     {
+        testcase ("regularSigners");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::secp256k1};
@@ -414,6 +422,7 @@ public:
 
     void test_regularSignersUsingSubmitMulti()
     {
+        testcase ("regularSignersUsingSubmitMulti");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::secp256k1};
@@ -617,6 +626,7 @@ public:
 
     void test_heterogeneousSigners()
     {
+        testcase ("heterogeneousSigners");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::secp256k1};
@@ -732,6 +742,7 @@ public:
     // disallow removing the last way a transaction may be signed.
     void test_keyDisable()
     {
+        testcase ("keyDisable");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::ed25519};
@@ -807,6 +818,7 @@ public:
     // master key, but not when multisigning.
     void test_regKey()
     {
+        testcase ("regKey");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::secp256k1};
@@ -839,6 +851,7 @@ public:
     // See if every kind of transaction can be successfully multi-signed.
     void test_txTypes()
     {
+        testcase ("txTypes");
         using namespace jtx;
         Env env(*this, features(featureMultiSign));
         Account const alice {"alice", KeyType::secp256k1};
@@ -921,6 +934,7 @@ public:
 
     void test_badSignatureText()
     {
+        testcase ("badSignatureText");
         // Verify that the text returned for signature failures is correct.
         using namespace jtx;
 
@@ -1003,8 +1017,9 @@ public:
             signer.setFieldVL (sfTxnSignature, badSig);
             // Signature should fail.
             auto const info = submitSTTx (local);
+            log << info[jss::result][jss::error_exception].asString() << std::endl;
             BEAST_EXPECT(info[jss::result][jss::error_exception].asString().
-                find ("Invalid signature on account r") != std::string::npos);
+                find ("Invalid signature on account c") != std::string::npos);
         }
         {
             // Multisign with an empty signers array should fail.
@@ -1057,6 +1072,7 @@ public:
 
     void test_noMultiSigners()
     {
+        testcase ("noMultiSigners");
         using namespace jtx;
         Env env {*this, features(featureMultiSign)};
         Account const alice {"alice", KeyType::ed25519};
@@ -1089,7 +1105,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(MultiSign, app, ripple);
+BEAST_DEFINE_TESTSUITE(MultiSign, app, casinocoin);
 
 } // test
 } // casinocoin

@@ -633,7 +633,7 @@ public:
 };
 
 // VFALCO This test fails because of thread asynchronous issues
-BEAST_DEFINE_TESTSUITE(SHAMapStore,app,ripple);
+BEAST_DEFINE_TESTSUITE(SHAMapStore,app,casinocoin);
 
 }
 }

@@ -42,11 +42,11 @@ public:
             return f;
         }();
 
-        BEAST_EXPECT (scaleFeeLoad (10000, l, fees, false) == 10000);
-        BEAST_EXPECT (scaleFeeLoad (1, l, fees, false) == 1);
+        BEAST_EXPECT (scaleFeeLoad (10000, l, fees, false) == 10000000);
+        BEAST_EXPECT (scaleFeeLoad (1, l, fees, false) == 1000);
     }
 };
 
-BEAST_DEFINE_TESTSUITE(LoadFeeTrack,ripple_core,ripple);
+BEAST_DEFINE_TESTSUITE(LoadFeeTrack,casinocoin_core,casinocoin);
 
 } // casinocoin

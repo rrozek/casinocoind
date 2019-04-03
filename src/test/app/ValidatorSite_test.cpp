@@ -386,7 +386,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(ValidatorSite, app, ripple);
+BEAST_DEFINE_TESTSUITE(ValidatorSite, app, casinocoin);
 
 } // test
 } // casinocoin

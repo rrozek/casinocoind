@@ -322,7 +322,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(SHAMap,ripple_app,ripple);
+BEAST_DEFINE_TESTSUITE(SHAMap,casinocoin_app,casinocoin);
 
 } // tests
 } // casinocoin

@@ -50,7 +50,7 @@ struct CheckLibraryVersions_test : beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(CheckLibraryVersions, ripple_basics, ripple);
+BEAST_DEFINE_TESTSUITE(CheckLibraryVersions, casinocoin_basics, casinocoin);
 
 }  // namespace version
 }  // namespace casinocoin
