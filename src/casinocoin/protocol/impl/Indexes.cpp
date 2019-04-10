@@ -61,6 +61,13 @@ getLedgerFeeIndex ()
     return sha512Half(std::uint16_t(spaceFee));
 }
 
+// get the index of the node that holds ledger dependent configuration
+uint256
+getLedgerConfigurationIndex ()
+{
+    return sha512Half(std::uint16_t(spaceConfiguration));
+}
+
 uint256
 getAccountRootIndex (AccountID const& account)
 {
@@ -234,6 +241,12 @@ Keylet fees_t::operator()() const
 {
     return { ltFEE_SETTINGS,
         getLedgerFeeIndex() };
+}
+
+Keylet configuration_t::operator()() const
+{
+    return { ltCONFIGURATION,
+        getLedgerConfigurationIndex() };
 }
 
 Keylet book_t::operator()(Book const& b) const

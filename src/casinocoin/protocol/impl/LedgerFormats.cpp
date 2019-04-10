@@ -94,18 +94,19 @@ LedgerFormats::LedgerFormats ()
             << SOElement (sfHighQualityOut,      SOE_OPTIONAL)
             ;
 
-    add ("Escrow", ltESCROW) <<
-        SOElement (sfAccount,           SOE_REQUIRED) <<
-        SOElement (sfDestination,       SOE_REQUIRED) <<
-        SOElement (sfAmount,            SOE_REQUIRED) <<
-        SOElement (sfCondition,         SOE_OPTIONAL) <<
-        SOElement (sfCancelAfter,       SOE_OPTIONAL) <<
-        SOElement (sfFinishAfter,       SOE_OPTIONAL) <<
-        SOElement (sfSourceTag,         SOE_OPTIONAL) <<
-        SOElement (sfDestinationTag,    SOE_OPTIONAL) <<
-        SOElement (sfOwnerNode,         SOE_REQUIRED) <<
-        SOElement (sfPreviousTxnID,     SOE_REQUIRED) <<
-        SOElement (sfPreviousTxnLgrSeq, SOE_REQUIRED);
+    add ("Escrow", ltESCROW)
+            << SOElement (sfAccount,           SOE_REQUIRED)
+            << SOElement (sfDestination,       SOE_REQUIRED)
+            << SOElement (sfAmount,            SOE_REQUIRED)
+            << SOElement (sfCondition,         SOE_OPTIONAL)
+            << SOElement (sfCancelAfter,       SOE_OPTIONAL)
+            << SOElement (sfFinishAfter,       SOE_OPTIONAL)
+            << SOElement (sfSourceTag,         SOE_OPTIONAL)
+            << SOElement (sfDestinationTag,    SOE_OPTIONAL)
+            << SOElement (sfOwnerNode,         SOE_REQUIRED)
+            << SOElement (sfPreviousTxnID,     SOE_REQUIRED)
+            << SOElement (sfPreviousTxnLgrSeq, SOE_REQUIRED)
+            ;
 
     add ("LedgerHashes", ltLEDGER_HASHES)
             << SOElement (sfFirstLedgerSequence, SOE_OPTIONAL) // Remove if we do a ledger restart
@@ -158,6 +159,10 @@ LedgerFormats::LedgerFormats ()
             << SOElement (sfOwnerNode,         SOE_REQUIRED)
             << SOElement (sfPreviousTxnID,     SOE_REQUIRED)
             << SOElement (sfPreviousTxnLgrSeq, SOE_REQUIRED)
+            ;
+
+    add ("Configuration", ltCONFIGURATION)
+            << SOElement (sfConfiguration,     SOE_REQUIRED)
             ;
 }
 

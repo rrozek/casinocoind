@@ -129,6 +129,10 @@ public:
     TER
     checkSign (PreclaimContext const& ctx);
 
+    static
+    TER
+    checkWLT (PreclaimContext const& ctx);
+
     // Returns the fee in fee units, not scaled for load.
     static
     std::uint64_t
@@ -158,6 +162,12 @@ public:
         // after checkSeq/Fee/Sign.
         return tesSUCCESS;
     }
+
+    static
+    TER
+    isWLTCompliant(STAmount const& amount,
+                   ConfigObjectEntry const& tokenConfig,
+                   beast::Journal const& j);
     /////////////////////////////////////////////////////
 
 protected:

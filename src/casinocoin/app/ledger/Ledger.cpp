@@ -283,6 +283,7 @@ Ledger::Ledger (Ledger const& prevLedger,
     , stateMap_ (prevLedger.stateMap_->snapShot (true))
     , fees_(prevLedger.fees_)
     , rules_(prevLedger.rules_)
+    , ledgerConfig_(prevLedger.ledgerConfig_)
 {
     info_.seq = prevLedger.info_.seq + 1;
     info_.parentCloseTime =
@@ -600,6 +601,7 @@ Ledger::setup (Config const& config)
 {
     bool ret = true;
 
+
     fees_.base = config.FEE_DEFAULT;
     fees_.units = config.TRANSACTION_FEE_BASE;
     fees_.reserve = config.FEE_ACCOUNT_RESERVE;
@@ -607,22 +609,8 @@ Ledger::setup (Config const& config)
 
     try
     {
-        if (auto const sle = read(keylet::fees()))
-        {
-            // VFALCO NOTE Why getFieldIndex and not isFieldPresent?
-
-            if (sle->getFieldIndex (sfBaseFee) != -1)
-                fees_.base = sle->getFieldU64 (sfBaseFee);
-
-            if (sle->getFieldIndex (sfReferenceFeeUnits) != -1)
-                fees_.units = sle->getFieldU32 (sfReferenceFeeUnits);
-
-            if (sle->getFieldIndex (sfReserveBase) != -1)
-                fees_.reserve = sle->getFieldU32 (sfReserveBase);
-
-            if (sle->getFieldIndex (sfReserveIncrement) != -1)
-                fees_.increment = sle->getFieldU32 (sfReserveIncrement);
-        }
+        updateFeesFromLedger();
+        updateLedgerConfigFromLedger();
     }
     catch (SHAMapMissingNode &)
     {
@@ -661,6 +649,46 @@ Ledger::peek (Keylet const& k) const
     if (! k.check(*sle))
         return nullptr;
     return sle;
+}
+
+void Ledger::updateFeesFromLedger()
+{
+    if (auto const sle = read(keylet::fees()))
+    {
+        if (sle->isFieldPresent(sfBaseFee))
+            fees_.base = sle->getFieldU64 (sfBaseFee);
+
+        if (sle->isFieldPresent(sfReferenceFeeUnits))
+            fees_.units = sle->getFieldU32 (sfReferenceFeeUnits);
+
+        if (sle->isFieldPresent(sfReserveBase))
+            fees_.reserve = sle->getFieldU32 (sfReserveBase);
+
+        if (sle->isFieldPresent(sfReserveIncrement))
+            fees_.increment = sle->getFieldU32 (sfReserveIncrement);
+    }
+}
+
+void Ledger::updateLedgerConfigFromLedger()
+{
+    if ((info().seq % 256) != 1 && ledgerConfig_.lastUpdateIndex != 0)
+        return;
+
+    if (auto const sle = read(keylet::configuration()))
+    {
+        if (sle->isFieldPresent(sfConfiguration))
+        {
+            ledgerConfig_.entries.clear();
+            STArray const& cfgArray = sle->getFieldArray(sfConfiguration);
+            for (STArray::const_iterator iter = cfgArray.begin(); iter != cfgArray.end(); ++iter)
+            {
+                ConfigObjectEntry entry;
+                if (entry.fromBytes((*iter).getFieldVL(sfConfigData)))
+                    ledgerConfig_.entries.push_back(entry);
+            }
+            ledgerConfig_.lastUpdateIndex = info().seq;
+        }
+    }
 }
 
 //------------------------------------------------------------------------------

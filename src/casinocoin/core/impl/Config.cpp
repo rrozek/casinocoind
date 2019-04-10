@@ -143,6 +143,7 @@ char const* const Config::configFileName = "casinocoind.cfg";
 char const* const Config::databaseDirName = "db";
 char const* const Config::validatorsFileName = "validators.txt";
 char const* const Config::votingFileName = "voting.cfg";
+char const* const Config::votableConfigFileName = "vote_config.cfg";
 
 static
 std::string
@@ -185,6 +186,20 @@ bool Config::reloadFeeVoteParams()
         return true;
     }
     return false;
+}
+
+Json::Value Config::reloadConfigurationVoteParams()
+{
+    Json::Value jvConfiguration;
+
+    boost::filesystem::path votableConfigFile;
+    std::string data;
+    if (loadSectionFromExternalPath (SECTION_CONFIGURATION_JSON, votableConfigFile, data, votableConfigFileName))
+    {
+        Json::Reader jrReader;
+        jrReader.parse (data, jvConfiguration);
+    }
+    return jvConfiguration;
 }
 
 void Config::setup (std::string const& strConf, bool bQuiet,

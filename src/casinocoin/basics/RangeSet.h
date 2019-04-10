@@ -62,6 +62,8 @@ public:
 
     std::string toString () const;
 
+    std::string toSingleRangeString () const;
+
     /** Returns the sum of the Lebesgue measures of all sub-ranges. */
     std::size_t
     lebesgue_sum() const;

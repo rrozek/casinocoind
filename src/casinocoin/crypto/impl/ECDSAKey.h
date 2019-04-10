@@ -17,23 +17,20 @@
 */
 //==============================================================================
 
-//==============================================================================
-/*
-    2017-06-30  ajochems        Refactored for casinocoin
-*/
-//==============================================================================
+#ifndef CASINOCOIN_ECDSAKEY_H
+#define CASINOCOIN_ECDSAKEY_H
 
-#include <BeastConfig.h>
+#include <casinocoin/basics/base_uint.h>
+#include <casinocoin/basics/Blob.h>
+#include <casinocoin/crypto/impl/ec_key.h>
 
-#include <casinocoin/crypto/impl/ec_key.cpp>
-#include <casinocoin/crypto/impl/GenerateDeterministicKey.cpp>
-#include <casinocoin/crypto/impl/KeyType.cpp>
-#include <casinocoin/crypto/impl/openssl.cpp>
-#include <casinocoin/crypto/impl/csprng.cpp>
-#include <casinocoin/crypto/impl/RFC1751.cpp>
-#include <casinocoin/crypto/impl/ECDSAKey.cpp>
-#include <casinocoin/crypto/impl/ECIES.cpp>
+namespace casinocoin {
 
-#if DOXYGEN
-#include <casinocoin/crypto/README.md>
+openssl::ec_key ECDSAPrivateKey (uint256 const& serialized);
+openssl::ec_key ECDSAPublicKey  (Blob    const& serialized);
+
+openssl::ec_key ECDSAPublicKey (std::uint8_t const* data, std::size_t size);
+
+} // casinocoin
+
 #endif

@@ -125,7 +125,7 @@ Currency const& noCurrency()
 
 Currency const& badCurrency()
 {
-    static Currency const currency(0x5852500000000000);
+    static Currency const currency(0x4353430000000000); // <- this translates to CSC
     return currency;
 }
 
