@@ -31,6 +31,8 @@
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/STAccount.h>
+#include <casinocoin/app/ledger/LedgerMaster.h>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 #include <algorithm>
@@ -246,7 +248,6 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
             JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition failed to parse json, return";
             return;
         }
-        JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition json parsed ok." << entry.getId();
 
         Blob objData;
         if (!entry.toBytes(objData))
@@ -256,7 +257,6 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
         }
         ObjectHash hash = sha512Half(makeSlice(objData));
 
-        JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition json: " << jvVotableConfig;
         JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition added " << entry.getId() << " with hash: " << to_string(hash);
         entryList_[hash] = entry;
     }
@@ -270,7 +270,6 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
                 JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition failed to parse json, continue";
                 continue;
             }
-            JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition json parsed ok." << anEntry.getId();
 
             Blob objData;
             if (!anEntry.toBytes(objData))
@@ -279,7 +278,6 @@ void VotableConfigurationImpl::updatePosition(Json::Value const& jvVotableConfig
                 continue;
             }
             ObjectHash hash = sha512Half(makeSlice(objData));
-            JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition json: " << jvVotableConfig[index];
             JLOG(j_.info()) << "VotableConfigurationImpl::updatePosition added " << anEntry.getId() << " with hash: " << to_string(hash);
             entryList_[hash] = anEntry;
         }

@@ -30,6 +30,7 @@
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/Quality.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/protocol/st.h>
 #include <casinocoin/ledger/View.h>
 
@@ -73,26 +74,29 @@ SetKYC::preflight (PreflightContext const& ctx)
     if (id == zero)
         return temBAD_SRC_ACCOUNT;
 
-    bool bIsTrusted = false;
-    for ( const std::string& entry : ctx.app.config().KYCTrustedAccounts )
+    if (!ctx.rules.enabled(featureConfigObject))
     {
-        JLOG(j.info()) << "address: " << entry << " read from config";
-        auto trustedAccountID = parseBase58<AccountID>(entry);
-        if (!trustedAccountID)
+        bool bIsTrusted = false;
+        for ( const std::string& entry : ctx.app.config().KYCTrustedAccounts )
         {
-            JLOG(j.info()) << "address: " << entry << " seems to be invalid";
-            continue;
+            JLOG(j.debug()) << "address: " << entry << " read from config";
+            auto trustedAccountID = parseBase58<AccountID>(entry);
+            if (!trustedAccountID)
+            {
+                JLOG(j.info()) << "address: " << entry << " seems to be invalid";
+                continue;
+            }
+            if (id == trustedAccountID)
+            {
+                bIsTrusted = true;
+                break;
+            }
         }
-        if (id == trustedAccountID)
+        if (!bIsTrusted)
         {
-            bIsTrusted = true;
-            break;
+            JLOG(j.info()) << "KYCSet tx can be only issued from trusted address";
+            return temBAD_SRC_ACCOUNT;
         }
-    }
-    if (!bIsTrusted)
-    {
-        JLOG(j.info()) << "KYCSet tx can be only issued from trusted address";
-        return temBAD_SRC_ACCOUNT;
     }
 
     if (uSetFlag == kycfValidated)
@@ -116,10 +120,52 @@ SetKYC::preflight (PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
+TER SetKYC::preclaim(const PreclaimContext &ctx)
+{
+    auto& j = ctx.j;
+    auto const id = ctx.tx[sfAccount];
+
+    if (ctx.view.rules().enabled(featureConfigObject)
+        && ctx.view.rules().enabled(featureKYC))
+    {
+        bool bIsTrusted = false;
+        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+        auto kycConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                            ledgerConfiguration.entries.end(),
+                                            [](ConfigObjectEntry const& obj)
+            {
+                return obj.getType() == ConfigObjectEntry::KYC_Signer;
+            });
+        if (kycConfigIter == ledgerConfiguration.entries.end())
+        {
+            JLOG(j.info()) << "No KYC entries found. tx forbidden.";
+            return tefFAILURE;
+        }
+        auto const& definedKYCSigners = (*kycConfigIter).getData();
+
+        for ( auto const entry : definedKYCSigners )
+        {
+            const KYC_SignerDescriptor* kycEntry = static_cast<const KYC_SignerDescriptor*>(entry);
+            JLOG(j.debug()) << "address: " << toBase58(kycEntry->kycSigner) << " read from config ledger object";
+            if (id == kycEntry->kycSigner)
+            {
+                bIsTrusted = true;
+                break;
+            }
+        }
+        if (!bIsTrusted)
+        {
+            JLOG(j.info()) << "KYCSet tx can be only issued from trusted address";
+            return temBAD_SRC_ACCOUNT;
+        }
+    }
+    return tesSUCCESS;
+}
+
 TER
 SetKYC::doApply ()
 {
-    JLOG(j_.info()) << "SetKYC doApply!";
+    JLOG(j_.debug()) << "SetKYC doApply!";
     AccountID const uDstAccountID (ctx_.tx.getAccountID (sfDestination));
 
     // Open a ledger for editing.
