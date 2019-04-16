@@ -26,6 +26,7 @@
 #include <casinocoin/protocol/Serializer.h>
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/json/json_writer.h>
+#include <stdexcept>
 
 #include <lz4/lib/lz4.h>
 
@@ -96,7 +97,18 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
         return false;
 
     mId = data.get(sfConfigID.getName(), Json::nullValue).asInt();
-    mType = typeMap.left.at(data.get(sfConfigType.getName(),Json::nullValue).asString());
+    try
+    {
+        mType = typeMap.left.at(data.get(sfConfigType.getName(),Json::nullValue).asString());
+    }
+    catch(std::out_of_range e)
+    {
+        JLOG(mJournal.info())
+                << "ConfigObjectEntry::fromJson exception: " << e.what()
+                << " when trying to map " << data.get(sfConfigType.getName(),Json::nullValue).asString()
+                << " to known types. aborting.";
+        return false;
+    }
 
 
     Json::Value jvSrcArray = data.get(sfConfigData.getName(), Json::arrayValue);
@@ -134,7 +146,18 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
 bool ConfigObjectEntry::toJson(Json::Value& result) const
 {
     result[sfConfigID.getName()] = mId;
-    result[sfConfigType.getName()] = typeMap.right.at(mType);
+    try
+    {
+        result[sfConfigType.getName()] = typeMap.right.at(mType);
+    }
+    catch(std::out_of_range e)
+    {
+        JLOG(mJournal.info())
+                << "ConfigObjectEntry::toJson exception: " << e.what()
+                << " when trying to map " << mType
+                << " to string type. aborting.";
+        return false;
+    }
 
     Json::Value jvData(Json::arrayValue);
     for (const DataDescriptorInterface* pItem : mData)
