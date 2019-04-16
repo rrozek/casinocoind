@@ -92,24 +92,7 @@ Json::Value doSubmit (RPC::Context& context)
         return jvResult;
     }
 
-// only add it if KYC feature is enabled
-    LedgerMaster& ledgerMaster = context.app.getLedgerMaster();
-    if (ledgerMaster.getValidatedRules().enabled (featureKYC)
-        && ledgerMaster.getValidatedRules().enabled (featureKYCIPTracking))
-    {
-        // only add if account is KYC-validated
-        // TODO: This adds much work for tx submit process.
-        //      Some KYC accounts cache might be useful
-        std::shared_ptr<const casinocoin::SLE> sleSender =
-                RPC::getAccountSLE(ledgerMaster, toBase58(stpTrans->getAccountID(sfAccount)));
-        if (sleSender && (sleSender->isFlag(lsfKYCValidated)))
-        {
-            std::string clientIP = context.clientAddress.address().to_string();
-            Blob ipAddress(clientIP.begin(), clientIP.end());
-            // TODO: jrojek apply ECIES with PubKey from CSCFoundationObject
-            const_cast<STTx*>(stpTrans.get())->setFieldVL(sfClientIP, ipAddress);
-        }
-    }
+    RPC::injectClientIP(context, const_cast<STTx*>(stpTrans.get()));
 
     {
         if (!context.app.checkSigs())

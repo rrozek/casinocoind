@@ -65,6 +65,8 @@ void ConsensusTransSetSF::gotNode (
             Serializer s (nodeData.data() + 4, nodeData.size() - 4);
             SerialIter sit (s.slice());
             auto stx = std::make_shared<STTx const> (std::ref (sit));
+            JLOG (j_.info())
+                    << "txID: " << stx->getTransactionID () << " nodeHash: " << nodeHash.as_uint256();
             assert (stx->getTransactionID () == nodeHash.as_uint256());
             auto const pap = &app_;
             app_.getJobQueue ().addJob (

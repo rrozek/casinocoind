@@ -49,8 +49,6 @@ Json::Value doEncryptMsg (RPC::Context& context)
     if (! context.params.isMember (jss::dest_public_key_hex))
         return RPC::missing_field_error (jss::dest_public_key_hex);
 
-    JLOG(j.debug()) << "doEncryptMsg: " << context.params;
-
     // dest pubKey
     auto unHexedPubKey = strUnHex(context.params[jss::dest_public_key_hex].asString());
     if (!unHexedPubKey.second)

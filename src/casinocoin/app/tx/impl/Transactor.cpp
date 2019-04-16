@@ -720,7 +720,7 @@ Transactor::operator()()
 
     JLOG(j_.debug()) << "Transactor for id: " << txID;
 
-#ifdef BEAST_DEBUG
+//#ifdef BEAST_DEBUG
     {
         Serializer ser;
         ctx_.tx.add (ser);
@@ -736,7 +736,7 @@ Transactor::operator()()
             assert (false);
         }
     }
-#endif
+//#endif
 
     auto terResult = ctx_.preclaimResult;
     if (terResult == tesSUCCESS)

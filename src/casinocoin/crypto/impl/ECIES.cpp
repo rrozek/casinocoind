@@ -130,6 +130,7 @@ static ECIES_HMAC_TYPE makeHMAC (const ECIES_HMAC_KEY_TYPE& secret, Blob const& 
     HMAC_CTX* ctxPtr = nullptr;
 #if OPENSSL_OLD
     HMAC_CTX ctx;
+    HMAC_CTX_init (&ctx);
     ctxPtr = &ctx;
 #else
     ctxPtr = HMAC_CTX_new();

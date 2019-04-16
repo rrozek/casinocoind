@@ -47,7 +47,6 @@ Json::Value doDecryptMsg (RPC::Context& context)
         return RPC::missing_field_error (jss::encrypted_message);
     if (! context.params.isMember (jss::secret))
         return RPC::missing_field_error (jss::secret);
-    JLOG(j.debug()) << "doDecryptMsg: " << context.params;
 
     Json::Value jvResult;
     auto const keypair = RPC::keypairForSignature (context.params, jvResult);
