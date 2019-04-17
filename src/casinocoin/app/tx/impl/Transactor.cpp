@@ -37,6 +37,7 @@
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/types.h>
+#include <casinocoin/app/misc/Blacklist.h>
 
 namespace casinocoin {
 
@@ -660,6 +661,73 @@ TER Transactor::checkMultiSign (PreclaimContext const& ctx)
 
     // Met the quorum.  Continue.
     return tesSUCCESS;
+}
+
+TER Transactor::checkBlacklist (PreclaimContext const& ctx)
+{
+    auto const accountid = ctx.tx.getAccountID(sfAccount);
+    if (accountid == zero)
+        return temBAD_SRC_ACCOUNT;
+
+    if (ctx.app.blacklistedAccounts().listed(toBase58(accountid)))
+    {
+        // account is blacklisted, get full blacklisted account info
+        JLOG(ctx.j.info()) <<  "Account " << toBase58(accountid) << " is blacklisted!";
+        BlacklistItem listedAccount = ctx.app.blacklistedAccounts().getAccount(toBase58(accountid));
+        auto unHexedPubKey = strUnHex(listedAccount.publicKeySigner);
+        if (!unHexedPubKey.second)
+            return temMALFORMED;
+        PublicKey signerPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
+
+        std::string accountIDSigner = toBase58(calcAccountID(signerPublicKey));
+        JLOG(ctx.j.info()) <<  "Account Blacklist Signer: " << accountIDSigner;
+
+        // get allowed signers from Config
+        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+        auto blacklistConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                                ledgerConfiguration.entries.end(),
+                                                [](ConfigObjectEntry const& obj)
+            {
+                return obj.getType() == ConfigObjectEntry::Blacklist_Signer;
+            });
+        if (blacklistConfigIter == ledgerConfiguration.entries.end())
+        {
+            JLOG(ctx.j.info()) << "No autorised blacklist signer entries found. tx forbidden.";
+            return tefBLACKLISTED;
+        }
+
+        auto const& definedBlacklistSigners = (*blacklistConfigIter).getData();
+        bool signerValid = false;
+        for (auto signer : definedBlacklistSigners)
+        {
+            const Blacklist_SignerDescriptor* blacklistEntry = static_cast<const Blacklist_SignerDescriptor*>(signer);
+            JLOG(ctx.j.info()) <<  "Defined Blacklist Signer: " << toBase58(blacklistEntry->blacklistSigner);
+            // check if allowed signer is the same as blacklisted signer account
+            if(toBase58(blacklistEntry->blacklistSigner) == accountIDSigner)
+            {
+                signerValid = true;
+                break;
+            }
+
+        }
+
+        if(!signerValid)
+        {
+            JLOG(ctx.j.info()) <<  "!!! Transaction not allowed !!! Account " << toBase58(accountid) << " is blacklisted!";
+            return tefBLACKLISTED;
+        }
+        else
+        {
+            JLOG(ctx.j.info()) <<  "Account " << toBase58(accountid) << " is blacklisted but Signer is not on the defined signers list!";
+            return tesSUCCESS;
+        }
+        
+    }
+    else
+    {
+        // account is not blacklisted
+        return tesSUCCESS;
+    }
 }
 
 //------------------------------------------------------------------------------

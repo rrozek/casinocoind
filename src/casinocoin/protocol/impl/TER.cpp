@@ -98,6 +98,7 @@ transResults()
         { tefBAD_AUTH_MASTER,        { "tefBAD_AUTH_MASTER",       "Auth for unclaimed account needs correct master key."                          } },
         { tefINVARIANT_FAILED,       { "tefINVARIANT_FAILED",      "Fee claim violated invariants for the transaction."                            } },
         { tefNOT_WLT,                { "tefNOT_WLT",               "Involved token is not on the allowed token list."                              } },
+        { tefBLACKLISTED,            { "tefBLACKLISTED",           "Account is blacklisted and not allowed to create transactions."                } },
 
         { telLOCAL_ERROR,            { "telLOCAL_ERROR",           "Local failure."                                                                } },
         { telBAD_DOMAIN,             { "telBAD_DOMAIN",            "Domain too long."                                                              } },

@@ -133,6 +133,10 @@ public:
     TER
     checkWLT (PreclaimContext const& ctx);
 
+    static
+    TER
+    checkBlacklist (PreclaimContext const& ctx);
+
     // Returns the fee in fee units, not scaled for load.
     static
     std::uint64_t

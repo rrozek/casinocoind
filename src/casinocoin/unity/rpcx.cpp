@@ -97,6 +97,7 @@
 #include <casinocoin/rpc/handlers/ValidationSeed.cpp>
 #include <casinocoin/rpc/handlers/WalletPropose.cpp>
 #include <casinocoin/rpc/handlers/WalletSeed.cpp>
+#include <casinocoin/rpc/handlers/BlacklistHandler.cpp>
 
 #include <casinocoin/rpc/impl/Handler.cpp>
 #include <casinocoin/rpc/impl/LegacyPathFind.cpp>

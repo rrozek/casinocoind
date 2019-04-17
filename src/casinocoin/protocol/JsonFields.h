@@ -474,6 +474,10 @@ JSS ( warning );                    // rpc:
 JSS ( website );                    // out: Configuration
 JSS ( write_load );                 // out: GetCounts
 
+JSS ( last_refresh_time );          // out: Remote Update Sites
+JSS ( last_refresh_status );        // out: Remote Update Sites
+JSS ( refresh_interval_min );       // out: Remote Update Sites
+
 #undef JSS
 
 } // jss

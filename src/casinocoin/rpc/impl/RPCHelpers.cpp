@@ -544,7 +544,7 @@ Blob injectClientIPHelper (Context& context, std::string const& srcAccountString
                     if (definedMsgPubKeys.size() > 0)
                     {
                         const Message_PubKeyDescriptor* pubKeyEntry = static_cast<const Message_PubKeyDescriptor*>(definedMsgPubKeys[0]);
-                        JLOG(context.j.debug()) << "pubkey used for ip encryption: " << pubKeyEntry->pubKey << " read from config ledger object";
+                        JLOG(context.j.debug()) << "pubkey used for ip encryption: " << pubKeyEntry->pubKey.data() << " read from config ledger object";
 
                         std::string clientIP = context.clientAddress.address().to_string();
                         Serializer s(clientIP.data(), clientIP.size());

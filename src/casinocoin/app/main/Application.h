@@ -79,6 +79,9 @@ class Cluster;
 class DatabaseCon;
 class SHAMapStore;
 
+class Blacklist;
+class BlacklistUpdater;
+
 using NodeCache     = TaggedCache <SHAMapHash, Blob>;
 
 class Application : public beast::PropertyStream::Source
@@ -160,6 +163,9 @@ public:
     virtual OpenLedger const&       openLedger() const = 0;
     virtual DatabaseCon& getTxnDB () = 0;
     virtual DatabaseCon& getLedgerDB () = 0;
+
+    virtual Blacklist&              blacklistedAccounts () = 0;
+    virtual BlacklistUpdater&       blacklistUpdater () = 0;
 
     virtual std::chrono::milliseconds getIOLatency () = 0;
 
