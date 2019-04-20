@@ -146,7 +146,6 @@ Blacklist::refreshAccountOnList (
             *it = {accountID, signature, publicKeySigner, creationDate, lastUpdatedDate, enabled};
         JLOG (j_.debug()) << "Updated AccountID: " << accountID;
     }
-    JLOG (j_.info()) << "Blacklisted Account ID List size: " << blacklistVector_.size();
 }
 
 Json::Value
@@ -164,6 +163,12 @@ Blacklist::getJson() const
         }
     }
     return jrr;
+}
+
+size_t 
+Blacklist::getSize() const
+{
+    return blacklistVector_.size();
 }
 
 } // casinocoin

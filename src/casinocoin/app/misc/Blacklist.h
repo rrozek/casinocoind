@@ -98,6 +98,11 @@ public:
      */
     Json::Value
     getJson() const;
+
+    /** Return the size of current account list
+     * */
+    size_t 
+    getSize() const;
 };
 
 //------------------------------------------------------------------------------

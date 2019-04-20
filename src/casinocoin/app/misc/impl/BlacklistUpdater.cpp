@@ -267,6 +267,7 @@ BlacklistUpdater::onSiteFetch(
         }
     }
 
+    JLOG (j_.info()) << "Blacklisted AccountID List size: " << blacklist_.getSize();
     std::lock_guard <std::mutex> lock{state_mutex_};
     fetching_ = false;
     if (! stopping_)
