@@ -89,6 +89,9 @@ enum LedgerEntryType
     // Simple unidirection csc channel
     ltPAYCHAN           = 'x',
 
+    // CSC Ledger dependent configuration object
+    ltCONFIGURATION     = 'C',
+
     // No longer used or supported. Left here to prevent accidental
     // reassignment of the ledger type.
     ltNICKNAME          = 'n',
@@ -116,6 +119,7 @@ enum LedgerNameSpace
     spaceTicket         = 'T',
     spaceSignerList     = 'S',
     spaceCSCUChannel    = 'x',
+    spaceConfiguration  = 'C',
 
     // No longer used or supported. Left here to reserve the space and
     // avoid accidental reuse of the space.

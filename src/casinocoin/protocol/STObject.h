@@ -363,7 +363,7 @@ public:
 
     void addWithoutSigningFields (Serializer & s) const
     {
-        add (s, false);
+        add (s, false, false);
     }
 
     // VFALCO NOTE does this return an expensive copy of an object with a
@@ -447,6 +447,9 @@ public:
     const STVector128& getFieldV128 (SField const& field) const;
     const STObject& getFieldObject (SField const& field) const;
     const STArray& getFieldArray (SField const& field) const;
+
+    // checks if all object STAmount fields are native CSC
+    bool isNative() const;
 
     /** Return the value of a field.
 
@@ -546,7 +549,7 @@ public:
     }
 
 private:
-    void add (Serializer & s, bool withSigningFields) const;
+    void add (Serializer & s, bool withSigningFields, bool withNotHashedFields = true) const;
 
     // Sort the entries in an STObject into the order that they will be
     // serialized.  Note: they are not sorted into pointer value order, they

@@ -395,6 +395,16 @@ private:
         return jvRequest;
     }
 
+    Json::Value parseConfigInfo (Json::Value const& jvParams)
+    {
+        Json::Value     jvRequest (Json::objectValue);
+
+        if (jvParams.size() == 1 && !jvParseLedger (jvRequest, jvParams[0u].asString ()))
+            return rpcError (rpcLGR_IDX_MALFORMED);
+
+        return jvRequest;
+    }
+
     // connect <ip> [port]
     Json::Value parseConnect (Json::Value const& jvParams)
     {
@@ -849,6 +859,42 @@ private:
         return rpcError (rpcINVALID_PARAMS);
     }
 
+    // decrypt_msg <secret> <src_pub_key_hex> <message>
+    Json::Value parseDecryptMsg (Json::Value const& jvParams)
+    {
+        if (2 == jvParams.size ())
+        {
+            Json::Value jvRequest;
+            jvRequest[jss::secret] = jvParams[0u].asString();
+            jvRequest[jss::encrypted_message] = jvParams[1u].asString();
+            return jvRequest;
+        }
+
+        return rpcError (rpcINVALID_PARAMS);
+    }
+
+    // decrypt_msg <secret> <dest_pub_key_hex> <message>
+    Json::Value parseEncryptMsg (Json::Value const& jvParams)
+    {
+        if (2 == jvParams.size ())
+        {
+            Json::Value jvRequest;
+            jvRequest[jss::dest_public_key_hex] = jvParams[0u].asString();
+            jvRequest[jss::message] = jvParams[1u].asString();
+            return jvRequest;
+        }
+        if (3 == jvParams.size ())
+        {
+            Json::Value jvRequest;
+            jvRequest[jss::dest_public_key_hex] = jvParams[0u].asString();
+            jvRequest[jss::message] = jvParams[1u].asString();
+            jvRequest[jss::secret] = jvParams[2u].asString();
+            return jvRequest;
+        }
+
+        return rpcError (rpcINVALID_PARAMS);
+    }
+
     // submit any multisigned transaction to the network
     //
     // submit_multisigned <json>
@@ -1049,8 +1095,11 @@ public:
             {   "can_delete",           &RPCParser::parseCanDelete,             0,  1   },
             {   "channel_authorize",    &RPCParser::parseChannelAuthorize,      3,  3   },
             {   "channel_verify",       &RPCParser::parseChannelVerify,         4,  4   },
+            {   "config_info",          &RPCParser::parseConfigInfo,            0,  1   },
             {   "connect",              &RPCParser::parseConnect,               1,  2   },
             {   "consensus_info",       &RPCParser::parseAsIs,                  0,  0   },
+            {   "decrypt_msg",          &RPCParser::parseDecryptMsg,            2,  2   },
+            {   "encrypt_msg",          &RPCParser::parseEncryptMsg,            2,  3   },
             {   "feature",              &RPCParser::parseFeature,               0,  2   },
             {   "fetch_info",           &RPCParser::parseFetchInfo,             0,  1   },
             {   "gateway_balances",     &RPCParser::parseGatewayBalances  ,     1,  -1  },

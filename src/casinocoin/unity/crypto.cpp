@@ -31,6 +31,8 @@
 #include <casinocoin/crypto/impl/openssl.cpp>
 #include <casinocoin/crypto/impl/csprng.cpp>
 #include <casinocoin/crypto/impl/RFC1751.cpp>
+#include <casinocoin/crypto/impl/ECDSAKey.cpp>
+#include <casinocoin/crypto/impl/ECIES.cpp>
 
 #if DOXYGEN
 #include <casinocoin/crypto/README.md>
