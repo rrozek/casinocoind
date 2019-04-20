@@ -41,6 +41,7 @@ Json::Value doAccountTxSwitch       (RPC::Context&);
 Json::Value doAccountTxOld          (RPC::Context&);
 Json::Value doBookOffers            (RPC::Context&);
 Json::Value doBlackList             (RPC::Context&);
+Json::Value doBlacklistedAccounts   (RPC::Context&);
 Json::Value doCanDelete             (RPC::Context&);
 Json::Value doChannelAuthorize      (RPC::Context&);
 Json::Value doChannelVerify         (RPC::Context&);

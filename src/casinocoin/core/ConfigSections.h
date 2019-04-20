@@ -81,6 +81,7 @@ struct ConfigSection
 #define SECTION_VOTING_FILE             "voting_file"
 #define SECTION_NETWORK                 "network"
 #define SECTION_CONFIGURATION_JSON      "configuration_json"
+#define SECTION_BLACKLIST_SITES         "blacklist_sites"
 
 } // casinocoin
 

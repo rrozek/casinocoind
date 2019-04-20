@@ -46,6 +46,7 @@ namespace casinocoin
 struct TokenDescriptor;
 struct KYC_SignerDescriptor;
 struct Message_PubKeyDescriptor;
+struct Blacklist_SignerDescriptor;
 
 struct DataDescriptorInterface
 {
@@ -72,7 +73,8 @@ public:
         Invalid             = 0,
         KYC_Signer          = 1,
         Message_PubKey      = 2,
-        Token               = 3
+        Token               = 3,
+        Blacklist_Signer    = 4
     };
 
     using bimap_string_type = boost::bimap<std::string, Type>;
@@ -153,6 +155,18 @@ struct Message_PubKeyDescriptor : public DataDescriptorInterface
     bool toJson(Json::Value& result) const override;
 
     PublicKey pubKey;
+};
+
+struct Blacklist_SignerDescriptor : public DataDescriptorInterface
+{
+    Blacklist_SignerDescriptor(beast::Journal const& journal);
+    
+    DataDescriptorInterface* clone() const override;
+
+    bool fromJson(Json::Value const& data) override;
+    bool toJson(Json::Value& result) const override;
+
+    AccountID blacklistSigner;
 };
 
 } // casinocoin

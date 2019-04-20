@@ -625,11 +625,13 @@ void Config::loadFromString (std::string const& fileContents)
         }
     }
 
+    // Load Features
     {
         auto const part = section("features");
         for(auto const& s : part.values())
             features.insert(feature(s));
     }
+            
 }
 
 int Config::getSize (SizedItemName item) const

@@ -91,22 +91,22 @@ invoke_preclaim(PreclaimContext const& ctx)
     if (id != zero)
     {
         TER result = T::checkSeq(ctx);
-
         if (result != tesSUCCESS)
             return { result, baseFee };
 
         result = T::checkFee(ctx, baseFee);
-
         if (result != tesSUCCESS)
             return { result, baseFee };
 
         result = T::checkWLT(ctx);
-
         if (result != tesSUCCESS)
             return { result, baseFee };
 
         result = T::checkSign(ctx);
-
+        if (result != tesSUCCESS)
+            return { result, baseFee };
+        
+        result = T::checkBlacklist(ctx);
         if (result != tesSUCCESS)
             return { result, baseFee };
 

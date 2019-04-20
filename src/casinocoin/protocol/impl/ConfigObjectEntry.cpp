@@ -42,6 +42,7 @@ ConfigObjectEntry::bimap_string_type ConfigObjectEntry::initializeTypeMap()
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("KYC_Signer", ConfigObjectEntry::KYC_Signer));
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Message_PubKey", ConfigObjectEntry::Message_PubKey));
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Token", ConfigObjectEntry::Token));
+    aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Blacklist_Signer", ConfigObjectEntry::Blacklist_Signer));
     return aMap;
 }
 
@@ -128,6 +129,9 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
             break;
         case Token:
             pItem = new TokenDescriptor(mJournal);
+            break;
+        case Blacklist_Signer:
+            pItem = new Blacklist_SignerDescriptor(mJournal);
             break;
         case Invalid:
             return false;
@@ -370,6 +374,34 @@ bool TokenDescriptor::toJson(Json::Value &result) const
     result[jss::contactEmail] = contactEmail;
     result[jss::iconURL] = iconURL;
     result[jss::apiEndpoint] = apiEndpoint;
+    return true;
+}
+
+Blacklist_SignerDescriptor::Blacklist_SignerDescriptor(beast::Journal const& journal)
+    : DataDescriptorInterface(journal)
+{}
+
+DataDescriptorInterface* Blacklist_SignerDescriptor::clone() const
+{
+    return new Blacklist_SignerDescriptor(*this);
+}
+
+bool Blacklist_SignerDescriptor::fromJson(Json::Value const& data)
+{
+    if (!data.isObject())
+        return false;
+
+    if (!data.isMember(jss::account))
+        return false;
+
+    if (!to_issuer(blacklistSigner, data[jss::account].asString()))
+        return false;
+    return true;
+}
+
+bool Blacklist_SignerDescriptor::toJson(Json::Value &result) const
+{
+    result[jss::account] = toBase58(blacklistSigner);
     return true;
 }
 
