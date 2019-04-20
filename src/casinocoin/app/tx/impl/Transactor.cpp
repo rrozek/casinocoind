@@ -672,7 +672,7 @@ TER Transactor::checkBlacklist (PreclaimContext const& ctx)
     if (ctx.app.blacklistedAccounts().listed(toBase58(accountid)))
     {
         // account is blacklisted, get full blacklisted account info
-        JLOG(ctx.j.info()) <<  "Account " << toBase58(accountid) << " is blacklisted!";
+        JLOG(ctx.j.debug()) <<  "Account " << toBase58(accountid) << " is blacklisted!";
         BlacklistItem listedAccount = ctx.app.blacklistedAccounts().getAccount(toBase58(accountid));
         auto unHexedPubKey = strUnHex(listedAccount.publicKeySigner);
         if (!unHexedPubKey.second)
@@ -680,7 +680,7 @@ TER Transactor::checkBlacklist (PreclaimContext const& ctx)
         PublicKey signerPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
 
         std::string accountIDSigner = toBase58(calcAccountID(signerPublicKey));
-        JLOG(ctx.j.info()) <<  "Account Blacklist Signer: " << accountIDSigner;
+        JLOG(ctx.j.debug()) <<  "Account Blacklist Signer: " << accountIDSigner;
 
         // get allowed signers from Config
         LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
@@ -692,18 +692,20 @@ TER Transactor::checkBlacklist (PreclaimContext const& ctx)
             });
         if (blacklistConfigIter == ledgerConfiguration.entries.end())
         {
-            JLOG(ctx.j.info()) << "No autorised blacklist signer entries found. tx forbidden.";
+            JLOG(ctx.j.info()) << "Account " << toBase58(accountid) << " is blacklisted but no autorised blacklist signer entries found in ConfigObject." << 
+                                  "TX is forbidden to prevent miss configuration.";
             return tefBLACKLISTED;
         }
 
+        // loop over defined allowed signers and check if blacklisted account is signed by an allowed signer
         auto const& definedBlacklistSigners = (*blacklistConfigIter).getData();
         bool signerValid = false;
         for (auto signer : definedBlacklistSigners)
         {
             const Blacklist_SignerDescriptor* blacklistEntry = static_cast<const Blacklist_SignerDescriptor*>(signer);
-            JLOG(ctx.j.info()) <<  "Defined Blacklist Signer: " << toBase58(blacklistEntry->blacklistSigner);
+            JLOG(ctx.j.debug()) <<  "Defined Blacklist Signer: " << toBase58(blacklistEntry->blacklistSigner);
             // check if allowed signer is the same as blacklisted signer account
-            if(toBase58(blacklistEntry->blacklistSigner) == accountIDSigner)
+            if(toBase58(blacklistEntry->blacklistSigner).compare(accountIDSigner) == 0)
             {
                 signerValid = true;
                 break;
@@ -711,7 +713,7 @@ TER Transactor::checkBlacklist (PreclaimContext const& ctx)
 
         }
 
-        if(!signerValid)
+        if(signerValid)
         {
             JLOG(ctx.j.info()) <<  "!!! Transaction not allowed !!! Account " << toBase58(accountid) << " is blacklisted!";
             return tefBLACKLISTED;
