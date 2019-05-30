@@ -56,9 +56,7 @@ class Validations_test : public beast::unit_test::suite
         boost::optional<std::uint32_t> loadFee_;
 
     public:
-        Node(PeerID nodeID, clock_type const& c)
-            : c_(c)
-            , nodeID_(nodeID)
+        Node(PeerID nodeID, clock_type const& c) : c_(c), nodeID_(nodeID)
         {
         }
 
@@ -290,7 +288,7 @@ class Validations_test : public beast::unit_test::suite
         }
     };
 
-     Ledger const genesisLedger{Ledger::MakeGenesis{}};
+    Ledger const genesisLedger{Ledger::MakeGenesis{}};
 
     void
     testAddValidation()
@@ -347,8 +345,7 @@ class Validations_test : public beast::unit_test::suite
             BEAST_EXPECT(
                 ValStatus::badSeq == harness.add(n.validate(ledgerAB)));
             // Cannot send the same partial validation sequence
-            BEAST_EXPECT(
-                ValStatus::badSeq == harness.add(n.partial(ledgerAB)));
+            BEAST_EXPECT(ValStatus::badSeq == harness.add(n.partial(ledgerAB)));
 
             // Now trusts the newest ledger too
             harness.clock().advance(1s);
@@ -423,9 +420,8 @@ class Validations_test : public beast::unit_test::suite
                 TestHarness harness(h.oracle);
                 Node n = harness.makeNode();
 
-                auto process = [&](Ledger & lgr)
-                {
-                    if(doFull)
+                auto process = [&](Ledger& lgr) {
+                    if (doFull)
                         return harness.add(n.validate(lgr));
                     return harness.add(n.partial(lgr));
                 };
@@ -455,7 +451,6 @@ class Validations_test : public beast::unit_test::suite
         LedgerHistoryHelper h;
         Ledger ledgerA = h["a"];
         Ledger ledgerAB = h["ab"];
-
 
         using Trigger = std::function<void(TestValidations&)>;
 
@@ -490,8 +485,7 @@ class Validations_test : public beast::unit_test::suite
             BEAST_EXPECT(
                 harness.vals().getNodesAfter(ledgerA, ledgerA.id()) == 0);
             BEAST_EXPECT(
-                harness.vals().getPreferred(genesisLedger) ==
-                std::make_pair(Ledger::Seq{0}, Ledger::ID{0}));
+                harness.vals().getPreferred(genesisLedger) == boost::none);
         }
     }
 
@@ -609,8 +603,7 @@ class Validations_test : public beast::unit_test::suite
                 ValStatus::current == harness.add(node.validate(ledgerA)));
 
         {
-            hash_set<PeerID> const expectedKeys = {a.nodeID(),
-                                                    b.nodeID()};
+            hash_set<PeerID> const expectedKeys = {a.nodeID(), b.nodeID()};
             BEAST_EXPECT(harness.vals().getCurrentNodeIDs() == expectedKeys);
         }
 
@@ -625,8 +618,7 @@ class Validations_test : public beast::unit_test::suite
                 ValStatus::current == harness.add(node.partial(ledgerAC)));
 
         {
-            hash_set<PeerID> const expectedKeys = {a.nodeID(),
-                                                    b.nodeID()};
+            hash_set<PeerID> const expectedKeys = {a.nodeID(), b.nodeID()};
             BEAST_EXPECT(harness.vals().getCurrentNodeIDs() == expectedKeys);
         }
 
@@ -693,7 +685,6 @@ class Validations_test : public beast::unit_test::suite
                 BEAST_EXPECT(
                     sorted(harness.vals().fees(id, baseFee)) ==
                     sorted(expectedFees));
-
             }
         };
 
@@ -834,8 +825,7 @@ class Validations_test : public beast::unit_test::suite
         };
 
         // Empty (no ledgers)
-        BEAST_EXPECT(
-            harness.vals().getPreferred(ledgerA) == pref(genesisLedger));
+        BEAST_EXPECT(harness.vals().getPreferred(ledgerA) == boost::none);
 
         // Single ledger
         BEAST_EXPECT(ValStatus::current == harness.add(a.validate(ledgerB)));
@@ -1067,8 +1057,12 @@ class Validations_test : public beast::unit_test::suite
             BEAST_EXPECT(
                 vals.getNodesAfter(this->genesisLedger, genesisLedger.id()) ==
                 trustedVals.size());
-            BEAST_EXPECT(
-                vals.getPreferred(this->genesisLedger).second == testID);
+            if (trustedVals.empty())
+                BEAST_EXPECT(
+                    vals.getPreferred(this->genesisLedger) == boost::none);
+            else
+                BEAST_EXPECT(
+                    vals.getPreferred(this->genesisLedger)->second == testID);
             BEAST_EXPECT(vals.getTrustedForLedger(testID) == trustedVals);
             BEAST_EXPECT(
                 vals.numTrustedForLedger(testID) == trustedVals.size());
@@ -1125,7 +1119,7 @@ class Validations_test : public beast::unit_test::suite
             auto& vals = harness.vals();
             BEAST_EXPECT(vals.currentTrusted() == trustedVals);
             BEAST_EXPECT(
-                vals.getPreferred(genesisLedger).second == v.ledgerID());
+                vals.getPreferred(genesisLedger)->second == v.ledgerID());
             BEAST_EXPECT(
                 vals.getNodesAfter(genesisLedger, genesisLedger.id()) == 0);
 
@@ -1134,8 +1128,7 @@ class Validations_test : public beast::unit_test::suite
             // make acquiring ledger available
             h["ab"];
             BEAST_EXPECT(vals.currentTrusted() == trustedVals);
-            BEAST_EXPECT(
-                vals.getPreferred(genesisLedger).second == genesisLedger.id());
+            BEAST_EXPECT(vals.getPreferred(genesisLedger) == boost::none);
             BEAST_EXPECT(
                 vals.getNodesAfter(genesisLedger, genesisLedger.id()) == 0);
         }
