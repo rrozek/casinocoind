@@ -607,6 +607,16 @@ ServerHandlerImp::processRequest (Port const& port,
     {
         Json::Value const& jsonRPC =
             batch ? jsonOrig[jss::params][i] : jsonOrig;
+
+        if (!jsonRPC.isObject())
+        {
+            Json::Value r(Json::objectValue);
+            r[jss::request] = jsonRPC;
+            r[jss::error] = make_json_error(method_not_found, "Method not found");
+            reply.append(r);
+            continue;
+        }
+
         /* ------------------------------------------------------------------ */
         auto role = Role::FORBID;
         auto required = Role::FORBID;
@@ -748,8 +758,26 @@ ServerHandlerImp::processRequest (Port const& port,
         }
 
         std::string casinocoinrpc = "1.0";
-        if (params.isMember(jss::casinocoinrpc) && params[jss::casinocoinrpc] != "1.0")
+        if (params.isMember(jss::casinocoinrpc))
+        {
+            if (!params[jss::casinocoinrpc].isString())
+            {
+                usage.charge(Resource::feeInvalidRPC);
+                if (!batch)
+                {
+                    HTTPReply(400, "ripplerpc is not a string", output, rpcJ);
+                    return;
+                }
+
+                Json::Value r = jsonRPC;
+                r[jss::error] = make_json_error(
+                    method_not_found, "ripplerpc is not a string");
+                reply.append(r);
+                continue;
+            }
             casinocoinrpc = params[jss::casinocoinrpc].asString();
+        }
+
         /**
          * Clear header-assigned values if not positively identified from a
          * secure_gateway.
