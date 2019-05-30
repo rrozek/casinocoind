@@ -17,10 +17,11 @@
 */
 //==============================================================================
 
- 
+#include <casinocoin/protocol/STAmount.h>
 #include <casinocoin/protocol/Sign.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/STParsedJSON.h>
+#include <casinocoin/protocol/TxFormats.h>
 #include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/beast/unit_test.h>
@@ -42,6 +43,9 @@ public:
 
         testcase ("ed25519 signatures");
         testSTTx (KeyType::ed25519);
+
+        testcase ("STObject constructor errors");
+        testObjectCtorErrors();
     }
 
     void testDeepNesting()
@@ -1230,7 +1234,7 @@ public:
 
         try
         {
-            casinocoin::SerialIter sit (Slice{payload2, sizeof(payload2)});
+            casinocoin::SerialIter sit {payload2};
             auto stx = std::make_shared<casinocoin::STTx const>(sit);
             fail("An exception should have been thrown");
         }
@@ -1286,6 +1290,95 @@ public:
         else
         {
             pass ();
+        }
+    }
+
+    void testObjectCtorErrors ()
+    {
+        auto const kp1 = randomKeyPair (KeyType::secp256k1);
+        auto const id1 = calcAccountID(kp1.first);
+
+        auto const kp2 = randomKeyPair (KeyType::secp256k1);
+        auto const id2 = calcAccountID(kp2.first);
+
+        // Lambda that returns a Payment STObject.
+        auto getPayment = [kp1, id1, id2] ()
+        {
+            // Account id1 pays account id2 10,000 XRP.
+            STObject payment (sfGeneric);
+            payment.setFieldU16 (sfTransactionType, ttPAYMENT);
+            payment.setAccountID (sfAccount, id1);
+            payment.setAccountID (sfDestination, id2);
+            payment.setFieldAmount (sfAmount, STAmount (10000000000ull));
+            payment.setFieldAmount (sfFee, STAmount (10ull));
+            payment.setFieldU32 (sfSequence, 1);
+            payment.setFieldVL (
+                sfSigningPubKey, Slice (kp1.first.data(), kp1.first.size()));
+            return payment;
+        };
+        {
+            // Verify that getPayment() returns a viable Payment.
+            std::string got;
+            try
+            {
+                STTx {getPayment()};
+            }
+            catch (STTx::FieldErr const& err)
+            {
+                got = err.what();
+            }
+            BEAST_EXPECT (got.empty());
+        }
+        {
+            // Make a payment with a defaulted PathSet field, which is invalid.
+            STObject defaultPath {getPayment()};
+            defaultPath.setFieldPathSet (sfPaths, STPathSet{});
+
+            std::string got;
+            try
+            {
+                STTx {std::move (defaultPath)};
+            }
+            catch (STTx::FieldErr const& err)
+            {
+                got = err.what();
+            }
+            BEAST_EXPECT (
+                got == "Field 'Paths' may not be explicitly set to default.");
+        }
+        {
+            // Make a Payment with an extra "SignerWeight" field.
+            STObject extraField {getPayment()};
+            extraField.setFieldU16 (sfSignerWeight, 7);
+
+            std::string got;
+            try
+            {
+                STTx {std::move (extraField)};
+            }
+            catch (STTx::FieldErr const& err)
+            {
+                got = err.what();
+            }
+            BEAST_EXPECT (
+                got == "Field 'SignerWeight' found in disallowed location.");
+        }
+        {
+            // Make a Payment that is missing the required Fee field.
+            STObject extraField {getPayment()};
+            extraField.delField (sfFee);
+
+            std::string got;
+            try
+            {
+                STTx {std::move (extraField)};
+            }
+            catch (STTx::FieldErr const& err)
+            {
+                got = err.what();
+            }
+            BEAST_EXPECT (
+                got == "Field 'Fee' is required but missing.");
         }
     }
 };

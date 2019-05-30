@@ -504,6 +504,10 @@ transactionPreProcessImpl (
         stpTrans = std::make_shared<STTx> (
             std::move (parsed.object.get()));
     }
+    catch (STObject::FieldErr& err)
+    {
+        return RPC::make_error (rpcINVALID_PARAMS, err.what());
+    }
     catch (std::exception&)
     {
         return RPC::make_error (rpcINTERNAL,
@@ -1105,6 +1109,10 @@ Json::Value transactionSubmitMultiSigned (
         {
             stpTrans = std::make_shared<STTx>(
                 std::move(parsedTx_json.object.get()));
+        }
+        catch (STObject::FieldErr& err)
+        {
+            return RPC::make_error (rpcINVALID_PARAMS, err.what());
         }
         catch (std::exception& ex)
         {
