@@ -66,6 +66,9 @@
 #include <casinocoin/basics/mulDiv.h>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/ip/host_name.hpp>
+#include <string>
+#include <tuple>
+#include <utility>
 namespace casinocoin {
 
 class NetworkOPsImp final
@@ -157,11 +160,18 @@ class NetworkOPsImp final
         void mode (OperatingMode om);
 
         /**
+         * Json-formatted state accounting data.
+         * 1st member: state accounting object.
+         * 2nd member: duration in current state.
+         */
+        using StateCountersJson = std::pair <Json::Value, std::string>;
+
+        /**
          * Output state counters in JSON format.
          *
          * @return JSON object.
          */
-        Json::Value json() const;
+        StateCountersJson json() const;
     };
 
     //! Server fees published on `server` subscription
@@ -2350,7 +2360,8 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin, bool counters)
             info[jss::published_ledger] = lpPublished->info().seq;
     }
 
-    info[jss::state_accounting] = accounting_.json();
+    std::tie(info[jss::state_accounting],
+        info[jss::server_state_duration_us]) = accounting_.json();
     info[jss::uptime] = UptimeClock::now().time_since_epoch().count();
     info[jss::jq_trans_overflow] = std::to_string(
         app_.overlay().getJqTransOverflow());
@@ -3335,7 +3346,8 @@ void NetworkOPsImp::StateAccounting::mode (OperatingMode om)
     start_ = now;
 }
 
-Json::Value NetworkOPsImp::StateAccounting::json() const
+NetworkOPsImp::StateAccounting::StateCountersJson
+NetworkOPsImp::StateAccounting::json() const
 {
     std::unique_lock<std::mutex> lock (mutex_);
 
@@ -3345,8 +3357,9 @@ Json::Value NetworkOPsImp::StateAccounting::json() const
 
     lock.unlock();
 
-    counters[mode].dur += std::chrono::duration_cast<
+    auto const current = std::chrono::duration_cast<
         std::chrono::microseconds>(std::chrono::system_clock::now() - start);
+    counters[mode].dur += current;
 
     Json::Value ret = Json::objectValue;
 
@@ -3359,7 +3372,7 @@ Json::Value NetworkOPsImp::StateAccounting::json() const
         state[jss::duration_us] = std::to_string(counters[i].dur.count());
     }
 
-    return ret;
+    return {ret, std::to_string(current.count())};
 }
 
 //------------------------------------------------------------------------------
