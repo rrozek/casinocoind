@@ -26,6 +26,7 @@
 #include <casinocoin/app/paths/CasinocoinCalc.h>
 #include <casinocoin/app/paths/impl/Steps.h>
 #include <casinocoin/basics/contract.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/ledger/ApplyViewImpl.h>
 #include <casinocoin/ledger/PaymentSandbox.h>
@@ -215,7 +216,7 @@ class ElementComboIter
     bool
     has(SB s) const
     {
-        return state_ & (1 << static_cast<int>(s));
+        return state_ & (1 << safe_cast<int>(s));
     }
 
     bool

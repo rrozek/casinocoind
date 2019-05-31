@@ -22,7 +22,7 @@
     2017-06-30  ajochems        Refactored for casinocoin
 */
 //==============================================================================
-
+#include <casinocoin/basics/safe_cast.h>
  
 #include <casinocoin/protocol/SField.h>
 #include <cassert>
@@ -371,7 +371,7 @@ SField::getField (int code)
         if (it != unknownCodeToField.end ())
             return * (it->second);
         return *(unknownCodeToField[code] = std::unique_ptr<SField const>(
-                       new SField(static_cast<SerializedTypeID>(type), field)));
+                       new SField(safe_cast<SerializedTypeID>(type), field)));
     }
 }
 
@@ -398,7 +398,7 @@ std::string SField::getName () const
     if (fieldValue == 0)
         return "";
 
-    return std::to_string(static_cast<int> (fieldType)) + "/" +
+    return std::to_string(safe_cast<int> (fieldType)) + "/" +
             std::to_string(fieldValue);
 }
 

@@ -49,6 +49,7 @@
 #include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/basics/PerfLog.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/basics/UptimeClock.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/crypto/csprng.h>
@@ -1671,7 +1672,7 @@ void NetworkOPsImp::pubServer ()
         if(f.em)
         {
             auto const loadFactor =
-                std::max(static_cast<std::uint64_t>(f.loadFactorServer),
+                std::max(safe_cast<std::uint64_t>(f.loadFactorServer),
                     mulDiv(f.em->openLedgerFeeLevel, f.loadBaseServer,
                         f.em->referenceFeeLevel).second);
 
@@ -2128,7 +2129,7 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin, bool counters)
         {
             if (when)
                 info[jss::validator_list_expires] =
-                    static_cast<Json::UInt>(when->time_since_epoch().count());
+                    safe_cast<Json::UInt>(when->time_since_epoch().count());
             else
                 info[jss::validator_list_expires] = 0;
         }
@@ -2234,7 +2235,7 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin, bool counters)
     auto const loadBaseFeeEscalation =
         escalationMetrics.referenceFeeLevel;
 
-    auto const loadFactor = std::max(static_cast<std::uint64_t>(loadFactorServer),
+    auto const loadFactor = std::max(safe_cast<std::uint64_t>(loadFactorServer),
         mulDiv(loadFactorFeeEscalation, loadBaseServer, loadBaseFeeEscalation).second);
 
     if (!human)

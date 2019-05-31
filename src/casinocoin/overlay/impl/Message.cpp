@@ -22,7 +22,7 @@
     2017-06-30  ajochems        Refactored for casinocoin
 */
 //==============================================================================
-
+#include <casinocoin/basics/safe_cast.h>
  
 #include <casinocoin/overlay/Message.h>
 #include <casinocoin/overlay/impl/TrafficCount.h>
@@ -45,7 +45,7 @@ Message::Message (::google::protobuf::Message const& message, int type)
         message.SerializeToArray (&mBuffer [Message::kHeaderBytes], messageBytes);
     }
 
-    mCategory = static_cast<int>(TrafficCount::categorize
+    mCategory = safe_cast<int>(TrafficCount::categorize
         (message, type, false));
 }
 
@@ -99,3 +99,4 @@ void Message::encodeHeader (unsigned size, int type)
 }
 
 }
+

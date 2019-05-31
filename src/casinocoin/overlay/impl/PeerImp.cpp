@@ -37,6 +37,7 @@
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/random.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/basics/UptimeClock.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <casinocoin/beast/core/SemanticVersion.h>
@@ -199,7 +200,7 @@ PeerImp::send (Message::pointer const& m)
         return;
 
     overlay_.reportTraffic (
-        static_cast<TrafficCount::category>(m->getCategory()),
+        safe_cast<TrafficCount::category>(m->getCategory()),
         false, static_cast<int>(m->getBuffer().size()));
 
     auto sendq_size = send_queue_.size();

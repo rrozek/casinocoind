@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_SERVER_BASEWSPEER_H_INCLUDED
 #define CASINOCOIN_SERVER_BASEWSPEER_H_INCLUDED
-
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/server/impl/BasePeer.h>
 #include <casinocoin/protocol/BuildInfo.h>
 #include <casinocoin/beast/utility/rngfill.h>
@@ -217,8 +217,9 @@ send(std::shared_ptr<WSMsg> w)
     {
         JLOG(this->j_.info()) <<
             "closing slow client";
-        cr_.code = static_cast<beast::websocket::close_code>(4000);
-        cr_.reason = "Client is too slow.";
+        cr_.code = safe_cast<decltype(cr_.code)>
+                      (beast::websocket::close_code::policy_error);
+        cr_.reason = "Policy error: client is too slow.";
         wq_.erase(std::next(wq_.begin()), wq_.end());
         close();
         return;

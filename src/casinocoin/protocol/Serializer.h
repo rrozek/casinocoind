@@ -26,12 +26,14 @@
 #ifndef CASINOCOIN_PROTOCOL_SERIALIZER_H_INCLUDED
 #define CASINOCOIN_PROTOCOL_SERIALIZER_H_INCLUDED
 
-#include <casinocoin/protocol/SField.h>
+
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Buffer.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/beast/crypto/secure_erase.h>
+#include <casinocoin/protocol/SField.h>
 #include <cassert>
 #include <cstdint>
 #include <iomanip>
@@ -164,7 +166,7 @@ public:
     int addFieldID (int type, int name);
     int addFieldID (SerializedTypeID type, int name)
     {
-        return addFieldID (static_cast<int> (type), name);
+        return addFieldID (safe_cast<int> (type), name);
     }
 
     // DEPRECATED
@@ -272,7 +274,7 @@ public:
                 std::setw (2) <<
                 std::hex <<
                 std::setfill ('0') <<
-                static_cast<unsigned int>(element);
+                safe_cast<unsigned int>(element);
         }
         return h.str ();
     }

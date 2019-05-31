@@ -24,7 +24,7 @@
                                 starting with 'c' 
 */
 //==============================================================================
-
+#include <casinocoin/basics/safe_cast.h>
  
 #include <casinocoin/protocol/tokens.h>
 #include <casinocoin/protocol/digest.h>
@@ -175,7 +175,7 @@ encodeToken (TokenType type,
 
     // Lay the data out as
     //      <type><token><checksum>
-    buf[0] = static_cast<std::underlying_type_t <TokenType>>(type);
+    buf[0] = safe_cast<std::underlying_type_t <TokenType>>(type);
     if (size)
         std::memcpy(buf.data() + 1, token, size);
     checksum(buf.data() + 1 + size, buf.data(), 1 + size);
@@ -268,14 +268,14 @@ std::string
 decodeBase58Token (std::string const& s,
     TokenType type, InverseArray const& inv)
 {
-    auto ret = decodeBase58(s, inv);
+    std::string const ret = decodeBase58(s, inv);
 
     // Reject zero length tokens
     if (ret.size() < 6)
         return {};
 
     // The type must match.
-    if (type != static_cast<TokenType>(ret[0]))
+    if (type != safe_cast<TokenType>(static_cast<std::uint8_t>(ret[0])))
         return {};
 
     // And the checksum must as well.

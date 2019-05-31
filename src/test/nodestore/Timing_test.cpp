@@ -22,6 +22,7 @@
 #include <casinocoin/nodestore/DummyScheduler.h>
 #include <casinocoin/nodestore/Manager.h>
 #include <casinocoin/basics/BasicConfig.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/unity/rocksdb.h>
 #include <casinocoin/beast/utility/temp_dir.h>
 #include <casinocoin/beast/xor_shift_engine.h>
@@ -122,7 +123,7 @@ public:
         Blob value(d_size_(gen_));
         rngcpy (&value[0], value.size(), gen_);
         return NodeObject::createObject (
-            static_cast<NodeObjectType>(d_type_(gen_)),
+            safe_cast<NodeObjectType>(d_type_(gen_)),
                 std::move(value), key);
     }
 
@@ -232,7 +233,6 @@ public:
     };
 
     /*  Execute parallel-for loop.
-
         Constructs `number_of_threads` instances of `Body`
         with `args...` parameters and runs them on individual threads
         with unique loop indexes in the range [0, n).

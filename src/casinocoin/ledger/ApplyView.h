@@ -25,13 +25,14 @@
 
 #ifndef CASINOCOIN_LEDGER_APPLYVIEW_H_INCLUDED
 #define CASINOCOIN_LEDGER_APPLYVIEW_H_INCLUDED
-
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/ledger/RawView.h>
 #include <casinocoin/ledger/ReadView.h>
 #include <boost/optional.hpp>
 namespace casinocoin {
 
 enum ApplyFlags
+    : std::uint32_t
 {
     tapNONE             = 0x00,
 
@@ -53,14 +54,14 @@ ApplyFlags
 operator|(ApplyFlags const& lhs,
     ApplyFlags const& rhs)
 {
-    return static_cast<ApplyFlags>(
-        static_cast<std::underlying_type_t<ApplyFlags>>(lhs) |
-            static_cast<std::underlying_type_t<ApplyFlags>>(rhs));
+    return safe_cast<ApplyFlags>(
+        safe_cast<std::underlying_type_t<ApplyFlags>>(lhs) |
+            safe_cast<std::underlying_type_t<ApplyFlags>>(rhs));
 }
 
-static_assert((tapPREFER_QUEUE | tapRETRY) == static_cast<ApplyFlags>(0x60),
+static_assert((tapPREFER_QUEUE | tapRETRY) == safe_cast<ApplyFlags>(0x60u),
     "ApplyFlags operator |");
-static_assert((tapRETRY | tapPREFER_QUEUE) == static_cast<ApplyFlags>(0x60),
+static_assert((tapRETRY | tapPREFER_QUEUE) == safe_cast<ApplyFlags>(0x60u),
     "ApplyFlags operator |");
 
 constexpr
@@ -68,9 +69,9 @@ ApplyFlags
 operator&(ApplyFlags const& lhs,
     ApplyFlags const& rhs)
 {
-    return static_cast<ApplyFlags>(
-        static_cast<std::underlying_type_t<ApplyFlags>>(lhs) &
-            static_cast<std::underlying_type_t<ApplyFlags>>(rhs));
+    return safe_cast<ApplyFlags>(
+        safe_cast<std::underlying_type_t<ApplyFlags>>(lhs) &
+            safe_cast<std::underlying_type_t<ApplyFlags>>(rhs));
 }
 
 static_assert((tapPREFER_QUEUE & tapRETRY) == tapNONE,
@@ -82,11 +83,11 @@ constexpr
 ApplyFlags
 operator~(ApplyFlags const& flags)
 {
-    return static_cast<ApplyFlags>(
-        ~static_cast<std::underlying_type_t<ApplyFlags>>(flags));
+    return safe_cast<ApplyFlags>(
+        ~safe_cast<std::underlying_type_t<ApplyFlags>>(flags));
 }
 
-static_assert(~tapRETRY == static_cast<ApplyFlags>(~0x20),
+static_assert(~tapRETRY == safe_cast<ApplyFlags>(0xFFFFFFDFu),
     "ApplyFlags operator ~");
 
 inline
@@ -369,3 +370,4 @@ public:
 } // casinocoin
 
 #endif
+

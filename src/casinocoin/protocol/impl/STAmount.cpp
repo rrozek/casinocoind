@@ -27,6 +27,7 @@
 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/SystemParameters.h>
 #include <casinocoin/protocol/STAmount.h>
@@ -253,13 +254,13 @@ STAmount::STAmount (Issue const& issue,
 
 STAmount::STAmount (Issue const& issue,
         std::uint32_t mantissa, int exponent, bool negative)
-    : STAmount (issue, static_cast<std::uint64_t>(mantissa), exponent, negative)
+    : STAmount (issue, safe_cast<std::uint64_t>(mantissa), exponent, negative)
 {
 }
 
 STAmount::STAmount (Issue const& issue,
         int mantissa, int exponent)
-    : STAmount (issue, static_cast<std::int64_t>(mantissa), exponent)
+    : STAmount (issue, safe_cast<std::int64_t>(mantissa), exponent)
 {
 }
 
@@ -1336,3 +1337,4 @@ divRound (STAmount const& num, STAmount const& den,
 }
 
 } // casinocoin
+

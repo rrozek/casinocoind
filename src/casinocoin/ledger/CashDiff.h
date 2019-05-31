@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_LEDGER_CASHDIFF_H_INCLUDED
 #define CASINOCOIN_LEDGER_CASHDIFF_H_INCLUDED
-
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/protocol/STAmount.h>
 #include <memory>                       // std::unique_ptr
 
@@ -50,13 +50,13 @@ inline CashFilter operator| (CashFilter lhs, CashFilter rhs)
 {
     using ul_t = std::underlying_type<CashFilter>::type;
     return static_cast<CashFilter>(
-        static_cast<ul_t>(lhs) | static_cast<ul_t>(rhs));
+        safe_cast<ul_t>(lhs) | safe_cast<ul_t>(rhs));
 }
 inline CashFilter operator& (CashFilter lhs, CashFilter rhs)
 {
     using ul_t = std::underlying_type<CashFilter>::type;
     return static_cast<CashFilter>(
-        static_cast<ul_t>(lhs) & static_cast<ul_t>(rhs));
+        safe_cast<ul_t>(lhs) & safe_cast<ul_t>(rhs));
 }
 
 //------------------------------------------------------------------------------

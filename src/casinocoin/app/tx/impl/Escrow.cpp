@@ -28,6 +28,7 @@
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/conditions/Condition.h>
 #include <casinocoin/conditions/Fulfillment.h>
 #include <casinocoin/ledger/ApplyView.h>
@@ -356,7 +357,7 @@ EscrowFinish::calculateBaseFee (
     if (auto const fb = tx[~sfFulfillment])
     {
         extraFee += view.fees().units *
-            (32 + static_cast<std::uint64_t> (fb->size() / 16));
+            (32 + safe_cast<std::uint64_t> (fb->size() / 16));
     }
 
     return Transactor::calculateBaseFee (view, tx) + extraFee;

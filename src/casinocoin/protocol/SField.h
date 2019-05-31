@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_PROTOCOL_SFIELD_H_INCLUDED
 #define CASINOCOIN_PROTOCOL_SFIELD_H_INCLUDED
-
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/json/json_value.h>
 #include <cstdint>
 #include <utility>
@@ -94,7 +94,7 @@ inline
 int
 field_code(SerializedTypeID id, int index)
 {
-    return (static_cast<int>(id) << 16) | index;
+    return (safe_cast<int>(id) << 16) | index;
 }
 
 // constexpr

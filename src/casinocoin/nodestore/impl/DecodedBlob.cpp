@@ -22,7 +22,7 @@
     2017-06-30  ajochems        Refactored for casinocoin
 */
 //==============================================================================
-
+#include <casinocoin/basics/safe_cast.h>
  
 #include <casinocoin/nodestore/impl/DecodedBlob.h>
 #include <algorithm>
@@ -55,7 +55,7 @@ DecodedBlob::DecodedBlob (void const* key, void const* value, int valueBytes)
     if (valueBytes > 8)
     {
         unsigned char const* byte = static_cast <unsigned char const*> (value);
-        m_objectType = static_cast <NodeObjectType> (byte [8]);
+        m_objectType = safe_cast <NodeObjectType> (byte [8]);
     }
 
     if (valueBytes > 9)
@@ -96,3 +96,4 @@ std::shared_ptr<NodeObject> DecodedBlob::createObject ()
 
 }
 }
+

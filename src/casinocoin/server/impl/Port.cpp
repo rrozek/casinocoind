@@ -22,7 +22,7 @@
     2017-06-30  ajochems        Refactored for casinocoin
 */
 //==============================================================================
-
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/server/Port.h>
 #include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/beast/core/LexicalCast.h>
@@ -198,7 +198,7 @@ parse_Port (ParsedPort& port, Section const& section, std::ostream& log)
         {
             try
             {
-                port.limit = static_cast<int> (
+                port.limit = safe_cast<int> (
                     beast::lexicalCastThrow<std::uint16_t>(lim));
             }
             catch (std::exception const&)

@@ -28,6 +28,7 @@
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/basics/base64.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <casinocoin/protocol/digest.h>
@@ -233,11 +234,11 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         if (versions.empty())
             return boost::none;
         hello.set_protoversion(
-            (static_cast<std::uint32_t>(versions.back().first) << 16) |
-            (static_cast<std::uint32_t>(versions.back().second)));
+            (safe_cast<std::uint32_t>(versions.back().first) << 16) |
+            (safe_cast<std::uint32_t>(versions.back().second)));
         hello.set_protoversionmin(
-            (static_cast<std::uint32_t>(versions.front().first) << 16) |
-            (static_cast<std::uint32_t>(versions.front().second)));
+            (safe_cast<std::uint32_t>(versions.front().first) << 16) |
+            (safe_cast<std::uint32_t>(versions.front().second)));
     }
 
     {
@@ -369,7 +370,7 @@ verifyHello (protocol::TMHello const& h,
 
         JLOG(journal.trace()) <<
             "Connect: time offset " <<
-            static_cast<std::int64_t>(ourTime) - h.nettime();
+            safe_cast<std::int64_t>(ourTime) - h.nettime();
     }
 
     if (h.protoversionmin () > to_packed (BuildInfo::getCurrentProtocol()))

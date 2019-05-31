@@ -53,6 +53,7 @@
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/ByteUtilities.h>
 #include <casinocoin/basics/ResolverAsio.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/basics/Sustain.h>
 #include <casinocoin/basics/PerfLog.h>
 #include <casinocoin/json/json_reader.h>
@@ -1076,7 +1077,7 @@ public:
             *db << "PRAGMA page_count;", soci::into(pageCount);
             std::uint32_t freePages = maxPages - pageCount;
             std::uint64_t freeSpace =
-                static_cast<std::uint64_t>(freePages) * pageSize;
+                safe_cast<std::uint64_t>(freePages) * pageSize;
             JLOG(m_journal.info())
                << "Transaction DB pathname: " << dbPath.string()
                << "; file size: " << dbSize.value_or(-1) << " bytes"

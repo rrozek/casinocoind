@@ -23,7 +23,10 @@
 */
 //==============================================================================
 
- 
+#include <casinocoin/basics/contract.h>
+#include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/safe_cast.h>
+#include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/HashPrefix.h>
 #include <casinocoin/protocol/JsonFields.h>
@@ -34,9 +37,6 @@
 #include <casinocoin/protocol/STArray.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/UintTypes.h>
-#include <casinocoin/basics/contract.h>
-#include <casinocoin/basics/Log.h>
-#include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/json/to_string.h>
 #include <boost/format.hpp>
 #include <array>
@@ -56,7 +56,7 @@ auto getTxFormat (TxType type)
         Throw<std::runtime_error> (
             "Invalid transaction type " +
             std::to_string (
-                static_cast<std::underlying_type_t<TxType>>(type)));
+                safe_cast<std::underlying_type_t<TxType>>(type)));
     }
 
     return format;
@@ -65,7 +65,7 @@ auto getTxFormat (TxType type)
 STTx::STTx (STObject&& object) noexcept (false)
     : STObject (std::move (object))
 {
-    tx_type_ = static_cast <TxType> (getFieldU16 (sfTransactionType));
+    tx_type_ = safe_cast<TxType> (getFieldU16 (sfTransactionType));
     applyTemplate (getTxFormat (tx_type_)->elements);  //  may throw
     tid_ = getHash(HashPrefix::transactionID);
 }
@@ -81,7 +81,7 @@ STTx::STTx (SerialIter& sit) noexcept (false)
     if (set (sit))
         Throw<std::runtime_error> ("Transaction contains an object terminator");
 
-    tx_type_ = static_cast<TxType> (getFieldU16 (sfTransactionType));
+    tx_type_ = safe_cast<TxType> (getFieldU16 (sfTransactionType));
 
     applyTemplate (getTxFormat (tx_type_)->elements);  // May throw
     tid_ = getHash(HashPrefix::transactionID);
@@ -99,7 +99,7 @@ STTx::STTx (
 
     assembler (*this);
 
-    tx_type_ = static_cast<TxType>(getFieldU16 (sfTransactionType));
+    tx_type_ = safe_cast<TxType>(getFieldU16 (sfTransactionType));
 
     if (tx_type_ != type)
         LogicError ("Transaction type was mutated during assembly");
@@ -530,7 +530,7 @@ isPseudoTx(STObject const& tx)
     auto t = tx[~sfTransactionType];
     if (!t)
         return false;
-    auto tt = static_cast<TxType>(*t);
+    auto tt = safe_cast<TxType>(*t);
     return tt == ttAMENDMENT || tt == ttFEE;
 }
 
