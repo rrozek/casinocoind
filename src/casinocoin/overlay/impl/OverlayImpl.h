@@ -47,6 +47,7 @@
 #include <cassert>
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -56,10 +57,7 @@ namespace casinocoin {
 class PeerImp;
 class BasicConfig;
 
-enum
-{
-    maxTTL = 2
-};
+constexpr std::uint32_t maxTTL = 2;
 
 class OverlayImpl : public Overlay
 {
