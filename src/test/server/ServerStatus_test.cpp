@@ -30,11 +30,13 @@
 #include <casinocoin/basics/base64.h>
 #include <beast/http.hpp>
 #include <beast/test/yield_to.hpp>
-#include <beast/websocket/detail/mask.hpp>
 #include <beast/core/multi_buffer.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <algorithm>
+#include <array>
+#include <random>
 #include <regex>
 namespace casinocoin {
 namespace test {
@@ -97,10 +99,16 @@ class ServerStatus_test :
         req.insert("User-Agent", "test");
         req.method(beast::http::verb::get);
         req.insert("Upgrade", "websocket");
-        beast::websocket::detail::maskgen maskgen;
-        beast::websocket::detail::sec_ws_key_type key;
-        beast::websocket::detail::make_sec_ws_key(key, maskgen);
-        req.insert("Sec-WebSocket-Key", key);
+        {
+            // not secure, but OK for a testing
+            std::random_device rd;
+            std::mt19937 e{rd()};
+            std::uniform_int_distribution<> d(0, 255);
+            std::array<std::uint8_t, 16> key;
+            for(auto& v : key)
+                v = d(e);
+            req.insert("Sec-WebSocket-Key", base64_encode(key.data(), key.size()));
+        };
         req.insert("Sec-WebSocket-Version", "13");
         req.insert(beast::http::field::connection, "upgrade");
         return req;
