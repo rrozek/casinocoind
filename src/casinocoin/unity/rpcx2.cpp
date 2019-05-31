@@ -51,6 +51,7 @@
 #include <casinocoin/rpc/handlers/ValidatorListSites.cpp>
 #include <casinocoin/rpc/handlers/WalletPropose.cpp>
 
+#include <casinocoin/rpc/impl/DeliveredAmount.cpp>
 #include <casinocoin/rpc/impl/Handler.cpp>
 #include <casinocoin/rpc/impl/LegacyPathFind.cpp>
 #include <casinocoin/rpc/impl/Role.cpp>

@@ -36,6 +36,7 @@
 #include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/resource/Fees.h>
 #include <casinocoin/rpc/Context.h>
+#include <casinocoin/rpc/DeliveredAmount.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <casinocoin/rpc/Role.h>
 
@@ -173,7 +174,7 @@ Json::Value doAccountTx (RPC::Context& context)
                 if (it.second)
                 {
                     auto meta = it.second->getJson (1);
-                    addPaymentDeliveredAmount (meta, context, it.first, it.second);
+                    insertDeliveredAmount (meta, context, it.first, *it.second);
                     jvObj[jss::meta] = std::move(meta);
 
                     std::uint32_t uLedgerIndex = it.second->getLgrSeq ();
@@ -206,3 +207,4 @@ Json::Value doAccountTx (RPC::Context& context)
 }
 
 } // casinocoin
+

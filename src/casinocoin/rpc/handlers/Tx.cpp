@@ -33,6 +33,7 @@
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/rpc/Context.h>
+#include <casinocoin/rpc/DeliveredAmount.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 
 namespace casinocoin {
@@ -133,12 +134,12 @@ Json::Value doTx (RPC::Context& context)
             auto rawMeta = lgr->txRead (txn->getID()).second;
             if (rawMeta)
             {
-                auto txMeta = std::make_shared<TxMeta> (txn->getID (),
-                    lgr->seq (), *rawMeta, context.app.journal ("TxMeta"));
+                auto txMeta = std::make_shared<TxMeta>(
+                    txn->getID(), lgr->seq(), *rawMeta);
                 okay = true;
                 auto meta = txMeta->getJson (0);
-                addPaymentDeliveredAmount (meta, context, txn, txMeta);
-                ret[jss::meta] = meta;
+                insertDeliveredAmount (meta, context, txn, *txMeta);
+                ret[jss::meta] = std::move(meta);
             }
         }
 
