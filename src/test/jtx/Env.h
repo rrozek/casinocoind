@@ -45,12 +45,11 @@
 #include <casinocoin/protocol/STAmount.h>
 #include <casinocoin/protocol/STObject.h>
 #include <casinocoin/protocol/STTx.h>
-#include <beast/core/detail/type_traits.hpp>
 #include <casinocoin/beast/unit_test.h>
 #include <functional>
 #include <string>
 #include <tuple>
-#include <type_traits>
+#include <casinocoin/beast/cxx17/type_traits.h> // <type_traits>
 #include <utility>
 #include <unordered_map>
 #include <vector>
@@ -692,7 +691,7 @@ protected:
         FN const&... fN)
     {
         maybe_invoke(stx, f,
-            beast::detail::is_invocable<F,
+            std::is_invocable<F,
                 void(Env&, STTx const&)>());
         invoke(stx, fN...);
     }
@@ -726,7 +725,7 @@ protected:
         FN const&... fN)
     {
         maybe_invoke(jt, f,
-            beast::detail::is_invocable<F,
+            std::is_invocable<F,
                 void(Env&, JTx&)>());
         invoke(jt, fN...);
     }

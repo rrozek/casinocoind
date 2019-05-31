@@ -28,7 +28,6 @@
 
 #include <casinocoin/basics/win32_workaround.h>
 #include <casinocoin/beast/xor_shift_engine.h>
-#include <beast/core/detail/type_traits.hpp>
 #include <boost/thread/tss.hpp>
 #include <cassert>
 #include <cstddef>
@@ -36,7 +35,7 @@
 #include <cstring>
 #include <random>
 #include <limits>
-#include <type_traits>
+#include <casinocoin/beast/cxx17/type_traits.h> // <type_traits>
 
 namespace casinocoin {
 
@@ -58,7 +57,7 @@ namespace detail {
 // Determines if a type can be called like an Engine
 template <class Engine, class Result = typename Engine::result_type>
 using is_engine =
-    beast::detail::is_invocable<Engine, Result()>;
+    std::is_invocable<Engine, Result()>;
 }
 
 /** Return the default random engine.
