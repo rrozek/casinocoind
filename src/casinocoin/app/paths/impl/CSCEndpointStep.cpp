@@ -173,8 +173,6 @@ private:
 class CSCEndpointPaymentStep : public CSCEndpointStep<CSCEndpointPaymentStep>
 {
 public:
-    explicit CSCEndpointPaymentStep() = default;
-
     using CSCEndpointStep<CSCEndpointPaymentStep>::CSCEndpointStep;
 
     CSCAmount

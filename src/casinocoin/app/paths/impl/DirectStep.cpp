@@ -227,8 +227,6 @@ private:
 class DirectIPaymentStep : public DirectStepI<DirectIPaymentStep>
 {
 public:
-    explicit DirectIPaymentStep() = default;
-
     using DirectStepI<DirectIPaymentStep>::DirectStepI;
     using DirectStepI<DirectIPaymentStep>::check;
 
@@ -272,8 +270,6 @@ public:
 class DirectIOfferCrossingStep : public DirectStepI<DirectIOfferCrossingStep>
 {
 public:
-    explicit DirectIOfferCrossingStep() = default;
-
     using DirectStepI<DirectIOfferCrossingStep>::DirectStepI;
     using DirectStepI<DirectIOfferCrossingStep>::check;
 

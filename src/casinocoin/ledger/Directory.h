@@ -66,8 +66,6 @@ public:
     using iterator_category =
         std::forward_iterator_tag;
 
-    const_iterator() = default;
-
     bool
     operator==(const_iterator const& other) const;
 
@@ -128,3 +126,4 @@ private:
 } // casinocoin
 
 #endif
+
