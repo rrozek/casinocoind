@@ -25,7 +25,7 @@
 
  
 #include <casinocoin/rpc/Status.h>
-
+#include <sstream>
 namespace casinocoin {
 namespace RPC {
 
@@ -53,7 +53,9 @@ std::string Status::codeString () const
     if (type_ == Status::Type::error_code_i)
     {
         auto info = get_error_info (toErrorCode ());
-        return info.token +  ": " + info.message;
+        std::ostringstream sStr;
+        sStr << info.token.c_str() << ": " << info.message.c_str();
+        return sStr.str();
     }
 
     assert (false);
@@ -98,3 +100,4 @@ std::string Status::toString() const {
 
 } // namespace RPC
 } // casinocoin
+
