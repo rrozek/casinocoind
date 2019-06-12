@@ -19,6 +19,8 @@
 
  
 #include <casinocoin/app/misc/TxQ.h>
+#include <casinocoin/app/misc/Manifest.h>
+#include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/JsonFields.h>
@@ -743,21 +745,6 @@ class LedgerRPC_test : public beast::unit_test::suite
                 "json", "ledger_entry", to_string (jvParams))[jss::result];
             checkErrorValue (jrr, "malformedRequest", "");
         }
-    }
-
-    void testLedgerEntryGenerator()
-    {
-        testcase ("ledger_entry Request Generator");
-        using namespace test::jtx;
-        Env env {*this};
-
-        // All generator requests are deprecated.
-        Json::Value jvParams;
-        jvParams[jss::generator] = 5;
-        jvParams[jss::ledger_hash] = to_string (env.closed()->info().hash);
-        Json::Value const jrr = env.rpc (
-            "json", "ledger_entry", to_string (jvParams))[jss::result];
-        checkErrorValue (jrr, "deprecatedFeature", "");
     }
 
     void testLedgerEntryOffer()
@@ -1518,7 +1505,6 @@ public:
         testLedgerEntryDepositPreauth();
         testLedgerEntryDirectory();
         testLedgerEntryEscrow();
-        testLedgerEntryGenerator();
         testLedgerEntryOffer();
         testLedgerEntryPayChan();
         testLedgerEntryCasinocoinState();
@@ -1533,4 +1519,5 @@ public:
 BEAST_DEFINE_TESTSUITE(LedgerRPC,app,ripple);
 
 } // casinocoin
+
 

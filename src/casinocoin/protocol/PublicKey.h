@@ -148,8 +148,7 @@ operator== (PublicKey const& lhs,
     PublicKey const& rhs)
 {
     return lhs.size() == rhs.size() &&
-        std::memcmp(lhs.data(),
-            rhs.data(), rhs.size()) == 0;
+        std::memcmp(lhs.data(), rhs.data(), rhs.size()) == 0;
 }
 
 inline
@@ -159,7 +158,7 @@ operator< (PublicKey const& lhs,
 {
     return std::lexicographical_compare(
         lhs.data(), lhs.data() + lhs.size(),
-            rhs.data(), rhs.data() + rhs.size());
+        rhs.data(), rhs.data() + rhs.size());
 }
 
 template <class Hasher>

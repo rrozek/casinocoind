@@ -125,7 +125,7 @@ detail::supportedAmendments ()
         "fix1515",
         "fix1578",
         "MultiSignReserve",
-        "fixTakerDryOfferRemoval"
+        "fixTakerDryOfferRemoval",
     };
     return supported;
 }

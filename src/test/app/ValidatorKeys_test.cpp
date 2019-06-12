@@ -89,8 +89,7 @@ public:
         PublicKey const tokenPublicKey =
             derivePublicKey(KeyType::secp256k1, tokenSecretKey);
 
-        auto const m = Manifest::make_Manifest(
-                base64_decode(tokenManifest));
+        auto const m = deserializeManifest(base64_decode(tokenManifest));
         BEAST_EXPECT(m);
         NodeID const tokenNodeID = calcNodeID(m->masterKey);
 

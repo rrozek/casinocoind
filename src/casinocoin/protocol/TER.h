@@ -269,7 +269,7 @@ enum TECcodes : TERUnderlyingType
     tecINVARIANT_FAILED         = 147,
     tecEXPIRED                  = 148,
     tecDUPLICATE                = 149,
-    tecKILLED                   = 150
+    tecKILLED                   = 150,
 };
 
 //------------------------------------------------------------------------------
