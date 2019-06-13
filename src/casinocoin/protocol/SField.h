@@ -144,21 +144,21 @@ public:
         yes,
         noAndNotHashed
     };
-    static IsSigning const notSigning = IsSigning::no;
+    static IsSigning const   notSigning = IsSigning::no;
     static IsSigning const notSigningNotHashed = IsSigning::noAndNotHashed;
 
-    int const               fieldCode;      // (type<<16)|index
-    SerializedTypeID const  fieldType;      // STI_*
-    int const               fieldValue;     // Code number for protocol
-    std::string             fieldName;
-    int                     fieldMeta;
-    int                     fieldNum;
-    IsSigning const         signingField;
-    std::string             jsonName;
+    int const                fieldCode;      // (type<<16)|index
+    SerializedTypeID const   fieldType;      // STI_*
+    int const                fieldValue;     // Code number for protocol
+    std::string              fieldName;
+    int                      fieldMeta;
+    int                      fieldNum;
+    IsSigning const          signingField;
+    Json::StaticString const jsonName;
 
     SField(SField const&) = delete;
     SField& operator=(SField const&) = delete;
-    SField(SField&&) = default;
+    SField(SField&&);
 
 protected:
     // These constructors can only be called from FieldNames.cpp
@@ -175,18 +175,23 @@ public:
     {
         return getField (field_code (type, value));
     }
+
     static const SField& getField (SerializedTypeID type, int value)
     {
         return getField (field_code (type, value));
     }
 
-    std::string getName () const;
-    bool hasName () const
+    std::string const& getName () const
     {
-        return !fieldName.empty ();
+        return fieldName;
     }
 
-    std::string const& getJsonName () const
+    bool hasName () const
+    {
+        return fieldCode > 0;
+    }
+
+    Json::StaticString const& getJsonName () const
     {
         return jsonName;
     }
