@@ -66,7 +66,7 @@ STTx::STTx (STObject&& object) noexcept (false)
     : STObject (std::move (object))
 {
     tx_type_ = safe_cast<TxType> (getFieldU16 (sfTransactionType));
-    applyTemplate (getTxFormat (tx_type_)->elements);  //  may throw
+    applyTemplate (getTxFormat (tx_type_)->getSOTemplate());  //  may throw
     tid_ = getHash(HashPrefix::transactionID);
 }
 
@@ -83,7 +83,7 @@ STTx::STTx (SerialIter& sit) noexcept (false)
 
     tx_type_ = safe_cast<TxType> (getFieldU16 (sfTransactionType));
 
-    applyTemplate (getTxFormat (tx_type_)->elements);  // May throw
+    applyTemplate (getTxFormat (tx_type_)->getSOTemplate());  // May throw
     tid_ = getHash(HashPrefix::transactionID);
 }
 
@@ -94,7 +94,7 @@ STTx::STTx (
 {
     auto format = getTxFormat (type);
 
-    set (format->elements);
+    set (format->getSOTemplate());
     setFieldU16 (sfTransactionType, format->getType ());
 
     assembler (*this);

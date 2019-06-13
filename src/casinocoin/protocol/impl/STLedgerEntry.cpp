@@ -50,7 +50,7 @@ STLedgerEntry::STLedgerEntry (Keylet const& k)
     if (format == nullptr)
         Throw<std::runtime_error> ("invalid ledger entry type");
 
-    set (format->elements);
+    set (format->getSOTemplate());
 
     setFieldU16 (sfLedgerEntryType,
         static_cast <std::uint16_t> (type_));
@@ -85,7 +85,7 @@ void STLedgerEntry::setSLEType ()
         Throw<std::runtime_error> ("invalid ledger entry type");
 
     type_ = format->getType ();
-    applyTemplate (format->elements);  // May throw
+    applyTemplate (format->getSOTemplate());  // May throw
 }
 
 std::string STLedgerEntry::getFullText () const
