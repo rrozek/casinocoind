@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_PROTOCOL_SOTEMPLATE_H_INCLUDED
 #define CASINOCOIN_PROTOCOL_SOTEMPLATE_H_INCLUDED
-
+#include <casinocoin/basics/contract.h>
 #include <casinocoin/protocol/SField.h>
 #include <boost/range.hpp>
 #include <memory>
@@ -55,6 +55,8 @@ public:
         : e_field (fieldName)
         , flags (flags)
     {
+        if (! e_field.isUseful())
+            Throw<std::runtime_error> ("SField in SOElement must be useful.");
     }
 };
 
