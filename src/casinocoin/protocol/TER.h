@@ -92,6 +92,7 @@ enum TEMcodes : TERUnderlyingType
     temBAD_OFFER,
     temBAD_PATH,
     temBAD_PATH_LOOP,
+    temBAD_REGKEY,
     temBAD_SEND_CSC_LIMIT,
     temBAD_SEND_CSC_MAX,
     temBAD_SEND_CSC_NO_DIRECT,

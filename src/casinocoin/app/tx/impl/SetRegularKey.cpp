@@ -26,6 +26,7 @@
  
 #include <casinocoin/app/tx/impl/SetRegularKey.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/UintTypes.h>
 
@@ -73,6 +74,14 @@ SetRegularKey::preflight (PreflightContext const& ctx)
         return temINVALID_FLAG;
     }
 
+
+    if (ctx.rules.enabled(fixMasterKeyAsRegularKey)
+        && ctx.tx.isFieldPresent(sfRegularKey)
+        && (ctx.tx.getAccountID(sfRegularKey) == ctx.tx.getAccountID(sfAccount)))
+    {
+        return temBAD_REGKEY;
+    }
+
     return preflight2(ctx);
 }
 
@@ -92,9 +101,9 @@ SetRegularKey::doApply ()
     }
     else
     {
+        // Account has disabled master key and no multi-signer signer list.
         if (sle->isFlag (lsfDisableMaster) &&
             !view().peek (keylet::signers (account_)))
-            // Account has disabled master key and no multi-signer signer list.
             return tecNO_ALTERNATIVE_KEY;
 
         sle->makeFieldAbsent (sfRegularKey);
