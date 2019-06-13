@@ -1127,15 +1127,15 @@ public:
         // PART 1:
         // we will make two offers that can be used to bridge BTC to USD
         // through CSC
-        env (offer (account_to_test, BTC (250), CSC (1000)),
-                 offers (account_to_test, 1));
+        env (offer (account_to_test, BTC (250), CSC (1000)));
+        env.require (offers(account_to_test, 1));
 
         // validate that the book now shows a BTC for CSC offer
         BEAST_EXPECT(isOffer(env, account_to_test, BTC(250), CSC(1000)));
 
         auto const secondLegSeq = env.seq(account_to_test);
-        env (offer (account_to_test, CSC(1000), USD (50)),
-                 offers (account_to_test, 2));
+        env (offer (account_to_test, CSC(1000), USD (50)));
+        env.require (offers (account_to_test, 2));
 
         // validate that the book also shows a CSC for USD offer
         BEAST_EXPECT(isOffer(env, account_to_test, CSC(1000), USD(50)));
@@ -1188,8 +1188,8 @@ public:
         // PART 2:
         // simple direct crossing  BTC to USD and then USD to BTC which causes
         // the first offer to be replaced
-        env (offer (account_to_test, BTC (250), USD (50)),
-                 offers (account_to_test, 1));
+        env (offer (account_to_test, BTC (250), USD (50)));
+        env.require (offers (account_to_test, 1));
 
         // validate that the book shows one BTC for USD offer and no USD for
         // BTC offers
@@ -1201,8 +1201,8 @@ public:
 
         // this second offer would self-cross directly, so it causes the first
         // offer by the same owner/taker to be removed
-        env (offer (account_to_test, USD (50), BTC (250)),
-                 offers (account_to_test, 1));
+        env (offer (account_to_test, USD (50), BTC (250)));
+        env.require (offers (account_to_test, 1));
 
         // validate that we now have just the second offer...the first
         // was removed
@@ -4587,7 +4587,7 @@ public:
             env(txn, ter (temBAD_TICK_SIZE));
 
             txn[sfTickSize.fieldName] = 0;
-            env(txn, tesSUCCESS);
+            env(txn);
             BEAST_EXPECT (! env.le(gw)->isFieldPresent (sfTickSize));
         }
 
