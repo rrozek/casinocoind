@@ -30,6 +30,7 @@
 #include <casinocoin/app/paths/Credit.h>
 #include <casinocoin/app/paths/Flow.h>
 #include <casinocoin/app/paths/impl/AmountSpec.h>
+#include <casinocoin/app/paths/impl/FlatSets.h>
 #include <casinocoin/app/paths/impl/FlowDebugInfo.h>
 #include <casinocoin/app/paths/impl/Steps.h>
 #include <casinocoin/basics/Log.h>
@@ -513,8 +514,7 @@ flow (PaymentSandbox const& baseView,
                 sb, *strand, remainingIn, remainingOut, j);
 
             // rm bad offers even if the strand fails
-            ofrsToRm.insert (boost::container::ordered_unique_range_t{},
-                f.ofrsToRm.begin (), f.ofrsToRm.end ());
+            SetUnion(ofrsToRm, f.ofrsToRm);
 
             if (f.ter != tesSUCCESS || f.out == beast::zero)
                 continue;
@@ -596,8 +596,7 @@ flow (PaymentSandbox const& baseView,
                         // view
         if (!ofrsToRm.empty ())
         {
-            ofrsToRmOnFail.insert (boost::container::ordered_unique_range_t{},
-                ofrsToRm.begin (), ofrsToRm.end ());
+            SetUnion(ofrsToRmOnFail, ofrsToRm);
             for (auto const& o : ofrsToRm)
             {
                 if (auto ok = sb.peek (keylet::offer (o)))
