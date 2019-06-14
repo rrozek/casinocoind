@@ -1249,6 +1249,40 @@ struct Flow_test : public beast::unit_test::suite
             ter(temBAD_PATH));
     }
 
+    void
+    testZeroOutputStep()
+    {
+        testcase("Zero Output Step");
+
+        using namespace jtx;
+        auto const alice = Account("alice");
+        auto const bob = Account("bob");
+        auto const carol = Account("carol");
+        auto const gw = Account("gw");
+        auto const USD = gw["USD"];
+        auto const EUR = gw["EUR"];
+
+        auto const features = supported_amendments();
+        Env env(*this, features);
+        env.fund(CSC(10000), alice, bob, carol, gw);
+        env.trust(USD(1000), alice, bob, carol);
+        env.trust(EUR(1000), alice, bob, carol);
+        env(pay(gw, alice, USD(100)));
+        env(pay(gw, bob, USD(100)));
+        env(pay(gw, bob, EUR(100)));
+        env.close();
+
+        env(offer(bob, USD(100), EUR(100)));
+        env(offer(bob, EUR(100), CSC(0.000001)));
+        env.close();
+
+        env(pay(alice, carol, CSC(1)),
+            path(~EUR, ~CSC),
+            sendmax(USD(1)),
+            txflags(tfPartialPayment),
+            ter(tecPATH_DRY));
+    }
+
     void testWithFeats(FeatureBitset features)
     {
         using namespace jtx;
@@ -1277,6 +1311,7 @@ struct Flow_test : public beast::unit_test::suite
     void run() override
     {
         testLimitQuality();
+        testZeroOutputStep();
         testRIPD1443(true);
         testRIPD1443(false);
         testRIPD1449(true);
