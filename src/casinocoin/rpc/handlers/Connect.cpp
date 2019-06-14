@@ -43,7 +43,6 @@ namespace casinocoin {
 // XXX Might allow domain for manual connections.
 Json::Value doConnect (RPC::Context& context)
 {
-    auto lock = make_lock(context.app.getMasterMutex());
     if (context.app.config().standalone())
         return "cannot connect in standalone mode";
 
@@ -73,3 +72,4 @@ Json::Value doConnect (RPC::Context& context)
 }
 
 } // casinocoin
+
