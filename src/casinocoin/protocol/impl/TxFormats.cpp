@@ -50,7 +50,7 @@ TxFormats::TxFormats ()
 		{ sfClientIP,             soeOPTIONAL },  // IPTracking
     };
 
-    add ("AccountSet", ttACCOUNT_SET,
+    add (jss::AccountSet, ttACCOUNT_SET,
         {
             { sfEmailHash,           soeOPTIONAL },
             { sfWalletLocator,       soeOPTIONAL },
@@ -64,7 +64,7 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("TrustSet", ttTRUST_SET,
+    add (jss::TrustSet, ttTRUST_SET,
         {
             { sfLimitAmount,         soeOPTIONAL },
             { sfQualityIn,           soeOPTIONAL },
@@ -72,7 +72,7 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("OfferCreate", ttOFFER_CREATE,
+    add (jss::OfferCreate, ttOFFER_CREATE,
         {
             { sfTakerPays,           soeREQUIRED },
             { sfTakerGets,           soeREQUIRED },
@@ -81,19 +81,19 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("OfferCancel", ttOFFER_CANCEL,
+    add (jss::OfferCancel, ttOFFER_CANCEL,
         {
             { sfOfferSequence,       soeREQUIRED },
         },
         commonFields);
 
-    add ("SetRegularKey", ttREGULAR_KEY_SET,
+    add (jss::SetRegularKey, ttREGULAR_KEY_SET,
         {
             { sfRegularKey,          soeOPTIONAL },
         },
         commonFields);
 
-    add ("Payment", ttPAYMENT,
+    add (jss::Payment, ttPAYMENT,
         {
             { sfDestination,         soeREQUIRED },
             { sfAmount,              soeREQUIRED },
@@ -105,7 +105,7 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("EscrowCreate", ttESCROW_CREATE,
+    add (jss::EscrowCreate, ttESCROW_CREATE,
         {
             { sfDestination,         soeREQUIRED },
             { sfAmount,              soeREQUIRED },
@@ -116,7 +116,7 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("EscrowFinish", ttESCROW_FINISH,
+    add (jss::EscrowFinish, ttESCROW_FINISH,
         {
             { sfOwner,               soeREQUIRED },
             { sfOfferSequence,       soeREQUIRED },
@@ -125,21 +125,21 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("EscrowCancel", ttESCROW_CANCEL,
+    add (jss::EscrowCancel, ttESCROW_CANCEL,
         {
             { sfOwner,               soeREQUIRED },
             { sfOfferSequence,       soeREQUIRED },
         },
         commonFields);
 
-    add ("EnableAmendment", ttAMENDMENT,
+    add (jss::EnableAmendment, ttAMENDMENT,
         {
             { sfLedgerSequence,      soeREQUIRED },
             { sfAmendment,           soeREQUIRED },
         },
         commonFields);
 
-    add ("SetFee", ttFEE,
+    add (jss::SetFee, ttFEE,
         {
             { sfLedgerSequence,      soeOPTIONAL },
             { sfBaseFee,             soeREQUIRED },
@@ -149,14 +149,14 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("TicketCreate", ttTICKET_CREATE,
+    add (jss::TicketCreate, ttTICKET_CREATE,
         {
             { sfTarget,              soeOPTIONAL },
             { sfExpiration,          soeOPTIONAL },
         },
         commonFields);
 
-    add ("TicketCancel", ttTICKET_CANCEL,
+    add (jss::TicketCancel, ttTICKET_CANCEL,
         {
             { sfTicketID,            soeREQUIRED },
         },
@@ -164,14 +164,14 @@ TxFormats::TxFormats ()
 
     // The SignerEntries are optional because a SignerList is deleted by
     // setting the SignerQuorum to zero and omitting SignerEntries.
-    add ("SignerListSet", ttSIGNER_LIST_SET,
+    add (jss::SignerListSet, ttSIGNER_LIST_SET,
         {
             { sfSignerQuorum,        soeREQUIRED },
             { sfSignerEntries,       soeOPTIONAL },
         },
         commonFields);
 
-    add ("PaymentChannelCreate", ttPAYCHAN_CREATE,
+    add (jss::PaymentChannelCreate, ttPAYCHAN_CREATE,
         {
             { sfDestination,         soeREQUIRED },
             { sfAmount,              soeREQUIRED },
@@ -182,7 +182,7 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("PaymentChannelFund", ttPAYCHAN_FUND,
+    add (jss::PaymentChannelFund, ttPAYCHAN_FUND,
         {
             { sfPayChannel,          soeREQUIRED },
             { sfAmount,              soeREQUIRED },
@@ -190,7 +190,7 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("PaymentChannelClaim", ttPAYCHAN_CLAIM,
+    add (jss::PaymentChannelClaim, ttPAYCHAN_CLAIM,
         {
             { sfPayChannel,          soeREQUIRED },
             { sfAmount,              soeOPTIONAL },
@@ -199,7 +199,7 @@ TxFormats::TxFormats ()
             { sfPublicKey,           soeOPTIONAL },
         },
         commonFields);
-    add ("KYCSet", ttKYC_SET,
+    add ("jss::KYCSet", ttKYC_SET,
 	{
             { sfDestination,        soeREQUIRED },
         	{ sfKYCVerifications,   soeOPTIONAL },
@@ -207,7 +207,7 @@ TxFormats::TxFormats ()
         	{ sfClearFlag,          soeOPTIONAL },
     },
 	 commonFields);
-    add ("CheckCreate", ttCHECK_CREATE,
+    add (jss::CheckCreate, ttCHECK_CREATE,
         {
             { sfDestination,         soeREQUIRED },
             { sfSendMax,             soeREQUIRED },
@@ -217,7 +217,7 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("CheckCash", ttCHECK_CASH,
+    add (jss::CheckCash, ttCHECK_CASH,
         {
             { sfCheckID,             soeREQUIRED },
             { sfAmount,              soeOPTIONAL },
@@ -225,13 +225,13 @@ TxFormats::TxFormats ()
         },
         commonFields);
 
-    add ("CheckCancel", ttCHECK_CANCEL,
+    add (jss::CheckCancel, ttCHECK_CANCEL,
         {
             { sfCheckID,             soeREQUIRED },
         },
         commonFields);
 
-    add ("DepositPreauth", ttDEPOSIT_PREAUTH,
+    add (jss::DepositPreauth, ttDEPOSIT_PREAUTH,
         {
             { sfAuthorize,           soeOPTIONAL },
             { sfUnauthorize,         soeOPTIONAL },

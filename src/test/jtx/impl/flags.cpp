@@ -31,7 +31,7 @@ fset (Account const& account,
 {
     Json::Value jv;
     jv[jss::Account] = account.human();
-    jv[jss::TransactionType] = "AccountSet";
+    jv[jss::TransactionType] = jss::AccountSet;
     if (on != 0)
         jv[jss::SetFlag] = on;
     if (off != 0)
@@ -64,3 +64,4 @@ nflags::operator()(Env& env) const
 } // jtx
 } // test
 } // casinocoin
+

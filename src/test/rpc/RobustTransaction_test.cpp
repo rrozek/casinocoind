@@ -452,7 +452,7 @@ public:
                 [&](auto const& jv)
                 {
                     return jv[jss::transaction][jss::TransactionType] ==
-                        "AccountSet";
+                        jss::AccountSet;
                 }));
         }
 

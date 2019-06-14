@@ -230,7 +230,7 @@ class TransactionEntry_test : public beast::unit_test::suite
         env.close();
 
         check_tx(env.closed()->seq(), trust_tx);
-        check_tx(env.closed()->seq(), pay_tx, "Payment");
+        check_tx(env.closed()->seq(), pay_tx, jss::Payment.c_str());
 
         env(offer(A2, CSC(100), A2["USD"](1)));
         auto offer_tx =
@@ -238,7 +238,7 @@ class TransactionEntry_test : public beast::unit_test::suite
 
         env.close();
 
-        check_tx(env.closed()->seq(), offer_tx, "OfferCreate");
+        check_tx(env.closed()->seq(), offer_tx, jss::OfferCreate.c_str());
     }
 
 public:
@@ -252,3 +252,4 @@ public:
 BEAST_DEFINE_TESTSUITE (TransactionEntry, rpc, ripple);
 
 }  // ripple
+

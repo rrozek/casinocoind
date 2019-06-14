@@ -43,7 +43,7 @@ LedgerFormats::LedgerFormats ()
         { sfFlags,                   soeREQUIRED },
     };
 
-    add ("AccountRoot", ltACCOUNT_ROOT,
+    add (jss::AccountRoot, ltACCOUNT_ROOT,
         {
             { sfAccount,             soeREQUIRED },
             { sfSequence,            soeREQUIRED },
@@ -64,7 +64,7 @@ LedgerFormats::LedgerFormats ()
         },
         commonFields);
 
-    add ("DirectoryNode", ltDIR_NODE,
+    add (jss::DirectoryNode, ltDIR_NODE,
         {
             { sfOwner,               soeOPTIONAL },  // for owner directories
             { sfTakerPaysCurrency,   soeOPTIONAL },  // for order book directories
@@ -79,7 +79,7 @@ LedgerFormats::LedgerFormats ()
         },
         commonFields);
 
-    add ("Offer", ltOFFER,
+    add (jss::Offer, ltOFFER,
         {
             { sfAccount,             soeREQUIRED },
             { sfSequence,            soeREQUIRED },
@@ -93,7 +93,8 @@ LedgerFormats::LedgerFormats ()
             { sfExpiration,          soeOPTIONAL },
         },
         commonFields);
-    add ("CasinocoinState", ltCASINOCOIN_STATE,
+
+    add (jss::CasinocoinState, ltCASINOCOIN_STATE,
         {
             { sfBalance,             soeREQUIRED },
             { sfLowLimit,            soeREQUIRED },
@@ -126,7 +127,7 @@ LedgerFormats::LedgerFormats ()
         },
         commonFields);
 
-    add ("LedgerHashes", ltLEDGER_HASHES,
+    add (jss::LedgerHashes, ltLEDGER_HASHES,
         {
             { sfFirstLedgerSequence, soeOPTIONAL }, // Remove if we do a ledger restart
             { sfLastLedgerSequence,  soeOPTIONAL },
@@ -134,14 +135,14 @@ LedgerFormats::LedgerFormats ()
         },
         commonFields);
 
-    add ("Amendments", ltAMENDMENTS,
+    add (jss::Amendments, ltAMENDMENTS,
         {
             { sfAmendments,          soeOPTIONAL }, // Enabled
             { sfMajorities,          soeOPTIONAL },
         },
         commonFields);
 
-    add ("FeeSettings", ltFEE_SETTINGS,
+    add (jss::FeeSettings, ltFEE_SETTINGS,
         {
             { sfBaseFee,             soeREQUIRED },
             { sfReferenceFeeUnits,   soeREQUIRED },
@@ -150,7 +151,7 @@ LedgerFormats::LedgerFormats ()
         },
         commonFields);
 
-    add ("Ticket", ltTICKET,
+    add (jss::Ticket, ltTICKET,
         {
             { sfAccount,             soeREQUIRED },
             { sfSequence,            soeREQUIRED },
@@ -162,7 +163,7 @@ LedgerFormats::LedgerFormats ()
 
     // All fields are soeREQUIRED because there is always a
     // SignerEntries.  If there are no SignerEntries the node is deleted.
-    add ("SignerList", ltSIGNER_LIST,
+    add (jss::SignerList, ltSIGNER_LIST,
         {
             { sfOwnerNode,           soeREQUIRED },
             { sfSignerQuorum,        soeREQUIRED },
@@ -173,7 +174,7 @@ LedgerFormats::LedgerFormats ()
         },
         commonFields);
 
-    add ("PayChannel", ltPAYCHAN,
+    add (jss::PayChannel, ltPAYCHAN,
         {
             { sfAccount,             soeREQUIRED },
             { sfDestination,         soeREQUIRED },
@@ -191,7 +192,7 @@ LedgerFormats::LedgerFormats ()
         },
         commonFields);
 
-    add ("Check", ltCHECK,
+    add (jss::Check, ltCHECK,
         {
             { sfAccount,             soeREQUIRED },
             { sfDestination,         soeREQUIRED },
@@ -208,7 +209,7 @@ LedgerFormats::LedgerFormats ()
         },
         commonFields);
 
-    add ("DepositPreauth", ltDEPOSIT_PREAUTH,
+    add (jss::DepositPreauth, ltDEPOSIT_PREAUTH,
         {
             { sfAccount,             soeREQUIRED },
             { sfAuthorize,           soeREQUIRED },

@@ -36,7 +36,7 @@ create (Account const& account,
 {
     Json::Value jv;
     jv[jss::Account] = account.human();
-    jv[jss::TransactionType] = "TicketCreate";
+    jv[jss::TransactionType] = jss::TicketCreate;
     if (expire)
         jv["Expiration"] = *expire;
     if (target)
@@ -50,7 +50,7 @@ Json::Value
 cancel(Account const& account, std::string const & ticketId)
 {
     Json::Value jv;
-    jv[jss::TransactionType] = "TicketCancel";
+    jv[jss::TransactionType] = jss::TicketCancel;
     jv[jss::Account] = account.human();
     jv["TicketID"] = ticketId;
     return jv;
@@ -61,3 +61,4 @@ cancel(Account const& account, std::string const & ticketId)
 } // jtx
 } // test
 } // casinocoin
+
