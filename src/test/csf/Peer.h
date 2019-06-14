@@ -22,6 +22,7 @@
 #include <casinocoin/beast/utility/WrappedSink.h>
 #include <casinocoin/consensus/Consensus.h>
 #include <casinocoin/consensus/Validations.h>
+#include <casinocoin/protocol/PublicKey.h>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 #include <algorithm>
@@ -162,9 +163,11 @@ struct Peer
     //! Type definitions for generic consensus
     using Ledger_t = Ledger;
     using NodeID_t = PeerID;
+    using NodeKey_t = PeerKey;
     using TxSet_t = TxSet;
     using PeerPosition_t = Position;
     using Result = ConsensusResult<Peer>;
+    using NodeKey = Validation::NodeKey;
 
     //! Logging support that prefixes messages with the peer ID
     beast::WrappedSink sink;
@@ -236,10 +239,7 @@ struct Peer
     //! Whether to simulate running as validator or a tracking node
     bool runAsValidator = true;
 
-    //! Enforce invariants on validation sequence numbers
-    SeqEnforcer<Ledger::Seq> seqEnforcer;
-
-    //TODO: Consider removing these two, they are only a convenience for tests
+    // TODO: Consider removing these two, they are only a convenience for tests
     // Number of proposers in the prior round
     std::size_t prevProposers = 0;
     // Duration of prior round
@@ -248,6 +248,8 @@ struct Peer
     // Quorum of validations needed for a ledger to be fully validated
     // TODO: Use the logic in ValidatorList to set this dynamically
     std::size_t quorum = 0;
+
+    hash_set<NodeKey_t> trustedKeys;
 
     // Simulation parameters
     ConsensusParms consensusParms;
@@ -565,8 +567,7 @@ struct Peer
 
             // Can only send one validated ledger per seq
             if (runAsValidator && isCompatible && !consensusFail &&
-                seqEnforcer(
-                    scheduler.now(), newLedger.seq(), validations.parms()))
+                validations.canValidateSeq(newLedger.seq()))
             {
                 bool isFull = proposing;
 
@@ -826,6 +827,39 @@ struct Peer
 
         // Will only relay if current
         return addTrustedValidation(v);
+    }
+
+    bool
+    haveValidated() const
+    {
+        return fullyValidatedLedger.seq() > Ledger::Seq{0};
+    }
+
+    Ledger::Seq
+    getValidLedgerIndex() const
+    {
+        return earliestAllowedSeq();
+    }
+
+    std::pair<std::size_t, hash_set<NodeKey_t>>
+    getQuorumKeys()
+    {
+        hash_set<NodeKey_t > keys;
+        for (auto const& p : trustGraph.trustedPeers(this))
+            keys.insert(p->key);
+        return {quorum, keys};
+    }
+
+    std::size_t
+    laggards(Ledger::Seq const seq, hash_set<NodeKey_t>& trustedKeys)
+    {
+        return validations.laggards(seq, trustedKeys);
+    }
+
+    bool
+    validator() const
+    {
+        return runAsValidator;
     }
 
     //--------------------------------------------------------------------------

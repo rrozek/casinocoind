@@ -92,6 +92,7 @@ class CCLConsensus
     public:
         using Ledger_t = CCLCxLedger;
         using NodeID_t = NodeID;
+        using NodeKey_t = PublicKey;
         using TxSet_t = CCLTxSet;
         using PeerPosition_t = CCLCxPeerPos;
 
@@ -136,6 +137,25 @@ class CCLConsensus
         */
         bool
         preStartRound(CCLCxLedger const & prevLedger);
+        bool
+        haveValidated() const;
+
+        LedgerIndex
+        getValidLedgerIndex() const;
+
+        std::pair<std::size_t, hash_set<NodeKey_t>>
+        getQuorumKeys() const;
+
+        std::size_t
+        laggards(Ledger_t::Seq const seq,
+            hash_set<NodeKey_t >& trustedKeys) const;
+
+        /** Whether I am a validator.
+         *
+         * @return whether I am a validator.
+         */
+        bool
+        validator() const;
 
         /** Consensus simulation parameters
          */

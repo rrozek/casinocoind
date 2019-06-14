@@ -927,6 +927,37 @@ CCLConsensus::Adaptor::preStartRound(CCLCxLedger const & prevLgr)
     return validating_ && synced;
 }
 
+bool
+CCLConsensus::Adaptor::haveValidated() const
+{
+    return ledgerMaster_.haveValidated();
+}
+
+LedgerIndex
+CCLConsensus::Adaptor::getValidLedgerIndex() const
+{
+    return ledgerMaster_.getValidLedgerIndex();
+}
+
+std::pair<std::size_t, hash_set<CCLConsensus::Adaptor::NodeKey_t>>
+CCLConsensus::Adaptor::getQuorumKeys() const
+{
+    return app_.validators().getQuorumKeys();
+}
+
+std::size_t
+CCLConsensus::Adaptor::laggards(Ledger_t::Seq const seq,
+    hash_set<CCLConsensus::Adaptor::NodeKey_t>& trustedKeys) const
+{
+    return app_.getValidations().laggards(seq, trustedKeys);
+}
+
+bool
+CCLConsensus::Adaptor::validator() const
+{
+    return !valPublic_.empty();
+}
+
 void
 CCLConsensus::startRound(
     NetClock::time_point const& now,
