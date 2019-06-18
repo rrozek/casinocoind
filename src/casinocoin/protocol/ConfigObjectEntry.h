@@ -110,9 +110,9 @@ struct TokenDescriptor : public DataDescriptorInterface
 {
     enum TokenFlags
     {
-        KYCRequired = 0x0001,
-        AuthRequired = 0x0002,
-        FeesRequired = 0x0004
+        KYCRequired     = 0x0001,
+        AuthRequired    = 0x0002,
+        Private         = 0x0004
     };
 
     TokenDescriptor(beast::Journal const& journal);
