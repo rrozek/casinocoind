@@ -456,6 +456,7 @@ getWLT(Json::Value const& jvRequest,
         {
             if (isCSC(amountCandidate))
                 continue;
+
             theToken = getWLT(amountCandidate, *tokenConfigIter, j);
             if (theToken)
                 return theToken;

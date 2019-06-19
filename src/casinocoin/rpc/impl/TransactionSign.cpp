@@ -758,7 +758,7 @@ Json::Value checkFee (
 
     if (ledger->rules().enabled(featureWLT))
     {
-        auto theToken = getWLT(request, ledger, j);
+        auto theToken = getWLT(tx, ledger, j);
         if (theToken)
         {
             auto const result = mulDiv (fee, theToken.get().extraFee, 100/*percent*/);

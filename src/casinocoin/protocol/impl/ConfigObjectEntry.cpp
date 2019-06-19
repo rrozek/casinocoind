@@ -458,19 +458,19 @@ boost::optional<TokenDescriptor> getWLT(const STAmount &amount, ConfigObjectEntr
             if (token->totalSupply.issue() == amount.issue()
                     && token->totalSupply >= amount)
             {
-                if (j) { JLOG((*j).debug()) << "isWLTCompliant() found matching entry, return OK"; }
+                if (j) { JLOG((*j).debug()) << "getWLT() found matching entry, return OK"; }
                 theToken = *token;
                 return theToken;
             }
         }
         catch( std::runtime_error const& err)
         {
-            if (j) { JLOG((*j).warn()) << "isWLTCompliant() caught exception. what: " << err.what(); }
+            if (j) { JLOG((*j).warn()) << "getWLT() caught exception. what: " << err.what(); }
             return theToken;
         }
     }
 
-    if (j) { JLOG((*j).info()) << "isWLTCompliant() not compliant"
+    if (j) { JLOG((*j).info()) << "getWLT() not compliant"
                         << " token: " << to_string(amount.issue().currency)
                         << " issuer: " << toBase58(amount.issue().account); }
     return theToken;
