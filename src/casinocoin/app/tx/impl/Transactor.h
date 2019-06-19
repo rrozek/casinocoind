@@ -167,13 +167,6 @@ public:
         return tesSUCCESS;
     }
 
-    static
-    TER
-    isWLTCompliant(STAmount const& amount,
-                   ConfigObjectEntry const& tokenConfig,
-                   beast::Journal const& j);
-    /////////////////////////////////////////////////////
-
 protected:
     TER
     apply();

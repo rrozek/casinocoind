@@ -46,6 +46,7 @@
 namespace casinocoin {
 
 class STArray;
+class ConfigObjectEntry;
 
 /** Thrown on illegal access to non-present SField. */
 struct missing_field_error : std::logic_error
@@ -450,6 +451,8 @@ public:
 
     // checks if all object STAmount fields are native CSC
     bool isNative() const;
+    // checks if all object STAmount fields are allowed WLTs
+    bool isAllowedWLT(ConfigObjectEntry const& tokenConfig) const;
 
     /** Return the value of a field.
 

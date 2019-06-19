@@ -32,13 +32,15 @@
 #include <casinocoin/protocol/AccountID.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/STAmount.h>
+#include <casinocoin/protocol/TER.h>
+#include <casinocoin/protocol/JsonFields.h>
 
 #include <casinocoin/json/json_value.h>
-#include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/basics/Log.h>
 
 #include <boost/bimap.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/optional.hpp>
 
 namespace casinocoin
 {
@@ -126,6 +128,7 @@ struct TokenDescriptor : public DataDescriptorInterface
 
     std::string fullName;
     STAmount totalSupply;
+    uint32_t extraFee = 0u; /*percent of network fee*/
     TokenFlags flags;
     std::string website;
     std::string contactEmail;
@@ -168,6 +171,22 @@ struct Blacklist_SignerDescriptor : public DataDescriptorInterface
 
     AccountID blacklistSigner;
 };
+
+//------------------------------------------------------------------------------
+//
+// WLT Helpers
+//
+//------------------------------------------------------------------------------
+TER
+isWLTCompliant(STAmount const& amount,
+               ConfigObjectEntry const& tokenConfig,
+               boost::optional<beast::Journal> j = boost::optional<beast::Journal>());
+
+boost::optional<TokenDescriptor>
+getWLT(STAmount const& amount,
+       ConfigObjectEntry const& tokenConfig,
+       boost::optional<beast::Journal> j = boost::optional<beast::Journal>());
+
 
 } // casinocoin
 

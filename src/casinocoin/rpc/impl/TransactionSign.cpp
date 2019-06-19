@@ -403,7 +403,8 @@ transactionPreProcessImpl (
             app.config(),
             app.getFeeTrack(),
             app.getTxQ(),
-            ledger);
+            ledger,
+            j);
 
         if (RPC::contains_error (err))
             return std::move (err);
@@ -652,7 +653,8 @@ Json::Value checkFee (
     Config const& config,
     LoadFeeTrack const& feeTrack,
     TxQ const& txQ,
-    std::shared_ptr<OpenView const> const& ledger)
+    std::shared_ptr<OpenView const> const& ledger,
+    beast::Journal const& j)
 {
     Json::Value& tx (request[jss::tx_json]);
     if (tx.isMember (jss::Fee))
@@ -753,6 +755,19 @@ Json::Value checkFee (
     {
         fee = std::max(loadFee, limit);
     }
+
+    if (ledger->rules().enabled(featureWLT))
+    {
+        auto theToken = getWLT(request, ledger, j);
+        if (theToken)
+        {
+            auto const result = mulDiv (fee, theToken.get().extraFee, 100/*percent*/);
+            if (!result.first)
+                Throw<std::overflow_error>("mulDiv");
+            fee += result.second;
+        }
+    }
+
     if (fee > limit)
     {
         std::stringstream ss;
@@ -1094,7 +1109,7 @@ Json::Value transactionSubmitMultiSigned (
     {
         Json::Value err = checkFee (
             jvRequest, role, false, app.config(), app.getFeeTrack(),
-                app.getTxQ(), ledger);
+                app.getTxQ(), ledger, j);
 
         if (RPC::contains_error(err))
             return err;

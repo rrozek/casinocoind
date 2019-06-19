@@ -32,6 +32,7 @@
 #include <casinocoin/protocol/AccountID.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/rpc/Context.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -426,6 +427,53 @@ parseAccountIds(Json::Value const& jvArray)
     return result;
 }
 
+boost::optional<TokenDescriptor>
+getWLT(Json::Value const& jvRequest,
+       std::shared_ptr<ReadView const> const& ledger,
+       beast::Journal const& j)
+{
+    boost::optional<TokenDescriptor> theToken;
+    if (!ledger->rules().enabled(featureWLT))
+        return theToken;
+
+    LedgerConfig const& ledgerConfiguration = ledger->ledgerConfig();
+    auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                        ledgerConfiguration.entries.end(),
+                                        [](ConfigObjectEntry const& obj)
+        {
+            return obj.getType() == ConfigObjectEntry::Token;
+        });
+    if (tokenConfigIter == ledgerConfiguration.entries.end())
+    {
+        JLOG(j.info()) << "No WLT entries found. tx forbidden.";
+        return theToken;
+    }
+
+    for (auto iter = jvRequest.begin(); iter != jvRequest.end(); ++iter)
+    {
+        STAmount amountCandidate;
+        if (amountFromJsonNoThrow(amountCandidate, *iter))
+        {
+            if (isCSC(amountCandidate))
+                continue;
+            theToken = getWLT(amountCandidate, *tokenConfigIter, j);
+            if (theToken)
+                return theToken;
+        }
+    }
+    return theToken;
+}
+
+bool
+isWLT(Json::Value const& jvRequest,
+      std::shared_ptr<ReadView const> const& ledger,
+      beast::Journal const& j)
+{
+    if (getWLT(jvRequest, ledger, j))
+        return true;
+    return false;
+}
+
 void
 addPaymentDeliveredAmount(Json::Value& meta, RPC::Context& context,
     std::shared_ptr<Transaction> transaction, TxMeta::pointer transactionMeta)
@@ -458,33 +506,7 @@ addPaymentDeliveredAmount(Json::Value& meta, RPC::Context& context,
         return;
     }
 
-    // Ledger 4594095 is the first ledger in which the DeliveredAmount field
-    // was present when a partial payment was made and its absence indicates
-    // that the amount delivered is listed in the Amount field.
-    if (transaction->getLedger () >= 4594095)
-    {
-        meta[jss::delivered_amount] =
-            serializedTx->getFieldAmount (sfAmount).getJson (1);
-        return;
-    }
-
-    // If the ledger closed long after the DeliveredAmount code was deployed
-    // then its absence indicates that the amount delivered is listed in the
-    // Amount field. DeliveredAmount went live January 24, 2014.
-    using namespace std::chrono_literals;
-    auto ct =
-        context.ledgerMaster.getCloseTimeBySeq (transaction->getLedger ());
-    if (ct && (*ct > NetClock::time_point{446000000s}))
-    {
-        // 446000000 is in Feb 2014, well after DeliveredAmount went live
-        meta[jss::delivered_amount] =
-            serializedTx->getFieldAmount (sfAmount).getJson (1);
-        return;
-    }
-
-    // Otherwise we report "unavailable" which cannot be parsed into a
-    // sensible amount.
-    meta[jss::delivered_amount] = Json::Value ("unavailable");
+    meta[jss::delivered_amount] = serializedTx->getFieldAmount (sfAmount).getJson (1);
 }
 
 void

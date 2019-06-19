@@ -29,6 +29,7 @@
 #include <casinocoin/protocol/STAccount.h>
 #include <casinocoin/protocol/STArray.h>
 #include <casinocoin/protocol/STBlob.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/basics/Log.h>
 
 namespace casinocoin {
@@ -592,6 +593,33 @@ bool STObject::isNative() const
             for( auto const& stObj : static_cast<STArray const&>(base))
             {
                 if (!stObj.isNative())
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool STObject::isAllowedWLT(ConfigObjectEntry const& tokenConfig) const
+{
+    for (detail::STVar const& elem : v_)
+    {
+        STBase const& base = elem.get();
+        if (base.getSType() == STI_AMOUNT)
+        {
+            if (isWLTCompliant(static_cast<STAmount const&>(base), tokenConfig) != tesSUCCESS)
+                return false;
+        }
+        else if (base.getSType() == STI_OBJECT)
+        {
+            if (!(static_cast<STObject const&>(base).isAllowedWLT(tokenConfig)))
+                return false;
+        }
+        else if (base.getSType() == STI_ARRAY)
+        {
+            for( auto const& stObj : static_cast<STArray const&>(base))
+            {
+                if (!stObj.isAllowedWLT(tokenConfig))
                     return false;
             }
         }
