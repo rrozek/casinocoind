@@ -89,6 +89,7 @@ JSS ( alternatives );               // out: PathRequest, CasinocoinPathFind
 JSS ( amendment_blocked );          // out: NetworkOPs
 JSS ( amendments );                 // in: AccountObjects, out: NetworkOPs
 JSS ( amount );                     // out: AccountChannels
+JSS ( apiEndpoint );                // out: Configuration
 JSS ( asks );                       // out: Subscribe
 JSS ( assets );                     // out: GatewayBalances
 JSS ( authorized );                 // out: AccountLines
@@ -128,7 +129,9 @@ JSS ( code );                       // out: errors
 JSS ( command );                    // in: RPCHandler
 JSS ( complete );                   // out: NetworkOPs, InboundLedger
 JSS ( complete_ledgers );           // out: NetworkOPs, PeerImp
+JSS ( configuration );              // out: RPCHandler
 JSS ( consensus );                  // out: NetworkOPs, LedgerConsensus
+JSS ( contactEmail );              // in/out: Configuration
 JSS ( converge_time );              // out: NetworkOPs
 JSS ( converge_time_s );            // out: NetworkOPs
 JSS ( count );                      // in: AccountTx*
@@ -150,6 +153,7 @@ JSS ( destination_account );        // in: PathRequest, CasinocoinPathFind, acco
                                     // out: AccountChannels
 JSS ( destination_amount );         // in: PathRequest, CasinocoinPathFind
 JSS ( destination_currencies );     // in: PathRequest, CasinocoinPathFind
+JSS ( dest_public_key_hex );        // in: EncryptMsgHandler
 JSS ( destination_tag );            // in: PathRequest
                                     // out: AccountChannels
 JSS ( dir_entry );                  // out: DirectoryEntryIterator
@@ -159,6 +163,7 @@ JSS ( directory );                  // in: LedgerEntry
 JSS ( drops );                      // out: TxQ
 JSS ( duration_us );                // out: NetworkOPs
 JSS ( enabled );                    // out: AmendmentTable
+JSS ( encrypted_message );          // out: EncryptMsgHandler
 JSS ( engine_result );              // out: NetworkOPs, TransactionSign, Submit
 JSS ( engine_result_code );         // out: NetworkOPs, TransactionSign, Submit
 JSS ( engine_result_message );      // out: NetworkOPs, TransactionSign, Submit
@@ -190,6 +195,7 @@ JSS ( freeze );                     // out: AccountLines
 JSS ( freeze_peer );                // out: AccountLines
 JSS ( frozen_balances );            // out: GatewayBalances
 JSS ( full );                       // in: LedgerClearer, handlers/Ledger
+JSS ( fullName );                   // out: Configuration
 JSS ( full_reply );                 // out: PathFind
 JSS ( fullbelow_size );             // in: GetCounts
 JSS ( generator );                  // in: LedgerEntry
@@ -203,6 +209,7 @@ JSS ( have_transactions );          // out: InboundLedger
 JSS ( highest_sequence );           // out: AccountInfo
 JSS ( hostid );                     // out: NetworkOPs
 JSS ( hotwallet );                  // in: GatewayBalances
+JSS ( iconURL );                    // out: Configuration
 JSS ( id );                         // websocket.
 JSS ( ident );                      // in: AccountCurrencies, AccountInfo,
                                     //     OwnerInfo
@@ -388,6 +395,7 @@ JSS ( source_account );             // in: PathRequest, CasinocoinPathFind
 JSS ( source_amount );              // in: PathRequest, CasinocoinPathFind
 JSS ( source_currencies );          // in: PathRequest, CasinocoinPathFind
 JSS ( source_tag );                 // out: AccountChannels
+JSS ( src_public_key_hex );         // in: DecryptMsgHandler
 JSS ( stand_alone );                // out: NetworkOPs
 JSS ( start );                      // in: TxHistory
 JSS ( state );                      // out: Logic.h, ServerState, LedgerData
@@ -412,8 +420,10 @@ JSS ( threshold );                  // in: Blacklist
 JSS ( ticket );                     // in: AccountObjects
 JSS ( timeouts );                   // out: InboundLedger
 JSS ( traffic );                    // out: Overlay
+JSS ( token );                      // out: RPC token
 JSS ( totalCoins );                 // out: LedgerToJson
 JSS ( total_coins );                // out: LedgerToJson
+JSS ( totalSupply );                // out: Configuration
 JSS ( transTreeHash );              // out: ledger/Ledger.cpp
 JSS ( transaction );                // in: Tx
                                     // out: NetworkOPs, AcceptedLedgerTx,
@@ -461,7 +471,12 @@ JSS ( version );                    // out: RPCVersion
 JSS ( vetoed );                     // out: AmendmentTableImpl
 JSS ( vote );                       // in: Feature
 JSS ( warning );                    // rpc:
+JSS ( website );                    // out: Configuration
 JSS ( write_load );                 // out: GetCounts
+
+JSS ( last_refresh_time );          // out: Remote Update Sites
+JSS ( last_refresh_status );        // out: Remote Update Sites
+JSS ( refresh_interval_min );       // out: Remote Update Sites
 
 #undef JSS
 

@@ -263,6 +263,7 @@ LedgerEntryTypesMatch::visitEntry(
         case ltOFFER:
         case ltLEDGER_HASHES:
         case ltAMENDMENTS:
+        case ltCONFIGURATION:
         case ltFEE_SETTINGS:
         case ltESCROW:
         case ltPAYCHAN:

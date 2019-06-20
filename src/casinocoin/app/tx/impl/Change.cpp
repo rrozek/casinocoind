@@ -31,6 +31,7 @@
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/TxFlags.h>
+#include <casinocoin/protocol/Feature.h>
 
 namespace casinocoin {
 
@@ -70,6 +71,10 @@ Change::preflight (PreflightContext const& ctx)
         return temBAD_SEQUENCE;
     }
 
+    if (ctx.tx.getTxnType() == ttCONFIG)
+    {
+        return preflightConfiguration(ctx);
+    }
     return tesSUCCESS;
 }
 
@@ -85,9 +90,21 @@ Change::preclaim(PreclaimContext const &ctx)
     }
 
     if (ctx.tx.getTxnType() != ttAMENDMENT
-        && ctx.tx.getTxnType() != ttFEE)
+        && ctx.tx.getTxnType() != ttFEE
+        && ctx.tx.getTxnType() != ttCONFIG)
         return temUNKNOWN;
 
+    return tesSUCCESS;
+}
+
+TER
+Change::preflightConfiguration(PreflightContext const& ctx)
+{
+    if (!ctx.rules.enabled(featureConfigObject))
+    {
+        JLOG(ctx.j.warn()) << "Change: ConfigObject feature disabled";
+        return temDISABLED;
+    }
     return tesSUCCESS;
 }
 
@@ -97,6 +114,9 @@ Change::doApply()
 {
     if (ctx_.tx.getTxnType () == ttAMENDMENT)
         return applyAmendment ();
+
+    if (ctx_.tx.getTxnType () == ttCONFIG)
+        return applyConfiguration ();
 
     assert(ctx_.tx.getTxnType() == ttFEE);
     return applyFee ();
@@ -233,6 +253,66 @@ Change::applyFee()
     view().update (feeObject);
 
     JLOG(j_.warn()) << "Fees have been changed";
+    return tesSUCCESS;
+}
+
+TER
+Change::applyConfiguration()
+{
+     JLOG(j_.info()) << "applyConfiguration";
+     auto const k = keylet::configuration();
+
+    SLE::pointer configObject = view().peek (k);
+
+    if (!configObject)
+    {
+        configObject = std::make_shared<SLE>(k);
+        view().insert(configObject);
+    }
+
+    const uint32_t txObjId = ctx_.tx.getFieldU32(sfConfigID);
+    const uint32_t txObjType = ctx_.tx.getFieldU32(sfConfigType);
+    const Blob txConfigData = ctx_.tx.getFieldVL(sfConfigData);
+
+    STArray ledgerConfigArray(sfConfiguration);
+    if (configObject->isFieldPresent(sfConfiguration))
+        ledgerConfigArray = configObject->getFieldArray(sfConfiguration);
+
+    auto ledgerConfigArrayIter = std::find_if(ledgerConfigArray.begin(), ledgerConfigArray.end(),
+        [&txObjId](STObject const& ledgerConfigObject)
+        {
+            return ledgerConfigObject.getFieldU32(sfConfigID) == txObjId;
+        });
+    if (ledgerConfigArrayIter != ledgerConfigArray.end())
+    {
+        if ((*ledgerConfigArrayIter).getFieldVL(sfConfigData) == txConfigData
+             && (*ledgerConfigArrayIter).getFieldU32(sfConfigType) == txObjType)
+        {
+            JLOG(j_.info()) << "applyConfiguration: no change";
+            return tefALREADY;
+        }
+        // we are updating existing config entry
+        (*ledgerConfigArrayIter).setFieldU32(sfConfigType, txObjType);
+        (*ledgerConfigArrayIter).setFieldVL(sfConfigData, txConfigData);
+    }
+    else
+    {
+        // we are adding new config entry
+        ledgerConfigArray.push_back(STObject(sfConfigEntry));
+        auto& entry = ledgerConfigArray.back();
+        entry.emplace_back(STUInt32(sfConfigID, txObjId));
+        entry.emplace_back(STUInt32(sfConfigType, txObjType));
+        entry.emplace_back(STBlob(sfConfigData, txConfigData.data(), txConfigData.size()));
+    }
+
+    if (ledgerConfigArray.empty())
+        configObject->makeFieldAbsent(sfConfiguration);
+    else
+        configObject->setFieldArray(sfConfiguration, ledgerConfigArray);
+    JLOG(j_.info()) << "applyConfiguration: update view";
+
+    view().update(configObject);
+    JLOG(j_.info()) << "applyConfiguration: tesSUCCESS";
     return tesSUCCESS;
 }
 

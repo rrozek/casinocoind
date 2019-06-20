@@ -472,7 +472,7 @@ def add_boost_and_protobuf(toolchain, env):
               ])
         env['BOOST_ROOT'] = BOOST_ROOT
         if toolchain in ['gcc', 'clang']:
-            env.Append(CCFLAGS=['-isystem' + env['BOOST_ROOT']])
+            env.Append(CCFLAGS=['-I' + env['BOOST_ROOT']])
         else:
             env.Append(CPPPATH=[
                 env['BOOST_ROOT'],
@@ -579,6 +579,9 @@ def config_env(toolchain, variant, env):
                 '-Wno-deprecated',
                 '-Wno-deprecated-declarations',
                 '-Wno-unused-function',
+                '-Wno-unused-variable',
+                '-Wno-unused-private-field',
+                '-Wno-unused-lambda-capture',
                 ])
         else:
             if should_link_static():

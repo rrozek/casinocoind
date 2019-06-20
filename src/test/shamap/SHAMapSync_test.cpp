@@ -199,7 +199,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(sync,shamap,ripple);
+BEAST_DEFINE_TESTSUITE(sync,shamap,casinocoin);
 
 } // tests
 } // casinocoin

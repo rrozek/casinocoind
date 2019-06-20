@@ -311,7 +311,7 @@ public:
 
 };
 
-BEAST_DEFINE_TESTSUITE(AccountSet,app,ripple);
+BEAST_DEFINE_TESTSUITE(AccountSet,app,casinocoin);
 
 }
 

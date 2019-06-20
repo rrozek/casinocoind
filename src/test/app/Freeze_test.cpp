@@ -130,7 +130,7 @@ class Freeze_test : public beast::unit_test::suite
             if(! BEAST_EXPECT(checkArraySize(affected, 5u)))
                 return;
             auto ff =
-                affected[3u][sfModifiedNode.fieldName][sfFinalFields.fieldName];
+                affected[1u][sfModifiedNode.fieldName][sfFinalFields.fieldName];
             BEAST_EXPECT(
                 ff[sfHighLimit.fieldName] == bob["USD"](100).value().getJson(0));
             auto amt =
@@ -469,7 +469,7 @@ class Freeze_test : public beast::unit_test::suite
         if(! BEAST_EXPECT(checkArraySize(affected, 2u)))
             return;
         auto ff =
-            affected[1u][sfModifiedNode.fieldName][sfFinalFields.fieldName];
+            affected[0u][sfModifiedNode.fieldName][sfFinalFields.fieldName];
         BEAST_EXPECT(
             ff[sfHighLimit.fieldName] == G1["USD"](0).value().getJson(0));
         BEAST_EXPECT(! (ff[jss::Flags].asUInt() & lsfLowFreeze));
@@ -497,7 +497,7 @@ class Freeze_test : public beast::unit_test::suite
         if(! BEAST_EXPECT(checkArraySize(affected, 2u)))
             return;
         ff =
-            affected[0u][sfModifiedNode.fieldName][sfFinalFields.fieldName];
+            affected[1u][sfModifiedNode.fieldName][sfFinalFields.fieldName];
         BEAST_EXPECT(
             ff[sfLowLimit.fieldName] == G1["USD"](0).value().getJson(0));
         BEAST_EXPECT(ff[jss::Flags].asUInt() & lsfLowFreeze);
@@ -537,7 +537,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Freeze, app, ripple);
+BEAST_DEFINE_TESTSUITE(Freeze, app, casinocoin);
 } // casinocoin
 
 

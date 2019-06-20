@@ -129,6 +129,8 @@ enum TER
     tefNOT_MULTI_SIGNING,
     tefBAD_AUTH_MASTER,
     tefINVARIANT_FAILED,
+    tefNOT_WLT,
+    tefBLACKLISTED,
 
     // -99 .. -1: R Retry
     //   sequence too high, no funds for txn fee, originating -account

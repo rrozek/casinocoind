@@ -321,7 +321,7 @@ public:
 
             auto const sk2 = parseBase58<SecretKey> (
                 TOKEN_NODE_PRIVATE,
-                "pnen77YEeUd4fFKG7iycBWcwKpTaeFRkW2WFostaATy1DSupwXe");
+                "pnen77YEeUd4fFKG7iyrBWrwKpTaeFRkW2WFostaATy1DSupwXe");
             BEAST_EXPECT(sk2);
 
             BEAST_EXPECT(sk1 == *sk2);
@@ -334,7 +334,7 @@ public:
 
             auto const sk2 = parseBase58<SecretKey> (
                 TOKEN_NODE_PRIVATE,
-                "paKv46LztLqK3GaKz1rG2nQGN6M4JLyRtxFBYFTw4wAVHtGys36");
+                "paKv46LztLqK3GaKz1cG2nQGN6M4JLyRtxFBYFTw4wAVHtGys36");
             BEAST_EXPECT(sk2);
 
             BEAST_EXPECT(sk1 == *sk2);
@@ -461,6 +461,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(SecretKey,protocol,ripple);
+BEAST_DEFINE_TESTSUITE(SecretKey,protocol,casinocoin);
 
 } // casinocoin

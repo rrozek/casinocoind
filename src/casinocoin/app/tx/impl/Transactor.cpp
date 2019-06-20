@@ -37,6 +37,7 @@
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/types.h>
+#include <casinocoin/app/misc/Blacklist.h>
 
 namespace casinocoin {
 
@@ -348,6 +349,114 @@ Transactor::checkSign (PreclaimContext const& ctx)
 }
 
 TER
+Transactor::checkWLT (PreclaimContext const& ctx)
+{
+    // Narrow allowed tokens only if WLT amendment is enabled
+    if (ctx.view.rules().enabled(featureWLT))
+    {
+        if (ctx.tx.isNative())
+        {
+            return tesSUCCESS;
+        }
+        if (ctx.tx.getTxnType() == ttCONFIG)
+        {
+            JLOG(ctx.j.info()) << "checkWLT() SetConfiguration tx can operate on non-WLT for obvious reason.";
+            return tesSUCCESS;
+        }
+
+        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+        auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                            ledgerConfiguration.entries.end(),
+                                            [](ConfigObjectEntry const& obj)
+            {
+                return obj.getType() == ConfigObjectEntry::Token;
+            });
+        if (tokenConfigIter == ledgerConfiguration.entries.end())
+        {
+            JLOG(ctx.j.info()) << "No WLT entries found. tx forbidden.";
+            return tefNOT_WLT;
+        }
+
+        std::function<TER(STObject const&)> recursiveAmountCheckLambda;
+        recursiveAmountCheckLambda = [&](STObject const& obj) -> TER
+        {
+            TER terWLTCompliant = tesSUCCESS;
+            for (auto iter = obj.begin(); iter != obj.end(); ++iter)
+            {
+                if ((*iter).getSType() == STI_AMOUNT)
+                {
+                    terWLTCompliant = isWLTCompliant(static_cast<STAmount const&>((*iter)), *tokenConfigIter, ctx.j);
+                }
+                else if ((*iter).getSType() == STI_OBJECT)
+                {
+                    terWLTCompliant = recursiveAmountCheckLambda(static_cast<STObject const&>((*iter)));
+                }
+                else if ((*iter).getSType() == STI_ARRAY)
+                {
+                    for( auto const& stObj : static_cast<STArray const&>((*iter)))
+                    {
+                        terWLTCompliant = recursiveAmountCheckLambda(stObj);
+                        if (terWLTCompliant != tesSUCCESS)
+                        {
+                            return terWLTCompliant;
+                        }
+                    }
+                }
+                if (terWLTCompliant != tesSUCCESS)
+                {
+                    return terWLTCompliant;
+                }
+            }
+            return tesSUCCESS;
+        };
+
+
+        return recursiveAmountCheckLambda(ctx.tx);
+    }
+
+    return tesSUCCESS;
+}
+
+TER
+Transactor::isWLTCompliant(STAmount const& amount, ConfigObjectEntry const& tokenConfig, beast::Journal const& j)
+{
+    if (isCSC(amount))
+    {
+        return tesSUCCESS;
+    }
+    if (tokenConfig.getType() != ConfigObjectEntry::Token)
+    {
+        JLOG(j.warn()) << "isWLTCompliant() non-Token config object passed";
+        return tefFAILURE;
+    }
+
+    auto const& definedTokens = tokenConfig.getData();
+    for (auto const entry : definedTokens)
+    {
+        const TokenDescriptor* token = static_cast<const TokenDescriptor*>(entry);
+        try
+        {
+            if (token->totalSupply.issue() == amount.issue()
+                    && token->totalSupply >= amount)
+            {
+                JLOG(j.debug()) << "isWLTCompliant() found matching entry, return OK";
+                return tesSUCCESS;
+            }
+        }
+        catch( std::runtime_error const& err)
+        {
+            JLOG(j.warn()) << "isWLTCompliant() caught exception. what: " << err.what();
+            return tefNOT_WLT;
+        }
+    }
+
+    JLOG(j.info()) << "isWLTCompliant() not compliant"
+                    << " token: " << to_string(amount.issue().currency)
+                    << " issuer: " << toBase58(amount.issue().account);
+    return tefNOT_WLT;
+}
+
+TER
 Transactor::checkSingleSign (PreclaimContext const& ctx)
 {
     auto const id = ctx.tx.getAccountID(sfAccount);
@@ -554,6 +663,75 @@ TER Transactor::checkMultiSign (PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
+TER Transactor::checkBlacklist (PreclaimContext const& ctx)
+{
+    auto const accountid = ctx.tx.getAccountID(sfAccount);
+    if (accountid == zero)
+        return temBAD_SRC_ACCOUNT;
+
+    if (ctx.app.blacklistedAccounts().listed(toBase58(accountid)))
+    {
+        // account is blacklisted, get full blacklisted account info
+        JLOG(ctx.j.debug()) <<  "Account " << toBase58(accountid) << " is blacklisted!";
+        BlacklistItem listedAccount = ctx.app.blacklistedAccounts().getAccount(toBase58(accountid));
+        auto unHexedPubKey = strUnHex(listedAccount.publicKeySigner);
+        if (!unHexedPubKey.second)
+            return temMALFORMED;
+        PublicKey signerPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
+
+        std::string accountIDSigner = toBase58(calcAccountID(signerPublicKey));
+        JLOG(ctx.j.debug()) <<  "Account Blacklist Signer: " << accountIDSigner;
+
+        // get allowed signers from Config
+        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+        auto blacklistConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                                ledgerConfiguration.entries.end(),
+                                                [](ConfigObjectEntry const& obj)
+            {
+                return obj.getType() == ConfigObjectEntry::Blacklist_Signer;
+            });
+        if (blacklistConfigIter == ledgerConfiguration.entries.end())
+        {
+            JLOG(ctx.j.info()) << "Account " << toBase58(accountid) << " is blacklisted but no autorised blacklist signer entries found in ConfigObject." << 
+                                  "TX is forbidden to prevent miss configuration.";
+            return tefBLACKLISTED;
+        }
+
+        // loop over defined allowed signers and check if blacklisted account is signed by an allowed signer
+        auto const& definedBlacklistSigners = (*blacklistConfigIter).getData();
+        bool signerValid = false;
+        for (auto signer : definedBlacklistSigners)
+        {
+            const Blacklist_SignerDescriptor* blacklistEntry = static_cast<const Blacklist_SignerDescriptor*>(signer);
+            JLOG(ctx.j.debug()) <<  "Defined Blacklist Signer: " << toBase58(blacklistEntry->blacklistSigner);
+            // check if allowed signer is the same as blacklisted signer account
+            if(toBase58(blacklistEntry->blacklistSigner).compare(accountIDSigner) == 0)
+            {
+                signerValid = true;
+                break;
+            }
+
+        }
+
+        if(signerValid)
+        {
+            JLOG(ctx.j.info()) <<  "!!! Transaction not allowed !!! Account " << toBase58(accountid) << " is blacklisted!";
+            return tefBLACKLISTED;
+        }
+        else
+        {
+            JLOG(ctx.j.info()) <<  "Account " << toBase58(accountid) << " is blacklisted but Signer is not on the defined signers list!";
+            return tesSUCCESS;
+        }
+        
+    }
+    else
+    {
+        // account is not blacklisted
+        return tesSUCCESS;
+    }
+}
+
 //------------------------------------------------------------------------------
 
 static
@@ -612,7 +790,7 @@ Transactor::operator()()
 
     JLOG(j_.debug()) << "Transactor for id: " << txID;
 
-#ifdef BEAST_DEBUG
+//#ifdef BEAST_DEBUG
     {
         Serializer ser;
         ctx_.tx.add (ser);
@@ -628,7 +806,7 @@ Transactor::operator()()
             assert (false);
         }
     }
-#endif
+//#endif
 
     auto terResult = ctx_.preclaimResult;
     if (terResult == tesSUCCESS)

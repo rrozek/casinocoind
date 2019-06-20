@@ -429,7 +429,7 @@ public:
         {
             auto const valSecret = parseBase58<SecretKey>(
                 TokenType::TOKEN_NODE_PRIVATE,
-                "paQmjZ37pKKPMrgadBLsuf9ab7Y7EUNzh27LQrZqoexpAs31nJi");
+                "paQmjZ37pKKPMcgadBLsuf9ab7Y7EUNzh27LQcZqoexpAs31nJi");
 
             // Format token string to test trim()
             std::vector<std::string> const tokenBlob = {
@@ -526,7 +526,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Manifest,app,ripple);
+BEAST_DEFINE_TESTSUITE(Manifest,app,casinocoin);
 
 } // test
 } // casinocoin

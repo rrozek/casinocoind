@@ -1012,7 +1012,7 @@ public:
         BEAST_EXPECT(jrOffer[jss::TakerGets] == USD(10).value().getJson(0));
         BEAST_EXPECT(jrOffer[jss::TakerPays] == CSC(4000).value().getJson(0));
         BEAST_EXPECT(jrOffer[jss::owner_funds] == "100");
-        BEAST_EXPECT(jrOffer[jss::quality] == "400000000");
+        BEAST_EXPECT(jrOffer[jss::quality] == "40000000000");
 
         BEAST_EXPECT(wsc->findMsg(5s,
             [&](auto const& jv)
@@ -1060,7 +1060,7 @@ public:
         BEAST_EXPECT(jrNextOffer[jss::TakerGets] == USD(5).value().getJson(0));
         BEAST_EXPECT(jrNextOffer[jss::TakerPays] == CSC(2000).value().getJson(0));
         BEAST_EXPECT(jrNextOffer[jss::owner_funds] == "50");
-        BEAST_EXPECT(jrNextOffer[jss::quality] == "400000000");
+        BEAST_EXPECT(jrNextOffer[jss::quality] == "40000000000");
 
         jv = wsc->invoke("unsubscribe", books);
         if (wsc->version() == 2)
@@ -1648,7 +1648,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Book,app,ripple);
+BEAST_DEFINE_TESTSUITE(Book,app,casinocoin);
 
 } // test
 } // casinocoin

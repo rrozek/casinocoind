@@ -64,9 +64,12 @@ public:
     preclaim(PreclaimContext const &ctx);
 
 private:
-    TER applyAmendment ();
 
+    static TER preflightConfiguration(PreflightContext const& ctx);
+
+    TER applyAmendment ();
     TER applyFee ();
+    TER applyConfiguration();
 };
 
 }

@@ -117,6 +117,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(JobCounter, core, ripple);
+BEAST_DEFINE_TESTSUITE(JobCounter, core, casinocoin);
 
 }

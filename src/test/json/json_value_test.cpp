@@ -233,6 +233,6 @@ struct json_value_test : beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(json_value, json, ripple);
+BEAST_DEFINE_TESTSUITE(json_value, json, casinocoin);
 
 } // casinocoin

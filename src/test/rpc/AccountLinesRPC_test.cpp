@@ -45,7 +45,7 @@ public:
             // account_lines with a malformed account.
             auto const lines = env.rpc ("json", "account_lines",
                 R"({"account": )"
-                R"("n9MJkEKHDhy5eTLuHUQeAAjo382frHNbFK4C8hcwN4nwM2SrLdBj"})");
+                R"("n9MJkEKHDhy5eTLuHUQeAAjo382fcHNbFK4C8hrwN4nwM2ScLdBj"})");
             BEAST_EXPECT(lines[jss::result][jss::error_message] ==
                 RPC::make_error(rpcBAD_SEED)[jss::error_message]);
         }
@@ -194,7 +194,7 @@ public:
             auto const lines = env.rpc ("json", "account_lines",
                 R"({"account": ")" + alice.human() + R"(", )"
                 R"("peer": )"
-                R"("n9MJkEKHDhy5eTLuHUQeAAjo382frHNbFK4C8hcwN4nwM2SrLdBj"})");
+                R"("n9MJkEKHDhy5eTLuHUQeAAjo382fcHNbFK4C8hrwN4nwM2ScLdBj"})");
             BEAST_EXPECT(lines[jss::result][jss::error_message] ==
                 RPC::make_error(rpcBAD_SEED)[jss::error_message]);
         }
@@ -384,7 +384,7 @@ public:
                 R"("id" : 5,)"
                 R"("params": [ )"
                 R"({"account": )"
-                R"("n9MJkEKHDhy5eTLuHUQeAAjo382frHNbFK4C8hcwN4nwM2SrLdBj"}]})");
+                R"("n9MJkEKHDhy5eTLuHUQeAAjo382fcHNbFK4C8hrwN4nwM2ScLdBj"}]})");
             BEAST_EXPECT(lines[jss::result][jss::error_message] ==
                 RPC::make_error(rpcBAD_SEED)[jss::error_message]);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
@@ -613,7 +613,7 @@ public:
                 R"("params": [ )"
                 R"({"account": ")" + alice.human() + R"(", )"
                 R"("peer": )"
-                R"("n9MJkEKHDhy5eTLuHUQeAAjo382frHNbFK4C8hcwN4nwM2SrLdBj"}]})");
+                R"("n9MJkEKHDhy5eTLuHUQeAAjo382fcHNbFK4C8hrwN4nwM2ScLdBj"}]})");
             BEAST_EXPECT(lines[jss::result][jss::error_message] ==
                 RPC::make_error(rpcBAD_SEED)[jss::error_message]);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
@@ -866,7 +866,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(AccountLinesRPC,app,ripple);
+BEAST_DEFINE_TESTSUITE(AccountLinesRPC,app,casinocoin);
 
 } // RPC
 } // casinocoin

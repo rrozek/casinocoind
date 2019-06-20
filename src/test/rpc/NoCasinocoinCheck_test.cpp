@@ -322,13 +322,13 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(noCasinocoinCheck, app, ripple);
+BEAST_DEFINE_TESTSUITE(noCasinocoinCheck, app, casinocoin);
 
 // These tests that deal with limit amounts are slow because of the
 // offer/account setup, so making them manual -- the additional coverage provided
 // by them is minimal
 
-BEAST_DEFINE_TESTSUITE_MANUAL(noCasinocoinCheckLimits, app, ripple);
+BEAST_DEFINE_TESTSUITE_MANUAL(noCasinocoinCheckLimits, app, casinocoin);
 
 } // casinocoin
 

@@ -118,6 +118,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(DeadlineTimer, core, ripple);
+BEAST_DEFINE_TESTSUITE(DeadlineTimer, core, casinocoin);
 
 }

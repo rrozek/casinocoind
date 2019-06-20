@@ -660,9 +660,6 @@ public:
     void
     run()
     {
-        // Instantiate a jtx::Env so debugLog writes are exercised.
-        test::jtx::Env env (*this);
-
         testFields();
         testSerialization();
         testParseJSONArray();
@@ -671,6 +668,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(STObject,protocol,ripple);
+BEAST_DEFINE_TESTSUITE(STObject,protocol,casinocoin);
 
 } // casinocoin

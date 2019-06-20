@@ -160,6 +160,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE (TransactionEntry, rpc, ripple);
+BEAST_DEFINE_TESTSUITE (TransactionEntry, rpc, casinocoin);
 
 }  // ripple
