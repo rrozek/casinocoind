@@ -128,7 +128,7 @@ struct TokenDescriptor : public DataDescriptorInterface
 
     std::string fullName;
     STAmount totalSupply;
-    uint32_t extraFee = 0u; /*percent of network fee*/
+    uint32_t extraFeeFactor = 0u; /*percent of network fee*/
     TokenFlags flags;
     std::string website;
     std::string contactEmail;

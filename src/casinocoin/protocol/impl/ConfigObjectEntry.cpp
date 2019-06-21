@@ -309,7 +309,7 @@ TokenDescriptor::TokenDescriptor(TokenDescriptor const& other)
     contactEmail = other.contactEmail;
     iconURL = other.iconURL;
     apiEndpoint = other.apiEndpoint;
-    extraFee = other.extraFee;
+    extraFeeFactor = other.extraFeeFactor;
 
     Serializer s;
     other.totalSupply.add(s);
@@ -325,7 +325,7 @@ TokenDescriptor& TokenDescriptor::operator=(TokenDescriptor const& other)
     contactEmail = other.contactEmail;
     iconURL = other.iconURL;
     apiEndpoint = other.apiEndpoint;
-    extraFee = other.extraFee;
+    extraFeeFactor = other.extraFeeFactor;
 
     Serializer s;
     other.totalSupply.add(s);
@@ -351,10 +351,10 @@ bool TokenDescriptor::fromJson(Json::Value const& data)
     contactEmail = data[jss::contactEmail].asString();
     iconURL = data[jss::iconURL].asString();
     apiEndpoint = data[jss::apiEndpoint].asString();
-    if (data.isMember(jss::extraFee))
-        extraFee = data[jss::extraFee].asInt();
+    if (data.isMember(jss::extraFeeFactor))
+        extraFeeFactor = data[jss::extraFeeFactor].asInt();
     else
-        extraFee = 0u;
+        extraFeeFactor = 0u;
 
     Json::Value combinedAmountObj(Json::objectValue);
     combinedAmountObj[jss::value] = data[jss::totalSupply];
@@ -379,7 +379,7 @@ bool TokenDescriptor::toJson(Json::Value &result) const
     result[jss::token] = combinedAmountObj[jss::currency];
     result[jss::issuer] = combinedAmountObj[jss::issuer];
 
-    result[jss::extraFee] = extraFee;
+    result[jss::extraFeeFactor] = extraFeeFactor;
 
     result[jss::fullName] = fullName;
     result[jss::flags] = flags;

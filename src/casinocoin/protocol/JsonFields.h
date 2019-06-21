@@ -175,7 +175,7 @@ JSS ( escrow );                     // in: LedgerEntry
 JSS ( expand );                     // in: handler/Ledger
 JSS ( expected_ledger_size );       // out: TxQ
 JSS ( expiration );                 // out: AccountOffers, AccountChannels
-JSS ( extraFee );                   // in/out: ConfigObject, Tokens
+JSS ( extraFeeFactor );                   // in/out: ConfigObject, Tokens
 JSS ( fail_hard );                  // in: Sign, Submit
 JSS ( failed );                     // out: InboundLedger
 JSS ( feature );                    // in: Feature

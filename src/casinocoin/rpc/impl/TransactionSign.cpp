@@ -761,7 +761,7 @@ Json::Value checkFee (
         auto theToken = getWLT(tx, ledger, j);
         if (theToken)
         {
-            auto const result = mulDiv (fee, theToken.get().extraFee, 100/*percent*/);
+            auto const result = mulDiv (fee, theToken.get().extraFeeFactor, 100/*percent*/);
             if (!result.first)
                 Throw<std::overflow_error>("mulDiv");
             fee += result.second;
