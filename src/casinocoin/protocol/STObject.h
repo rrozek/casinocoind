@@ -35,6 +35,7 @@
 #include <casinocoin/protocol/STVector256.h>
 #include <casinocoin/protocol/STVector128.h>
 #include <casinocoin/protocol/SOTemplate.h>
+#include <casinocoin/protocol/TER.h>
 #include <casinocoin/protocol/impl/STVar.h>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/optional.hpp>
@@ -47,6 +48,7 @@ namespace casinocoin {
 
 class STArray;
 class ConfigObjectEntry;
+struct TokenDescriptor;
 
 /** Thrown on illegal access to non-present SField. */
 struct missing_field_error : std::logic_error
@@ -452,7 +454,8 @@ public:
     // checks if all object STAmount fields are native CSC
     bool isNative() const;
     // checks if all object STAmount fields are allowed WLTs
-    bool isAllowedWLT(ConfigObjectEntry const& tokenConfig) const;
+    std::pair<TER, boost::optional<TokenDescriptor>>
+    isAllowedWLT(ConfigObjectEntry const& tokenConfig) const;
 
     /** Return the value of a field.
 

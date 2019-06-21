@@ -177,7 +177,7 @@ struct Blacklist_SignerDescriptor : public DataDescriptorInterface
 // WLT Helpers
 //
 //------------------------------------------------------------------------------
-TER
+std::pair<TER, boost::optional<TokenDescriptor>>
 isWLTCompliant(STAmount const& amount,
                ConfigObjectEntry const& tokenConfig,
                boost::optional<beast::Journal> j = boost::optional<beast::Journal>());

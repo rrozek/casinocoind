@@ -127,11 +127,17 @@ public:
 
     static
     TER
+    checkFeeToken (PreclaimContext const& ctx,
+                   TokenDescriptor const& theToken);
+
+    static
+    TER
     checkSign (PreclaimContext const& ctx);
 
     static
     TER
-    checkWLT (PreclaimContext const& ctx);
+    checkWLT (PreclaimContext const& ctx,
+              boost::optional<TokenDescriptor>& theToken);
 
     static
     TER

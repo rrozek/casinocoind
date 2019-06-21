@@ -426,26 +426,33 @@ DataDescriptorInterface::DataDescriptorInterface(beast::Journal const& journal)
 //////////////////////////// Helpers ////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-TER isWLTCompliant(const STAmount &amount, ConfigObjectEntry const& tokenConfig, boost::optional<beast::Journal> j)
+std::pair<TER, boost::optional<TokenDescriptor>>
+isWLTCompliant(const STAmount &amount,
+               ConfigObjectEntry const& tokenConfig,
+               boost::optional<beast::Journal> j)
 {
+    boost::optional<TokenDescriptor> theToken;
     if (isCSC(amount))
     {
-        return tesSUCCESS;
+        return {tesSUCCESS, theToken};
     }
     if (tokenConfig.getType() != ConfigObjectEntry::Token)
     {
         if (j) { JLOG((*j).warn()) << "isWLTCompliant() non-Token config object passed"; }
-        return tefFAILURE;
+        return {tefFAILURE, theToken};
     }
 
-    auto theToken = getWLT(amount, tokenConfig, j);
+    theToken = getWLT(amount, tokenConfig, j);
     if (theToken)
-        return tesSUCCESS;
+        return {tesSUCCESS, theToken};
 
-    return tefNOT_WLT;
+    return {tefNOT_WLT, theToken};
 }
 
-boost::optional<TokenDescriptor> getWLT(const STAmount &amount, ConfigObjectEntry const& tokenConfig, boost::optional<beast::Journal> j)
+boost::optional<TokenDescriptor>
+getWLT(const STAmount &amount,
+       ConfigObjectEntry const& tokenConfig,
+       boost::optional<beast::Journal> j)
 {
     boost::optional<TokenDescriptor> theToken;
 

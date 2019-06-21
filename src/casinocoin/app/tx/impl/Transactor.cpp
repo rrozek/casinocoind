@@ -31,6 +31,7 @@
 #include <casinocoin/app/tx/impl/SignerEntries.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/ledger/View.h>
@@ -215,6 +216,66 @@ Transactor::checkFee (PreclaimContext const& ctx, std::uint64_t baseFee)
     return tesSUCCESS;
 }
 
+TER Transactor::checkFeeToken(PreclaimContext const& ctx,
+                              TokenDescriptor const& theToken)
+{
+    if (!ctx.view.rules().enabled(featureWLT))
+    {
+        return tesSUCCESS;
+    }
+
+    auto const feePaid = calculateFeePaid(ctx.tx);
+    if (!isLegalAmount (feePaid) || feePaid < beast::zero)
+        return temBAD_FEE;
+
+    auto const feeRequired = mulDiv(ctx.app.config().TRANSACTION_FEE_BASE,
+                               ctx.view.fees().base, ctx.view.fees().units);
+    if (!feeRequired.first)
+    {
+        JLOG(ctx.j.debug()) << "Overflow in default fee calculation";
+        return temBAD_FEE;
+    }
+
+    auto const feeToken = mulDiv (feeRequired.second, theToken.extraFeeFactor, 100/*percent*/);
+    if (!feeToken.first)
+        Throw<std::overflow_error>("Overflow in token fee calculation");
+    CSCAmount requiredTokenFee(feeRequired.second + feeToken.second);
+
+
+    // Only check fee is sufficient when the ledger is open.
+    if (ctx.view.open() && feePaid < requiredTokenFee)
+    {
+        JLOG(ctx.j.debug()) << "Insufficient fee paid: " <<
+            to_string(feePaid) << "/" << to_string(requiredTokenFee);
+        return telINSUF_FEE_P;
+    }
+
+    if (feePaid == zero)
+        return tesSUCCESS;
+
+    auto const id = ctx.tx.getAccountID(sfAccount);
+    auto const sle = ctx.view.read(
+        keylet::account(id));
+    auto const balance = (*sle)[sfBalance].csc();
+
+    if (balance < feePaid)
+    {
+        JLOG(ctx.j.trace()) << "Insufficient balance:" <<
+            " balance=" << to_string(balance) <<
+            " paid=" << to_string(feePaid);
+
+        if ((balance > zero) && !ctx.view.open())
+        {
+            // Closed ledger, non-zero balance, less than fee
+            return tecINSUFF_FEE;
+        }
+
+        return terINSUF_FEE_B;
+    }
+
+    return tesSUCCESS;
+}
+
 TER Transactor::payFee ()
 {
     auto const feePaid = calculateFeePaid(ctx_.tx);
@@ -349,38 +410,42 @@ Transactor::checkSign (PreclaimContext const& ctx)
 }
 
 TER
-Transactor::checkWLT (PreclaimContext const& ctx)
+Transactor::checkWLT (PreclaimContext const& ctx, boost::optional<TokenDescriptor>& theToken)
 {
     // Narrow allowed tokens only if WLT amendment is enabled
-    if (ctx.view.rules().enabled(featureWLT))
+    if (!ctx.view.rules().enabled(featureWLT))
     {
-        if (ctx.tx.isNative())
-        {
-            return tesSUCCESS;
-        }
-        if (ctx.tx.getTxnType() == ttCONFIG)
-        {
-            JLOG(ctx.j.info()) << "checkWLT() SetConfiguration tx can operate on non-WLT for obvious reason.";
-            return tesSUCCESS;
-        }
-
-        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
-        auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
-                                            ledgerConfiguration.entries.end(),
-                                            [](ConfigObjectEntry const& obj)
-            {
-                return obj.getType() == ConfigObjectEntry::Token;
-            });
-        if (tokenConfigIter == ledgerConfiguration.entries.end())
-        {
-            JLOG(ctx.j.info()) << "No WLT entries found. tx forbidden.";
-            return tefNOT_WLT;
-        }
-
-        return ctx.tx.isAllowedWLT(*tokenConfigIter) ? tesSUCCESS : tefNOT_WLT;
+        return tesSUCCESS;
     }
 
-    return tesSUCCESS;
+    if (ctx.tx.isNative())
+    {
+        return tesSUCCESS;
+    }
+
+    if (ctx.tx.getTxnType() == ttCONFIG)
+    {
+        JLOG(ctx.j.info()) << "checkWLT() SetConfiguration tx can operate on non-WLT for obvious reason.";
+        return tesSUCCESS;
+    }
+
+    LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+    auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                        ledgerConfiguration.entries.end(),
+                                        [](ConfigObjectEntry const& obj)
+    {
+            return obj.getType() == ConfigObjectEntry::Token;
+    });
+
+    if (tokenConfigIter == ledgerConfiguration.entries.end())
+    {
+        JLOG(ctx.j.info()) << "No WLT entries found. tx forbidden.";
+        return tefNOT_WLT;
+    }
+
+    auto result = ctx.tx.isAllowedWLT(*tokenConfigIter);
+    theToken = result.second;
+    return result.first;
 }
 
 TER
