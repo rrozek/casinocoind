@@ -28,7 +28,7 @@
 
 #include <casinocoin/ledger/ReadView.h>
 #include <casinocoin/shamap/SHAMap.h>
-#include <casinocoin/app/misc/Validations.h>
+#include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/basics/BasicConfig.h>
 #include <casinocoin/protocol/SystemParameters.h>
 
@@ -95,7 +95,7 @@ public:
     virtual
     void
     doVoting (std::shared_ptr<ReadView const> const& lastClosedLedger,
-        ValidationSet const& parentValidations,
+        std::vector<STValidation::pointer> const& parentValidations,
             std::shared_ptr<SHAMap> const& initialPosition) = 0;
 
     virtual

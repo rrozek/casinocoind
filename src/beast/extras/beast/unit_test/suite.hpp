@@ -11,6 +11,7 @@
 #include <beast/unit_test/runner.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/throw_exception.hpp>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -47,8 +48,7 @@ enum abort_t
     abort_on_fail
 };
 
-/** A testsuite class.
-
+/* A testsuite class.
     Derived classes execute a series of testcases, where each testcase is
     a series of pass/fail tests. To provide a unit test using this class,
     derive from it and use the BEAST_DEFINE_UNIT_TEST macro in a
@@ -133,8 +133,7 @@ private:
         {
         }
 
-        /** Open a new testcase.
-
+        /* Open a new testcase.
             A testcase is a series of evaluated test conditions. A test
             suite may have multiple test cases. A test is associated with
             the last opened testcase. When the test first runs, a default
@@ -156,8 +155,7 @@ private:
     };
 
 public:
-    /** Logging output stream.
-
+    /* Logging output stream.
         Text sent to the log output stream will be forwarded to
         the output stream associated with the runner.
     */
@@ -182,8 +180,7 @@ public:
     {
     }
 
-    /** Invokes the test using the specified runner.
-
+    /* Invokes the test using the specified runner.
         Data members are set up here instead of the constructor as a
         convenience to writing the derived class to avoid repetition of
         forwarded constructor arguments to the base.
@@ -199,7 +196,7 @@ public:
     pass();
 
     /** Record a failure.
-
+     * 
         @param reason Optional text added to the output on a failure.
 
         @param file The source code file where the test failed.
@@ -216,8 +213,7 @@ public:
     fail(std::string const& reason = "");
     /** @} */
 
-    /** Evaluate a test condition.
-
+    /* Evaluate a test condition.
         This function provides improved logging by incorporating the
         file name and line number into the reported output on failure,
         as well as additional text specified by the caller.
@@ -230,7 +226,7 @@ public:
         @param file The source code file where the test failed.
 
         @param line The source code line number where the test failed.
-
+        
         @return `true` if the test condition indicates success.
     */
     /** @{ */
@@ -551,7 +547,7 @@ fail(std::string const& reason)
     if(abort_)
     {
         aborted_ = true;
-        throw abort_exception();
+        BOOST_THROW_EXCEPTION(abort_exception());
     }
 }
 
@@ -569,7 +565,7 @@ suite::
 propagate_abort()
 {
     if(abort_ && aborted_)
-        throw abort_exception();
+        BOOST_THROW_EXCEPTION(abort_exception());
 }
 
 template<class>
@@ -599,16 +595,14 @@ run(runner& r)
 }
 
 #ifndef BEAST_EXPECT
-/** Check a precondition.
-
+/* Check a precondition.
     If the condition is false, the file and line number are reported.
 */
 #define BEAST_EXPECT(cond) expect(cond, __FILE__, __LINE__)
 #endif
 
 #ifndef BEAST_EXPECTS
-/** Check a precondition.
-
+/* Check a precondition.
     If the condition is false, the file and line number are reported.
 */
 #define BEAST_EXPECTS(cond, reason) ((cond) ? (pass(), true) : \
@@ -636,7 +630,7 @@ run(runner& r)
 //
 #ifndef BEAST_DEFINE_TESTSUITE
 
-/** Enables insertion of test suites into the global container.
+/* Enables insertion of test suites into the global container.
     The default is to insert all test suite definitions into the global
     container. If BEAST_DEFINE_TESTSUITE is user defined, this macro
     has no effect.
@@ -645,8 +639,7 @@ run(runner& r)
 #define BEAST_NO_UNIT_TEST_INLINE 0
 #endif
 
-/** Define a unit test suite.
-
+/* Define a unit test suite.
     Class     The type representing the class being tested.
     Module    Identifies the module.
     Library   Identifies the library.

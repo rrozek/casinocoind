@@ -8,8 +8,7 @@
 #ifndef BEAST_WEBSOCKET_SYNC_ECHO_SERVER_HPP
 #define BEAST_WEBSOCKET_SYNC_ECHO_SERVER_HPP
 
-#include <beast/core/placeholders.hpp>
-#include <beast/core/streambuf.hpp>
+#include <beast/core/multi_buffer.hpp>
 #include <beast/websocket.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
@@ -38,25 +37,6 @@ public:
     using socket_type = boost::asio::ip::tcp::socket;
 
 private:
-    struct identity
-    {
-        template<class Body, class Fields>
-        void
-        operator()(beast::http::message<
-            true, Body, Fields>& req) const
-        {
-            req.fields.replace("User-Agent", "sync_echo_client");
-        }
-
-        template<class Body, class Fields>
-        void
-        operator()(beast::http::message<
-            false, Body, Fields>& resp) const
-        {
-            resp.fields.replace("Server", "sync_echo_server");
-        }
-    };
-
     /** A container of type-erased option setters.
     */
     template<class NextLayer>
@@ -142,7 +122,6 @@ private:
 
 public:
     /** Constructor.
-
         @param log A pointer to a stream to log to, or `nullptr`
         to disable logging.
     */
@@ -151,8 +130,6 @@ public:
         , sock_(ios_)
         , acceptor_(ios_)
     {
-        opts_.set_option(
-            beast::websocket::decorate(identity{}));
     }
 
     /** Destructor.
@@ -177,9 +154,7 @@ public:
     }
 
     /** Set a websocket option.
-
         The option will be applied to all new connections.
-
         @param opt The option to apply.
     */
     template<class Opt>
@@ -190,9 +165,7 @@ public:
     }
 
     /** Open a listening port.
-
         @param ep The address and port to bind to.
-
         @param ec Set to the error, if any occurred.
     */
     void
@@ -212,7 +185,7 @@ public:
             return fail("listen", ec);
         acceptor_.async_accept(sock_, ep_,
             std::bind(&sync_echo_server::on_accept, this,
-                beast::asio::placeholders::error));
+                std::placeholders::_1));
         thread_ = std::thread{[&]{ ios_.run(); }};
     }
 
@@ -231,7 +204,7 @@ private:
 
     void
     fail(std::string what, error_code ec,
-        int id, endpoint_type const& ep)
+        std::size_t id, endpoint_type const& ep)
     {
         if(log_)
             if(ec != beast::websocket::error::closed)
@@ -280,7 +253,7 @@ private:
         std::thread{lambda{*this, ep_, std::move(sock_)}}.detach();
         acceptor_.async_accept(sock_, ep_,
             std::bind(&sync_echo_server::on_accept, this,
-                beast::asio::placeholders::error));
+                std::placeholders::_1));
     }
 
     template<class DynamicBuffer, std::size_t N>
@@ -312,7 +285,13 @@ private:
             socket_type> ws{std::move(sock)};
         opts_.set_options(ws);
         error_code ec;
-        ws.accept(ec);
+        ws.accept_ex(
+            [](beast::websocket::response_type& res)
+            {
+                res.insert(
+                    "Server", "sync_echo_server");
+            },
+            ec);
         if(ec)
         {
             fail("accept", ec, id, ep);
@@ -320,42 +299,39 @@ private:
         }
         for(;;)
         {
-            beast::websocket::opcode op;
-            beast::streambuf sb;
-            ws.read(op, sb, ec);
+            beast::multi_buffer b;
+            ws.read(b, ec);
             if(ec)
             {
                 auto const s = ec.message();
                 break;
             }
-            ws.set_option(beast::websocket::message_type{op});
-            if(match(sb, "RAW"))
+            ws.binary(ws.got_binary());
+            if(match(b, "RAW"))
             {
                 boost::asio::write(
-                    ws.next_layer(), sb.data(), ec);
+                    ws.next_layer(), b.data(), ec);
             }
-            else if(match(sb, "TEXT"))
+            else if(match(b, "TEXT"))
             {
-                ws.set_option(
-                    beast::websocket::message_type{
-                        beast::websocket::opcode::text});
-                ws.write(sb.data(), ec);
+                ws.binary(false);
+                ws.write(b.data(), ec);
             }
-            else if(match(sb, "PING"))
+            else if(match(b, "PING"))
             {
                 beast::websocket::ping_data payload;
-                sb.consume(buffer_copy(
+                b.consume(buffer_copy(
                     buffer(payload.data(), payload.size()),
-                        sb.data()));
+                        b.data()));
                 ws.ping(payload, ec);
             }
-            else if(match(sb, "CLOSE"))
+            else if(match(b, "CLOSE"))
             {
                 ws.close({}, ec);
             }
             else
             {
-                ws.write(sb.data(), ec);
+                ws.write(b.data(), ec);
             }
             if(ec)
                 break;

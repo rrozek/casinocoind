@@ -29,7 +29,6 @@
 #include <casinocoin/server/impl/BaseHTTPPeer.h>
 #include <casinocoin/server/WSSession.h>
 #include <casinocoin/beast/asio/ssl_bundle.h>
-#include <beast/core/placeholders.hpp>
 #include <beast/websocket/ssl.hpp>
 #include <memory>
 

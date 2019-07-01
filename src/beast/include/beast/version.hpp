@@ -9,15 +9,15 @@
 #define BEAST_VERSION_HPP
 
 #include <beast/config.hpp>
+#include <boost/config.hpp>
 
-// follows http://semver.org
+/** @def BEAST_API_VERSION 
+    Identifies the API version of Beast.
+    This is a simple integer that is incremented by one every time
+    a set of code changes is merged to the master or develop branch.
+*/
+#define BEAST_VERSION 79
 
-//  BEAST_VERSION % 100 is the patch level
-//  BEAST_VERSION / 100 % 1000 is the minor version
-//  BEAST_VERSION / 100000 is the major version
-//
-#define BEAST_VERSION 100000
-
-#define BEAST_VERSION_STRING "1.0.0-b34"
+#define BEAST_VERSION_STRING "Beast/" BOOST_STRINGIZE(BEAST_VERSION)
 
 #endif

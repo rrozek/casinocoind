@@ -27,7 +27,7 @@
 #define CASINOCOIN_APP_MISC_AMENDMENTTABLE_H_INCLUDED
 
 #include <casinocoin/app/ledger/Ledger.h>
-#include <casinocoin/app/misc/Validations.h>
+#include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/protocol/Protocol.h>
 
@@ -84,7 +84,7 @@ public:
         NetClock::time_point closeTime,
         std::set <uint256> const& enabledAmendments,
         majorityAmendments_t const& majorityAmendments,
-        ValidationSet const& valSet) = 0;
+        std::vector<STValidation::pointer> const& valSet) = 0;
 
     // Called by the consensus code when we need to
     // add feature entries to a validation
@@ -118,7 +118,7 @@ public:
     void
     doVoting (
         std::shared_ptr <ReadView const> const& lastClosedLedger,
-        ValidationSet const& parentValidations,
+        std::vector<STValidation::pointer> const& parentValidations,
         std::shared_ptr<SHAMap> const& initialPosition)
     {
         // Ask implementation what to do

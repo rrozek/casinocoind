@@ -32,8 +32,7 @@
 #include <casinocoin/server/impl/PlainHTTPPeer.h>
 #include <casinocoin/server/impl/SSLHTTPPeer.h>
 #include <casinocoin/beast/asio/ssl_bundle.h>
-#include <beast/core/placeholders.hpp>
-#include <beast/core/streambuf.hpp>
+#include <beast/core/multi_buffer.hpp>
 #include <boost/asio/basic_waitable_timer.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_service.hpp>
@@ -231,7 +230,7 @@ do_detect(boost::asio::yield_context do_yield)
 {
     bool ssl;
     error_code ec;
-    beast::streambuf buf(16);
+    beast::multi_buffer buf(16);
     timer_.expires_from_now(std::chrono::seconds(15));
     std::tie(ec, ssl) = detect_ssl(socket_, buf, do_yield);
     error_code unused;

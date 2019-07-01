@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_SERVER_PLAINHTTPPEER_H_INCLUDED
 #define CASINOCOIN_SERVER_PLAINHTTPPEER_H_INCLUDED
-
+#include <casinocoin/beast/rfc2616.h>
 #include <casinocoin/server/impl/BaseHTTPPeer.h>
 #include <casinocoin/server/impl/PlainWSPeer.h>
 #include <memory>
@@ -138,7 +138,7 @@ do_request()
     }
 
     // Perform half-close when Connection: close and not SSL
-    if (! is_keep_alive(this->message_))
+    if (! beast::rfc2616::is_keep_alive(this->message_))
         stream_.shutdown(socket_type::shutdown_receive, ec);
     if (ec)
         return this->fail(ec, "request");

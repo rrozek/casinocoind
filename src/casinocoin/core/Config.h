@@ -34,6 +34,7 @@
 #include <casinocoin/beast/net/IPEndpoint.h>
 #include <casinocoin/json/json_value.h>
 #include <casinocoin/beast/utility/Journal.h>
+#include <beast/core/string.hpp>
 #include <beast/core/detail/ci_char_traits.hpp>
 #include <boost/asio/ip/tcp.hpp> // VFALCO FIX: This include should not be here
 #include <boost/filesystem.hpp> // VFALCO FIX: This include should not be here

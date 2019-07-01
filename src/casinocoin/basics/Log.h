@@ -27,7 +27,7 @@
 #define CASINOCOIN_BASICS_LOG_H_INCLUDED
 
 #include <casinocoin/basics/UnorderedContainers.h>
-#include <beast/core/detail/ci_char_traits.hpp>
+#include <beast/core/string.hpp>
 #include <casinocoin/beast/utility/Journal.h>
 #include <boost/filesystem.hpp>
 #include <map>
@@ -154,7 +154,7 @@ private:
     std::mutex mutable mutex_;
     std::map <std::string,
         std::unique_ptr<beast::Journal::Sink>,
-            beast::detail::ci_less> sinks_;
+            beast::iless> sinks_;
     beast::severities::Severity thresh_;
     File file_;
     bool silent_ = false;

@@ -27,3 +27,4 @@
 
 #include <casinocoin/app/consensus/CCLConsensus.cpp>
 #include <casinocoin/app/consensus/CCLCxPeerPos.cpp>
+#include <casinocoin/app/consensus/CCLValidations.cpp>

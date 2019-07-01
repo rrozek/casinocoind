@@ -27,6 +27,7 @@
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/consensus/Consensus.h>
 #include <casinocoin/app/consensus/CCLConsensus.h>
+#include <casinocoin/app/consensus/CCLValidations.h>
 #include <casinocoin/app/ledger/AcceptedLedger.h>
 #include <casinocoin/app/ledger/InboundLedgers.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
@@ -1308,17 +1309,17 @@ bool NetworkOPsImp::checkLastClosedLedger (
 
     hash_map<uint256, ValidationCount> ledgers;
     {
-        auto current = app_.getValidations ().getCurrentValidations (
+        auto current = app_.getValidations ().currentTrustedDistribution (
             closedLedger, prevClosedLedger,
             m_ledgerMaster.getValidLedgerIndex());
 
         for (auto& it: current)
         {
             auto& vc = ledgers[it.first];
-            vc.trustedValidations += it.second.first;
+            vc.trustedValidations += it.second.count;
 
-            if (it.second.second > vc.highValidation)
-                vc.highValidation = it.second.second;
+            if (it.second.highNode > vc.highValidation)
+                vc.highValidation = it.second.highNode;
         }
     }
 
@@ -2110,7 +2111,7 @@ bool NetworkOPsImp::recvValidation (
     JLOG(m_journal.debug()) << "recvValidation " << val->getLedgerHash ()
                           << " from " << source;
     pubValidation (val);
-    return app_.getValidations ().addValidation (val, source);
+    return handleNewValidation(app_, val, source);
 }
 
 Json::Value NetworkOPsImp::getConsensusInfo ()

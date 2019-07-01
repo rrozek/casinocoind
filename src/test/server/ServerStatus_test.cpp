@@ -25,7 +25,6 @@
 #include <test/jtx/WSClient.h>
 #include <test/jtx/JSONRPCClient.h>
 #include <casinocoin/core/DeadlineTimer.h>
-#include <beast/core/to_string.hpp>
 #include <beast/http.hpp>
 #include <beast/test/yield_to.hpp>
 #include <beast/websocket/detail/mask.hpp>
@@ -86,17 +85,18 @@ class ServerStatus_test :
         using namespace beast::http;
         request<string_body> req;
 
-        req.url = "/";
+        req.target("/");
         req.version = 11;
-        req.fields.insert("Host", host + ":" + to_string(port));
-        req.fields.insert("User-Agent", "test");
-        req.method = "GET";
-        req.fields.insert("Upgrade", "websocket");
+        req.insert("Host", host + ":" + to_string(port));
+        req.insert("User-Agent", "test");
+        req.method(beast::http::verb::get);
+        req.insert("Upgrade", "websocket");
         beast::websocket::detail::maskgen maskgen;
-        std::string key = beast::websocket::detail::make_sec_ws_key(maskgen);
-        req.fields.insert("Sec-WebSocket-Key", key);
-        req.fields.insert("Sec-WebSocket-Version", "13");
-        prepare(req, connection::upgrade);
+        beast::websocket::detail::sec_ws_key_type key;
+        beast::websocket::detail::make_sec_ws_key(key, maskgen);
+        req.insert("Sec-WebSocket-Key", key);
+        req.insert("Sec-WebSocket-Version", "13");
+        req.insert(beast::http::field::connection, "upgrade");
         return req;
     }
 
@@ -109,21 +109,21 @@ class ServerStatus_test :
         using namespace beast::http;
         request<string_body> req;
 
-        req.url = "/";
+        req.target("/");
         req.version = 11;
-        req.fields.insert("Host", host + ":" + to_string(port));
-        req.fields.insert("User-Agent", "test");
+        req.insert("Host", host + ":" + to_string(port));
+        req.insert("User-Agent", "test");
         if(body.empty())
         {
-            req.method = "GET";
+            req.method(beast::http::verb::get);
         }
         else
         {
-            req.method = "POST";
-            req.fields.insert("Content-Type", "application/json; charset=UTF-8");
+            req.method(beast::http::verb::post);
+            req.insert("Content-Type", "application/json; charset=UTF-8");
             req.body = body;
         }
-        prepare(req);
+        req.prepare_payload();
 
         return req;
     }
@@ -131,7 +131,7 @@ class ServerStatus_test :
     void
     doRequest(
         boost::asio::yield_context& yield,
-        beast::http::request<beast::http::string_body> const& req,
+        beast::http::request<beast::http::string_body>& req,
         std::string const& host,
         uint16_t port,
         bool secure,
@@ -142,7 +142,7 @@ class ServerStatus_test :
         using namespace beast::http;
         io_service& ios = get_io_service();
         ip::tcp::resolver r{ios};
-        beast::streambuf sb;
+        beast::multi_buffer sb;
 
         auto it =
             r.async_resolve(
@@ -161,7 +161,7 @@ class ServerStatus_test :
             ss.async_handshake(ssl::stream_base::client, yield[ec]);
             if(ec)
                 return;
-            async_write(ss, req, yield[ec]);
+            beast::http::async_write(ss, req, yield[ec]);
             if(ec)
                 return;
             async_read(ss, sb, resp, yield[ec]);
@@ -174,7 +174,7 @@ class ServerStatus_test :
             async_connect(sock, it, yield[ec]);
             if(ec)
                 return;
-            async_write(sock, req, yield[ec]);
+            beast::http::async_write(sock, req, yield[ec]);
             if(ec)
                 return;
             async_read(sock, sb, resp, yield[ec]);
@@ -195,10 +195,11 @@ class ServerStatus_test :
     {
         auto const port = env.app().config()["port_ws"].
             get<std::uint16_t>("port");
-        auto const ip = env.app().config()["port_ws"].
+        auto ip = env.app().config()["port_ws"].
             get<std::string>("ip");
+        auto req = makeWSUpgrade(*ip, *port);
         doRequest(
-            yield, makeWSUpgrade(*ip, *port), *ip, *port, secure, resp, ec);
+            yield, req, *ip, *port, secure, resp, ec);
         return;
     }
 
@@ -215,9 +216,10 @@ class ServerStatus_test :
             get<std::uint16_t>("port");
         auto const ip = env.app().config()["port_rpc"].
             get<std::string>("ip");
+        auto req = makeHTTPRequest(*ip, *port, body);
         doRequest(
             yield,
-            makeHTTPRequest(*ip, *port, body),
+            req,
             *ip,
             *port,
             secure,
@@ -287,7 +289,7 @@ class ServerStatus_test :
             doWSRequest(env, yield, false, resp, ec);
             if(! BEAST_EXPECTS(! ec, ec.message()))
                 return;
-            BEAST_EXPECT(resp.status == 401);
+            BEAST_EXPECT(resp.result() == beast::http::status::unauthorized);
         }
 
         //secure request
@@ -297,7 +299,7 @@ class ServerStatus_test :
             doWSRequest(env, yield, true, resp, ec);
             if(! BEAST_EXPECTS(! ec, ec.message()))
                 return;
-            BEAST_EXPECT(resp.status == 401);
+            BEAST_EXPECT(resp.result() == beast::http::status::unauthorized);
         }
     }
 
@@ -320,7 +322,7 @@ class ServerStatus_test :
             doHTTPRequest(env, yield, false, resp, ec);
             if(! BEAST_EXPECTS(! ec, ec.message()))
                 return;
-            BEAST_EXPECT(resp.status == 200);
+            BEAST_EXPECT(resp.result() == beast::http::status::ok);
         }
 
         //secure request
@@ -330,7 +332,7 @@ class ServerStatus_test :
             doHTTPRequest(env, yield, true, resp, ec);
             if(! BEAST_EXPECTS(! ec, ec.message()))
                 return;
-            BEAST_EXPECT(resp.status == 200);
+            BEAST_EXPECT(resp.result() == beast::http::status::ok);
         }
     };
 
@@ -362,7 +364,7 @@ class ServerStatus_test :
 
         io_service& ios = get_io_service();
         ip::tcp::resolver r{ios};
-        beast::streambuf sb;
+        beast::multi_buffer sb;
 
         auto it =
             r.async_resolve(

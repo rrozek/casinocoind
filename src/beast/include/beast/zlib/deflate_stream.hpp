@@ -4,33 +4,6 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
-// This is a derivative work based on Zlib, copyright below:
-/*
-    Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
-
-    This software is provided 'as-is', without any express or implied
-    warranty.  In no event will the authors be held liable for any damages
-    arising from the use of this software.
-
-    Permission is granted to anyone to use this software for any purpose,
-    including commercial applications, and to alter it and redistribute it
-    freely, subject to the following restrictions:
-
-    1. The origin of this software must not be misrepresented; you must not
-       claim that you wrote the original software. If you use this software
-       in a product, an acknowledgment in the product documentation would be
-       appreciated but is not required.
-    2. Altered source versions must be plainly marked as such, and must not be
-       misrepresented as being the original software.
-    3. This notice may not be removed or altered from any source distribution.
-
-    Jean-loup Gailly        Mark Adler
-    jloup@gzip.org          madler@alumni.caltech.edu
-
-    The data format used by the zlib library is described by RFCs (Request for
-    Comments) 1950 to 1952 in the files http://tools.ietf.org/html/rfc1950
-    (zlib format), rfc1951 (deflate format) and rfc1952 (gzip format).
-*/
 
 #ifndef BEAST_ZLIB_DEFLATE_STREAM_HPP
 #define BEAST_ZLIB_DEFLATE_STREAM_HPP
@@ -48,8 +21,36 @@
 namespace beast {
 namespace zlib {
 
-/** Raw deflate compressor.
+// This is a derivative work based on Zlib, copyright below:
+/*
+    Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
+    
+    This software is provided 'as-is', without any express or implied
+    warranty.  In no event will the authors be held liable for any damages
+    arising from the use of this software.
 
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+       claim that you wrote the original software. If you use this software
+       in a product, an acknowledgment in the product documentation would be
+       appreciated but is not required.
+    2. Altered source versions must be plainly marked as such, and must not be
+       misrepresented as being the original software.
+    3. This notice may not be removed or altered from any source distribution.
+
+    Jean-loup Gailly        Mark Adler
+    jloup@gzip.org          madler@alumni.caltech.edu
+
+    The data format used by the zlib library is described by RFCs (Request for
+    Comments) 1950 to 1952 in the files http://tools.ietf.org/html/rfc1950
+    (zlib format), rfc1951 (deflate format) and rfc1952 (gzip format).
+*/
+
+/* Raw deflate compressor.
+ * 
     This is a port of zlib's "deflate" functionality to C++.
 */
 class deflate_stream
@@ -57,14 +58,14 @@ class deflate_stream
 {
 public:
     /** Construct a default deflate stream.
-
+     * 
         Upon construction, the stream settings will be set
         to these default values:
 
         @li `level = 6`
-
+        
         @li `windowBits = 15`
-
+        
         @li `memLevel = 8`
 
         @li `strategy = Strategy::normal`
@@ -79,7 +80,7 @@ public:
     }
 
     /** Reset the stream and compression settings.
-
+     * 
         This function initializes the stream to the specified
         compression settings.
 
@@ -101,7 +102,7 @@ public:
     }
 
     /** Reset the stream without deallocating memory.
-
+     * 
         This function performs the equivalent of calling `clear`
         followed by `reset` with the same compression settings,
         without deallocating the internal buffers.
@@ -116,7 +117,7 @@ public:
     }
 
     /** Clear the stream.
-
+     * 
         This function resets the stream and frees all dynamically
         allocated internal buffers. The compression settings are
         left unchanged.
@@ -131,13 +132,11 @@ public:
     }
 
     /** Returns the upper limit on the size of a compressed block.
-
+     * 
         This function makes a conservative estimate of the maximum number
         of bytes needed to store the result of compressing a block of
         data based on the current compression level and strategy.
-
-        @param bytes The size of the uncompressed data.
-
+        @param sourceLen The size of the uncompressed data.
         @return The maximum number of resulting compressed bytes.
     */
     std::size_t
@@ -147,7 +146,7 @@ public:
     }
 
     /** Fine tune internal compression parameters.
-
+     * 
         Compression parameters should only be tuned by someone who
         understands the algorithm used by zlib's deflate for searching
         for the best matching string, and even then only by the most
@@ -167,7 +166,7 @@ public:
     }
 
     /** Compress input and write output.
-
+     * 
         This function compresses as much data as possible, and stops when
         the input buffer becomes empty or the output buffer becomes full.
         It may introduce some output latency (reading input without
@@ -286,7 +285,7 @@ public:
     }
 
     /** Update the compression level and strategy.
-
+     * 
         This function dynamically updates the compression level and
         compression strategy. The interpretation of level and strategy
         is as in @ref reset. This can be used to switch between compression
@@ -315,7 +314,7 @@ public:
     }
 
     /** Return bits pending in the output.
-
+     * 
         This function returns the number of bytes and bits of output
         that have been generated, but not yet provided in the available
         output. The bytes not provided would be due to the available
@@ -334,7 +333,7 @@ public:
     }
 
     /** Insert bits into the compressed output stream.
-
+     * 
         This function inserts bits in the deflate output stream. The
         intent is that this function is used to start off the deflate
         output with the bits leftover from a previous deflate stream when
@@ -355,7 +354,7 @@ public:
 };
 
 /** Returns the upper limit on the size of a compressed block.
-
+ * 
     This function makes a conservative estimate of the maximum number
     of bytes needed to store the result of compressing a block of
     data.

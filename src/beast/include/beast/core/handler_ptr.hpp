@@ -17,8 +17,7 @@
 
 namespace beast {
 
-/** A smart pointer container with associated completion handler.
-
+/* A smart pointer container with associated completion handler.
     This is a smart pointer that retains shared ownership of an
     object through a pointer. Memory is managed using the allocation
     and deallocation functions associated with a completion handler,
@@ -77,16 +76,14 @@ public:
     /// Copy assignment (disallowed).
     handler_ptr& operator=(handler_ptr const&) = delete;
 
-    /** Destructs the owned object if no more @ref handler_ptr link to it.
-
+    /* Destructs the owned object if no more @ref handler_ptr link to it.
         If `*this` owns an object and it is the last @ref handler_ptr
         owning it, the object is destroyed and the memory deallocated
         using the associated deallocator.
     */
     ~handler_ptr();
 
-    /** Move constructor.
-
+    /* Move constructor.
         When this call returns, the moved-from container
         will have no owned object.
     */
@@ -95,8 +92,7 @@ public:
     /// Copy constructor
     handler_ptr(handler_ptr const& other);
 
-    /** Construct a new @ref handler_ptr
-
+    /* Construct a new @ref handler_ptr
         This creates a new @ref handler_ptr with an owned object
         of type `T`. The allocator associated with the handler will
         be used to allocate memory for the owned object. The constructor
@@ -115,8 +111,7 @@ public:
     template<class... Args>
     handler_ptr(Handler&& handler, Args&&... args);
 
-    /** Construct a new @ref handler_ptr
-
+    /* Construct a new @ref handler_ptr
         This creates a new @ref handler_ptr with an owned object
         of type `T`. The allocator associated with the handler will
         be used to allocate memory for the owned object. The constructor
@@ -149,8 +144,7 @@ public:
         return p_ && p_->t;
     }
 
-    /** Returns a pointer to the owned object.
-
+    /* Returns a pointer to the owned object.
         If `*this` owns an object, a pointer to the
         object is returned, else `nullptr` is returned.
     */
@@ -174,8 +168,7 @@ public:
         return p_->t;
     }
 
-    /** Release ownership of the handler
-
+    /* Release ownership of the handler
         If `*this` owns an object, it is first destroyed.
 
         @return The released handler.
@@ -183,14 +176,17 @@ public:
     handler_type
     release_handler();
 
-    /** Invoke the handler in the owned object.
-
+    /* Invoke the handler in the owned object.
         This function invokes the handler in the owned object
         with a forwarded argument list. Before the invocation,
         the owned object is destroyed, satisfying the
         deallocation-before-invocation Asio guarantee. All
         instances of @ref handler_ptr which refer to the
         same owned object will be reset, including this instance.
+        @note Care must be taken when the arguments are themselves
+        stored in the owned object. Such arguments must first be
+        moved to the stack or elsewhere, and then passed, or else
+        undefined behavior will result.
     */
     template<class... Args>
     void

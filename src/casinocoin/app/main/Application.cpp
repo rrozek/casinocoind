@@ -26,6 +26,7 @@
 #include <BeastConfig.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/core/DatabaseCon.h>
+#include <casinocoin/app/consensus/CCLValidations.h>
 #include <casinocoin/app/main/DBInit.h>
 #include <casinocoin/app/main/BasicApp.h>
 #include <casinocoin/app/main/Tuning.h>
@@ -338,7 +339,7 @@ public:
     std::unique_ptr <AmendmentTable> m_amendmentTable;
     std::unique_ptr <LoadFeeTrack> mFeeTrack;
     std::unique_ptr <HashRouter> mHashRouter;
-    std::unique_ptr <Validations> mValidations;
+    CCLValidations mValidations;
     std::unique_ptr <LoadManager> m_loadManager;
     std::unique_ptr <VotableConfiguration> m_votableConfig;
     std::unique_ptr <TxQ> txQ_;
@@ -488,7 +489,8 @@ public:
         , mHashRouter (std::make_unique<HashRouter>(
             stopwatch(), HashRouter::getDefaultHoldTime ()))
 
-        , mValidations (make_Validations (*this))
+        , mValidations (ValidationParms(),stopwatch(), logs_->journal("Validations"),
+            *this)
 
         , m_loadManager (make_LoadManager (*this, *this, logs_->journal("LoadManager")))
 
@@ -692,9 +694,9 @@ public:
         return *m_votableConfig;
     }
 
-    Validations& getValidations () override
+    CCLValidations& getValidations () override
     {
-        return *mValidations;
+        return mValidations;
     }
 
     ValidatorList& validators () override
@@ -881,7 +883,7 @@ public:
             m_entropyTimer.cancel ();
         }
 
-        mValidations->flush ();
+        mValidations.flush ();
 
         // stop validator site refresh
         validatorSites_->stop ();
@@ -958,7 +960,7 @@ public:
         getNodeStore().sweep();
         getLedgerMaster().sweep();
         getTempNodeCache().sweep();
-        getValidations().sweep();
+        getValidations().expire();
         getInboundLedgers().sweep();
         m_acceptedLedgerCache.sweep();
         family().treecache().sweep();
@@ -1629,7 +1631,7 @@ bool ApplicationImp::loadOldLedger (
                 }
             }
         }
-        else if (ledgerID.empty () || beast::detail::ci_equal(ledgerID, "latest"))
+        else if (ledgerID.empty () || beast::detail::iequals(ledgerID, "latest"))
         {
             loadLedger = getLastFullLedger ();
         }

@@ -41,6 +41,7 @@
 #include <beast/zlib/detail/ranges.hpp>
 #include <beast/zlib/detail/window.hpp>
 #include <beast/core/detail/type_traits.hpp>
+#include <boost/throw_exception.hpp>
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -118,7 +119,7 @@ private:
         the current table to the next table.  Each entry is four bytes.
 
         op values as set by inflate_table():
-
+        
         00000000 - literal
         0000tttt - table link, tttt != 0 is the number of table index bits
         0001eeee - length or distance, eeee is the number of extra bits
@@ -233,8 +234,8 @@ inflate_stream::
 doReset(int windowBits)
 {
     if(windowBits < 8 || windowBits > 15)
-        throw beast::detail::make_exception<std::domain_error>(
-            "windowBits out of range", __FILE__, __LINE__);
+        BOOST_THROW_EXCEPTION(std::domain_error{
+            "windowBits out of range"});
     w_.reset(windowBits);
 
     bi_.flush();
@@ -708,8 +709,8 @@ doWrite(z_params& zs, Flush flush, error_code& ec)
 
         case SYNC:
         default:
-            throw beast::detail::make_exception<std::logic_error>(
-                "stream error", __FILE__, __LINE__);
+            BOOST_THROW_EXCEPTION(std::logic_error{
+                "stream error"});
         }
     }
 }
@@ -795,18 +796,15 @@ inflate_table(
        from their more natural integer increment ordering, and so when the
        decoding tables are built in the large loop below, the integer codes
        are incremented backwards.
-
        This routine assumes, but does not check, that all of the entries in
        lens[] are in the range 0..15.  The caller must assure this.
        1..15 is interpreted as that code length.  zero means that that
        symbol does not occur in this code.
-
        The codes are sorted by computing a count of codes for each length,
        creating from that a table of starting indices for each length in the
        sorted table, and then entering the symbols in order in the sorted
        table.  The sorted table is work[], with that space being provided by
        the caller.
-
        The length counts are used for other purposes as well, i.e. finding
        the minimum and maximum length codes, determining if there are any
        codes at all, checking for a valid set of lengths, and looking ahead
@@ -878,24 +876,20 @@ inflate_table(
        bits off of the bottom.  For codes where len is less than drop + curr,
        those top drop + curr - len bits are incremented through all values to
        fill the table with replicated entries.
-
        root is the number of index bits for the root table.  When len exceeds
        root, sub-tables are created pointed to by the root entry with an index
        of the low root bits of huff.  This is saved in low to check for when a
        new sub-table should be started.  drop is zero when the root table is
        being filled, and drop is root when sub-tables are being filled.
-
        When a new sub-table is needed, it is necessary to look ahead in the
        code lengths to determine what size sub-table is needed.  The length
        counts are used for this, and so count[] is decremented as codes are
        entered in the tables.
-
        used keeps track of how many table entries have been allocated from the
        provided *table space.  It is checked for build::lens and DIST tables against
        the constants kEnoughLens and kEnoughDists to guard against changes in
        the initial root table size constants.  See the comments in inftrees.hpp
        for more information.
-
        sym increments through all symbols, and the loop terminates when
        all codes of length max, i.e. all codes, have been processed.  This
        routine permits incomplete codes, so another loop after this one fills
@@ -935,8 +929,8 @@ inflate_table(
 
     auto const not_enough = []
     {
-        throw beast::detail::make_exception<std::logic_error>(
-            "insufficient output size when inflating tables", __FILE__, __LINE__);
+        BOOST_THROW_EXCEPTION(std::logic_error{
+            "insufficient output size when inflating tables"});
     };
 
     // check available table space
@@ -1066,10 +1060,10 @@ get_fixed_tables() ->
             std::uint16_t lens[320];
             std::uint16_t work[288];
 
-            std::fill(&lens[  0], &lens[144], 8);
-            std::fill(&lens[144], &lens[256], 9);
-            std::fill(&lens[256], &lens[280], 7);
-            std::fill(&lens[280], &lens[288], 8);
+            std::fill(&lens[  0], &lens[144], std::uint16_t{8});
+            std::fill(&lens[144], &lens[256], std::uint16_t{9});
+            std::fill(&lens[256], &lens[280], std::uint16_t{7});
+            std::fill(&lens[280], &lens[288], std::uint16_t{8});
 
             {
                 error_code ec;
@@ -1077,7 +1071,7 @@ get_fixed_tables() ->
                 inflate_table(build::lens,
                     lens, 288, &next, &lenbits, work, ec);
                 if(ec)
-                    throw std::logic_error{ec.message()};
+                    BOOST_THROW_EXCEPTION(std::logic_error{ec.message()});
             }
 
             // VFALCO These fixups are from ZLib
@@ -1089,11 +1083,11 @@ get_fixed_tables() ->
             {
                 error_code ec;
                 auto next = &dist_[0];
-                std::fill(&lens[0], &lens[32], 5);
+                std::fill(&lens[0], &lens[32], std::uint16_t{5});
                 inflate_table(build::dists,
                     lens, 32, &next, &distbits, work, ec);
                 if(ec)
-                    throw std::logic_error{ec.message()};
+                    BOOST_THROW_EXCEPTION(std::logic_error{ec.message()});
             }
         }
     };
@@ -1121,34 +1115,26 @@ fixedTables()
    When large enough input and output buffers are supplied to inflate(), for
    example, a 16K input buffer and a 64K output buffer, more than 95% of the
    inflate execution time is spent in this routine.
-
    Entry assumptions:
-
         state->mode_ == LEN
         zs.avail_in >= 6
         zs.avail_out >= 258
         start >= zs.avail_out
         state->bits_ < 8
-
    On return, state->mode_ is one of:
-
         LEN -- ran out of enough output space or enough available input
         TYPE -- reached end of block code, inflate() to interpret next block
         BAD -- error in block data
-
    Notes:
-
     - The maximum input bits used by a length/distance pair is 15 bits for the
       length code, 5 bits for the length extra, 15 bits for the distance code,
       and 13 bits for the distance extra.  This totals 48 bits, or six bytes.
       Therefore if zs.avail_in >= 6, then there is enough input to avoid
       checking for available input while decoding.
-
     - The maximum bytes that a single length/distance pair can output is 258
       bytes, which is the maximum length that can be coded.  inflate_fast()
       requires zs.avail_out >= 258 for each loop to avoid checking for
       output space.
-
   inflate_fast() speedups that turned out slower (on a PowerPC G3 750CXe):
    - Using bit fields for code structure
    - Different op definition to avoid & for extra bits (do & for table bits)

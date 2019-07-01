@@ -10,13 +10,13 @@
 
 #include <beast/config.hpp>
 #include <beast/http/detail/rfc7230.hpp>
+#include <beast/http/detail/basic_parsed_list.hpp>
 
 namespace beast {
 namespace http {
 
-/** A list of parameters in a HTTP extension field value.
-
-    This container allows iteration of the parameter list in a HTTP
+/* A list of parameters in an HTTP extension field value.
+    This container allows iteration of the parameter list in an HTTP
     extension. The parameter list is a series of name/value pairs
     with each pair starting with a semicolon. The value is optional.
 
@@ -48,20 +48,19 @@ namespace http {
 */
 class param_list
 {
-    boost::string_ref s_;
+    string_view s_;
 
 public:
-    /** The type of each element in the list.
-
+    /* The type of each element in the list.
         The first string in the pair is the name of the parameter,
         and the second string in the pair is its value (which may
         be empty).
     */
     using value_type =
-        std::pair<boost::string_ref, boost::string_ref>;
+        std::pair<string_view, string_view>;
 
     /// A constant iterator to the list
-#if GENERATING_DOCS
+#if BEAST_DOXYGEN
     using const_iterator = implementation_defined;
 #else
     class const_iterator;
@@ -71,12 +70,11 @@ public:
     param_list() = default;
 
     /** Construct a list.
-
         @param s A string containing the list contents. The string
         must remain valid for the lifetime of the container.
     */
     explicit
-    param_list(boost::string_ref const& s)
+    param_list(string_view s)
         : s_(s)
     {
     }
@@ -97,8 +95,7 @@ public:
 //------------------------------------------------------------------------------
 
 /** A list of extensions in a comma separated HTTP field value.
-
-    This container allows iteration of the extensions in a HTTP
+    This container allows iteration of the extensions in an HTTP
     field value. The extension list is a comma separated list of
     token parameter list pairs.
 
@@ -136,33 +133,31 @@ public:
 */
 class ext_list
 {
-    using iter_type = boost::string_ref::const_iterator;
+    using iter_type = string_view::const_iterator;
 
-    boost::string_ref s_;
+    string_view s_;
 
 public:
-    /** The type of each element in the list.
-
+    /* The type of each element in the list.
         The first element of the pair is the extension token, and the
         second element of the pair is an iterable container holding the
         extension's name/value parameters.
     */
-    using value_type = std::pair<boost::string_ref, param_list>;
+    using value_type = std::pair<string_view, param_list>;
 
     /// A constant iterator to the list
-#if GENERATING_DOCS
+#if BEAST_DOXYGEN
     using const_iterator = implementation_defined;
 #else
     class const_iterator;
 #endif
 
-    /** Construct a list.
-
+    /* Construct a list.
         @param s A string containing the list contents. The string
         must remain valid for the lifetime of the container.
     */
     explicit
-    ext_list(boost::string_ref const& s)
+    ext_list(string_view s)
         : s_(s)
     {
     }
@@ -179,8 +174,8 @@ public:
     /// Return a const iterator to the end of the list
     const_iterator cend() const;
 
-    /** Find a token in the list.
-
+    /**Find a token in the list.
+     * 
         @param s The token to find. A case-insensitive comparison is used.
 
         @return An iterator to the matching token, or `end()` if no
@@ -191,7 +186,7 @@ public:
     find(T const& s);
 
     /** Return `true` if a token is present in the list.
-
+     * 
         @param s The token to find. A case-insensitive comparison is used.
     */
     template<class T>
@@ -201,8 +196,7 @@ public:
 
 //------------------------------------------------------------------------------
 
-/** A list of tokens in a comma separated HTTP field value.
-
+/* A list of tokens in a comma separated HTTP field value.
     This container allows iteration of a list of items in a
     header field value. The input is a comma separated list of
     tokens.
@@ -229,28 +223,27 @@ public:
 */
 class token_list
 {
-    using iter_type = boost::string_ref::const_iterator;
+    using iter_type = string_view::const_iterator;
 
-    boost::string_ref s_;
+    string_view s_;
 
 public:
     /// The type of each element in the token list.
-    using value_type = boost::string_ref;
+    using value_type = string_view;
 
     /// A constant iterator to the list
-#if GENERATING_DOCS
+#if BEAST_DOXYGEN
     using const_iterator = implementation_defined;
 #else
     class const_iterator;
 #endif
 
-    /** Construct a list.
-
+    /* Construct a list.
         @param s A string containing the list contents. The string
         must remain valid for the lifetime of the container.
     */
     explicit
-    token_list(boost::string_ref const& s)
+    token_list(string_view s)
         : s_(s)
     {
     }
@@ -268,13 +261,46 @@ public:
     const_iterator cend() const;
 
     /** Return `true` if a token is present in the list.
-
         @param s The token to find. A case-insensitive comparison is used.
     */
     template<class T>
     bool
     exists(T const& s);
 };
+
+/** A list of tokens in a comma separated HTTP field value.
+    This container allows iteration of a list of items in a
+    header field value. The input is a comma separated list of
+    tokens.
+    If a parsing error is encountered while iterating the string,
+    the behavior of the container will be as if a string containing
+    only characters up to but excluding the first invalid character
+    was used to construct the list.
+    @par BNF
+    @code
+        token-list  = *( "," OWS ) token *( OWS "," [ OWS token ] )
+    @endcode
+    To use this class, construct with the string to be parsed and
+    then use `begin` and `end`, or range-for to iterate each item:
+    @par Example
+    @code
+    for(auto const& token : token_list{"apple, pear, banana"})
+        std::cout << token << "\n";
+    @endcode
+*/
+using opt_token_list =
+    detail::basic_parsed_list<
+        detail::opt_token_list_policy>;
+
+/** Returns `true` if a parsed list is parsed without errors.
+    This function iterates a single pass through a parsed list
+    and returns `true` if there were no parsing errors, else
+    returns `false`.
+*/
+template<class Policy>
+bool
+validate_list(detail::basic_parsed_list<
+    Policy> const& list);
 
 } // http
 } // beast

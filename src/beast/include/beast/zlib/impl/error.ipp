@@ -7,7 +7,7 @@
 // This is a derivative work based on Zlib, copyright below:
 /*
     Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
-
+    
     This software is provided 'as-is', without any express or implied
     warranty.  In no event will the authors be held liable for any damages
     arising from the use of this software.
@@ -58,7 +58,7 @@ public:
     const char*
     name() const noexcept override
     {
-        return "zlib";
+        return "beast.zlib";
     }
 
     std::string
@@ -85,7 +85,7 @@ public:
 
         case error::general:
         default:
-            return "zlib error";
+            return "beast.zlib error";
         }
     }
 

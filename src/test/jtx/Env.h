@@ -44,7 +44,7 @@
 #include <casinocoin/protocol/STAmount.h>
 #include <casinocoin/protocol/STObject.h>
 #include <casinocoin/protocol/STTx.h>
-#include <beast/core/detail/is_call_possible.hpp>
+#include <beast/core/detail/type_traits.hpp>
 #include <casinocoin/beast/unit_test.h>
 #include <functional>
 #include <string>
@@ -642,7 +642,7 @@ protected:
         FN const&... fN)
     {
         maybe_invoke(stx, f,
-            beast::detail::is_call_possible<F,
+            beast::detail::is_invocable<F,
                 void(Env&, STTx const&)>());
         invoke(stx, fN...);
     }
@@ -676,7 +676,7 @@ protected:
         FN const&... fN)
     {
         maybe_invoke(jt, f,
-            beast::detail::is_call_possible<F,
+            beast::detail::is_invocable<F,
                 void(Env&, JTx&)>());
         invoke(jt, fN...);
     }
