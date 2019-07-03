@@ -153,6 +153,8 @@ def parse_time(t):
         return time.strptime(t, '%a %b %d %H:%M:%S %Y')
     elif l==3:
         return time.strptime(t, '%d %b %Y')
+    elif t[-3:] == 'UTC':
+        return time.strptime(t, '%a %b %d %H:%M:%S %Y %Z')
     else:
         return time.strptime(t, '%a %b %d %H:%M:%S %Z %Y')
 

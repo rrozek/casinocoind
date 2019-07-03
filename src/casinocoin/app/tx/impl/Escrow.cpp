@@ -26,6 +26,7 @@
 #include <BeastConfig.h>
 #include <casinocoin/app/tx/impl/Escrow.h>
 #include <casinocoin/app/misc/HashRouter.h>
+#include <casinocoin/app/paths/CasinocoinState.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/conditions/Condition.h>
@@ -36,6 +37,7 @@
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/CSCAmount.h>
+#include <casinocoin/protocol/Quality.h>
 #include <casinocoin/ledger/View.h>
 
 // During an EscrowFinish, the transaction must specify both
@@ -157,7 +159,10 @@ EscrowCreate::preflight (PreflightContext const& ctx)
         return ret;
 
     if (! isCSC(ctx.tx[sfAmount]))
-        return temBAD_AMOUNT;
+    {
+        if (!ctx.rules.enabled(featureEscrowIOU))
+            return temBAD_AMOUNT;
+    }
 
     if (ctx.tx[sfAmount] <= beast::zero)
         return temBAD_AMOUNT;
@@ -197,7 +202,7 @@ EscrowCreate::preflight (PreflightContext const& ctx)
 TER
 EscrowCreate::doApply()
 {
-    auto const closeTime = ctx_.view ().info ().parentCloseTime;
+    auto const closeTime = view ().info ().parentCloseTime;
 
     if (ctx_.tx[~sfCancelAfter])
     {
@@ -216,33 +221,90 @@ EscrowCreate::doApply()
     }
 
     auto const account = ctx_.tx[sfAccount];
-    auto const sle = ctx_.view().peek(
+    auto const sle = view().peek(
         keylet::account(account));
-
+    auto const& amount = ctx_.tx[sfAmount];
+    bool isCsc = isCSC(amount);
     // Check reserve and funds availability
     {
+        // if not operating on CSC and escrowIOU is disabled -  bail out
+        if (!isCsc && !ctx_.view().rules().enabled(featureEscrowIOU))
+            return tecINVARIANT_FAILED;
+
         auto const balance = STAmount((*sle)[sfBalance]).csc();
-        auto const reserve = ctx_.view().fees().accountReserve(
+        auto const reserve = view().fees().accountReserve(
             (*sle)[sfOwnerCount] + 1);
 
         if (balance < reserve)
             return tecINSUFFICIENT_RESERVE;
 
-        if (balance < reserve + STAmount(ctx_.tx[sfAmount]).csc())
-            return tecUNFUNDED;
+        if (isCsc)
+        {
+            if(balance < reserve + STAmount(ctx_.tx[sfAmount]).csc())
+                return tecUNFUNDED;
+        }
+        // if src is not issuer
+        else if (account_ != amount.getIssuer())
+        {
+            SLE::pointer sleCSCStateSrc = view().peek(
+                        keylet::line(account_, amount.getIssuer(), amount.getCurrency()));
+            auto cscLine = CasinocoinState::makeItem(account_, sleCSCStateSrc);
+            if (!cscLine)
+                return tecNO_LINE;
+
+            auto balance = cscLine->getBalance();
+            bool negate = false;
+            if (cscLine->getAccountID() == account_ && balance.negative())
+            {
+                negate = true;
+            }
+            if (negate)
+            {
+                STAmount amountTmp = amount;
+                amountTmp.negate();
+                if (balance > amountTmp)
+                    return tecUNFUNDED_ESCROW;
+            }
+            else
+            {
+                if (balance.negative() || balance < amount)
+                    return tecUNFUNDED_ESCROW;
+            }
+        }
+        // applySteps grant that involved tokens are WLT tokens (if WLT amendment is enabled)
     }
 
+    auto const& dest = ctx_.tx[sfDestination];
     // Check destination account
     {
         auto const sled = ctx_.view().read(
-            keylet::account(ctx_.tx[sfDestination]));
+            keylet::account(dest));
         if (! sled)
             return tecNO_DST;
         if (((*sled)[sfFlags] & lsfRequireDestTag) &&
                 ! ctx_.tx[~sfDestinationTag])
             return tecDST_TAG_NEEDED;
-        if ((*sled)[sfFlags] & lsfDisallowCSC)
-            return tecNO_TARGET;
+
+        if (isCsc)
+        {
+            if ((*sled)[sfFlags] & lsfDisallowCSC)
+                return tecNO_TARGET;
+        }
+        else
+        {
+            SLE::pointer sleDstLine = view().peek(
+                keylet::line(dest, amount.getIssuer(), amount.getCurrency()));
+            if (!sleDstLine)
+                return tecNO_LINE;
+
+            // check if src/dest line is frozen or issuer is frozen
+            // check if requireAuth and if so - is authorized
+            bool const bHigh = dest > amount.getIssuer();
+            auto limit = sleDstLine->getFieldAmount(!bHigh ? sfLowLimit : sfHighLimit);
+            if (limit < amount)
+                return tecPATH_DRY;
+
+        }
     }
 
     // Create escrow in ledger
@@ -259,6 +321,15 @@ EscrowCreate::doApply()
 
     ctx_.view().insert(slep);
 
+    // add to issuer's owner directory
+    if (amount.getIssuer() != account && amount.getIssuer() != dest)
+    {
+        auto page = dirAdd(ctx_.view(), keylet::ownerDir(amount.getIssuer()), slep->key(),
+                           false, describeOwnerDir(amount.getIssuer()), ctx_.app.journal("View"));
+        if (!page)
+            return tecDIR_FULL;
+        (*slep)[sfIssuerNode] = *page;
+    }
     // Add escrow to owner directory
     {
         uint64_t page;
