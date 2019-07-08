@@ -27,7 +27,7 @@
 #define VOTABLECONFIGURATION_H
 
 #include <casinocoin/app/ledger/Ledger.h>
-#include <casinocoin/app/misc/Validations.h>
+#include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/json/json_value.h>
@@ -59,7 +59,7 @@ public:
     virtual
     void
     doVoting (std::shared_ptr<ReadView const> const& lastClosedLedger,
-        ValidationSet const& parentValidations,
+        std::vector<STValidation::pointer> const& parentValidations,
         std::shared_ptr<SHAMap> const& initialPosition) = 0;
 
     /** Update our current voting position with our config file

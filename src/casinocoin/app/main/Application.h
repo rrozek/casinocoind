@@ -26,6 +26,7 @@
 #ifndef CASINOCOIN_APP_MAIN_APPLICATION_H_INCLUDED
 #define CASINOCOIN_APP_MAIN_APPLICATION_H_INCLUDED
 
+#include <boost/asio.hpp>
 #include <casinocoin/shamap/FullBelowCache.h>
 #include <casinocoin/shamap/TreeNodeCache.h>
 #include <casinocoin/basics/TaggedCache.h>
@@ -34,7 +35,7 @@
 #include <memory>
 #include <mutex>
 
-namespace boost { namespace asio { class io_service; } }
+//namespace boost { namespace asio { class io_service; } }
 
 namespace casinocoin {
 

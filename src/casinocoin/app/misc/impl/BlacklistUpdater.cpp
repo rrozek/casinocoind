@@ -212,11 +212,11 @@ BlacklistUpdater::onSiteFetch(
     detail::response_type&& res,
     std::size_t siteIdx)
 {
-    if (! ec && res.status != 200)
+    if (! ec && res.result() != beast::http::status::ok)
     {
         std::lock_guard <std::mutex> lock{sites_mutex_};
         JLOG (j_.warn()) << "Request for blacklist at " <<
-            sites_[siteIdx].uri << " returned " << res.status;
+            sites_[siteIdx].uri << " returned " << res.result();
     }
     else if (! ec)
     {

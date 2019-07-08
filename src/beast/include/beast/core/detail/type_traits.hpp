@@ -9,36 +9,12 @@
 #define BEAST_DETAIL_TYPE_TRAITS_HPP
 
 #include <beast/core/error.hpp>
-#include <boost/asio/buffer.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio.hpp>
 #include <iterator>
 #include <tuple>
 #include <type_traits>
 
 #include <string>
-
-// A few workarounds to keep things working
-
-namespace boost {
-namespace asio {
-
-// for has_get_io_service
-class io_service;
-
-// for is_dynamic_buffer
-template<class Allocator>
-class basic_streambuf;
-
-namespace detail {
-
-// for is_buffer_sequence
-template<class Buffer, class Buffers>
-class consuming_buffers;
-
-} // detail
-
-} // asio
-} // boost
 
 //------------------------------------------------------------------------------
 

@@ -24,7 +24,6 @@
 #include <BeastConfig.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/configuration/VotableConfiguration.h>
-#include <casinocoin/app/misc/Validations.h>
 #include <casinocoin/core/DatabaseCon.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/protocol/digest.h>
@@ -33,6 +32,7 @@
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/protocol/STAccount.h>
+#include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
@@ -95,7 +95,7 @@ public:
 
     void
     doVoting (std::shared_ptr<ReadView const> const& lastClosedLedger,
-        ValidationSet const& parentValidations,
+        std::vector<STValidation::pointer> const& parentValidations,
         std::shared_ptr<SHAMap> const& initialPosition) override;
 
     void
@@ -158,7 +158,7 @@ void VotableConfigurationImpl::doValidation(std::shared_ptr<const ReadView> cons
        STVector256 (sfConfigHashes, ourConfig));
 }
 
-void VotableConfigurationImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLedger, const ValidationSet &parentValidations, const std::shared_ptr<SHAMap> &initialPosition)
+void VotableConfigurationImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLedger, std::vector<STValidation::pointer> const& parentValidations, const std::shared_ptr<SHAMap> &initialPosition)
 {
     if (!lastClosedLedger->rules().enabled(featureConfigObject))
     {
@@ -171,13 +171,13 @@ void VotableConfigurationImpl::doVoting(std::shared_ptr<const ReadView> const& l
 
     for (auto const& singleValidation : parentValidations)
     {
-        if (!(singleValidation.second->isTrusted()))
+        if (!(singleValidation->isTrusted()))
             continue;
         std::set<ObjectHash> singleNodePosition;
-        if (singleValidation.second->isFieldPresent(sfConfigHashes))
+        if (singleValidation->isFieldPresent(sfConfigHashes))
         {
             auto const choices =
-                singleValidation.second->getFieldV256 (sfConfigHashes);
+                singleValidation->getFieldV256 (sfConfigHashes);
             singleNodePosition.insert (choices.begin (), choices.end ());
         }
         configVote->tally (singleNodePosition);
