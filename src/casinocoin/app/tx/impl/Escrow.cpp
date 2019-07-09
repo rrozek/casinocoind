@@ -324,25 +324,34 @@ EscrowCreate::doApply()
     // add to issuer's owner directory
     if (amount.getIssuer() != account && amount.getIssuer() != dest)
     {
-        auto page = dirAdd(ctx_.view(), keylet::ownerDir(amount.getIssuer()), slep->key(),
-                           false, describeOwnerDir(amount.getIssuer()), ctx_.app.journal("View"));
-        if (!page)
-            return tecDIR_FULL;
-        (*slep)[sfIssuerNode] = *page;
-    }
-    // Add escrow to owner directory
-    {
         uint64_t page;
         auto result = dirAdd(ctx_.view(), page,
-            keylet::ownerDir(account), slep->key(),
-            describeOwnerDir(account), ctx_.app.journal ("View"));
+                             keylet::ownerDir(amount.getIssuer()), slep->key(),
+                             describeOwnerDir(amount.getIssuer()), ctx_.app.journal("View"));
         if (! isTesSuccess(result.first))
             return result.first;
-        (*slep)[sfOwnerNode] = page;
+        (*slep)[sfIssuerNode] = page;
     }
 
     // Deduct owner's balance, increment owner count
-    (*sle)[sfBalance] = (*sle)[sfBalance] - ctx_.tx[sfAmount];
+
+    if (isCsc)
+    {
+        (*sle)[sfBalance] = (*sle)[sfBalance] - ctx_.tx[sfAmount];
+    }
+    else if (account_ != amount.getIssuer())
+    {
+        SLE::pointer sleSrc = view().peek(
+            keylet::line(account_, amount.getIssuer(), amount.getCurrency()));
+        STAmount const& balance = (*sleSrc)[sfBalance];
+        if (balance.negative())
+            (*sleSrc)[sfBalance] = (*sleSrc)[sfBalance] + ctx_.tx[sfAmount];
+        else
+            (*sleSrc)[sfBalance] = (*sleSrc)[sfBalance] - ctx_.tx[sfAmount];
+
+        ctx_.view().update(sleSrc);
+    }
+
     (*sle)[sfOwnerCount] = (*sle)[sfOwnerCount] + 1;
     ctx_.view().update(sle);
 
@@ -503,6 +512,7 @@ EscrowFinish::doApply()
     }
 
     AccountID const account = (*slep)[sfAccount];
+    STAmount const& amount = (*slep)[sfAmount];
 
     // Remove escrow from owner directory
     {
@@ -514,22 +524,79 @@ EscrowFinish::doApply()
             return ter;
     }
 
-    // NOTE: These payments cannot be used to fund accounts
 
     // Fetch Destination SLE
-    auto const sled = ctx_.view().peek(
-        keylet::account((*slep)[sfDestination]));
-    if (! sled)
-        return tecNO_DST;
+//    auto const sled = ctx_.view().peek(
+//        keylet::account((*slep)[sfDestination]));
+//    if (! sled)
+//        return tecNO_DST;
 
-    // Transfer amount to destination
-    (*sled)[sfBalance] = (*sled)[sfBalance] + (*slep)[sfAmount];
-    ctx_.view().update(sled);
+//    // Transfer amount to destination
+//    (*sled)[sfBalance] = (*sled)[sfBalance] + (*slep)[sfAmount];
+//    ctx_.view().update(sled);
+
+    bool const isCsc = isCSC(amount);
+    if (!isCsc)
+    {
+    }
+
+    // Fetch Destination SLE,transfer amount to destination
+    if (isCsc)
+    {
+        SLE::pointer sled = ctx_.view().peek(
+                    keylet::account((*slep)[sfDestination]));
+        if (!sled)
+            return tecNO_DST;
+        (*sled)[sfBalance] = (*sled)[sfBalance] + (*slep)[sfAmount];
+        ctx_.view().update(sled);
+    }
+    else
+    {
+        //Remove escrow from issuer's owner directory
+        AccountID const destination = (*slep)[sfDestination];
+        if (amount.getIssuer() != account && amount.getIssuer() != destination)
+        {
+            TER const ter = dirDelete(ctx_.view(), true,
+                (*slep)[sfIssuerNode], keylet::ownerDir(amount.getIssuer()),
+                k.key, false, false, ctx_.app.journal("View"));
+            if (!isTesSuccess(ter))
+                return ter;
+        }
+
+        SLE::pointer sled = view().peek(
+                    keylet::line((*slep)[sfDestination], amount.getIssuer(), amount.getCurrency()));
+        if (!sled)
+            return tecNO_LINE;
+        bool const bHigh = dest > amount.getIssuer();
+        auto limit = sled->getFieldAmount(!bHigh ? sfLowLimit : sfHighLimit);
+        if (limit < amount)
+            return tecPATH_DRY;
+        // If the gateway has a transfer rate, accommodate that.
+        Rate gatewayXferRate{ QUALITY_ONE };
+        STAmount amountSend = amount;
+        if (account_ != amount.getIssuer())
+        {
+            gatewayXferRate = transferRate(ctx_.view(), amount.getIssuer());
+            if (gatewayXferRate.value != QUALITY_ONE)
+            {
+                amountSend = divideRound(amount,
+                                         gatewayXferRate, true);
+            }
+        }
+
+        //transfer amount to destination
+        if (bHigh)
+            (*sled)[sfBalance] = (*sled)[sfBalance] - amountSend;
+        else
+            (*sled)[sfBalance] = (*sled)[sfBalance] + amountSend;
+        ctx_.view().update(sled);
+    }
 
     // Adjust source owner count
     auto const sle = ctx_.view().peek(
         keylet::account(account));
     (*sle)[sfOwnerCount] = (*sle)[sfOwnerCount] - 1;
+    // NOTE: These payments cannot be used to fund accounts
     ctx_.view().update(sle);
 
     // Remove escrow from ledger
@@ -581,9 +648,45 @@ EscrowCancel::doApply()
     }
 
     // Transfer amount back to owner, decrement owner count
+//    auto const sle = ctx_.view().peek(
+//        keylet::account(account));
+//    (*sle)[sfBalance] = (*sle)[sfBalance] + (*slep)[sfAmount];
+
+    //Remove escrow from issuer's owner directory
+    AccountID const destination = (*slep)[sfDestination];
+    if (amount.getIssuer() != account && amount.getIssuer() != destination)
+    {
+        TER const ter = dirDelete(ctx_.view(), true,
+            (*slep)[sfIssuerNode], keylet::ownerDir(amount.getIssuer()),
+            k.key, false, false, ctx_.app.journal("View"));
+        if (!isTesSuccess(ter))
+            return ter;
+    }
+
+    // Transfer amount back to owner
+    bool isZxc = isXRP(amount);
+    // Fetch Destination SLE,transfer amount to src
+    if (isZxc)
+    {
+        SLE::pointer sled = ctx_.view().peek(
+            keylet::account(account));
+        (*sled)[sfBalance] = (*sled)[sfBalance] + (*slep)[sfAmount];
+        ctx_.view().update(sled);
+    }
+    else if (account != amount.getIssuer())
+    {
+        SLE::pointer sled = view().peek(
+            keylet::line(account, amount.getIssuer(), amount.getCurrency()));
+        bool const bHigh = account > amount.getIssuer();
+        if (bHigh)
+            (*sled)[sfBalance] = (*sled)[sfBalance] - (*slep)[sfAmount];
+        else
+            (*sled)[sfBalance] = (*sled)[sfBalance] + (*slep)[sfAmount];
+        ctx_.view().update(sled);
+    }
+    // Decrement owner count
     auto const sle = ctx_.view().peek(
         keylet::account(account));
-    (*sle)[sfBalance] = (*sle)[sfBalance] + (*slep)[sfAmount];
     (*sle)[sfOwnerCount] = (*sle)[sfOwnerCount] - 1;
     ctx_.view().update(sle);
 

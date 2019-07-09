@@ -46,7 +46,8 @@ CSCNotCreated::visitEntry(
             drops_ -= ((*before)[sfAmount] - (*before)[sfBalance]).csc().drops();
             break;
         case ltESCROW:
-            drops_ -= (*before)[sfAmount].csc().drops();
+            if (isCSC((*before)[sfAmount]))
+                drops_ -= (*before)[sfAmount].csc().drops();
             break;
         default:
             break;
@@ -65,7 +66,7 @@ CSCNotCreated::visitEntry(
                 drops_ += ((*after)[sfAmount] - (*after)[sfBalance]).csc().drops();
             break;
         case ltESCROW:
-            if (! isDelete)
+            if (!isDelete && isCSC((*after)[sfAmount]))
                 drops_ += (*after)[sfAmount].csc().drops();
             break;
         default:
@@ -185,15 +186,23 @@ NoZeroEscrow::visitEntry(
 {
     auto isBad = [](STAmount const& amount)
     {
-        if (!amount.native())
-            return true;
+        if (isCSC(amount))
+        {
+            if (!amount.native())
+                return true;
 
-        if (amount.csc().drops() <= 0)
-            return true;
+            if (amount.csc().drops() <= 0)
+                return true;
 
-        if (amount.csc().drops() >= SYSTEM_CURRENCY_START)
-            return true;
-
+            if (amount.csc().drops() >= SYSTEM_CURRENCY_START)
+                return true;
+        }
+        else
+        {
+            // jrojek TODO: check with our WLT list if the amount is sane
+            // for testing purposes we accept all nonIOUs for now.
+            return false;
+        }
         return false;
     };
 

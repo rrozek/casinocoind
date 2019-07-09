@@ -142,15 +142,16 @@ SF_U32 const sfConfigID            = make::one<SF_U32::type>(&sfConfigID,       
 SF_U32 const sfConfigType          = make::one<SF_U32::type>(&sfConfigType,          STI_UINT32, 41, "ConfigType");
 
 // 64-bit integers
-SF_U64 const sfIndexNext     = make::one<SF_U64::type>(&sfIndexNext,     STI_UINT64, 1, "IndexNext");
-SF_U64 const sfIndexPrevious = make::one<SF_U64::type>(&sfIndexPrevious, STI_UINT64, 2, "IndexPrevious");
-SF_U64 const sfBookNode      = make::one<SF_U64::type>(&sfBookNode,      STI_UINT64, 3, "BookNode");
-SF_U64 const sfOwnerNode     = make::one<SF_U64::type>(&sfOwnerNode,     STI_UINT64, 4, "OwnerNode");
-SF_U64 const sfBaseFee       = make::one<SF_U64::type>(&sfBaseFee,       STI_UINT64, 5, "BaseFee");
-SF_U64 const sfExchangeRate  = make::one<SF_U64::type>(&sfExchangeRate,  STI_UINT64, 6, "ExchangeRate");
-SF_U64 const sfLowNode       = make::one<SF_U64::type>(&sfLowNode,       STI_UINT64, 7, "LowNode");
-SF_U64 const sfHighNode      = make::one<SF_U64::type>(&sfHighNode,      STI_UINT64, 8, "HighNode");
-
+SF_U64 const sfIndexNext        = make::one<SF_U64::type>(&sfIndexNext,         STI_UINT64, 1, "IndexNext");
+SF_U64 const sfIndexPrevious    = make::one<SF_U64::type>(&sfIndexPrevious,     STI_UINT64, 2, "IndexPrevious");
+SF_U64 const sfBookNode         = make::one<SF_U64::type>(&sfBookNode,          STI_UINT64, 3, "BookNode");
+SF_U64 const sfOwnerNode        = make::one<SF_U64::type>(&sfOwnerNode,         STI_UINT64, 4, "OwnerNode");
+SF_U64 const sfBaseFee          = make::one<SF_U64::type>(&sfBaseFee,           STI_UINT64, 5, "BaseFee");
+SF_U64 const sfExchangeRate     = make::one<SF_U64::type>(&sfExchangeRate,      STI_UINT64, 6, "ExchangeRate");
+SF_U64 const sfLowNode          = make::one<SF_U64::type>(&sfLowNode,           STI_UINT64, 7, "LowNode");
+SF_U64 const sfHighNode         = make::one<SF_U64::type>(&sfHighNode,          STI_UINT64, 8, "HighNode");
+SF_U64 const sfDestinationNode  = make::one<SF_U64::type>(&sfDestinationNode,   STI_UINT64, 9, "DestinationNode");
+SF_U64 const sfIssuerNode       = make::one<SF_U64::type>(&sfIssuerNode,        STI_UINT64, 10, "IssuerNode");
 // 128-bit
 SF_U128 const sfEmailHash = make::one<SF_U128::type>(&sfEmailHash, STI_HASH128, 1, "EmailHash");
 
