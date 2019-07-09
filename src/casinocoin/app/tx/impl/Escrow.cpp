@@ -567,7 +567,7 @@ EscrowFinish::doApply()
                     keylet::line((*slep)[sfDestination], amount.getIssuer(), amount.getCurrency()));
         if (!sled)
             return tecNO_LINE;
-        bool const bHigh = dest > amount.getIssuer();
+        bool const bHigh = destination > amount.getIssuer();
         auto limit = sled->getFieldAmount(!bHigh ? sfLowLimit : sfHighLimit);
         if (limit < amount)
             return tecPATH_DRY;
@@ -664,9 +664,9 @@ EscrowCancel::doApply()
     }
 
     // Transfer amount back to owner
-    bool isZxc = isXRP(amount);
+    bool isCsc = isCSC(amount);
     // Fetch Destination SLE,transfer amount to src
-    if (isZxc)
+    if (isCsc)
     {
         SLE::pointer sled = ctx_.view().peek(
             keylet::account(account));
