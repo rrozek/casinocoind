@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <test/jtx/Env.h>
 #include <test/jtx/PathSet.h>
@@ -37,11 +37,11 @@ class Discrepancy_test : public beast::unit_test::suite
     // A payment with path and sendmax is made and the transaction is queried
     // to verify that the net of balance changes match the fee charged.
     void
-    testCSCDiscrepancy (std::initializer_list<uint256> fs)
+    testXRPDiscrepancy (FeatureBitset features)
     {
-        testcase ("Discrepancy test : CSC Discrepancy");
+        testcase ("Discrepancy test : XRP Discrepancy");
         using namespace test::jtx;
-        Env env {*this, features(fs)};
+        Env env {*this, features};
 
         Account A1 {"A1"};
         Account A2 {"A2"};
@@ -118,7 +118,7 @@ class Discrepancy_test : public beast::unit_test::suite
             else if(an.isMember(sfDeletedNode.fieldName))
                 node = an[sfDeletedNode.fieldName];
 
-            if(node && node[sfLedgerEntryType.fieldName] == "AccountRoot")
+            if(node && node[sfLedgerEntryType.fieldName] == jss::AccountRoot)
             {
                 Json::Value prevFields =
                     node.isMember(sfPreviousFields.fieldName) ?
@@ -142,15 +142,18 @@ class Discrepancy_test : public beast::unit_test::suite
     }
 
 public:
-    void run ()
+    void run () override
     {
-        testCSCDiscrepancy ({});
-        testCSCDiscrepancy ({featureFlow});
-        testCSCDiscrepancy ({featureFlow, fix1373});
-        testCSCDiscrepancy ({featureFlow, fix1373, featureFlowCross});
+        using namespace test::jtx;
+        auto const sa = supported_amendments();
+        testXRPDiscrepancy (sa - featureFlow - fix1373 - featureFlowCross);
+        testXRPDiscrepancy (sa               - fix1373 - featureFlowCross);
+        testXRPDiscrepancy (sa                         - featureFlowCross);
+        testXRPDiscrepancy (sa);
     }
 };
 
 BEAST_DEFINE_TESTSUITE (Discrepancy, app, casinocoin);
 
 } // casinocoin
+

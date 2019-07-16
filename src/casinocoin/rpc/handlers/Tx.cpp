@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/ledger/TransactionMaster.h>
 #include <casinocoin/app/main/Application.h>
@@ -33,6 +33,7 @@
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/rpc/Context.h>
+#include <casinocoin/rpc/DeliveredAmount.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 
 namespace casinocoin {
@@ -51,7 +52,7 @@ isHexTxID (std::string const& txid)
     auto const ret = std::find_if (txid.begin (), txid.end (),
         [](std::string::value_type c)
         {
-            return !std::isxdigit (c);
+            return !std::isxdigit (static_cast<unsigned char>(c));
         });
 
     return (ret == txid.end ());
@@ -133,12 +134,12 @@ Json::Value doTx (RPC::Context& context)
             auto rawMeta = lgr->txRead (txn->getID()).second;
             if (rawMeta)
             {
-                auto txMeta = std::make_shared<TxMeta> (txn->getID (),
-                    lgr->seq (), *rawMeta, context.app.journal ("TxMeta"));
+                auto txMeta = std::make_shared<TxMeta>(
+                    txn->getID(), lgr->seq(), *rawMeta);
                 okay = true;
                 auto meta = txMeta->getJson (0);
-                addPaymentDeliveredAmount (meta, context, txn, txMeta);
-                ret[jss::meta] = meta;
+                insertDeliveredAmount (meta, context, txn, *txMeta);
+                ret[jss::meta] = std::move(meta);
             }
         }
 
@@ -151,3 +152,4 @@ Json::Value doTx (RPC::Context& context)
 }
 
 } // casinocoin
+

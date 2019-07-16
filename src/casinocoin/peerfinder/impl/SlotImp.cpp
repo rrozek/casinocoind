@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/peerfinder/impl/SlotImp.h>
 #include <casinocoin/peerfinder/PeerfinderManager.h>
 #include <casinocoin/peerfinder/impl/Tuning.h>
@@ -96,9 +96,7 @@ SlotImp::activate (clock_type::time_point const& now)
 
 //------------------------------------------------------------------------------
 
-Slot::~Slot ()
-{
-}
+Slot::~Slot () = default;
 
 //------------------------------------------------------------------------------
 

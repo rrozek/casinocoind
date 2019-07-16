@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/beast/unit_test.h>
 #include <string>
@@ -27,7 +27,7 @@ namespace casinocoin {
 class contract_test : public beast::unit_test::suite
 {
 public:
-    void run ()
+    void run () override
     {
         try
         {

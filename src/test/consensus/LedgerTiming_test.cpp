@@ -16,7 +16,7 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 //==============================================================================
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/consensus/LedgerTiming.h>
 
@@ -25,7 +25,6 @@ namespace test {
 
 class LedgerTiming_test : public beast::unit_test::suite
 {
-    beast::Journal j;
 
     void testGetNextLedgerTimeResolution()
     {
@@ -77,6 +76,7 @@ class LedgerTiming_test : public beast::unit_test::suite
 
     void testRoundCloseTime()
     {
+        using namespace std::chrono_literals;
         // A closeTime equal to the epoch is not modified
         using tp = NetClock::time_point;
         tp def;
@@ -94,58 +94,24 @@ class LedgerTiming_test : public beast::unit_test::suite
 
     }
 
-    void testShouldCloseLedger()
+    void testEffCloseTime()
     {
-        // Bizarre times forcibly close
-        BEAST_EXPECT(shouldCloseLedger(true, 10, 10, 10, -10s, 10s, 1s, 1s, j));
-        BEAST_EXPECT(shouldCloseLedger(true, 10, 10, 10, 100h, 10s, 1s, 1s, j));
-        BEAST_EXPECT(shouldCloseLedger(true, 10, 10, 10, 10s, 100h, 1s, 1s, j));
+        using namespace std::chrono_literals;
+        using tp = NetClock::time_point;
+        tp close = effCloseTime(tp{10s}, 30s, tp{0s});
+        BEAST_EXPECT(close == tp{1s});
 
-        // Rest of network has closed
-        BEAST_EXPECT(shouldCloseLedger(true, 10, 3, 5, 10s, 10s, 10s, 10s, j));
+        close = effCloseTime(tp{16s}, 30s, tp{0s});
+        BEAST_EXPECT(close == tp{30s});
 
-        // No transactions means wait until end of internval
-        BEAST_EXPECT(!shouldCloseLedger(false, 10, 0, 0, 1s, 1s, 1s, 10s, j));
-        BEAST_EXPECT(shouldCloseLedger(false, 10, 0, 0, 1s, 10s, 1s, 10s, j));
+        close = effCloseTime(tp{16s}, 30s, tp{30s});
+        BEAST_EXPECT(close == tp{31s});
 
-        // Enforce minimum ledger open time
-        BEAST_EXPECT(!shouldCloseLedger(true, 10, 0, 0, 10s, 10s, 1s, 10s, j));
+        close = effCloseTime(tp{16s}, 30s, tp{60s});
+        BEAST_EXPECT(close == tp{61s});
 
-        // Don't go too much faster than last time
-        BEAST_EXPECT(!shouldCloseLedger(true, 10, 0, 0, 10s, 10s, 3s, 10s, j));
-
-        BEAST_EXPECT(shouldCloseLedger(true, 10, 0, 0, 10s, 10s, 10s, 10s, j));
-
-    }
-
-    void testCheckConsensus()
-    {
-        // Not enough time has elapsed
-        BEAST_EXPECT( ConsensusState::No
-            == checkConsensus(10, 2, 2, 0, 3s, 2s, true, j));
-
-        // If not enough peers have propsed, ensure
-        // more time for proposals
-        BEAST_EXPECT( ConsensusState::No
-            == checkConsensus(10, 2, 2, 0, 3s, 4s, true, j));
-
-        // Enough time has elapsed and we all agree
-        BEAST_EXPECT( ConsensusState::Yes
-            == checkConsensus(10, 2, 2, 0, 3s, 10s, true, j));
-
-        // Enough time has elapsed and we don't yet agree
-        BEAST_EXPECT( ConsensusState::No
-            == checkConsensus(10, 2, 1, 0, 3s, 10s, true, j));
-
-        // Our peers have moved on
-        // Enough time has elapsed and we all agree
-        BEAST_EXPECT( ConsensusState::MovedOn
-            == checkConsensus(10, 2, 1, 8, 3s, 10s, true, j));
-
-        // No peers makes it easy to agree
-        BEAST_EXPECT( ConsensusState::Yes
-            == checkConsensus(0, 0, 0, 0, 3s, 10s, true, j));
-
+        close = effCloseTime(tp{31s}, 30s, tp{0s});
+        BEAST_EXPECT(close == tp{30s});
     }
 
     void
@@ -153,8 +119,7 @@ class LedgerTiming_test : public beast::unit_test::suite
     {
         testGetNextLedgerTimeResolution();
         testRoundCloseTime();
-        testShouldCloseLedger();
-        testCheckConsensus();
+        testEffCloseTime();
     }
 
 };

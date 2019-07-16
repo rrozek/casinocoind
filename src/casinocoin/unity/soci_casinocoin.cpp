@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/core/impl/DummySociDynamicBackend.cpp>
 #include <casinocoin/core/impl/SociDB.cpp>

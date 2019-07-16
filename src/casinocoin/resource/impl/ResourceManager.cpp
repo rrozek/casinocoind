@@ -23,12 +23,13 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/resource/ResourceManager.h>
 #include <casinocoin/resource/impl/Logic.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/beast/core/CurrentThreadName.h>
+#include <boost/core/ignore_unused.hpp>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -52,6 +53,7 @@ public:
         : journal_ (journal)
         , logic_ (collector, stopwatch(), journal)
     {
+        boost::ignore_unused (journal_); // Keep unused journal_ just in case.
         thread_ = std::thread {&ManagerImp::run, this};
     }
 
@@ -138,9 +140,7 @@ Manager::Manager ()
 {
 }
 
-Manager::~Manager ()
-{
-}
+Manager::~Manager () = default;
 
 //------------------------------------------------------------------------------
 

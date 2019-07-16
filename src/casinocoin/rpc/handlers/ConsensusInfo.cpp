@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/json/json_value.h>
@@ -37,12 +37,10 @@ Json::Value doConsensusInfo (RPC::Context& context)
 {
     Json::Value ret (Json::objectValue);
 
-    {
-        auto lock = make_lock(context.app.getMasterMutex());
-        ret[jss::info] = context.netOps.getConsensusInfo ();
-    }
+    ret[jss::info] = context.netOps.getConsensusInfo ();
 
     return ret;
 }
 
 } // casinocoin
+

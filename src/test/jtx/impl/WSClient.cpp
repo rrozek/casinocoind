@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/WSClient.h>
 #include <test/jtx.h>
 #include <casinocoin/json/json_reader.h>
@@ -65,9 +65,9 @@ class WSClientImpl : public WSClient
             parse_Port(pp, cfg[name], log);
             if(pp.protocol.count(ps) == 0)
                 continue;
-            using boost::asio::ip::address_v4;
-            if(*pp.ip == address_v4{0x00000000})
-                *pp.ip = address_v4{0x7f000001};
+            using namespace boost::asio::ip;
+            if(pp.ip && pp.ip->is_unspecified())
+               *pp.ip = pp.ip->is_v6() ? address{address_v6::loopback()} : address{address_v4::loopback()};
             return { *pp.ip, *pp.port };
         }
         Throw<std::runtime_error>("Missing WebSocket port");
@@ -299,3 +299,4 @@ makeWSClient(Config const& cfg, bool v2, unsigned rpc_version)
 
 } // test
 } // casinocoin
+

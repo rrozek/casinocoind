@@ -24,7 +24,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/basics/contract.h>
@@ -299,7 +299,7 @@ void Config::setup (std::string const& strConf, bool bQuiet,
         legacy("database_path", boost::filesystem::absolute(dataDir).string());
     }
 
-    HTTPClient::initializeSSLContext(*this);
+    HTTPClient::initializeSSLContext(*this, j_);
 
     if (RUN_STANDALONE)
         LEDGER_HISTORY = 0;
@@ -425,7 +425,7 @@ void Config::loadFromString (std::string const& fileContents)
         PEER_PRIVATE = beast::lexicalCastThrow <bool> (strTemp);
 
     if (getSingleSection (secConfig, SECTION_PEERS_MAX, strTemp, j_))
-        PEERS_MAX = std::max (0, beast::lexicalCastThrow <int> (strTemp));
+        PEERS_MAX = beast::lexicalCastThrow <std::size_t> (strTemp);
 
     if (getSingleSection (secConfig, SECTION_NETWORK, strTemp, j_))
     {
@@ -468,6 +468,9 @@ void Config::loadFromString (std::string const& fileContents)
         }
     }
 
+    if (getSingleSection (secConfig, SECTION_SIGNING_SUPPORT, strTemp, j_))
+        signingEnabled_     = beast::lexicalCastThrow <bool> (strTemp);
+
     if (getSingleSection (secConfig, SECTION_ELB_SUPPORT, strTemp, j_))
         ELB_SUPPORT         = beast::lexicalCastThrow <bool> (strTemp);
 
@@ -486,7 +489,7 @@ void Config::loadFromString (std::string const& fileContents)
             "and [" SECTION_VALIDATOR_TOKEN "] config sections");
 
     if (getSingleSection (secConfig, SECTION_NETWORK_QUORUM, strTemp, j_))
-        NETWORK_QUORUM      = beast::lexicalCastThrow <std::size_t> (strTemp);
+        NETWORK_QUORUM      = beast::lexicalCastThrow<std::size_t>(strTemp);
 
     if (!reloadFeeVoteParams())
     {
@@ -629,7 +632,31 @@ void Config::loadFromString (std::string const& fileContents)
     {
         auto const part = section("features");
         for(auto const& s : part.values())
-            features.insert(feature(s));
+        {
+            if (auto const f = getRegisteredFeature(s))
+                features.insert(*f);
+            else
+                Throw<std::runtime_error>(
+                    "Unknown feature: " + s + "  in config file.");
+        }
+    }
+
+    // This doesn't properly belong here, but check to make sure that the
+    // value specified for network_quorum is achievable:
+    {
+        auto pm = PEERS_MAX;
+
+        // FIXME this apparently magic value is actually defined as a constant
+        //       elsewhere (see defaultMaxPeers) but we handle this check here.
+        if (pm == 0)
+            pm = 21;
+
+        if (NETWORK_QUORUM > pm)
+        {
+            Throw<std::runtime_error>(
+                "The minimum number of required peers (network_quorum) exceeds "
+                "the maximum number of allowed peers (peers_max)");
+        }
     }
             
 }
@@ -718,3 +745,4 @@ std::string Config::getPeerNetworkString(uint32_t network)
 }
 
 } // casinocoin
+

@@ -29,8 +29,7 @@
 #include <casinocoin/server/WSSession.h>
 #include <casinocoin/net/InfoSub.h>
 #include <casinocoin/beast/net/IPAddressConversion.h>
-#include <casinocoin/json/Output.h>
-#include <casinocoin/json/to_string.h>
+#include <casinocoin/json/json_writer.h>
 #include <casinocoin/rpc/Role.h>
 #include <memory>
 #include <string>
@@ -75,13 +74,13 @@ public:
     }
 
     void
-    send(Json::Value const& jv, bool)
+    send(Json::Value const& jv, bool) override
     {
         auto sp = ws_.lock();
         if(! sp)
             return;
         beast::multi_buffer sb;
-        stream(jv,
+        Json::stream(jv,
             [&](void const* data, std::size_t n)
             {
                 sb.commit(boost::asio::buffer_copy(

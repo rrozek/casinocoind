@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/SetAccount.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/core/Config.h>
@@ -55,7 +55,7 @@ SetAccount::affectsSubsequentTransactionAuth(STTx const& tx)
             *uClearFlag == asfAccountTxnID);
 }
 
-TER
+NotTEC
 SetAccount::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);
@@ -125,7 +125,13 @@ SetAccount::preflight (PreflightContext const& ctx)
 
         if (uRate && (uRate < QUALITY_ONE))
         {
-            JLOG(j.trace()) << "Malformed transaction: Bad transfer rate.";
+            JLOG(j.trace()) << "Malformed transaction: Transfer rate too small.";
+            return temBAD_TRANSFER_RATE;
+        }
+
+        if (ctx.rules.enabled(fix1201) && (uRate > 2 * QUALITY_ONE))
+        {
+            JLOG(j.trace()) << "Malformed transaction: Transfer rate too large.";
             return temBAD_TRANSFER_RATE;
         }
     }
@@ -191,7 +197,7 @@ SetAccount::preclaim(PreclaimContext const& ctx)
             keylet::ownerDir(id)))
         {
             JLOG(ctx.j.trace()) << "Retry: Owner directory not empty.";
-            return (ctx.flags & tapRETRY) ? terOWNERS : tecOWNERS;
+            return (ctx.flags & tapRETRY) ? TER {terOWNERS} : TER {tecOWNERS};
         }
     }
 
@@ -201,38 +207,37 @@ SetAccount::preclaim(PreclaimContext const& ctx)
 TER
 SetAccount::doApply ()
 {
-    std::uint32_t const uTxFlags = ctx_.tx.getFlags ();
-
-    auto const sle = view().peek(
-        keylet::account(account_));
+    auto const sle = view().peek(keylet::account(account_));
 
     std::uint32_t const uFlagsIn = sle->getFieldU32 (sfFlags);
     std::uint32_t uFlagsOut = uFlagsIn;
 
-    std::uint32_t const uSetFlag = ctx_.tx.getFieldU32 (sfSetFlag);
-    std::uint32_t const uClearFlag = ctx_.tx.getFieldU32 (sfClearFlag);
+    STTx const& tx {ctx_.tx};
+    std::uint32_t const uSetFlag {tx.getFieldU32 (sfSetFlag)};
+    std::uint32_t const uClearFlag {tx.getFieldU32 (sfClearFlag)};
 
     // legacy AccountSet flags
-    bool bSetRequireDest   = (uTxFlags & TxFlag::requireDestTag) || (uSetFlag == asfRequireDest);
-    bool bClearRequireDest = (uTxFlags & tfOptionalDestTag) || (uClearFlag == asfRequireDest);
-    bool bSetRequireAuth   = (uTxFlags & tfRequireAuth) || (uSetFlag == asfRequireAuth);
-    bool bClearRequireAuth = (uTxFlags & tfOptionalAuth) || (uClearFlag == asfRequireAuth);
-    bool bSetDisallowCSC   = (uTxFlags & tfDisallowCSC) || (uSetFlag == asfDisallowCSC);
-    bool bClearDisallowCSC = (uTxFlags & tfAllowCSC) || (uClearFlag == asfDisallowCSC);
+    std::uint32_t const uTxFlags {tx.getFlags ()};
+    bool const bSetRequireDest   {(uTxFlags & TxFlag::requireDestTag) || (uSetFlag == asfRequireDest)};
+    bool const bClearRequireDest {(uTxFlags & tfOptionalDestTag) || (uClearFlag == asfRequireDest)};
+    bool const bSetRequireAuth   {(uTxFlags & tfRequireAuth) || (uSetFlag == asfRequireAuth)};
+    bool const bClearRequireAuth {(uTxFlags & tfOptionalAuth) || (uClearFlag == asfRequireAuth)};
+    bool const bSetDisallowCSC   {(uTxFlags & tfDisallowCSC) || (uSetFlag == asfDisallowCSC)};
+    bool const bClearDisallowCSC {(uTxFlags & tfAllowCSC) || (uClearFlag == asfDisallowCSC)};
 
-    bool sigWithMaster = false;
-
+    bool const sigWithMaster {[&tx, &acct = account_] ()
     {
-        auto const spk = ctx_.tx.getSigningPubKey();
+        auto const spk = tx.getSigningPubKey();
 
         if (publicKeyType (makeSlice (spk)))
         {
             PublicKey const signingPubKey (makeSlice (spk));
 
-            if (calcAccountID(signingPubKey) == account_)
-                sigWithMaster = true;
+            if (calcAccountID(signingPubKey) == acct)
+                return true;
         }
-    }
+        return false;
+    }()};
 
     //
     // RequireAuth
@@ -317,11 +322,13 @@ SetAccount::doApply ()
     //
     if (uSetFlag == asfDefaultCasinocoin)
     {
-        uFlagsOut   |= lsfDefaultCasinocoin;
+        JLOG(j_.trace()) << "Set lsfDefaultCasinocoin.";
+        uFlagsOut |= lsfDefaultCasinocoin;
     }
     else if (uClearFlag == asfDefaultCasinocoin)
     {
-        uFlagsOut   &= ~lsfDefaultCasinocoin;
+        JLOG(j_.trace()) << "Clear lsfDefaultCasinocoin.";
+        uFlagsOut &= ~lsfDefaultCasinocoin;
     }
 
     //
@@ -331,7 +338,7 @@ SetAccount::doApply ()
     {
         if (!sigWithMaster && !(uFlagsIn & lsfDisableMaster))
         {
-            JLOG(j_.trace()) << "Can't use regular key to set NoFreeze.";
+            JLOG(j_.trace()) << "Must use master key to set NoFreeze.";
             return tecNEED_MASTER_KEY;
         }
 
@@ -361,22 +368,39 @@ SetAccount::doApply ()
     //
     if ((uSetFlag == asfAccountTxnID) && !sle->isFieldPresent (sfAccountTxnID))
     {
-        JLOG(j_.trace()) << "Set AccountTxnID";
+        JLOG(j_.trace()) << "Set AccountTxnID.";
         sle->makeFieldPresent (sfAccountTxnID);
         }
 
     if ((uClearFlag == asfAccountTxnID) && sle->isFieldPresent (sfAccountTxnID))
     {
-        JLOG(j_.trace()) << "Clear AccountTxnID";
+        JLOG(j_.trace()) << "Clear AccountTxnID.";
         sle->makeFieldAbsent (sfAccountTxnID);
+    }
+
+    //
+    // DepositAuth
+    //
+    if (view().rules().enabled(featureDepositAuth))
+    {
+        if (uSetFlag == asfDepositAuth)
+        {
+            JLOG(j_.trace()) << "Set lsfDepositAuth.";
+            uFlagsOut |= lsfDepositAuth;
+        }
+        else if (uClearFlag == asfDepositAuth)
+        {
+            JLOG(j_.trace()) << "Clear lsfDepositAuth.";
+            uFlagsOut &= ~lsfDepositAuth;
+        }
     }
 
     //
     // EmailHash
     //
-    if (ctx_.tx.isFieldPresent (sfEmailHash))
+    if (tx.isFieldPresent (sfEmailHash))
     {
-        uint128 const uHash = ctx_.tx.getFieldH128 (sfEmailHash);
+        uint128 const uHash = tx.getFieldH128 (sfEmailHash);
 
         if (!uHash)
         {
@@ -393,9 +417,9 @@ SetAccount::doApply ()
     //
     // WalletLocator
     //
-    if (ctx_.tx.isFieldPresent (sfWalletLocator))
+    if (tx.isFieldPresent (sfWalletLocator))
     {
-        uint256 const uHash = ctx_.tx.getFieldH256 (sfWalletLocator);
+        uint256 const uHash = tx.getFieldH256 (sfWalletLocator);
 
         if (!uHash)
         {
@@ -412,9 +436,9 @@ SetAccount::doApply ()
     //
     // MessageKey
     //
-    if (ctx_.tx.isFieldPresent (sfMessageKey))
+    if (tx.isFieldPresent (sfMessageKey))
     {
-        Blob const messageKey = ctx_.tx.getFieldVL (sfMessageKey);
+        Blob const messageKey = tx.getFieldVL (sfMessageKey);
 
         if (messageKey.empty ())
         {
@@ -431,9 +455,9 @@ SetAccount::doApply ()
     //
     // Domain
     //
-    if (ctx_.tx.isFieldPresent (sfDomain))
+    if (tx.isFieldPresent (sfDomain))
     {
-        Blob const domain = ctx_.tx.getFieldVL (sfDomain);
+        Blob const domain = tx.getFieldVL (sfDomain);
 
         if (domain.empty ())
         {
@@ -450,16 +474,16 @@ SetAccount::doApply ()
     //
     // TransferRate
     //
-    if (ctx_.tx.isFieldPresent (sfTransferRate))
+    if (tx.isFieldPresent (sfTransferRate))
     {
-        std::uint32_t uRate = ctx_.tx.getFieldU32 (sfTransferRate);
+        std::uint32_t uRate = tx.getFieldU32 (sfTransferRate);
 
         if (uRate == 0 || uRate == QUALITY_ONE)
         {
             JLOG(j_.trace()) << "unset transfer rate";
             sle->makeFieldAbsent (sfTransferRate);
         }
-        else if (uRate > QUALITY_ONE)
+        else
         {
             JLOG(j_.trace()) << "set transfer rate";
             sle->setFieldU32 (sfTransferRate, uRate);
@@ -469,9 +493,9 @@ SetAccount::doApply ()
     //
     // TickSize
     //
-    if (ctx_.tx.isFieldPresent (sfTickSize))
+    if (tx.isFieldPresent (sfTickSize))
     {
-        auto uTickSize = ctx_.tx[sfTickSize];
+        auto uTickSize = tx[sfTickSize];
         if ((uTickSize == 0) || (uTickSize == Quality::maxTickSize))
         {
             JLOG(j_.trace()) << "unset tick size";
@@ -491,3 +515,4 @@ SetAccount::doApply ()
 }
 
 }
+

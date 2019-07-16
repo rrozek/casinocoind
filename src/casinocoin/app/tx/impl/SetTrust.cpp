@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/SetTrust.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/Feature.h>
@@ -34,7 +34,7 @@
 
 namespace casinocoin {
 
-TER
+NotTEC
 SetTrust::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);
@@ -73,7 +73,7 @@ SetTrust::preflight (PreflightContext const& ctx)
         return temBAD_CURRENCY;
     }
 
-    if (saLimitAmount < zero)
+    if (saLimitAmount < beast::zero)
     {
         JLOG(j.trace()) <<
             "Malformed transaction: Negative credit limit.";
@@ -175,7 +175,7 @@ SetTrust::doApply ()
     // could use the extra CSC for their own purposes.
 
     CSCAmount const reserveCreate ((uOwnerCount < 2)
-        ? CSCAmount (zero)
+        ? CSCAmount (beast::zero)
         : view().fees().accountReserve(uOwnerCount + 1));
 
     std::uint32_t uQualityIn (bQualityIn ? ctx_.tx.getFieldU32 (sfQualityIn) : 0);
@@ -324,9 +324,14 @@ SetTrust::doApply ()
         std::uint32_t const uFlagsIn (sleCasinocoinState->getFieldU32 (sfFlags));
         std::uint32_t uFlagsOut (uFlagsIn);
 
-        if (bSetNoCasinocoin && !bClearNoCasinocoin && (bHigh ? saHighBalance : saLowBalance) >= zero)
+        if (bSetNoCasinocoin && !bClearNoCasinocoin)
         {
-            uFlagsOut |= (bHigh ? lsfHighNoCasinocoin : lsfLowNoCasinocoin);
+            if ((bHigh ? saHighBalance : saLowBalance) >= beast::zero)
+                uFlagsOut |= (bHigh ? lsfHighNoCasinocoin : lsfLowNoCasinocoin);
+
+            else if (view().rules().enabled(fix1578))
+                // Cannot set noCasinocoin on a negative balance.
+                return tecNO_PERMISSION;
         }
         else if (bClearNoCasinocoin && !bSetNoCasinocoin)
         {
@@ -352,13 +357,13 @@ SetTrust::doApply ()
         bool const  bLowReserveSet      = uLowQualityIn || uLowQualityOut ||
                                             ((uFlagsOut & lsfLowNoCasinocoin) == 0) != bLowDefCasinocoin ||
                                             (uFlagsOut & lsfLowFreeze) ||
-                                            saLowLimit || saLowBalance > zero;
+                                            saLowLimit || saLowBalance > beast::zero;
         bool const  bLowReserveClear    = !bLowReserveSet;
 
         bool const  bHighReserveSet     = uHighQualityIn || uHighQualityOut ||
                                             ((uFlagsOut & lsfHighNoCasinocoin) == 0) != bHighDefCasinocoin ||
                                             (uFlagsOut & lsfHighFreeze) ||
-                                            saHighLimit || saHighBalance > zero;
+                                            saHighLimit || saHighBalance > beast::zero;
         bool const  bHighReserveClear   = !bHighReserveSet;
 
         bool const  bDefault            = bLowReserveClear && bHighReserveClear;

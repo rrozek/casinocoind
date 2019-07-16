@@ -44,17 +44,9 @@ namespace casinocoin {
 
     Carries a ConsensusProposal signed by a peer.
 */
-class CCLCxPeerPos : public CountedObject<CCLCxPeerPos>
+class CCLCxPeerPos
 {
 public:
-    static char const*
-    getCountedObjectName()
-    {
-        return "CCLCxPeerPos";
-    }
-    using pointer = std::shared_ptr<CCLCxPeerPos>;
-    using ref = const pointer&;
-
     //< The type of the proposed position
     using Proposal = ConsensusProposal<NodeID, uint256, uint256>;
 
@@ -64,7 +56,7 @@ public:
 
         @param publicKey Public key of the peer
         @param signature Signature provided with the proposal
-        @param suppress ????
+        @param suppress Unique id used for hash router suppression
         @param proposal The consensus proposal
     */
 
@@ -76,7 +68,7 @@ public:
 
     //! Create the signing hash for the proposal
     uint256
-    getSigningHash() const;
+    signingHash() const;
 
     //! Verify the signing hash of the proposal
     bool
@@ -84,45 +76,59 @@ public:
 
     //! Signature of the proposal (not necessarily verified)
     Slice
-    getSignature() const
+    signature() const
     {
-        return signature_;
+        return data_->signature_;
     }
 
     //! Public key of peer that sent the proposal
     PublicKey const&
-    getPublicKey() const
+    publicKey() const
     {
-        return publicKey_;
+        return data_->publicKey_;
     }
 
-    //! ?????
+    //! Unique id used by hash router to suppress duplicates
     uint256 const&
-    getSuppressionID() const
+    suppressionID() const
     {
-        return mSuppression;
+        return data_->suppression_;
     }
 
-    //! The consensus proposal
-    Proposal const&
+    Proposal const &
     proposal() const
     {
-        return proposal_;
+        return data_->proposal_;
     }
-
-    /// @cond Ignore
-    //! Add a conversion operator to conform to the Consensus interface
-    operator Proposal const&() const
-    {
-        return proposal_;
-    }
-    /// @endcond
 
     //! JSON representation of proposal
     Json::Value
     getJson() const;
 
 private:
+
+    struct Data : public CountedObject<Data>
+    {
+        PublicKey publicKey_;
+        Buffer signature_;
+        uint256 suppression_;
+        Proposal proposal_;
+
+        Data(
+            PublicKey const& publicKey,
+            Slice const& signature,
+            uint256 const& suppress,
+            Proposal&& proposal);
+
+        static char const*
+        getCountedObjectName()
+        {
+            return "CCLCxPeerPos::Data";
+        }
+    };
+
+    std::shared_ptr<Data> data_;
+
     template <class Hasher>
     void
     hash_append(Hasher& h) const
@@ -135,10 +141,6 @@ private:
         hash_append(h, proposal().position());
     }
 
-    Proposal proposal_;
-    uint256 mSuppression;
-    PublicKey publicKey_;
-    Buffer signature_;
 };
 
 /** Calculate a unique identifier for a signed proposal.
@@ -169,3 +171,4 @@ proposalUniqueId(
 }  // ripple
 
 #endif
+

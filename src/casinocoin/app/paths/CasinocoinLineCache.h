@@ -87,6 +87,8 @@ private:
 
         struct Hash
         {
+            explicit Hash() = default;
+
             std::size_t
             operator () (AccountKey const& key) const noexcept
             {
@@ -104,3 +106,4 @@ private:
 } // casinocoin
 
 #endif
+

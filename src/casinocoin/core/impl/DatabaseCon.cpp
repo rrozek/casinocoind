@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/DatabaseCon.h>
 #include <casinocoin/core/SociDB.h>
 #include <casinocoin/basics/contract.h>

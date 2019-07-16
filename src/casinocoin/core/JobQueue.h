@@ -28,7 +28,6 @@
 
 #include <casinocoin/basics/LocalValue.h>
 #include <casinocoin/basics/win32_workaround.h>
-#include <casinocoin/core/JobCounter.h>
 #include <casinocoin/core/JobTypes.h>
 #include <casinocoin/core/JobTypeData.h>
 #include <casinocoin/core/Stoppable.h>
@@ -38,8 +37,16 @@
 
 namespace casinocoin {
 
+namespace perf
+{
+    class PerfLog;
+}
+
 class Logs;
-struct Coro_create_t {};
+struct Coro_create_t
+{
+    explicit Coro_create_t() = default;
+};
 
 /** A pool of threads to perform work.
 
@@ -103,9 +110,30 @@ public:
               When the job runs, the coroutine's stack is restored and execution
                 continues at the beginning of coroutine function or the statement
                 after the previous call to yield.
-            Undefined behavior if called consecutively without a corresponding yield.
+            Undefined behavior if called after the coroutine has completed
+              with a return (as opposed to a yield()).
+            Undefined behavior if post() or resume() called consecutively
+              without a corresponding yield.
+            @return true if the Coro's job is added to the JobQueue.
         */
-        void post();
+        bool post();
+
+        /** Resume coroutine execution.
+            Effects:
+               The coroutine continues execution from where it last left off
+                 using this same thread.
+            Undefined behavior if called after the coroutine has completed
+              with a return (as opposed to a yield()).
+            Undefined behavior if resume() or post() called consecutively
+              without a corresponding yield.
+        */
+        void resume();
+
+        /** Returns true if the Coro is still runnable (has not returned). */
+        bool runnable() const;
+
+        /** Once called, the Coro allows early exit without an assert. */
+        void expectEarlyExit();
 
         /** Waits until coroutine returns from the user function. */
         void join();
@@ -114,34 +142,27 @@ public:
     using JobFunction = std::function <void(Job&)>;
 
     JobQueue (beast::insight::Collector::ptr const& collector,
-        Stoppable& parent, beast::Journal journal, Logs& logs);
+        Stoppable& parent, beast::Journal journal, Logs& logs,
+        perf::PerfLog& perfLog);
     ~JobQueue ();
 
     /** Adds a job to the JobQueue.
-
-        @param t The type of job.
+        @param type The type of job.
         @param name Name of the job.
-        @param func std::function with signature void (Job&).  Called when the job is executed.
-    */
-    void addJob (JobType type, std::string const& name, JobFunction const& func);
-
-    /** Adds a counted job to the JobQueue.
-
-        @param t The type of job.
-        @param name Name of the job.
-        @param counter JobCounter for counting the Job.
         @param jobHandler Lambda with signature void (Job&).  Called when the job is executed.
-
-        @return true if JobHandler added, false if JobCounter is already joined.
+        @return true if jobHandler added to queue.
     */
-    template <typename JobHandler>
-    bool addCountedJob (JobType type,
-        std::string const& name, JobCounter& counter, JobHandler&& jobHandler)
+    template <typename JobHandler,
+        typename = std::enable_if_t<std::is_same<decltype(
+            std::declval<JobHandler&&>()(std::declval<Job&>())), void>::value>>
+    bool addJob (JobType type,
+        std::string const& name, JobHandler&& jobHandler)
     {
-        if (auto optionalCountedJob = counter.wrap (std::move (jobHandler)))
+        if (auto optionalCountedJob =
+            Stoppable::jobCounter().wrap (std::forward<JobHandler>(jobHandler)))
         {
-            addJob (type, name, std::move (*optionalCountedJob));
-            return true;
+            return addRefCountedJob (
+                type, name, std::move (*optionalCountedJob));
         }
         return false;
     }
@@ -151,9 +172,10 @@ public:
         @param t The type of job.
         @param name Name of the job.
         @param f Has a signature of void(std::shared_ptr<Coro>). Called when the job executes.
+        @return shared_ptr to posted Coro.  nullptr if post was not successful.
     */
     template <class F>
-    void postCoro (JobType t, std::string const& name, F&& f);
+    std::shared_ptr<Coro> postCoro (JobType t, std::string const& name, F&& f);
 
     /** Jobs waiting at this priority.
     */
@@ -169,8 +191,7 @@ public:
 
     /** Set the number of thread serving the job queue to precisely this number.
     */
-    void setThreadCount (int c, bool const standaloneMode,
-                         bool const validator=true);
+    void setThreadCount (int c, bool const standaloneMode);
 
     /** Return a scoped LoadEvent.
     */
@@ -213,17 +234,12 @@ private:
     Job::CancelCallback m_cancelCallback;
 
     // Statistics tracking
+    perf::PerfLog& perfLog_;
     beast::insight::Collector::ptr m_collector;
     beast::insight::Gauge job_count;
     beast::insight::Hook hook;
 
     std::condition_variable cv_;
-
-    static JobTypes const& getJobTypes()
-    {
-        static JobTypes types;
-        return types;
-    }
 
     void collect();
     JobTypeData& getJobTypeData (JobType type);
@@ -232,6 +248,16 @@ private:
 
     // Signals the service stopped if the stopped condition is met.
     void checkStopped (std::lock_guard <std::mutex> const& lock);
+
+    // Adds a reference counted job to the JobQueue.
+    //
+    //    param type The type of job.
+    //    param name Name of the job.
+    //    param func std::function with signature void (Job&).  Called when the job is executed.
+    //
+    //    return true if func added to queue.
+    bool addRefCountedJob (
+        JobType type, std::string const& name, JobFunction const& func);
 
     // Signals an added Job for processing.
     //
@@ -281,14 +307,6 @@ private:
     //  <none>
     void finishJob (JobType type);
 
-    template <class Rep, class Period>
-    void on_dequeue (JobType type,
-        std::chrono::duration <Rep, Period> const& value);
-
-    template <class Rep, class Period>
-    void on_execute (JobType type,
-        std::chrono::duration <Rep, Period> const& value);
-
     // Runs the next appropriate waiting Job.
     //
     // Pre-conditions:
@@ -299,7 +317,7 @@ private:
     //
     // Invariants:
     //  <none>
-    void processTask () override;
+    void processTask (int instance) override;
 
     // Returns the limit of running jobs for the given job type.
     // For jobs with no limit, we return the largest int. Hopefully that
@@ -317,15 +335,15 @@ private:
     other requests while the RPC command completes its work asynchronously.
 
     postCoro() creates a Coro object. When the Coro ctor is called, and its
-    coro_ member is initialized(a boost::coroutines::pull_type), execution
+    coro_ member is initialized (a boost::coroutines::pull_type), execution
     automatically passes to the coroutine, which we don't want at this point,
     since we are still in the handler thread context. It's important to note here
     that construction of a boost pull_type automatically passes execution to the
     coroutine. A pull_type object automatically generates a push_type that is
-    used as the as a parameter(do_yield) in the signature of the function the
+    passed as a parameter (do_yield) in the signature of the function the
     pull_type was created with. This function is immediately called during coro_
     construction and within it, Coro::yield_ is assigned the push_type
-    parameter(do_yield) address and called(yield()) so we can return execution
+    parameter (do_yield) address and called (yield()) so we can return execution
     back to the caller's stack.
 
     postCoro() then calls Coro::post(), which schedules a job on the job
@@ -374,17 +392,26 @@ private:
 namespace casinocoin {
 
 template <class F>
-void JobQueue::postCoro (JobType t, std::string const& name, F&& f)
+std::shared_ptr<JobQueue::Coro>
+JobQueue::postCoro (JobType t, std::string const& name, F&& f)
 {
     /*  First param is a detail type to make construction private.
         Last param is the function the coroutine runs. Signature of
         void(std::shared_ptr<Coro>).
     */
-    auto const coro = std::make_shared<Coro>(
+    auto coro = std::make_shared<Coro>(
         Coro_create_t{}, *this, t, name, std::forward<F>(f));
-    coro->post();
+    if (! coro->post())
+    {
+        // The Coro was not successfully posted.  Disable it so it's destructor
+        // can run with no negative side effects.  Then destroy it.
+        coro->expectEarlyExit();
+        coro.reset();
+    }
+    return coro;
 }
 
 }
 
 #endif
+

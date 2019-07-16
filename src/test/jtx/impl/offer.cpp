@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/offer.h>
 #include <casinocoin/protocol/JsonFields.h>
 
@@ -35,7 +35,7 @@ offer (Account const& account,
     jv[jss::TakerGets] = out.getJson(0);
     if (flags)
         jv[jss::Flags] = flags;
-    jv[jss::TransactionType] = "OfferCreate";
+    jv[jss::TransactionType] = jss::OfferCreate;
     return jv;
 }
 
@@ -45,7 +45,7 @@ offer_cancel (Account const& account, std::uint32_t offerSeq)
     Json::Value jv;
     jv[jss::Account] = account.human();
     jv[jss::OfferSequence] = offerSeq;
-    jv[jss::TransactionType] = "OfferCancel";
+    jv[jss::TransactionType] = jss::OfferCancel;
     return jv;
 }
 

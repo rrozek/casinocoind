@@ -27,6 +27,7 @@
 #define CASINOCOIN_APP_MISC_DETAIL_WORKSSL_H_INCLUDED
 
 #include <casinocoin/app/misc/detail/WorkBase.h>
+#include <casinocoin/net/RegisterSSLCerts.h>
 #include <casinocoin/basics/contract.h>
 #include <boost/asio/ssl.hpp>
 #include <boost/bind.hpp>
@@ -39,12 +40,11 @@ namespace detail {
 class SSLContext : public boost::asio::ssl::context
 {
 public:
-    SSLContext()
+    SSLContext(beast::Journal j)
     : boost::asio::ssl::context(boost::asio::ssl::context::sslv23)
     {
         boost::system::error_code ec;
-        set_default_verify_paths (ec);
-
+        registerSSLCerts(*this, ec, j);
         if (ec)
         {
             Throw<std::runtime_error> (
@@ -70,8 +70,11 @@ private:
 public:
     WorkSSL(
         std::string const& host,
-        std::string const& path, std::string const& port,
-        boost::asio::io_service& ios, callback_type cb);
+        std::string const& path,
+        std::string const& port,
+        boost::asio::io_service& ios,
+        beast::Journal j,
+        callback_type cb);
     ~WorkSSL() = default;
 
 private:
@@ -93,8 +96,7 @@ private:
         bool preverified,
         boost::asio::ssl::verify_context& ctx)
     {
-        return
-            boost::asio::ssl::rfc2818_verification (domain) (preverified, ctx);
+        return boost::asio::ssl::rfc2818_verification(domain)(preverified, ctx);
     }
 };
 
@@ -102,15 +104,19 @@ private:
 
 WorkSSL::WorkSSL(
     std::string const& host,
-    std::string const& path, std::string const& port,
-    boost::asio::io_service& ios, callback_type cb)
-    : WorkBase (host, path, port, ios, cb)
-    , context_()
-    , stream_ (socket_, context_)
+    std::string const& path,
+    std::string const& port,
+    boost::asio::io_service& ios,
+    beast::Journal j,
+    callback_type cb)
+    : WorkBase(host, path, port, ios, cb)
+    , context_(j)
+    , stream_(socket_, context_)
 {
+    // Set SNI hostname
+    SSL_set_tlsext_host_name(stream_.native_handle(), host.c_str());
     stream_.set_verify_mode (boost::asio::ssl::verify_peer);
-    stream_.set_verify_callback (
-        std::bind (
+    stream_.set_verify_callback(    std::bind (
             &WorkSSL::rfc2818_verify, host_,
             std::placeholders::_1, std::placeholders::_2));
 }

@@ -71,6 +71,11 @@ systemCurrencyCode ()
     return code;
 }
 
-} // casinocoin
+/** The CSC ledger network's earliest allowed sequence */
+static
+std::uint32_t constexpr
+CSC_LEDGER_EARLIEST_SEQ {32570};
+
+} // ripple
 
 #endif

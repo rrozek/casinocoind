@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/json/Object.h>
 #include <test/json/TestOutputSuite.h>
 #include <casinocoin/beast/unit_test.h>
@@ -210,13 +210,17 @@ public:
 
     void testKeyFailure ()
     {
-#ifdef DEBUG
         setup ("repeating keys");
         auto& root = makeRoot();
         root.set ("foo", "bar");
         root.set ("baz", 0);
-        auto fail = [&]() { root.set ("foo", "bar"); };
-        expectException (fail);
+        // setting key again throws in !NDEBUG builds
+        auto set_again = [&]() { root.set ("foo", "bar"); };
+#ifdef NDEBUG
+        set_again();
+        pass();
+#else
+        expectException (set_again);
 #endif
     }
 
@@ -238,3 +242,4 @@ public:
 BEAST_DEFINE_TESTSUITE(JsonObject, casinocoin_basics, casinocoin);
 
 } // Json
+

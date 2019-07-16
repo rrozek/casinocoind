@@ -26,10 +26,12 @@
 #ifndef CASINOCOIN_APP_CONSENSUS_IMPL_DISPUTEDTX_H_INCLUDED
 #define CASINOCOIN_APP_CONSENSUS_IMPL_DISPUTEDTX_H_INCLUDED
 
+#include <boost/container/flat_map.hpp>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/beast/utility/Journal.h>
-#include <casinocoin/consensus/LedgerTiming.h>
+#include <casinocoin/consensus/ConsensusParms.h>
+#include <casinocoin/json/json_writer.h>
 #include <casinocoin/protocol/Serializer.h>
 #include <casinocoin/protocol/UintTypes.h>
 #include <memory>
@@ -54,17 +56,19 @@ template <class Tx_t, class NodeID_t>
 class DisputedTx
 {
     using TxID_t = typename Tx_t::ID;
-
+    using Map_t = boost::container::flat_map<NodeID_t, bool>;
 public:
     /** Constructor
 
         @param tx The transaction under dispute
         @param ourVote Our vote on whether tx should be included
+        @param numPeers Anticipated number of peer votes
         @param j Journal for debugging
     */
-    DisputedTx(Tx_t const& tx, bool ourVote, beast::Journal j)
+    DisputedTx(Tx_t const& tx, bool ourVote, std::size_t numPeers, beast::Journal j)
         : yays_(0), nays_(0), ourVote_(ourVote), tx_(tx), j_(j)
     {
+        votes_.reserve(numPeers);
     }
 
     //! The unique id/hash of the disputed transaction.
@@ -118,10 +122,11 @@ public:
         @param percentTime Percentage progress through consensus, e.g. 50%
                through or 90%.
         @param proposing Whether we are proposing to our peers in this round.
+        @param p Consensus parameters controlling thresholds for voting
         @return Whether our vote changed
     */
     bool
-    updateVote(int percentTime, bool proposing);
+    updateVote(int percentTime, bool proposing, ConsensusParms const& p);
 
     //! JSON representation of dispute, used for debugging
     Json::Value
@@ -132,9 +137,8 @@ private:
     int nays_;      //< Number of no votes
     bool ourVote_;  //< Our vote (true is yes)
     Tx_t tx_;       //< Transaction under dispute
-
-    hash_map<NodeID_t, bool> votes_;  //< Votes of our peers
-    beast::Journal j_;                //< Debug journal
+    Map_t votes_;   //< Map from NodeID to vote
+    beast::Journal j_;
 };
 
 // Track a peer's yes/no vote on a particular disputed tx_
@@ -196,7 +200,10 @@ DisputedTx<Tx_t, NodeID_t>::unVote(NodeID_t const& peer)
 
 template <class Tx_t, class NodeID_t>
 bool
-DisputedTx<Tx_t, NodeID_t>::updateVote(int percentTime, bool proposing)
+DisputedTx<Tx_t, NodeID_t>::updateVote(
+    int percentTime,
+    bool proposing,
+    ConsensusParms const& p)
 {
     if (ourVote_ && (nays_ == 0))
         return false;
@@ -212,20 +219,16 @@ DisputedTx<Tx_t, NodeID_t>::updateVote(int percentTime, bool proposing)
         // This is basically the percentage of nodes voting 'yes' (including us)
         weight = (yays_ * 100 + (ourVote_ ? 100 : 0)) / (nays_ + yays_ + 1);
 
-        // VFALCO TODO Rename these macros and turn them into language
-        //             constructs.  consolidate them into a class that collects
-        //             all these related values.
-        //
         // To prevent avalanche stalls, we increase the needed weight slightly
         // over time.
-        if (percentTime < AV_MID_CONSENSUS_TIME)
-            newPosition = weight > AV_INIT_CONSENSUS_PCT;
-        else if (percentTime < AV_LATE_CONSENSUS_TIME)
-            newPosition = weight > AV_MID_CONSENSUS_PCT;
-        else if (percentTime < AV_STUCK_CONSENSUS_TIME)
-            newPosition = weight > AV_LATE_CONSENSUS_PCT;
+        if (percentTime < p.avMID_CONSENSUS_TIME)
+            newPosition = weight > p.avINIT_CONSENSUS_PCT;
+        else if (percentTime < p.avLATE_CONSENSUS_TIME)
+            newPosition = weight > p.avMID_CONSENSUS_PCT;
+        else if (percentTime < p.avSTUCK_CONSENSUS_TIME)
+            newPosition = weight > p.avLATE_CONSENSUS_PCT;
         else
-            newPosition = weight > AV_STUCK_CONSENSUS_PCT;
+            newPosition = weight > p.avSTUCK_CONSENSUS_PCT;
     }
     else
     {
@@ -239,14 +242,14 @@ DisputedTx<Tx_t, NodeID_t>::updateVote(int percentTime, bool proposing)
         JLOG(j_.info()) << "No change (" << (ourVote_ ? "YES" : "NO")
                         << ") : weight " << weight << ", percent "
                         << percentTime;
-        JLOG(j_.debug()) << getJson();
+        JLOG(j_.debug()) << Json::Compact{getJson()};
         return false;
     }
 
     ourVote_ = newPosition;
     JLOG(j_.debug()) << "We now vote " << (ourVote_ ? "YES" : "NO") << " on "
                      << tx_.id();
-    JLOG(j_.debug()) << getJson();
+    JLOG(j_.debug()) << Json::Compact{getJson()};
     return true;
 }
 
@@ -276,3 +279,4 @@ DisputedTx<Tx_t, NodeID_t>::getJson() const
 }  // casinocoin
 
 #endif
+

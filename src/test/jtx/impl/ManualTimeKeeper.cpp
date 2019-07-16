@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/ManualTimeKeeper.h>
 
 namespace casinocoin {

@@ -239,10 +239,10 @@ public:
     Value ( const Value& other );
     ~Value ();
 
-    Value& operator= ( const Value& other );
+    Value& operator= ( Value const& other );
+    Value& operator= ( Value&& other );
 
     Value ( Value&& other ) noexcept;
-    Value& operator= ( Value&& other ) noexcept;
 
     /// Swap values.
     /// \note Currently, comments are intentionally not swapped, for
@@ -252,12 +252,14 @@ public:
     ValueType type () const;
 
     const char* asCString () const;
+    /** Returns the unquoted string value. */
     std::string asString () const;
     Int asInt () const;
     UInt asUInt () const;
     double asDouble () const;
     bool asBool () const;
 
+    // TODO: What is the "empty()" method this docstring mentions?
     /** isNull() tests to see if this field is null.  Don't use this method to
         test for emptiness: use empty(). */
     bool isNull () const;
@@ -268,8 +270,10 @@ public:
     bool isDouble () const;
     bool isNumeric () const;
     bool isString () const;
-    bool isArray () const;
-    bool isObject () const;
+    bool isArray() const;
+    bool isArrayOrNull () const;
+    bool isObject() const;
+    bool isObjectOrNull () const;
 
     bool isConvertibleTo ( ValueType other ) const;
 
@@ -391,7 +395,7 @@ private:
         double real_;
         bool bool_;
         char* string_;
-        ObjectValues* map_;
+        ObjectValues* map_ {nullptr};
     } value_;
     ValueType type_ : 8;
     int allocated_ : 1;     // Notes: if declared as bool, bitfield is useless.
@@ -437,7 +441,7 @@ class ValueAllocator
 public:
     enum { unknown = (unsigned) - 1 };
 
-    virtual ~ValueAllocator ();
+    virtual ~ValueAllocator () = default;
 
     virtual char* makeMemberName ( const char* memberName ) = 0;
     virtual void releaseMemberName ( char* memberName ) = 0;
@@ -516,7 +520,7 @@ public:
     using pointer = const Value*;
     using SelfType = ValueConstIterator;
 
-    ValueConstIterator ();
+    ValueConstIterator () = default;
 private:
     /*! \internal Use by Value to create an iterator.
      */
@@ -569,7 +573,7 @@ public:
     using pointer = Value*;
     using SelfType = ValueIterator;
 
-    ValueIterator ();
+    ValueIterator () = default;
     ValueIterator ( const ValueConstIterator& other );
     ValueIterator ( const ValueIterator& other );
 private:
@@ -612,15 +616,8 @@ public:
     }
 };
 
-//------------------------------------------------------------------------------
-
-using write_t = std::function<void(void const*, std::size_t)>;
-
-/** Stream compact JSON to the specified function. */
-void
-stream (Json::Value const& jv, write_t write);
-
 } // namespace Json
 
 
 #endif // CPPTL_JSON_H_INCLUDED
+

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/impl/SNTPClock.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/random.h>
@@ -89,7 +89,7 @@ private:
         sys_seconds sent;
         std::uint32_t nonce;
 
-        Query (sys_seconds j = sys_seconds::max())
+        explicit Query (sys_seconds j = sys_seconds::max())
             : replied (false)
             , sent (j)
         {
@@ -130,7 +130,7 @@ public:
     {
     }
 
-    ~SNTPClientImp ()
+    ~SNTPClientImp () override
     {
         if (thread_.joinable())
         {

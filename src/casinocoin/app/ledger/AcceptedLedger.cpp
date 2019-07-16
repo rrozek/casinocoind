@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/ledger/AcceptedLedger.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/chrono.h>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/resource/Fees.h>
@@ -55,8 +55,8 @@ Json::Value doSignMsg (RPC::Context& context)
                 keypair.second,
                 makeSlice(strHex(context.params[jss::message].asString())));
     Slice pubKeySlice = keypair.first.slice();
-    jvResult[jss::signature] = Json::Value(strHex(signature.data(), signature.size()));
-    jvResult[jss::public_key_hex] = Json::Value(strHex(pubKeySlice.data(), pubKeySlice.size()));
+    jvResult[jss::signature] = Json::Value(strHex(signature));
+    jvResult[jss::public_key_hex] = Json::Value(strHex(pubKeySlice));
     jvResult[jss::message] = context.params[jss::message];
 
     return jvResult;

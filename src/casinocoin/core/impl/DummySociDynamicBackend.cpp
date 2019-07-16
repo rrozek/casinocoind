@@ -30,7 +30,12 @@
     header file and some macros to be defined.)
 */
 
-#include <BeastConfig.h>
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+#endif
+
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/core/SociDB.h>
 #include <soci/sqlite3/soci-sqlite3.h>
@@ -63,3 +68,6 @@ void unload_all (){};
 }  // namespace dynamic_backends
 }  // namespace soci
 
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

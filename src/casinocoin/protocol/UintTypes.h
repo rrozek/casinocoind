@@ -29,13 +29,28 @@
 #include <casinocoin/basics/UnorderedContainers.h>
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/protocol/AccountID.h>
+#include <casinocoin/beast/utility/Zero.h>
 
 namespace casinocoin {
 namespace detail {
 
-class CurrencyTag {};
-class DirectoryTag {};
-class NodeIDTag {};
+class CurrencyTag
+{
+public:
+    explicit CurrencyTag() = default;
+};
+
+class DirectoryTag
+{
+public:
+    explicit DirectoryTag() = default;
+};
+
+class NodeIDTag
+{
+public:
+    explicit NodeIDTag() = default;
+};
 
 } // detail
 
@@ -61,7 +76,7 @@ Currency const& badCurrency();
 
 inline bool isCSC(Currency const& c)
 {
-    return c == zero;
+    return c == beast::zero;
 }
 
 /** Returns "", "CSC", or three letter ISO code. */
@@ -86,18 +101,22 @@ namespace std {
 template <>
 struct hash <casinocoin::Currency> : casinocoin::Currency::hasher
 {
+    explicit hash() = default;
 };
 
 template <>
 struct hash <casinocoin::NodeID> : casinocoin::NodeID::hasher
 {
+    explicit hash() = default;
 };
 
 template <>
 struct hash <casinocoin::Directory> : casinocoin::Directory::hasher
 {
+    explicit hash() = default;
 };
 
 } // std
 
 #endif
+

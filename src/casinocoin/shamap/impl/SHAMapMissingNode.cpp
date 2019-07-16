@@ -23,8 +23,9 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/shamap/SHAMapMissingNode.h>
+#include <casinocoin/beast/utility/Zero.h>
 #include <ostream>
 
 namespace casinocoin {
@@ -48,7 +49,7 @@ operator<< (std::ostream& out, const SHAMapMissingNode& mn)
         break;
     };
 
-    if (mn.mNodeHash == zero)
+    if (mn.mNodeHash == beast::zero)
         out << "id : " << mn.mNodeID;
     else
         out << "hash : " << mn.mNodeHash;

@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/UnorderedContainers.h>
 #include <casinocoin/protocol/Book.h>
 #include <casinocoin/protocol/Issue.h>
@@ -457,7 +457,7 @@ public:
 
     //--------------------------------------------------------------------------
 
-    void run()
+    void run() override
     {
         testcase ("Currency");
         testUnsigned <Currency> ();

@@ -25,6 +25,7 @@
 
 #ifndef CASINOCOIN_RESOURCE_TUNING_H_INCLUDED
 #define CASINOCOIN_RESOURCE_TUNING_H_INCLUDED
+#include <chrono>
 
 namespace casinocoin {
 namespace Resource {
@@ -33,26 +34,27 @@ namespace Resource {
 enum
 {
     // Balance at which a warning is issued
-     warningThreshold           = 500
+     warningThreshold           = 5000
 
     // Balance at which the consumer is disconnected
-    ,dropThreshold              = 1500
-
-    // The number of seconds until an inactive table item is removed
-    ,secondsUntilExpiration     = 300
+    ,dropThreshold              = 15000
 
     // The number of seconds in the exponential decay window
     // (This should be a power of two)
     ,decayWindowSeconds         = 32
 
     // The minimum balance required in order to include a load source in gossip
-    ,minimumGossipBalance       = 100
-
-    // Number of seconds until imported gossip expires
-    ,gossipExpirationSeconds    = 30
+    ,minimumGossipBalance       = 1000
 };
+
+// The number of seconds until an inactive table item is removed
+std::chrono::seconds constexpr secondsUntilExpiration{300};
+
+// Number of seconds until imported gossip expires
+std::chrono::seconds constexpr gossipExpirationSeconds{30};
 
 }
 }
 
 #endif
+

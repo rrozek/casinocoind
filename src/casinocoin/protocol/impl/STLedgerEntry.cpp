@@ -23,9 +23,10 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/JsonFields.h>
@@ -39,13 +40,17 @@ STLedgerEntry::STLedgerEntry (Keylet const& k)
     , key_ (k.key)
     , type_ (k.type)
 {
+    if (!(0u <= type_ &&
+        type_ <= std::min<unsigned>(std::numeric_limits<std::uint16_t>::max(),
+        std::numeric_limits<std::underlying_type_t<LedgerEntryType>>::max())))
+            Throw<std::runtime_error> ("invalid ledger entry type: out of range");
     auto const format =
         LedgerFormats::getInstance().findByType (type_);
 
     if (format == nullptr)
         Throw<std::runtime_error> ("invalid ledger entry type");
 
-    set (format->elements);
+    set (format->getSOTemplate());
 
     setFieldU16 (sfLedgerEntryType,
         static_cast <std::uint16_t> (type_));
@@ -73,24 +78,14 @@ STLedgerEntry::STLedgerEntry (
 void STLedgerEntry::setSLEType ()
 {
     auto format = LedgerFormats::getInstance().findByType (
-        static_cast <LedgerEntryType> (
+        safe_cast <LedgerEntryType> (
             getFieldU16 (sfLedgerEntryType)));
 
     if (format == nullptr)
         Throw<std::runtime_error> ("invalid ledger entry type");
 
     type_ = format->getType ();
-
-    if (!setType (format->elements))
-    {
-        if (auto j = debugLog().error())
-        {
-            j << "Ledger entry not valid for type " << format->getName ();
-            j << "Object: " << getJson (0);
-        }
-
-        Throw<std::runtime_error> ("ledger entry not valid for type");
-    }
+    applyTemplate (format->getSOTemplate());  // May throw
 }
 
 std::string STLedgerEntry::getFullText () const
@@ -158,3 +153,4 @@ bool STLedgerEntry::thread (
 }
 
 } // casinocoin
+

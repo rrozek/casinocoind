@@ -22,7 +22,7 @@
     2017-06-29  ajochems        Refactored for casinocoin
 */
 //==============================================================================
-
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/conditions/Condition.h>
 #include <casinocoin/conditions/Fulfillment.h>
 #include <casinocoin/conditions/impl/PreimageSha256.h>
@@ -122,31 +122,32 @@ Fulfillment::deserialize(
 
     std::unique_ptr<Fulfillment> f;
 
-    switch (static_cast<Type>(p.tag))
+    using TagType = decltype(p.tag);
+    switch (p.tag)
     {
-    case Type::preimageSha256:
+    case safe_cast<TagType>(Type::preimageSha256):
         f = PreimageSha256::deserialize(Slice(s.data(), p.length), ec);
         if (ec)
             return {};
         s += p.length;
         break;
 
-    case Type::prefixSha256:
+    case safe_cast<TagType>(Type::prefixSha256):
         ec = error::unsupported_type;
         return {};
         break;
 
-    case Type::thresholdSha256:
+    case safe_cast<TagType>(Type::thresholdSha256):
         ec = error::unsupported_type;
         return {};
         break;
 
-    case Type::rsaSha256:
+    case safe_cast<TagType>(Type::rsaSha256):
         ec = error::unsupported_type;
         return {};
         break;
 
-    case Type::ed25519Sha256:
+    case safe_cast<TagType>(Type::ed25519Sha256):
         ec = error::unsupported_type;
         return {};
 
@@ -166,3 +167,4 @@ Fulfillment::deserialize(
 
 }
 }
+

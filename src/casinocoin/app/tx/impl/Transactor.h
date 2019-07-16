@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_APP_TX_TRANSACTOR_H_INCLUDED
 #define CASINOCOIN_APP_TX_TRANSACTOR_H_INCLUDED
-
+#include <casinocoin/app/tx/applySteps.h>
 #include <casinocoin/app/tx/impl/ApplyContext.h>
 #include <casinocoin/protocol/CSCAmount.h>
 #include <casinocoin/beast/utility/Journal.h>
@@ -63,7 +63,8 @@ public:
 
     PreclaimContext(Application& app_, ReadView const& view_,
         TER preflightResult_, STTx const& tx_,
-            ApplyFlags flags_, beast::Journal j_ = {})
+            ApplyFlags flags_,
+            beast::Journal j_ = beast::Journal{beast::Journal::getNullSink()})
         : app(app_)
         , view(view_)
         , preflightResult(preflightResult_)
@@ -86,9 +87,12 @@ protected:
     beast::Journal j_;
 
     AccountID     account_;
-    CSCAmount     mFeeDue;
     CSCAmount     mPriorBalance;  // Balance before fees.
     CSCAmount     mSourceBalance; // Balance after fees.
+
+    virtual ~Transactor() = default;
+    Transactor (Transactor const&) = delete;
+    Transactor& operator= (Transactor const&) = delete;
 
 public:
     /** Process the transaction. */
@@ -118,7 +122,7 @@ public:
     */
 
     static
-    TER
+    NotTEC
     checkSeq (PreclaimContext const& ctx);
 
     static
@@ -126,13 +130,13 @@ public:
     checkFee (PreclaimContext const& ctx, std::uint64_t baseFee);
 
     static
-    TER
-    checkFeeToken (PreclaimContext const& ctx,
-                   TokenDescriptor const& theToken);
+    NotTEC
+    checkSign (PreclaimContext const& ctx);
 
     static
     TER
-    checkSign (PreclaimContext const& ctx);
+    checkFeeToken (PreclaimContext const& ctx,
+                   TokenDescriptor const& theToken);
 
     static
     TER
@@ -147,7 +151,8 @@ public:
     static
     std::uint64_t
     calculateBaseFee (
-        PreclaimContext const& ctx);
+        ReadView const& view,
+        STTx const& tx);
 
     static
     bool
@@ -172,6 +177,7 @@ public:
         // after checkSeq/Fee/Sign.
         return tesSUCCESS;
     }
+    /////////////////////////////////////////////////////
 
 protected:
     TER
@@ -184,26 +190,41 @@ protected:
 
     virtual TER doApply () = 0;
 
+    /** Compute the minimum fee required to process a transaction
+        with a given baseFee based on the current server load.
+        @param app The application hosting the server
+        @param baseFee The base fee of a candidate transaction
+            @see ripple::calculateBaseFee
+        @param fees Fee settings from the current ledger
+        @param flags Transaction processing fees
+     */
+    static
+    CSCAmount
+    minimumFee (Application& app, std::uint64_t baseFee,
+        Fees const& fees, ApplyFlags flags);
+
 private:
+    CSCAmount reset(CSCAmount fee);
+
     void setSeq ();
     TER payFee ();
-    void claimFee (CSCAmount& fee, TER terResult, std::vector<uint256> const& removedOffers);
-    static TER checkSingleSign (PreclaimContext const& ctx);
-    static TER checkMultiSign (PreclaimContext const& ctx);
+    static NotTEC checkSingleSign (PreclaimContext const& ctx);
+    static NotTEC checkMultiSign (PreclaimContext const& ctx);
 };
 
 /** Performs early sanity checks on the txid */
-TER
+NotTEC
 preflight0(PreflightContext const& ctx);
 
 /** Performs early sanity checks on the account and fee fields */
-TER
+NotTEC
 preflight1 (PreflightContext const& ctx);
 
 /** Checks whether the signature appears valid */
-TER
+NotTEC
 preflight2 (PreflightContext const& ctx);
 
 }
 
 #endif
+

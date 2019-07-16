@@ -424,7 +424,7 @@ def get_libs(lib, static):
     try:
         cmd = ['pkg-config', '--static', '--libs', lib]
         libs = subprocess.check_output(cmd,
-                                       stderr=subprocess.STDOUT).strip()
+                                       stderr=subprocess.STDOUT).strip().decode("utf-8")
         all_libs = [l[2:] for l in libs.split() if l.startswith('-l')]
         if not static:
             return ([], all_libs)
@@ -565,7 +565,8 @@ def config_env(toolchain, variant, env):
         env.Append(CXXFLAGS=[
             '-frtti',
             '-std=c++14',
-            '-Wno-invalid-offsetof'
+            '-Wno-invalid-offsetof',
+            '-Wdeprecated'
             ])
 
         env.Append(CPPDEFINES=['_FILE_OFFSET_BITS=64'])
@@ -578,7 +579,6 @@ def config_env(toolchain, variant, env):
         # These should be the same regardless of platform...
         if Beast.system.osx:
             env.Append(CCFLAGS=[
-                '-Wno-deprecated',
                 '-Wno-deprecated-declarations',
                 '-Wno-unused-function',
                 '-Wno-unused-variable',
@@ -618,7 +618,8 @@ def config_env(toolchain, variant, env):
             'boost_program_options',
             'boost_regex',
             'boost_system',
-            'boost_thread'
+            'boost_thread',
+            'boost_serialization'
         ]
         env.Append(LIBS=['dl'])
 
@@ -759,6 +760,7 @@ def config_env(toolchain, variant, env):
             'uuid.lib',
             'odbc32.lib',
             'odbccp32.lib',
+	    'crypt32.lib'
             ])
         env.Append(LINKFLAGS=[
             '/DEBUG',
@@ -981,7 +983,8 @@ def get_classic_sources(toolchain):
     append_sources(result, *list_sources('src/test/server', '.cpp'))
     append_sources(result, *list_sources('src/test/shamap', '.cpp'))
     append_sources(result, *list_sources('src/test/jtx', '.cpp'))
-    append_sources(result, *list_sources('src/test/csf', '.cpp'))    
+    append_sources(result, *list_sources('src/test/csf', '.cpp'))
+    append_sources(result, *list_sources('src/test/unit_test', '.cpp'))
 
 
     if use_shp(toolchain):
@@ -1013,8 +1016,11 @@ def get_unity_sources(toolchain):
         'src/casinocoin/beast/unity/beast_utility_unity.cpp',
         'src/casinocoin/unity/app_consensus.cpp',
         'src/casinocoin/unity/app_ledger.cpp',
-        'src/casinocoin/unity/app_main.cpp',
+        'src/casinocoin/unity/app_ledger_impl.cpp',
+        'src/casinocoin/unity/app_main1.cpp',
+        'src/casinocoin/unity/app_main2.cpp',
         'src/casinocoin/unity/app_misc.cpp',
+        'src/casinocoin/unity/app_misc_impl.cpp',
         'src/casinocoin/unity/app_paths.cpp',
         'src/casinocoin/unity/app_tx.cpp',
         'src/casinocoin/unity/conditions.cpp',
@@ -1024,16 +1030,20 @@ def get_unity_sources(toolchain):
         'src/casinocoin/unity/crypto.cpp',
         'src/casinocoin/unity/ledger.cpp',
         'src/casinocoin/unity/net.cpp',
-        'src/casinocoin/unity/overlay.cpp',
+        'src/casinocoin/unity/overlay1.cpp',
+        'src/casinocoin/unity/overlay2.cpp',
         'src/casinocoin/unity/peerfinder.cpp',
         'src/casinocoin/unity/json.cpp',
         'src/casinocoin/unity/protocol.cpp',
-        'src/casinocoin/unity/rpcx.cpp',
+        'src/casinocoin/unity/rpcx1.cpp',
+        'src/casinocoin/unity/rpcx2.cpp',
         'src/casinocoin/unity/shamap.cpp',
         'src/casinocoin/unity/server.cpp',
-        'src/test/unity/app_test_unity.cpp',
+        'src/test/unity/app_test_unity1.cpp',
+        'src/test/unity/app_test_unity2.cpp',
         'src/test/unity/basics_test_unity.cpp',
-        'src/test/unity/beast_test_unity.cpp',
+        'src/test/unity/beast_test_unity1.cpp',
+        'src/test/unity/beast_test_unity2.cpp',
     	'src/test/unity/consensus_test_unity.cpp',
         'src/test/unity/core_test_unity.cpp',
         'src/test/unity/conditions_test_unity.cpp',
@@ -1045,8 +1055,10 @@ def get_unity_sources(toolchain):
         'src/test/unity/resource_test_unity.cpp',
         'src/test/unity/rpc_test_unity.cpp',
         'src/test/unity/server_test_unity.cpp',
+        'src/test/unity/server_status_test_unity.cpp',
         'src/test/unity/shamap_test_unity.cpp',
-        'src/test/unity/jtx_unity.cpp',
+        'src/test/unity/jtx_unity1.cpp',
+        'src/test/unity/jtx_unity2.cpp',
         'src/test/unity/csf_unity.cpp'
     )
 
@@ -1157,7 +1169,7 @@ for tu_style in ['classic', 'unity']:
                 os.path.join(variant_dir, 'proto') :
                     os.path.join (build_dir, 'proto'),
                 }
-            for dest, source in variant_dirs.iteritems():
+            for dest, source in variant_dirs.items():
                 env.VariantDir(dest, source, duplicate=0)
 
             object_builder = ObjectBuilder(env, variant_dirs)
@@ -1260,7 +1272,7 @@ for tu_style in ['classic', 'unity']:
                     [object_builder.env] + object_builder.child_envs + [base],
                     dest_file='build.ninja')
 
-for key, value in aliases.iteritems():
+for key, value in aliases.items():
     env.Alias(key, value)
 
 vcxproj = base.VSProject(
@@ -1301,6 +1313,6 @@ def do_count(target, source, env):
     lines = 0
     for f in testfiles:
         lines = lines + sum(1 for line in open(f))
-    print "Total unit test lines: %d" % lines
+    print ("Total unit test lines: %d" % lines)
 
 PhonyTargets(env, count = do_count)

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/digest.h>
 #include <type_traits>
 #include <openssl/ripemd.h>

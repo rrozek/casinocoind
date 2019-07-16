@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/AccountCurrencies.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/core/JobQueue.h>
@@ -232,7 +232,7 @@ public:
         Resource::Charge loadType = Resource::feeReferenceRPC;
         Resource::Consumer c;
         beast::IP::Endpoint dummy;
-        RPC::Context context {beast::Journal(), {}, app, loadType,
+        RPC::Context context {env.journal, {}, app, loadType,
             app.getOPs(), app.getLedgerMaster(), c, dummy, Role::USER, {}};
 
         Json::Value params = Json::objectValue;
@@ -261,6 +261,7 @@ public:
                 g.signal();
             });
 
+        using namespace std::chrono_literals;
         BEAST_EXPECT(g.wait_for(5s));
         BEAST_EXPECT(! result.isMember(jss::error));
         return result;
@@ -330,7 +331,7 @@ public:
         Resource::Charge loadType = Resource::feeReferenceRPC;
         Resource::Consumer c;
         beast::IP::Endpoint dummy;
-        RPC::Context context {beast::Journal(), {}, app, loadType,
+        RPC::Context context {env.journal, {}, app, loadType,
             app.getOPs(), app.getLedgerMaster(), c, dummy, Role::USER, {}};
         Json::Value result;
         gate g;
@@ -1050,7 +1051,9 @@ public:
         log << "this test is really stupid. regards, jrojek" << std::endl;
 
         using namespace jtx;
-        Env env(*this);
+        Env env{*this,
+                supported_amendments().reset(featureFlow)};
+
         Account A1 {"A1"};
         Account A2 {"A2"};
         Account A3 {"A3"};
@@ -1383,7 +1386,7 @@ public:
     }
 
     void
-    run()
+    run() override
     {
         source_currencies_limit();
         no_direct_path_no_intermediary_no_alternatives();

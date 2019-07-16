@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/Pathfinder.h>
 #include <test/jtx/paths.h>
 #include <casinocoin/protocol/JsonFields.h>

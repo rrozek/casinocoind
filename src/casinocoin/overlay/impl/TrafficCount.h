@@ -25,8 +25,8 @@
 
 #ifndef CASINOCOIN_OVERLAY_TRAFFIC_H_INCLUDED
 #define CASINOCOIN_OVERLAY_TRAFFIC_H_INCLUDED
-
-#include "casinocoin.pb.h"
+#include <casinocoin/basics/safe_cast.h>
+#include <casinocoin/protocol/messages.h>
 
 #include <atomic>
 #include <map>
@@ -105,7 +105,7 @@ public:
     {
         for (category i = category::CT_base;
             i <= category::CT_unknown;
-            i = static_cast<category>(static_cast<int>(i) + 1))
+            i = safe_cast<category>(safe_cast<std::underlying_type_t<category>>(i) + 1))
         {
             counts_[i];
         }
@@ -134,3 +134,4 @@ public:
 
 }
 #endif
+

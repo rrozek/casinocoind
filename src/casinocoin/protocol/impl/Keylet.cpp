@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Keylet.h>
 #include <casinocoin/protocol/STLedgerEntry.h>
 

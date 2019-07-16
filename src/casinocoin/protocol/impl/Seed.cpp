@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Seed.h>
 #include <casinocoin/basics/Buffer.h>
 #include <casinocoin/protocol/AccountID.h>
@@ -91,8 +91,7 @@ template <>
 boost::optional<Seed>
 parseBase58 (std::string const& s)
 {
-    auto const result = decodeBase58Token(
-         s, TokenType::TOKEN_FAMILY_SEED);
+    auto const result = decodeBase58Token(s, TokenType::FamilySeed);
     if (result.empty())
         return boost::none;
     if (result.size() != 16)
@@ -107,10 +106,10 @@ parseGenericSeed (std::string const& str)
         return boost::none;
 
     if (parseBase58<AccountID>(str) ||
-        parseBase58<PublicKey>(TokenType::TOKEN_NODE_PUBLIC, str) ||
-        parseBase58<PublicKey>(TokenType::TOKEN_ACCOUNT_PUBLIC, str) ||
-        parseBase58<SecretKey>(TokenType::TOKEN_NODE_PRIVATE, str) ||
-        parseBase58<SecretKey>(TokenType::TOKEN_ACCOUNT_SECRET, str))
+        parseBase58<PublicKey>(TokenType::NodePublic, str) ||
+        parseBase58<PublicKey>(TokenType::AccountPublic, str) ||
+        parseBase58<SecretKey>(TokenType::NodePrivate, str) ||
+        parseBase58<SecretKey>(TokenType::AccountSecret, str))
     {
         return boost::none;
     }
@@ -153,3 +152,4 @@ seedAs1751 (Seed const& seed)
 }
 
 }
+

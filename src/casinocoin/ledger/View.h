@@ -66,6 +66,10 @@ bool
 isGlobalFrozen (ReadView const& view,
     AccountID const& issuer);
 
+bool
+isFrozen (ReadView const& view, AccountID const& account,
+    Currency const& currency, AccountID const& issuer);
+
 // Returns the amount an account can spend without going into debt.
 //
 // <-- saAmount: amount of currency held by account. May be negative.
@@ -229,39 +233,13 @@ dirNext (ApplyView& view,
 std::function<void (SLE::ref)>
 describeOwnerDir(AccountID const& account);
 
-// <--     uNodeDir: For deletion, present to make dirDelete efficient.
-// -->   uRootIndex: The index of the base of the directory.  Nodes are based off of this.
-// --> uLedgerIndex: Value to add to directory.
-// Only append. This allow for things that watch append only structure to just monitor from the last node on ward.
-// Within a node with no deletions order of elements is sequential.  Otherwise, order of elements is random.
-
-/** Add an entry to directory, creating the directory if necessary
-
-    @param uNodeDir node of entry - makes deletion efficient
-    @param uRootIndex The index of the base of the directory.
-                      Nodes are based off of this.
-    @param uLedgerIndex Value to add to directory.
-
-    @return a pair containing a code indicating success or
-            failure, and if successful, a boolean indicating
-            whether the directory was just created.
-*/
-std::pair<TER, bool>
+// deprecated
+boost::optional<std::uint64_t>
 dirAdd (ApplyView& view,
-    std::uint64_t&                      uNodeDir,      // Node of entry.
     Keylet const&                       uRootIndex,
     uint256 const&                      uLedgerIndex,
+    bool                                strictOrder,
     std::function<void (SLE::ref)>      fDescriber,
-    beast::Journal j);
-
-TER
-dirDelete (ApplyView& view,
-    const bool           bKeepRoot,
-    const std::uint64_t& uNodeDir,      // Node item is mentioned in.
-    uint256 const&       uRootIndex,
-    uint256 const&       uLedgerIndex,  // Item being deleted
-    const bool           bStable,
-    const bool           bSoft,
     beast::Journal j);
 
 // VFALCO NOTE Both STAmount parameters should just
@@ -369,3 +347,4 @@ bool fix1449 (NetClock::time_point const closeTime);
 } // casinocoin
 
 #endif
+

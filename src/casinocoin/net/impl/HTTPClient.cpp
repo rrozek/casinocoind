@@ -23,13 +23,13 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/net/HTTPClient.h>
 #include <casinocoin/net/AutoSocket.h>
-
+#include <casinocoin/net/RegisterSSLCerts.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -47,7 +47,7 @@ class HTTPClientSSLContext
 {
 public:
     explicit
-    HTTPClientSSLContext (Config const& config)
+    HTTPClientSSLContext (Config const& config, beast::Journal j)
         : m_context (boost::asio::ssl::context::sslv23)
         , verify_ (config.SSL_VERIFY)
     {
@@ -55,7 +55,7 @@ public:
 
         if (config.SSL_VERIFY_FILE.empty ())
         {
-            m_context.set_default_verify_paths (ec);
+            registerSSLCerts(m_context, ec, j);
 
             if (ec && config.SSL_VERIFY_DIR.empty ())
                 Throw<std::runtime_error> (
@@ -96,9 +96,9 @@ private:
 
 boost::optional<HTTPClientSSLContext> httpClientSSLContext;
 
-void HTTPClient::initializeSSLContext (Config const& config)
+void HTTPClient::initializeSSLContext (Config const& config, beast::Journal j)
 {
-    httpClientSSLContext.emplace (config);
+    httpClientSSLContext.emplace (config, j);
 }
 
 //------------------------------------------------------------------------------
@@ -284,6 +284,12 @@ public:
         else
         {
             JLOG (j_.trace()) << "Resolve complete.";
+
+            // If we intend  to verify the SSL connection, we need to
+            // set the default domain for server name indication *prior* to
+            // connecting
+            if (httpClientSSLContext->sslVerify())
+                mSocket.setTLSHostName(mDeqSites[0]);
 
             boost::asio::async_connect (
                 mSocket.lowest_layer (),

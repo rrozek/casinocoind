@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/Transaction.h>
@@ -60,13 +60,21 @@ Json::Value doSubmit (RPC::Context& context)
 
         RPC::injectClientIP(context);
 
-        return RPC::transactionSubmit (
-        context.params,
-        failType,
-        context.role,
-        context.ledgerMaster.getValidatedLedgerAge(),
-        context.app,
-        RPC::getProcessTxnFn (context.netOps));
+        if (context.role != Role::ADMIN && !context.app.config().canSign())
+            return RPC::make_error (rpcNOT_SUPPORTED,
+                "Signing is not supported by this server.");
+
+        auto ret = RPC::transactionSubmit (
+            context.params, failType, context.role,
+            context.ledgerMaster.getValidatedLedgerAge(),
+            context.app, RPC::getProcessTxnFn (context.netOps));
+
+        ret[jss::deprecated] = "Signing support in the 'submit' command has been "
+                               "deprecated and will be removed in a future version "
+                               "of the server. Please migrate to a standalone "
+                               "signing tool.";
+
+        return ret;
     }
 
     Json::Value jvResult;

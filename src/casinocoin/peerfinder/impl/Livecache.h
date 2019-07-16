@@ -27,6 +27,7 @@
 #define CASINOCOIN_PEERFINDER_LIVECACHE_H_INCLUDED
 
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/random.h>
 #include <casinocoin/peerfinder/PeerfinderManager.h>
 #include <casinocoin/peerfinder/impl/iosformat.h>
 #include <casinocoin/peerfinder/impl/Tuning.h>
@@ -35,6 +36,7 @@
 #include <boost/intrusive/list.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
+#include <algorithm>
 namespace casinocoin {
 namespace PeerFinder {
 
@@ -45,6 +47,8 @@ namespace detail {
 
 class LivecacheBase
 {
+public:
+    explicit LivecacheBase() = default;
 protected:
     struct Element
         : boost::intrusive::list_base_hook <>
@@ -72,8 +76,17 @@ public:
     public:
         // Iterator transformation to extract the endpoint from Element
         struct Transform
-            : public std::unary_function <Element, Endpoint>
+#ifdef _LIBCPP_VERSION
+            : public std::unary_function<Element, Endpoint>
+#endif
         {
+#ifndef _LIBCPP_VERSION
+            using first_argument = Element;
+            using result_type = Endpoint;
+#endif
+
+            explicit Transform() = default;
+
             Endpoint const& operator() (Element const& e) const
             {
                 return e.endpoint;
@@ -226,9 +239,17 @@ public:
 
         template <bool IsConst>
         struct Transform
-            : public std::unary_function <
-                typename lists_type::value_type, Hop <IsConst>>
+#ifdef _LIBCPP_VERSION
+            : public std::unary_function<typename lists_type::value_type, Hop<IsConst>>
+#endif
         {
+#ifndef _LIBCPP_VERSION
+            using first_argument = typename lists_type::value_type;
+            using result_type = Hop <IsConst>;
+#endif
+
+            explicit Transform() = default;
+
             Hop <IsConst> operator() (typename beast::maybe_const <
                 IsConst, typename lists_type::value_type>::type& list) const
             {
@@ -482,7 +503,7 @@ Livecache <Allocator>::hops_t::shuffle()
         v.reserve (list.size());
         std::copy (list.begin(), list.end(),
             std::back_inserter (v));
-        std::random_shuffle (v.begin(), v.end());
+        std::shuffle (v.begin(), v.end(), default_prng());
         list.clear();
         for (auto& e : v)
             list.push_back (e);
@@ -546,3 +567,4 @@ Livecache <Allocator>::hops_t::remove (Element& e)
 }
 
 #endif
+

@@ -17,28 +17,23 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/misc/AmendmentTable.h>
 #include <casinocoin/basics/BasicConfig.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/beast/unit_test.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/beast/unit_test.h>
+#include <test/unit_test/SuiteJournal.h>
 
 namespace casinocoin
 {
-
-namespace detail {
-extern
-std::vector<std::string>
-supportedAmendments ();
-}
 
 class AmendmentTable_test final : public beast::unit_test::suite
 {
@@ -96,12 +91,15 @@ private:
 
     Section const emptySection;
 
+    test::SuiteJournal journal;
+
 public:
     AmendmentTable_test ()
         : m_set1 (createSet (1, 12))
         , m_set2 (createSet (2, 12))
         , m_set3 (createSet (3, 12))
         , m_set4 (createSet (4, 12))
+        , journal ("AmendmentTable_test", *this)
     {
     }
 
@@ -118,7 +116,7 @@ public:
             supported,
             enabled,
             vetoed,
-            beast::Journal{});
+            journal);
     }
 
     std::unique_ptr<AmendmentTable>
@@ -129,7 +127,7 @@ public:
             makeSection (m_set1),
             makeSection (m_set2),
             makeSection (m_set3));
-    };
+    }
 
     void testConstruct ()
     {
@@ -337,14 +335,13 @@ public:
         BEAST_EXPECT(ret.second == post_state.end());
     }
 
-    std::vector <PublicKey> makeValidators (int num)
+    std::vector<std::pair<PublicKey,SecretKey>> makeValidators (int num)
     {
-        std::vector <PublicKey> ret;
+        std::vector <std::pair<PublicKey, SecretKey>> ret;
         ret.reserve (num);
         for (int i = 0; i < num; ++i)
         {
-            ret.push_back (
-                randomKeyPair(KeyType::secp256k1).first);
+            ret.emplace_back(randomKeyPair(KeyType::secp256k1));
         }
         return ret;
     }
@@ -358,7 +355,7 @@ public:
     void doRound(
         AmendmentTable& table,
         weeks week,
-        std::vector <PublicKey> const& validators,
+        std::vector <std::pair<PublicKey, SecretKey>> const& validators,
         std::vector <std::pair <uint256, int>> const& votes,
         std::vector <uint256>& ourVotes,
         std::set <uint256>& enabled,
@@ -384,11 +381,8 @@ public:
         int i = 0;
         for (auto const& val : validators)
         {
-            auto v = std::make_shared <STValidation> (
-                uint256(), roundTime, val, true);
-
             ++i;
-            STVector256 field (sfAmendments);
+            std::vector<uint256> field;
 
             for (auto const& amendment : votes)
             {
@@ -398,10 +392,19 @@ public:
                     field.push_back (amendment.first);
                 }
             }
-            if (!field.empty ())
-                v->setFieldV256 (sfAmendments, field);
 
-            v->setTrusted();
+            auto v = std::make_shared<STValidation>(
+                uint256(),
+                i,
+                uint256(),
+                roundTime,
+                val.first,
+                val.second,
+                calcNodeID(val.first),
+                true,
+                STValidation::FeeSettings{},
+                field);
+
             validations.emplace_back(v);
         }
 
@@ -735,15 +738,21 @@ public:
         }
     }
 
-    void
-    testSupportedAmendments ()
+    void testHasUnsupported ()
     {
-        for (auto const& amend : detail::supportedAmendments ())
-            BEAST_EXPECT(amend.substr (0, 64) ==
-                to_string (feature (amend.substr (65))));
+        testcase ("hasUnsupportedEnabled");
+
+        auto table = makeTable(1);
+        BEAST_EXPECT(! table->hasUnsupportedEnabled());
+
+        std::set <uint256> enabled;
+        std::for_each(m_set4.begin(), m_set4.end(),
+            [&enabled](auto const &s){ enabled.insert(amendmentId(s)); });
+        table->doValidatedLedger(1, enabled);
+        BEAST_EXPECT(table->hasUnsupportedEnabled());
     }
 
-    void run ()
+    void run () override
     {
         testConstruct();
         testGet ();
@@ -754,10 +763,11 @@ public:
         testVoteEnable ();
         testDetectMajority ();
         testLostMajority ();
-        testSupportedAmendments ();
+        testHasUnsupported ();
     }
 };
 
 BEAST_DEFINE_TESTSUITE (AmendmentTable, app, casinocoin);
 
 }  // ripple
+

@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_LEDGER_CASHDIFF_H_INCLUDED
 #define CASINOCOIN_LEDGER_CASHDIFF_H_INCLUDED
-
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/protocol/STAmount.h>
 #include <memory>                       // std::unique_ptr
 
@@ -50,13 +50,13 @@ inline CashFilter operator| (CashFilter lhs, CashFilter rhs)
 {
     using ul_t = std::underlying_type<CashFilter>::type;
     return static_cast<CashFilter>(
-        static_cast<ul_t>(lhs) | static_cast<ul_t>(rhs));
+        safe_cast<ul_t>(lhs) | safe_cast<ul_t>(rhs));
 }
 inline CashFilter operator& (CashFilter lhs, CashFilter rhs)
 {
     using ul_t = std::underlying_type<CashFilter>::type;
     return static_cast<CashFilter>(
-        static_cast<ul_t>(lhs) & static_cast<ul_t>(rhs));
+        safe_cast<ul_t>(lhs) & safe_cast<ul_t>(rhs));
 }
 
 //------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ class CashDiff
 public:
     CashDiff() = delete;
     CashDiff (CashDiff const&) = delete;
-    CashDiff (CashDiff&& other);
+    CashDiff (CashDiff&& other) noexcept;
     CashDiff& operator= (CashDiff const&) = delete;
     ~CashDiff();
 
@@ -88,6 +88,21 @@ public:
 
     // Returns true is there are any differences to report.
     bool hasDiff() const;
+
+    // Checks for the CSC round-to-zero case.  Returns zero if not detected.
+    // Otherwise returns -1 if seen on lhs, +1 if seen on rhs.
+    //
+    // For tiny offers of TakerPays IOU and TakerGets CSC, cases have been
+    // observed where CSC rounding allows a tiny amount of IOU to be
+    // removed from an Offer while returning no CSC to the offer owner.
+    // That's because the CSC amount was rounded down to zero drops.
+    //
+    // The person submitting the tiny offer does not, however, get something
+    // for nothing.  The transaction's fee is significantly larger than the
+    // value of the received IOU.
+    //
+    // This check should be made before calling rmDust().
+    int cscRoundToZero() const;
 
     // Remove dust-sized differences.  Returns true is dust was removed.
     bool rmDust();
@@ -129,9 +144,10 @@ private:
 // If v1 and v2 have different issues, then their difference is never dust.
 // If v1 < v2, smallness is computed as v1 / (v2 - v1).
 // The e10 argument says at least how big that ratio must be.  Default is 10^6.
-// If both v1 and v2 are CSC, any difference of 2 or smaller is considered dust.
+// If both v1 and v2 are CSC, consider any diff of 2 drops or less to be dust.
 bool diffIsDust (STAmount const& v1, STAmount const& v2, std::uint8_t e10 = 6);
 
 } // casinocoin
 
 #endif
+

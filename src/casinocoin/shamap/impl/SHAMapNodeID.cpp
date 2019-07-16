@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/shamap/SHAMapNodeID.h>
 #include <casinocoin/crypto/csprng.h>
 #include <casinocoin/basics/Log.h>

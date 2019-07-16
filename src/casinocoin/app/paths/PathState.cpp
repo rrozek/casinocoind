@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/Credit.h>
 #include <casinocoin/app/paths/PathState.h>
 #include <casinocoin/basics/Log.h>
@@ -59,7 +59,7 @@ void PathState::reset(STAmount const& in, STAmount const& out)
     saInAct = in;
     saOutAct = out;
 
-    if (inReq() > zero && inAct() >= inReq())
+    if (inReq() > beast::zero && inAct() >= inReq())
     {
         JLOG (j_.warn())
             <<  "casinocoinCalc: DONE:"
@@ -67,7 +67,7 @@ void PathState::reset(STAmount const& in, STAmount const& out)
             << " inReq()=" << inReq();
     }
 
-    assert (inReq() < zero || inAct() < inReq());
+    assert (inReq() < beast::zero || inAct() < inReq());
     // Error if done.
 
     if (outAct() >= outReq())
@@ -317,7 +317,7 @@ TER PathState::pushNode (
                     else if ((sleBck->getFieldU32 (sfFlags) & lsfRequireAuth) &&
                              !(sleCasinocoinState->getFieldU32 (sfFlags) &
                                   (bHigh ? lsfHighAuth : lsfLowAuth)) &&
-                             sleCasinocoinState->getFieldAmount(sfBalance) == zero)
+                             sleCasinocoinState->getFieldAmount(sfBalance) == beast::zero)
                     {
                         JLOG (j_.warn())
                                 << "pushNode: delay: can't receive IOUs from "
@@ -333,7 +333,7 @@ TER PathState::pushNode (
                             node.issue_.currency);
                         STAmount saLimit;
 
-                        if (saOwed <= zero)
+                        if (saOwed <= beast::zero)
                         {
                             saLimit = creditLimit (view(),
                                 node.account_,

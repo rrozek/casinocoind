@@ -84,7 +84,10 @@ public:
     //--------------------------------------------------------------------------
     STAmount(SerialIter& sit, SField const& name);
 
-    struct unchecked { };
+    struct unchecked
+    {
+        explicit unchecked() = default;
+    };
 
     // Do not call canonicalize
     STAmount (SField const& name, Issue const& issue,
@@ -194,7 +197,7 @@ public:
 
     explicit operator bool() const noexcept
     {
-        return *this != zero;
+        return *this != beast::zero;
     }
 
     STAmount& operator+= (STAmount const&);
@@ -220,7 +223,7 @@ public:
 
     void negate()
     {
-        if (*this != zero)
+        if (*this != beast::zero)
             mIsNegative = !mIsNegative;
     }
 
@@ -429,10 +432,10 @@ public:
         *stAmountCalcSwitchover2 = saved2_;
     }
 
-    // Mon Dec 28, 2015 10:00:00am PST
+    // Mon Dec 28, 2015 18:00:00 UTC
     static NetClock::time_point const soTime;
 
-    // Mon Mar 28, 2015 10:00:00am PST
+    // Sat Feb 27, 2016 05:00:00 UTC
     static NetClock::time_point const soTime2;
 
 private:
@@ -443,3 +446,4 @@ private:
 } // casinocoin
 
 #endif
+

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/misc/Transaction.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/Log.h>
@@ -70,18 +70,18 @@ void Transaction::setStatus (TransStatus ts, std::uint32_t lseq)
 TransStatus Transaction::sqlTransactionStatus(
     boost::optional<std::string> const& status)
 {
-    char const c = (status) ? (*status)[0] : TXN_SQL_UNKNOWN;
+    char const c = (status) ? (*status)[0] : txnSqlUnknown;
 
     switch (c)
     {
-    case TXN_SQL_NEW:       return NEW;
-    case TXN_SQL_CONFLICT:  return CONFLICTED;
-    case TXN_SQL_HELD:      return HELD;
-    case TXN_SQL_VALIDATED: return COMMITTED;
-    case TXN_SQL_INCLUDED:  return INCLUDED;
+    case txnSqlNew:       return NEW;
+    case txnSqlConflict:  return CONFLICTED;
+    case txnSqlHeld:      return HELD;
+    case txnSqlValidated: return COMMITTED;
+    case txnSqlIncluded:  return INCLUDED;
     }
 
-    assert (c == TXN_SQL_UNKNOWN);
+    assert (c == txnSqlUnknown);
     return INVALID;
 }
 
@@ -173,3 +173,4 @@ Json::Value Transaction::getJson (int options, bool binary) const
 }
 
 } // casinocoin
+

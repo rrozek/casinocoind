@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/rpc/RPCHandler.h>
 #include <casinocoin/rpc/impl/Tuning.h>
@@ -33,6 +33,7 @@
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/PerfLog.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/json/Object.h>
@@ -43,7 +44,8 @@
 #include <casinocoin/resource/Fees.h>
 #include <casinocoin/rpc/Role.h>
 #include <casinocoin/resource/Fees.h>
-
+#include <atomic>
+#include <chrono>
 namespace casinocoin {
 namespace RPC {
 
@@ -163,6 +165,13 @@ error_code_i fillHandler (Context& context,
         return rpcNO_NETWORK;
     }
 
+    if (context.app.getOPs().isAmendmentBlocked() &&
+         (handler->condition_ & NEEDS_CURRENT_LEDGER ||
+          handler->condition_ & NEEDS_CLOSED_LEDGER))
+    {
+        return rpcAMENDMENT_BLOCKED;
+    }
+
     if (!context.app.config().standalone() &&
         handler->condition_ & NEEDS_CURRENT_LEDGER)
     {
@@ -197,14 +206,22 @@ template <class Object, class Method>
 Status callMethod (
     Context& context, Method method, std::string const& name, Object& result)
 {
+    static std::atomic<std::uint64_t> requestId {0};
+    auto& perfLog = context.app.getPerfLog();
+    std::uint64_t const curId = ++requestId;
     try
     {
+        perfLog.rpcStart(name, curId);
         auto v = context.app.getJobQueue().makeLoadEvent(
             jtGENERIC, "cmd:" + name);
-        return method (context, result);
+
+        auto ret = method (context, result);
+        perfLog.rpcFinish(name, curId);
+        return ret;
     }
     catch (std::exception& e)
     {
+        perfLog.rpcError(name, curId);
         JLOG (context.j.info()) << "Caught throw: " << e.what ();
 
         if (context.loadType == Resource::feeReferenceRPC)
@@ -224,7 +241,22 @@ void getResult (
     {
         JLOG (context.j.debug()) << "rpcError: " << status.toString();
         result[jss::status] = jss::error;
-        result[jss::request] = context.params;
+
+        auto rq = context.params;
+
+        if (rq.isObject())
+        {
+            if (rq.isMember(jss::passphrase.c_str()))
+                rq[jss::passphrase.c_str()] = "<masked>";
+            if (rq.isMember(jss::secret.c_str()))
+                rq[jss::secret.c_str()] = "<masked>";
+            if (rq.isMember(jss::seed.c_str()))
+                rq[jss::seed.c_str()] = "<masked>";
+            if (rq.isMember(jss::seed_hex.c_str()))
+                rq[jss::seed_hex.c_str()] = "<masked>";
+        }
+
+        result[jss::request] = rq;
     }
     else
     {
@@ -282,3 +314,4 @@ Role roleRequired (std::string const& method)
 
 } // RPC
 } // casinocoin
+

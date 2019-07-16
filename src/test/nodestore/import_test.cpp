@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/nodestore/impl/codec.h>
 #include <casinocoin/beast/clock/basic_seconds_clock.h>
@@ -105,7 +105,7 @@ pretty_time(std::ostream& os, std::chrono::duration<Rep, Period> d)
         else
         {
             // use integral
-            os << round<nanoseconds>(d).count();
+            os << date::round<nanoseconds>(d).count();
         }
         os << "ns";
     }
@@ -121,7 +121,7 @@ pretty_time(std::ostream& os, std::chrono::duration<Rep, Period> d)
         else
         {
             // use integral
-            os << round<microseconds>(d).count();
+            os << date::round<microseconds>(d).count();
         }
         os << "us";
     }
@@ -137,7 +137,7 @@ pretty_time(std::ostream& os, std::chrono::duration<Rep, Period> d)
         else
         {
             // use integral
-            os << round<milliseconds>(d).count();
+            os << date::round<milliseconds>(d).count();
         }
         os << "ms";
     }
@@ -153,7 +153,7 @@ pretty_time(std::ostream& os, std::chrono::duration<Rep, Period> d)
         else
         {
             // use integral
-            os << round<seconds>(d).count();
+            os << date::round<seconds>(d).count();
         }
         os << "s";
     }
@@ -169,7 +169,7 @@ pretty_time(std::ostream& os, std::chrono::duration<Rep, Period> d)
         else
         {
             // use integral
-            os << round<minutes>(d).count();
+            os << date::round<minutes>(d).count();
         }
         os << "min";
     }
@@ -586,7 +586,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(import,NodeStore,casinocoin);
+BEAST_DEFINE_TESTSUITE_MANUAL(import,NodeStore,casinocoin);
 
 #endif
 

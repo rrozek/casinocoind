@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/ApplyViewImpl.h>
 #include <casinocoin/ledger/PaymentSandbox.h>
 #include <test/jtx/PathSet.h>
@@ -55,12 +55,12 @@ class PaymentSandbox_test : public beast::unit_test::suite
       2) New code: Path is dry because sender does not have any
          GW1 to spend until the end of the transaction.
     */
-    void testSelfFunding (std::initializer_list<uint256> fs)
+    void testSelfFunding (FeatureBitset features)
     {
         testcase ("selfFunding");
 
         using namespace jtx;
-        Env env (*this, features(fs));
+        Env env (*this, features);
         Account const gw1 ("gw1");
         Account const gw2 ("gw2");
         Account const snd ("snd");
@@ -96,12 +96,12 @@ class PaymentSandbox_test : public beast::unit_test::suite
         env.require (balance ("rcv", USD_gw2 (2)));
     }
 
-    void testSubtractCredits (std::initializer_list<uint256> fs)
+    void testSubtractCredits (FeatureBitset features)
     {
         testcase ("subtractCredits");
 
         using namespace jtx;
-        Env env (*this, features(fs));
+        Env env (*this, features);
         Account const gw1 ("gw1");
         Account const gw2 ("gw2");
         Account const alice ("alice");
@@ -256,7 +256,7 @@ class PaymentSandbox_test : public beast::unit_test::suite
         }
     }
 
-    void testTinyBalance (std::initializer_list<uint256> fs)
+    void testTinyBalance (FeatureBitset features)
     {
         testcase ("Tiny balance");
 
@@ -266,7 +266,7 @@ class PaymentSandbox_test : public beast::unit_test::suite
 
         using namespace jtx;
 
-        Env env (*this, features(fs));
+        Env env (*this, features);
 
         Account const gw ("gw");
         Account const alice ("alice");
@@ -278,10 +278,10 @@ class PaymentSandbox_test : public beast::unit_test::suite
         STAmount hugeAmt (issue, STAmount::cMaxValue, STAmount::cMaxOffset - 1,
             false, false, STAmount::unchecked{});
 
-        for (auto timeDelta : {-env.closed ()->info ().closeTimeResolution,
-                 env.closed ()->info ().closeTimeResolution})
+        for (auto d : {-1, 1})
         {
-            auto const closeTime = fix1141Time () + timeDelta;
+            auto const closeTime = fix1141Time () +
+                d * env.closed()->info().closeTimeResolution;
             env.close (closeTime);
             ApplyViewImpl av (&*env.current (), tapNONE);
             PaymentSandbox pv (&av);
@@ -293,18 +293,16 @@ class PaymentSandbox_test : public beast::unit_test::suite
         }
     }
 
-    void testReserve(std::initializer_list<uint256> fs)
+    void testReserve(FeatureBitset features)
     {
         testcase ("Reserve");
         using namespace jtx;
 
-        beast::Journal dj;
-
-        auto accountFundsCSC = [&dj](
-            ReadView const& view, AccountID const& id) -> CSCAmount
+        auto accountFundsCSC = [](ReadView const& view,
+            AccountID const& id, beast::Journal j) -> CSCAmount
         {
             return toAmount<CSCAmount> (accountHolds (
-                view, id, cscCurrency (), cscAccount (), fhZERO_IF_FROZEN, dj));
+                view, id, cscCurrency (), cscAccount (), fhZERO_IF_FROZEN, j));
         };
 
         auto reserve = [](jtx::Env& env, std::uint32_t count) -> CSCAmount
@@ -312,7 +310,7 @@ class PaymentSandbox_test : public beast::unit_test::suite
             return env.current ()->fees ().accountReserve (count);
         };
 
-        Env env (*this, features(fs));
+        Env env (*this, features);
 
         Account const alice ("alice");
         env.fund (reserve(env, 1), alice);
@@ -327,20 +325,21 @@ class PaymentSandbox_test : public beast::unit_test::suite
             // to drop below the reserve. Make sure her funds are zero (there was a bug that
             // caused her funds to become negative).
 
-            accountSend (sb, cscAccount (), alice, CSC(100), dj);
-            accountSend (sb, alice, cscAccount (), CSC(100), dj);
-            BEAST_EXPECT(accountFundsCSC (sb, alice) == beast::zero);
+            accountSend (sb, cscAccount (), alice, CSC(100), env.journal);
+            accountSend (sb, alice, cscAccount (), CSC(100), env.journal);
+            BEAST_EXPECT(
+                accountFundsCSC (sb, alice, env.journal) == beast::zero);
         }
     }
 
-    void testBalanceHook(std::initializer_list<uint256> fs)
+    void testBalanceHook(FeatureBitset features)
     {
         // Make sure the Issue::Account returned by PAymentSandbox::balanceHook
         // is correct.
         testcase ("balanceHook");
 
         using namespace jtx;
-        Env env (*this, features(fs));
+        Env env (*this, features);
 
         Account const gw ("gw");
         auto const USD = gw["USD"];
@@ -368,18 +367,20 @@ class PaymentSandbox_test : public beast::unit_test::suite
     }
 
 public:
-    void run ()
+    void run () override
     {
-        auto testAll = [this](std::initializer_list<uint256> fs) {
-            testSelfFunding(fs);
-            testSubtractCredits(fs);
-            testTinyBalance(fs);
-            testReserve(fs);
-            testBalanceHook(fs);
+        auto testAll = [this](FeatureBitset features) {
+            testSelfFunding(features);
+            testSubtractCredits(features);
+            testTinyBalance(features);
+            testReserve(features);
+            testBalanceHook(features);
         };
-        testAll({});
-        testAll({featureFlow, fix1373});
-        testAll({featureFlow, fix1373, featureFlowCross});
+        using namespace jtx;
+        auto const sa = supported_amendments();
+        testAll(sa - featureFlow - fix1373 - featureFlowCross);
+        testAll(sa                         - featureFlowCross);
+        testAll(sa);
     }
 };
 
@@ -387,3 +388,4 @@ BEAST_DEFINE_TESTSUITE (PaymentSandbox, ledger, casinocoin);
 
 }  // test
 }  // ripple
+

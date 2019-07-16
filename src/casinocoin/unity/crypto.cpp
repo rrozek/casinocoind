@@ -23,11 +23,10 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/crypto/impl/ec_key.cpp>
 #include <casinocoin/crypto/impl/GenerateDeterministicKey.cpp>
-#include <casinocoin/crypto/impl/KeyType.cpp>
 #include <casinocoin/crypto/impl/openssl.cpp>
 #include <casinocoin/crypto/impl/csprng.cpp>
 #include <casinocoin/crypto/impl/RFC1751.cpp>

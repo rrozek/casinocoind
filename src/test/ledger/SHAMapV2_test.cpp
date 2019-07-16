@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/Ledger.h>
 #include <test/jtx.h>
 #include <casinocoin/beast/unit_test.h>
@@ -69,7 +69,7 @@ class SHAMapV2_test : public beast::unit_test::suite
         BEAST_EXPECT(getEnabledAmendments(*ledger) == amendments);
     }
 
-    void run()
+    void run() override
     {
         testSHAMapV2();
     }

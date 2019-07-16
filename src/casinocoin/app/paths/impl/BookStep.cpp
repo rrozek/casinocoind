@@ -22,8 +22,8 @@
     2017-06-29  ajochems        Refactored for casinocoin
 */
 //==============================================================================
-
-#include <BeastConfig.h>
+#include <casinocoin/app/paths/impl/FlatSets.h>
+ 
 #include <casinocoin/app/paths/impl/Steps.h>
 #include <casinocoin/app/paths/Credit.h>
 #include <casinocoin/app/paths/NodeDirectory.h>
@@ -49,13 +49,15 @@ template<class TIn, class TOut, class TDerived>
 class BookStep : public StepImp<TIn, TOut, BookStep<TIn, TOut, TDerived>>
 {
 protected:
-    static constexpr uint32_t maxOffersToConsume_ = 2000;
+    uint32_t const maxOffersToConsume_;
     Book book_;
     AccountID strandSrc_;
     AccountID strandDst_;
     // Charge transfer fees when the prev step redeems
     Step const* const prevStep_ = nullptr;
     bool const ownerPaysTransferFee_;
+    // Mark as inactive (dry) if too many offers are consumed
+    bool inactive_ = false;
     beast::Journal j_;
 
     struct Cache
@@ -71,11 +73,20 @@ protected:
 
     boost::optional<Cache> cache_;
 
+    static
+    uint32_t getMaxOffersToConsume(StrandContext const& ctx)
+    {
+        if (ctx.view.rules().enabled(fix1515))
+            return 1000;
+        return 2000;
+    }
+
 public:
     BookStep (StrandContext const& ctx,
         Issue const& in,
         Issue const& out)
-        : book_ (in, out)
+        : maxOffersToConsume_ (getMaxOffersToConsume(ctx))
+        , book_ (in, out)
         , strandSrc_ (ctx.strandSrc)
         , strandDst_ (ctx.strandDst)
         , prevStep_ (ctx.prevStep)
@@ -87,7 +98,7 @@ public:
     Book const& book() const
     {
         return book_;
-    };
+    }
 
     boost::optional<EitherAmount>
     cachedIn () const override
@@ -142,6 +153,10 @@ public:
 
     // Check for errors frozen constraints.
     TER check(StrandContext const& ctx) const;
+
+    bool inactive() const override {
+        return inactive_;
+    }
 
 protected:
     std::string logStringImpl (char const* name) const
@@ -203,6 +218,8 @@ class BookPaymentStep
     : public BookStep<TIn, TOut, BookPaymentStep<TIn, TOut>>
 {
 public:
+    explicit BookPaymentStep() = default;
+
     using BookStep<TIn, TOut, BookPaymentStep<TIn, TOut>>::BookStep;
     using BookStep<TIn, TOut, BookPaymentStep<TIn, TOut>>::qualityUpperBound;
 
@@ -529,8 +546,10 @@ BookStep<TIn, TOut, TDerived>::forEachOffer (
                 continue;
 
         // Make sure offer owner has authorization to own IOUs from issuer.
-        // An account can always own their own IOUs.
-        if (flowCross && (offer.owner() != offer.issueIn().account))
+        // An account can always own CSC or their own IOUs.
+        if (flowCross &&
+            (!isCSC (offer.issueIn().currency)) &&
+            (offer.owner() != offer.issueIn().account))
         {
             auto const& issuerID = offer.issueIn().account;
             auto const issuer = afView.read (keylet::account (issuerID));
@@ -539,10 +558,10 @@ BookStep<TIn, TOut, TDerived>::forEachOffer (
                 // Issuer requires authorization.  See if offer owner has that.
                 auto const& ownerID = offer.owner();
                 auto const authFlag =
-                    ownerID > issuerID ? lsfHighAuth : lsfLowAuth;
+                    issuerID > ownerID ? lsfHighAuth : lsfLowAuth;
 
                 auto const line = afView.read (keylet::line (
-                    ownerID, issuerID, offer.issueOut().currency));
+                    ownerID, issuerID, offer.issueIn().currency));
 
                 if (!line || (((*line)[sfFlags] & authFlag) == 0))
                 {
@@ -717,14 +736,21 @@ BookStep<TIn, TOut, TDerived>::revImp (
         auto const r = forEachOffer (sb, afView, prevStepRedeems, eachOffer);
         boost::container::flat_set<uint256> toRm = std::move(std::get<0>(r));
         std::uint32_t const offersConsumed = std::get<1>(r);
-        ofrsToRm.insert (boost::container::ordered_unique_range_t{},
-            toRm.begin (), toRm.end ());
+        SetUnion(ofrsToRm, toRm);
 
         if (offersConsumed >= maxOffersToConsume_)
         {
-            // Too many iterations, mark this strand as dry
-            cache_.emplace (beast::zero, beast::zero);
-            return {beast::zero, beast::zero};
+            // Too many iterations, mark this strand as inactive
+            if (!afView.rules().enabled(fix1515))
+            {
+                // Don't use the liquidity
+                cache_.emplace(beast::zero, beast::zero);
+                return {beast::zero, beast::zero};
+            }
+
+            // Use the liquidity, but use this to mark the strand as inactive so
+            // it's not used further
+            inactive_ = true;
         }
     }
 
@@ -871,14 +897,21 @@ BookStep<TIn, TOut, TDerived>::fwdImp (
         auto const r = forEachOffer (sb, afView, prevStepRedeems, eachOffer);
         boost::container::flat_set<uint256> toRm = std::move(std::get<0>(r));
         std::uint32_t const offersConsumed = std::get<1>(r);
-        ofrsToRm.insert (boost::container::ordered_unique_range_t{},
-            toRm.begin (), toRm.end ());
+        SetUnion(ofrsToRm, toRm);
 
         if (offersConsumed >= maxOffersToConsume_)
         {
-            // Too many iterations, mark this strand as dry
-            cache_.emplace (beast::zero, beast::zero);
-            return {beast::zero, beast::zero};
+            // Too many iterations, mark this strand as inactive (dry)
+            if (!afView.rules().enabled(fix1515))
+            {
+                // Don't use the liquidity
+                cache_.emplace(beast::zero, beast::zero);
+                return {beast::zero, beast::zero};
+            }
+
+            // Use the liquidity, but use this to mark the strand as inactive so
+            // it's not used further
+            inactive_ = true;
         }
     }
 
@@ -1091,3 +1124,4 @@ make_BookStepXI (
 }
 
 } // casinocoin
+

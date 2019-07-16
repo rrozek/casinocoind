@@ -26,7 +26,7 @@
 #ifndef CASINOCOIN_OVERLAY_CLUSTER_H_INCLUDED
 #define CASINOCOIN_OVERLAY_CLUSTER_H_INCLUDED
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/BasicConfig.h>
@@ -47,6 +47,8 @@ class Cluster
 private:
     struct Comparator
     {
+        explicit Comparator() = default;
+
         using is_transparent = std::true_type;
 
         bool
@@ -130,3 +132,4 @@ public:
 } // casinocoin
 
 #endif
+

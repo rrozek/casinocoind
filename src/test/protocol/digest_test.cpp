@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/digest.h>
 #include <casinocoin/beast/utility/rngfill.h>
 #include <casinocoin/beast/xor_shift_engine.h>
@@ -149,7 +149,7 @@ public:
         pass ();
     }
 
-    void run ()
+    void run () override
     {
         testSHA512 ();
         testSHA256 ();
@@ -157,6 +157,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL(digest,casinocoin_data,casinocoin);
+BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(digest,ripple_data,casinocoin,20);
 
 } // casinocoin

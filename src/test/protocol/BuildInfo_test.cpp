@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/BuildInfo.h>
 #include <casinocoin/beast/core/SemanticVersion.h>
 #include <casinocoin/beast/unit_test.h>
@@ -85,7 +85,7 @@ public:
         BEAST_EXPECT(to_packed (from_version (65535, 65535)) == 4294967295);
     }
 
-    void run ()
+    void run () override
     {
         testValues ();
         testStringVersion ();

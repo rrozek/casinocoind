@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <test/jtx.h>
@@ -452,7 +452,7 @@ public:
                 [&](auto const& jv)
                 {
                     return jv[jss::transaction][jss::TransactionType] ==
-                        "AccountSet";
+                        jss::AccountSet;
                 }));
         }
 

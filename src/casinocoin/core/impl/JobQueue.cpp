@@ -23,21 +23,24 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/basics/contract.h>
+#include <casinocoin/basics/PerfLog.h>
 
 namespace casinocoin {
 
 JobQueue::JobQueue (beast::insight::Collector::ptr const& collector,
-    Stoppable& parent, beast::Journal journal, Logs& logs)
+    Stoppable& parent, beast::Journal journal, Logs& logs,
+    perf::PerfLog& perfLog)
     : Stoppable ("JobQueue", parent)
     , m_journal (journal)
     , m_lastJob (0)
-    , m_invalidJobData (getJobTypes ().getInvalid (), collector, logs)
+    , m_invalidJobData (JobTypes::instance().getInvalid (), collector, logs)
     , m_processCount (0)
-    , m_workers (*this, "JobQueue", 0)
+    , m_workers (*this, perfLog, "JobQueue", 0)
     , m_cancelCallback (std::bind (&Stoppable::isStopping, this))
+    , perfLog_ (perfLog)
     , m_collector (collector)
 {
     hook = m_collector->make_hook (std::bind (&JobQueue::collect, this));
@@ -46,7 +49,7 @@ JobQueue::JobQueue (beast::insight::Collector::ptr const& collector,
     {
         std::lock_guard <std::mutex> lock (m_mutex);
 
-        for (auto const& x : getJobTypes ())
+        for (auto const& x : JobTypes::instance())
         {
             JobTypeInfo const& jt = x.second;
 
@@ -73,8 +76,8 @@ JobQueue::collect ()
     job_count = m_jobSet.size ();
 }
 
-void
-JobQueue::addJob (JobType type, std::string const& name,
+bool
+JobQueue::addRefCountedJob (JobType type, std::string const& name,
     JobFunction const& func)
 {
     assert (type != jtINVALID);
@@ -82,7 +85,7 @@ JobQueue::addJob (JobType type, std::string const& name,
     auto iter (m_jobData.find (type));
     assert (iter != m_jobData.end ());
     if (iter == m_jobData.end ())
-        return;
+        return false;
 
     JobTypeData& data (iter->second);
 
@@ -114,6 +117,7 @@ JobQueue::addJob (JobType type, std::string const& name,
                 data.load (), func, m_cancelCallback)));
         queueJob (*result.first, lock);
     }
+    return true;
 }
 
 int
@@ -158,8 +162,7 @@ JobQueue::getJobCountGE (JobType t) const
 }
 
 void
-JobQueue::setThreadCount (int c, bool const standaloneMode,
-                          bool const validator)
+JobQueue::setThreadCount (int c, bool const standaloneMode)
 {
     if (standaloneMode)
     {
@@ -168,13 +171,9 @@ JobQueue::setThreadCount (int c, bool const standaloneMode,
     else if (c == 0)
     {
         c = static_cast<int>(std::thread::hardware_concurrency());
-        if (validator)
-            c = 2 + std::min(c, 4); // I/O will bottleneck
-        else
-            c *= 2; // Tested to improve stability under high RPC load.
+        c = 2 + std::min(c, 4); // I/O will bottleneck
         JLOG (m_journal.info()) << "Auto-tuning to " << c <<
-                            " validation/transaction/proposal threads for " <<
-                            (validator ? "" : "non-") << "validator.";
+                            " validation/transaction/proposal threads.";
     }
     else
     {
@@ -226,6 +225,7 @@ JobQueue::isOverloaded ()
 Json::Value
 JobQueue::getJson (int c)
 {
+    using namespace std::chrono_literals;
     Json::Value ret (Json::objectValue);
 
     ret["threads"] = m_workers.getNumberOfThreads ();
@@ -249,7 +249,7 @@ JobQueue::getJson (int c)
         int running (data.running);
 
         if ((stats.count != 0) || (waiting != 0) ||
-            (stats.latencyPeak != 0) || (running != 0))
+            (stats.latencyPeak != 0ms) || (running != 0))
         {
             Json::Value& pri = priorities.append (Json::objectValue);
 
@@ -264,11 +264,11 @@ JobQueue::getJson (int c)
             if (stats.count != 0)
                 pri["per_second"] = static_cast<int> (stats.count);
 
-            if (stats.latencyPeak != 0)
-                pri["peak_time"] = static_cast<int> (stats.latencyPeak);
+            if (stats.latencyPeak != 0ms)
+                pri["peak_time"] = static_cast<int> (stats.latencyPeak.count());
 
-            if (stats.latencyAvg != 0)
-                pri["avg_time"] = static_cast<int> (stats.latencyAvg);
+            if (stats.latencyAvg != 0ms)
+                pri["avg_time"] = static_cast<int> (stats.latencyAvg.count());
 
             if (running != 0)
                 pri["in_progress"] = running;
@@ -339,6 +339,7 @@ JobQueue::queueJob (Job const& job, std::lock_guard <std::mutex> const& lock)
     JobType const type (job.getType ());
     assert (type != jtINVALID);
     assert (m_jobSet.find (job) != m_jobSet.end ());
+    perfLog_.jobQueue(type);
 
     JobTypeData& data (getJobTypeData (type));
 
@@ -408,34 +409,13 @@ JobQueue::finishJob (JobType type)
     --data.running;
 }
 
-template <class Rep, class Period>
-void JobQueue::on_dequeue (JobType type,
-    std::chrono::duration <Rep, Period> const& value)
-{
-    using namespace std::chrono;
-    auto const ms (ceil <std::chrono::milliseconds> (value));
-
-    if (ms.count() >= 10)
-        getJobTypeData (type).dequeue.notify (ms);
-}
-
-template <class Rep, class Period>
-void JobQueue::on_execute (JobType type,
-    std::chrono::duration <Rep, Period> const& value)
-{
-    using namespace std::chrono;
-    auto const ms (ceil <std::chrono::milliseconds> (value));
-
-    if (ms.count() >= 10)
-        getJobTypeData (type).execute.notify (ms);
-}
-
 void
-JobQueue::processTask ()
+JobQueue::processTask (int instance)
 {
     JobType type;
 
     {
+        using namespace std::chrono;
         Job::clock_type::time_point const start_time (
             Job::clock_type::now());
         {
@@ -448,10 +428,18 @@ JobQueue::processTask ()
             type = job.getType();
             JobTypeData& data(getJobTypeData(type));
             JLOG(m_journal.trace()) << "Doing " << data.name () << " job";
-            on_dequeue (job.getType (), start_time - job.queue_time ());
+            auto const us = date::ceil<microseconds>(
+                start_time - job.queue_time());
+            perfLog_.jobStart(type, us, start_time, instance);
+            if (us >= 10ms)
+                getJobTypeData(type).dequeue.notify(us);
             job.doJob ();
         }
-        on_execute(type, Job::clock_type::now() - start_time);
+        auto const us (
+            date::ceil<microseconds>(Job::clock_type::now() - start_time));
+        perfLog_.jobFinish(type, us, instance);
+        if (us >= 10ms)
+            getJobTypeData(type).execute.notify(us);
     }
 
     {
@@ -472,7 +460,7 @@ JobQueue::processTask ()
 int
 JobQueue::getJobLimit (JobType type)
 {
-    JobTypeInfo const& j (getJobTypes ().get (type));
+    JobTypeInfo const& j (JobTypes::instance().get (type));
     assert (j.type () != jtINVALID);
 
     return j.limit ();
@@ -486,3 +474,4 @@ JobQueue::onChildrenStopped ()
 }
 
 }
+

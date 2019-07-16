@@ -23,14 +23,17 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
+#include <casinocoin/ledger/BookDirs.h>
 #include <casinocoin/ledger/ReadView.h>
 #include <casinocoin/ledger/View.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/st.h>
+#include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/protocol/Quality.h>
 #include <boost/algorithm/string.hpp>
 #include <cassert>
@@ -40,7 +43,7 @@ namespace casinocoin {
 NetClock::time_point const& fix1141Time ()
 {
     using namespace std::chrono_literals;
-    // Fri July 1, 2016 10:00:00am PDT
+    // Fri July 1, 2016 17:00:00 UTC
     static NetClock::time_point const soTime{520707600s};
     return soTime;
 }
@@ -53,7 +56,7 @@ bool fix1141 (NetClock::time_point const closeTime)
 NetClock::time_point const& fix1274Time ()
 {
     using namespace std::chrono_literals;
-    // Fri Sep 30, 2016 10:00:00am PDT
+    // Fri Sep 30, 2016 17:00:00 UTC
     static NetClock::time_point const soTime{528570000s};
 
     return soTime;
@@ -67,7 +70,7 @@ bool fix1274 (NetClock::time_point const closeTime)
 NetClock::time_point const& fix1298Time ()
 {
     using namespace std::chrono_literals;
-    // Wed Dec 21, 2016 10:00:00am PST
+    // Wed Dec 21, 2016 18:00:00 UTC
     static NetClock::time_point const soTime{535658400s};
 
     return soTime;
@@ -81,7 +84,7 @@ bool fix1298 (NetClock::time_point const closeTime)
 NetClock::time_point const& fix1443Time ()
 {
     using namespace std::chrono_literals;
-    // Sat Mar 11, 2017 05:00:00pm PST
+    // Sun Mar 12, 2017 01:00:00 UTC
     static NetClock::time_point const soTime{542595600s};
 
     return soTime;
@@ -95,7 +98,7 @@ bool fix1443 (NetClock::time_point const closeTime)
 NetClock::time_point const& fix1449Time ()
 {
     using namespace std::chrono_literals;
-    // Thurs, Mar 30, 2017 01:00:00pm PDT
+    // Thurs, Mar 30, 2017 20:00:00 UTC
     static NetClock::time_point const soTime{544219200s};
 
     return soTime;
@@ -105,14 +108,6 @@ bool fix1449 (NetClock::time_point const closeTime)
 {
     return closeTime > fix1449Time();
 }
-
-// VFALCO NOTE A copy of the other one for now
-/** Maximum number of entries in a directory page
-    A change would be protocol-breaking.
-*/
-#ifndef DIR_NODE_MAX
-#define DIR_NODE_MAX  32
-#endif
 
 //------------------------------------------------------------------------------
 //
@@ -149,7 +144,6 @@ isGlobalFrozen (ReadView const& view,
 
 // Can the specified account spend the specified currency issued by
 // the specified issuer or does the freeze flag prohibit it?
-static
 bool
 isFrozen (ReadView const& view, AccountID const& account,
     Currency const& currency, AccountID const& issuer)
@@ -254,7 +248,7 @@ static
 std::uint32_t
 confineOwnerCount (std::uint32_t current, std::int32_t adjustment,
     boost::optional<AccountID> const& id = boost::none,
-    beast::Journal j = beast::Journal{})
+    beast::Journal j = beast::Journal {beast::Journal::getNullSink()})
 {
     std::uint32_t adjusted {current + adjustment};
     if (adjustment > 0)
@@ -295,7 +289,7 @@ cscLiquid (ReadView const& view, AccountID const& id,
 {
     auto const sle = view.read(keylet::account(id));
     if (sle == nullptr)
-        return zero;
+        return beast::zero;
 
     // Return balance minus reserve
     if (fix1141 (view.info ().parentCloseTime))
@@ -469,7 +463,7 @@ areCompatible (ReadView const& validLedger, ReadView const& testLedger,
     {
         // valid -> ... -> test
         auto hash = hashOfSeq (testLedger, validLedger.info().seq,
-            beast::Journal());
+            beast::Journal {beast::Journal::getNullSink()});
         if (hash && (*hash != validLedger.info().hash))
         {
             JLOG(s) << reason << " incompatible with valid ledger";
@@ -483,7 +477,7 @@ areCompatible (ReadView const& validLedger, ReadView const& testLedger,
     {
         // test -> ... -> valid
         auto hash = hashOfSeq (validLedger, testLedger.info().seq,
-            beast::Journal());
+            beast::Journal {beast::Journal::getNullSink()});
         if (hash && (*hash != testLedger.info().hash))
         {
             JLOG(s) << reason << " incompatible preceding ledger";
@@ -523,7 +517,7 @@ bool areCompatible (uint256 const& validHash, LedgerIndex validIndex,
     {
         // Ledger we are testing follows last valid ledger
         auto hash = hashOfSeq (testLedger, validIndex,
-            beast::Journal());
+            beast::Journal {beast::Journal::getNullSink()});
         if (hash && (*hash != validHash))
         {
             JLOG(s) << reason << " incompatible following ledger";
@@ -816,19 +810,28 @@ describeOwnerDir(AccountID const& account)
     };
 }
 
-std::pair<TER, bool>
+boost::optional<std::uint64_t>
 dirAdd (ApplyView& view,
-    std::uint64_t&                          uNodeDir,
     Keylet const&                           dir,
     uint256 const&                          uLedgerIndex,
+    bool                                    strictOrder,
     std::function<void (SLE::ref)>          fDescriber,
     beast::Journal j)
 {
+    if (view.rules().enabled(featureSortedDirectories))
+    {
+        if (strictOrder)
+            return view.dirAppend(dir, uLedgerIndex, fDescriber);
+        else
+            return view.dirInsert(dir, uLedgerIndex, fDescriber);
+    }
+
     JLOG (j.trace()) << "dirAdd:" <<
         " dir=" << to_string (dir.key) <<
         " uLedgerIndex=" << to_string (uLedgerIndex);
 
     auto sleRoot = view.peek(dir);
+    std::uint64_t uNodeDir = 0;
 
     if (! sleRoot)
     {
@@ -846,9 +849,7 @@ dirAdd (ApplyView& view,
             "dirAdd: created root " << to_string (dir.key) <<
             " for entry " << to_string (uLedgerIndex);
 
-        uNodeDir = 0;
-
-        return { tesSUCCESS, true };
+        return uNodeDir;
     }
 
     SLE::pointer sleNode;
@@ -870,7 +871,7 @@ dirAdd (ApplyView& view,
 
     svIndexes = sleNode->getFieldV256 (sfIndexes);
 
-    if (DIR_NODE_MAX != svIndexes.size ())
+    if (dirNodeMaxEntries != svIndexes.size ())
     {
         // Add to current node.
         view.update(sleNode);
@@ -878,7 +879,7 @@ dirAdd (ApplyView& view,
     // Add to new node.
     else if (!++uNodeDir)
     {
-        return { tecDIR_FULL, false };
+        return boost::none;
     }
     else
     {
@@ -914,196 +915,7 @@ dirAdd (ApplyView& view,
     JLOG (j.trace()) <<
         "dirAdd:  appending: Node: " << strHex (uNodeDir);
 
-    return { tesSUCCESS, false };
-}
-
-// Ledger must be in a state for this to work.
-TER
-dirDelete (ApplyView& view,
-    const bool                      bKeepRoot,      // --> True, if we never completely clean up, after we overflow the root node.
-    const std::uint64_t&            uNodeDir,       // --> Node containing entry.
-    uint256 const&                  uRootIndex,     // --> The index of the base of the directory.  Nodes are based off of this.
-    uint256 const&                  uLedgerIndex,   // --> Value to remove from directory.
-    const bool                      bStable,        // --> True, not to change relative order of entries.
-    const bool                      bSoft,          // --> True, uNodeDir is not hard and fast (pass uNodeDir=0).
-    beast::Journal j)
-{
-    std::uint64_t uNodeCur = uNodeDir;
-    SLE::pointer sleNode =
-        view.peek(keylet::page(uRootIndex, uNodeCur));
-
-    if (!sleNode)
-    {
-        JLOG (j.warn()) << "dirDelete: no such node:" <<
-            " uRootIndex=" << to_string (uRootIndex) <<
-            " uNodeDir=" << strHex (uNodeDir) <<
-            " uLedgerIndex=" << to_string (uLedgerIndex);
-
-        if (!bSoft)
-        {
-            assert (false);
-            return tefBAD_LEDGER;
-        }
-        else if (uNodeDir < 20)
-        {
-            // Go the extra mile. Even if node doesn't exist, try the next node.
-
-            return dirDelete (view, bKeepRoot,
-                uNodeDir + 1, uRootIndex, uLedgerIndex, bStable, true, j);
-        }
-        else
-        {
-            return tefBAD_LEDGER;
-        }
-    }
-
-    STVector256 svIndexes = sleNode->getFieldV256 (sfIndexes);
-
-    auto it = std::find (svIndexes.begin (), svIndexes.end (), uLedgerIndex);
-
-    if (svIndexes.end () == it)
-    {
-        if (!bSoft)
-        {
-            assert (false);
-            JLOG (j.warn()) << "dirDelete: no such entry";
-            return tefBAD_LEDGER;
-        }
-
-        if (uNodeDir < 20)
-        {
-            // Go the extra mile. Even if entry not in node, try the next node.
-            return dirDelete (view, bKeepRoot, uNodeDir + 1,
-                uRootIndex, uLedgerIndex, bStable, true, j);
-        }
-
-        return tefBAD_LEDGER;
-    }
-
-    // Remove the element.
-    if (svIndexes.size () > 1)
-    {
-        if (bStable)
-        {
-            svIndexes.erase (it);
-        }
-        else
-        {
-            *it = svIndexes[svIndexes.size () - 1];
-            svIndexes.resize (svIndexes.size () - 1);
-        }
-    }
-    else
-    {
-        svIndexes.clear ();
-    }
-
-    sleNode->setFieldV256 (sfIndexes, svIndexes);
-    view.update(sleNode);
-
-    if (svIndexes.empty ())
-    {
-        // May be able to delete nodes.
-        std::uint64_t       uNodePrevious   = sleNode->getFieldU64 (sfIndexPrevious);
-        std::uint64_t       uNodeNext       = sleNode->getFieldU64 (sfIndexNext);
-
-        if (!uNodeCur)
-        {
-            // Just emptied root node.
-
-            if (!uNodePrevious)
-            {
-                // Never overflowed the root node.  Delete it.
-                view.erase(sleNode);
-            }
-            // Root overflowed.
-            else if (bKeepRoot)
-            {
-                // If root overflowed and not allowed to delete overflowed root node.
-            }
-            else if (uNodePrevious != uNodeNext)
-            {
-                // Have more than 2 nodes.  Can't delete root node.
-            }
-            else
-            {
-                // Have only a root node and a last node.
-                auto sleLast = view.peek(keylet::page(uRootIndex, uNodeNext));
-
-                assert (sleLast);
-
-                if (sleLast->getFieldV256 (sfIndexes).empty ())
-                {
-                    // Both nodes are empty.
-
-                    view.erase (sleNode);  // Delete root.
-                    view.erase (sleLast);  // Delete last.
-                }
-                else
-                {
-                    // Have an entry, can't delete root node.
-                }
-            }
-        }
-        // Just emptied a non-root node.
-        else if (uNodeNext)
-        {
-            // Not root and not last node. Can delete node.
-
-            auto slePrevious =
-                view.peek(keylet::page(uRootIndex, uNodePrevious));
-            auto sleNext = view.peek(keylet::page(uRootIndex, uNodeNext));
-            assert (slePrevious);
-            if (!slePrevious)
-            {
-                JLOG (j.warn()) << "dirDelete: previous node is missing";
-                return tefBAD_LEDGER;
-            }
-            assert (sleNext);
-            if (!sleNext)
-            {
-                JLOG (j.warn()) << "dirDelete: next node is missing";
-                return tefBAD_LEDGER;
-            }
-
-            // Fix previous to point to its new next.
-            slePrevious->setFieldU64 (sfIndexNext, uNodeNext);
-            view.update (slePrevious);
-
-            // Fix next to point to its new previous.
-            sleNext->setFieldU64 (sfIndexPrevious, uNodePrevious);
-            view.update (sleNext);
-
-            view.erase(sleNode);
-        }
-        // Last node.
-        else if (bKeepRoot || uNodePrevious)
-        {
-            // Not allowed to delete last node as root was overflowed.
-            // Or, have pervious entries preventing complete delete.
-        }
-        else
-        {
-            // Last and only node besides the root.
-            auto sleRoot = view.peek (keylet::page(uRootIndex));
-
-            assert (sleRoot);
-
-            if (sleRoot->getFieldV256 (sfIndexes).empty ())
-            {
-                // Both nodes are empty.
-
-                view.erase(sleRoot);  // Delete root.
-                view.erase(sleNode);  // Delete last.
-            }
-            else
-            {
-                // Root has an entry, can't delete.
-            }
-        }
-    }
-
-    return tesSUCCESS;
+    return uNodeDir;
 }
 
 TER
@@ -1135,86 +947,77 @@ trustCreate (ApplyView& view,
         ltCASINOCOIN_STATE, uIndex);
     view.insert (sleCasinocoinState);
 
-    std::uint64_t   uLowNode;
-    std::uint64_t   uHighNode;
+    auto lowNode = dirAdd (view, keylet::ownerDir (uLowAccountID),
+        sleCasinocoinState->key(), false, describeOwnerDir (uLowAccountID), j);
 
-    TER terResult;
+    if (!lowNode)
+        return tecDIR_FULL;
 
-    std::tie (terResult, std::ignore) = dirAdd (view,
-        uLowNode, keylet::ownerDir (uLowAccountID),
-        sleCasinocoinState->key(),
-        describeOwnerDir (uLowAccountID), j);
+    auto highNode = dirAdd (view, keylet::ownerDir (uHighAccountID),
+        sleCasinocoinState->key(), false, describeOwnerDir (uHighAccountID), j);
 
-    if (tesSUCCESS == terResult)
+    if (!highNode)
+        return tecDIR_FULL;
+
+    const bool bSetDst = saLimit.getIssuer () == uDstAccountID;
+    const bool bSetHigh = bSrcHigh ^ bSetDst;
+
+    assert (sleAccount->getAccountID (sfAccount) ==
+        (bSetHigh ? uHighAccountID : uLowAccountID));
+    auto slePeer = view.peek (keylet::account(
+        bSetHigh ? uLowAccountID : uHighAccountID));
+    assert (slePeer);
+
+    // Remember deletion hints.
+    sleCasinocoinState->setFieldU64 (sfLowNode, *lowNode);
+    sleCasinocoinState->setFieldU64 (sfHighNode, *highNode);
+
+    sleCasinocoinState->setFieldAmount (
+        bSetHigh ? sfHighLimit : sfLowLimit, saLimit);
+    sleCasinocoinState->setFieldAmount (
+        bSetHigh ? sfLowLimit : sfHighLimit,
+        STAmount ({saBalance.getCurrency (),
+                   bSetDst ? uSrcAccountID : uDstAccountID}));
+
+    if (uQualityIn)
+        sleCasinocoinState->setFieldU32 (
+            bSetHigh ? sfHighQualityIn : sfLowQualityIn, uQualityIn);
+
+    if (uQualityOut)
+        sleCasinocoinState->setFieldU32 (
+            bSetHigh ? sfHighQualityOut : sfLowQualityOut, uQualityOut);
+
+    std::uint32_t uFlags = bSetHigh ? lsfHighReserve : lsfLowReserve;
+
+    if (bAuth)
     {
-        std::tie (terResult, std::ignore) = dirAdd (view,
-            uHighNode, keylet::ownerDir (uHighAccountID),
-            sleCasinocoinState->key(),
-            describeOwnerDir (uHighAccountID), j);
+        uFlags |= (bSetHigh ? lsfHighAuth : lsfLowAuth);
+    }
+    if (bnoCasinocoin)
+    {
+        uFlags |= (bSetHigh ? lsfHighNoCasinocoin : lsfLowNoCasinocoin);
+    }
+    if (bFreeze)
+    {
+        uFlags |= (!bSetHigh ? lsfLowFreeze : lsfHighFreeze);
     }
 
-    if (tesSUCCESS == terResult)
+    if ((slePeer->getFlags() & lsfDefaultCasinocoin) == 0)
     {
-        const bool bSetDst = saLimit.getIssuer () == uDstAccountID;
-        const bool bSetHigh = bSrcHigh ^ bSetDst;
-
-        assert (sleAccount->getAccountID (sfAccount) ==
-            (bSetHigh ? uHighAccountID : uLowAccountID));
-        auto slePeer = view.peek (keylet::account(
-            bSetHigh ? uLowAccountID : uHighAccountID));
-        assert (slePeer);
-
-        // Remember deletion hints.
-        sleCasinocoinState->setFieldU64 (sfLowNode, uLowNode);
-        sleCasinocoinState->setFieldU64 (sfHighNode, uHighNode);
-
-        sleCasinocoinState->setFieldAmount (
-            bSetHigh ? sfHighLimit : sfLowLimit, saLimit);
-        sleCasinocoinState->setFieldAmount (
-            bSetHigh ? sfLowLimit : sfHighLimit,
-            STAmount ({saBalance.getCurrency (),
-                       bSetDst ? uSrcAccountID : uDstAccountID}));
-
-        if (uQualityIn)
-            sleCasinocoinState->setFieldU32 (
-                bSetHigh ? sfHighQualityIn : sfLowQualityIn, uQualityIn);
-
-        if (uQualityOut)
-            sleCasinocoinState->setFieldU32 (
-                bSetHigh ? sfHighQualityOut : sfLowQualityOut, uQualityOut);
-
-        std::uint32_t uFlags = bSetHigh ? lsfHighReserve : lsfLowReserve;
-
-        if (bAuth)
-        {
-            uFlags |= (bSetHigh ? lsfHighAuth : lsfLowAuth);
-        }
-        if (bnoCasinocoin)
-        {
-            uFlags |= (bSetHigh ? lsfHighNoCasinocoin : lsfLowNoCasinocoin);
-        }
-        if (bFreeze)
-        {
-            uFlags |= (!bSetHigh ? lsfLowFreeze : lsfHighFreeze);
-        }
-
-        if ((slePeer->getFlags() & lsfDefaultCasinocoin) == 0)
-        {
-            // The other side's default is no rippling
-            uFlags |= (bSetHigh ? lsfLowNoCasinocoin : lsfHighNoCasinocoin);
-        }
-
-        sleCasinocoinState->setFieldU32 (sfFlags, uFlags);
-        adjustOwnerCount(view, sleAccount, 1, j);
-
-        // ONLY: Create ripple balance.
-        sleCasinocoinState->setFieldAmount (sfBalance, bSetHigh ? -saBalance : saBalance);
-
-        view.creditHook (uSrcAccountID,
-            uDstAccountID, saBalance, saBalance.zeroed());
+        // The other side's default is no rippling
+        uFlags |= (bSetHigh ? lsfLowNoCasinocoin : lsfHighNoCasinocoin);
     }
 
-    return terResult;
+    sleCasinocoinState->setFieldU32 (sfFlags, uFlags);
+    adjustOwnerCount(view, sleAccount, 1, j);
+
+    // ONLY: Create ripple balance.
+    sleCasinocoinState->setFieldAmount (sfBalance, bSetHigh ? -saBalance : saBalance);
+
+    view.creditHook (uSrcAccountID,
+        uDstAccountID, saBalance, saBalance.zeroed());
+
+    return tesSUCCESS;
 }
 
 TER
@@ -1225,41 +1028,37 @@ trustDelete (ApplyView& view,
                  beast::Journal j)
 {
     // Detect legacy dirs.
-    bool        bLowNode    = sleCasinocoinState->isFieldPresent (sfLowNode);
-    bool        bHighNode   = sleCasinocoinState->isFieldPresent (sfHighNode);
     std::uint64_t uLowNode    = sleCasinocoinState->getFieldU64 (sfLowNode);
     std::uint64_t uHighNode   = sleCasinocoinState->getFieldU64 (sfHighNode);
-    TER         terResult;
 
     JLOG (j.trace())
         << "trustDelete: Deleting ripple line: low";
-    terResult   = dirDelete(view,
-        false,
-        uLowNode,
-        getOwnerDirIndex (uLowAccountID),
-        sleCasinocoinState->key(),
-        false,
-        !bLowNode,
-        j);
 
-    if (tesSUCCESS == terResult)
-    {
-        JLOG (j.trace())
-                << "trustDelete: Deleting ripple line: high";
-        terResult   = dirDelete (view,
-            false,
-            uHighNode,
-            getOwnerDirIndex (uHighAccountID),
+    if (! view.dirRemove(
+            keylet::ownerDir(uLowAccountID),
+            uLowNode,
             sleCasinocoinState->key(),
-            false,
-            !bHighNode,
-            j);
+            false))
+    {
+        return tefBAD_LEDGER;
+    }
+
+    JLOG (j.trace())
+            << "trustDelete: Deleting ripple line: high";
+
+    if (! view.dirRemove(
+            keylet::ownerDir(uHighAccountID),
+            uHighNode,
+            sleCasinocoinState->key(),
+            false))
+    {
+        return tefBAD_LEDGER;
     }
 
     JLOG (j.trace()) << "trustDelete: Deleting ripple line: state";
     view.erase(sleCasinocoinState);
 
-    return terResult;
+    return tesSUCCESS;
 }
 
 TER
@@ -1273,24 +1072,32 @@ offerDelete (ApplyView& view,
     auto owner = sle->getAccountID  (sfAccount);
 
     // Detect legacy directories.
-    bool bOwnerNode = sle->isFieldPresent (sfOwnerNode);
-    std::uint64_t uOwnerNode = sle->getFieldU64 (sfOwnerNode);
     uint256 uDirectory = sle->getFieldH256 (sfBookDirectory);
-    std::uint64_t uBookNode  = sle->getFieldU64 (sfBookNode);
 
-    TER terResult  = dirDelete (view, false, uOwnerNode,
-        getOwnerDirIndex (owner), offerIndex, false, !bOwnerNode, j);
-    TER terResult2 = dirDelete (view, false, uBookNode,
-        uDirectory, offerIndex, true, false, j);
+    if (! view.dirRemove(
+        keylet::ownerDir(owner),
+        sle->getFieldU64(sfOwnerNode),
+        offerIndex,
+        false))
+    {
+        return tefBAD_LEDGER;
+    }
 
-    if (tesSUCCESS == terResult)
-        adjustOwnerCount(view, view.peek(
-            keylet::account(owner)), -1, j);
+    if (! view.dirRemove(
+        keylet::page(uDirectory),
+        sle->getFieldU64(sfBookNode),
+        offerIndex,
+        false))
+    {
+        return tefBAD_LEDGER;
+    }
+
+    adjustOwnerCount(view, view.peek(
+        keylet::account(owner)), -1, j);
 
     view.erase(sle);
 
-    return (terResult == tesSUCCESS) ?
-        terResult2 : terResult;
+    return tesSUCCESS;
 }
 
 // Direct send w/o fees:
@@ -1381,9 +1188,9 @@ casinocoinCredit (ApplyView& view,
         bool bDelete = false;
 
         // YYY Could skip this if rippling in reverse.
-        if (saBefore > zero
+        if (saBefore > beast::zero
             // Sender balance was positive.
-            && saBalance <= zero
+            && saBalance <= beast::zero
             // Sender is zero or negative.
             && (uFlags & (!bSenderHigh ? lsfLowReserve : lsfHighReserve))
             // Sender reserve is set.
@@ -1527,7 +1334,7 @@ accountSend (ApplyView& view,
     AccountID const& uSenderID, AccountID const& uReceiverID,
     STAmount const& saAmount, beast::Journal j)
 {
-    assert (saAmount >= zero);
+    assert (saAmount >= beast::zero);
 
     /* If we aren't sending anything or if the sender is the same as the
      * receiver then we don't need to do anything.
@@ -1592,8 +1399,8 @@ accountSend (ApplyView& view,
             // VFALCO Its laborious to have to mutate the
             //        TER based on params everywhere
             terResult = view.open()
-                ? telFAILED_PROCESSING
-                : tecFAILED_PROCESSING;
+                ? TER {telFAILED_PROCESSING}
+                : TER {tecFAILED_PROCESSING};
         }
         else
         {
@@ -1656,9 +1463,9 @@ updateTrustLine (
     assert (sle);
 
     // YYY Could skip this if rippling in reverse.
-    if (before > zero
+    if (before > beast::zero
         // Sender balance was positive.
-        && after <= zero
+        && after <= beast::zero
         // Sender is zero or negative.
         && (flags & (!bSenderHigh ? lsfLowReserve : lsfHighReserve))
         // Sender reserve is set.
@@ -1858,8 +1665,8 @@ transferCSC (ApplyView& view,
         //        mutating these TER everywhere
         // FIXME: this logic should be moved to callers maybe?
         return view.open()
-            ? telFAILED_PROCESSING
-            : tecFAILED_PROCESSING;
+            ? TER {telFAILED_PROCESSING}
+            : TER {tecFAILED_PROCESSING};
     }
 
     // Decrement CSC balance.
@@ -1875,3 +1682,4 @@ transferCSC (ApplyView& view,
 }
 
 } // casinocoin
+

@@ -85,7 +85,7 @@ public:
     virtual
     void
     doValidation (std::shared_ptr<ReadView const> const& lastClosedLedger,
-        STObject& baseValidation) = 0;
+        STValidation::FeeSettings & fees) = 0;
 
     /** Cast our local vote on the fee.
 
@@ -117,3 +117,4 @@ make_FeeVote (FeeVote::Setup const& setup, beast::Journal journal);
 } // casinocoin
 
 #endif
+

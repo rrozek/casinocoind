@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/OfferStream.h>
 #include <casinocoin/beast/unit_test.h>
 
@@ -33,7 +33,7 @@ public:
     }
 
     void
-    run()
+    run() override
     {
         test();
     }

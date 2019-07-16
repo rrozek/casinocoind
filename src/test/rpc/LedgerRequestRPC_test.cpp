@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <test/jtx.h>
@@ -150,7 +150,8 @@ public:
     void testEvolution()
     {
         using namespace test::jtx;
-        Env env { *this };
+        Env env {*this, FeatureBitset{}}; //the hashes being checked below assume
+                                     //no amendments
         Account const gw { "gateway" };
         auto const USD = gw["USD"];
         env.fund(CSC(100000), gw);
@@ -251,9 +252,10 @@ public:
     void testMoreThan256Closed()
     {
         using namespace test::jtx;
+        using namespace std::chrono_literals;
         Env env {*this};
         Account const gw {"gateway"};
-        env.app().getLedgerMaster().tune(0, 3600);
+        env.app().getLedgerMaster().tune(0, 1h);
         auto const USD = gw["USD"];
         env.fund(CSC(100000), gw);
 
@@ -293,7 +295,7 @@ public:
 
     }
 
-    void run ()
+    void run () override
     {
         testLedgerRequest();
         testEvolution();

@@ -29,6 +29,7 @@
 #include <casinocoin/core/Config.h>
 #include <casinocoin/rpc/RPCHandler.h>
 #include <casinocoin/rpc/Status.h>
+#include <vector>
 
 namespace Json {
 class Object;
@@ -56,7 +57,7 @@ struct Handler
     RPC::Condition condition_;
 };
 
-const Handler* getHandler (std::string const&);
+Handler const* getHandler (std::string const&);
 
 /** Return a Json::objectValue with a single entry. */
 template <class Value>
@@ -68,7 +69,11 @@ Json::Value makeObjectValue (
     return result;
 }
 
+/** Return names of all methods. */
+std::vector<char const*> getHandlerNames();
+
 } // RPC
 } // casinocoin
 
 #endif
+

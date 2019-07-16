@@ -25,7 +25,6 @@
 #define BEAST_CONFIG_H_INCLUDED
 
 #include <casinocoin/beast/core/PlatformConfig.h>
-#include <casinocoin/beast/core/CompilerConfig.h>
 #include <casinocoin/beast/core/StandardConfig.h>
 #include <casinocoin/beast/core/ConfigCheck.h>
 

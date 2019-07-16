@@ -17,11 +17,12 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/TaggedCache.h>
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/beast/clock/manual_clock.h>
+#include <test/unit_test/SuiteJournal.h>
 
 namespace casinocoin {
 
@@ -38,9 +39,11 @@ original object.
 class TaggedCache_test : public beast::unit_test::suite
 {
 public:
-    void run ()
+    void run () override
     {
-        beast::Journal const j;
+        using namespace std::chrono_literals;
+        using namespace beast::severities;
+        test::SuiteJournal journal ("TaggedCache_test", *this);
 
         TestStopwatch clock;
         clock.set (0);
@@ -49,7 +52,7 @@ public:
         using Value = std::string;
         using Cache = TaggedCache <Key, Value>;
 
-        Cache c ("test", 1, 1, clock, j);
+        Cache c ("test", 1, 1s, clock, journal);
 
         // Insert an item, retrieve it, and age it so it gets purged.
         {

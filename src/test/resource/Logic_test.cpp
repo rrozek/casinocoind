@@ -17,21 +17,22 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/basics/random.h>
 #include <casinocoin/beast/unit_test.h>
-#include <boost/utility/base_from_member.hpp>
 #include <casinocoin/resource/Consumer.h>
 #include <casinocoin/resource/impl/Entry.h>
 #include <casinocoin/resource/impl/Logic.h>
+#include <test/unit_test/SuiteJournal.h>
+
+#include <boost/utility/base_from_member.hpp>
 
 
 
 namespace casinocoin {
 namespace Resource {
 
-class Manager_test : public beast::unit_test::suite
+class ResourceManager_test : public beast::unit_test::suite
 {
 public:
     class TestLogic
@@ -64,15 +65,16 @@ public:
 
     void createGossip (Gossip& gossip)
     {
-        int const v (10 + rand_int(9));
-        int const n (10 + rand_int(9));
+        std::uint8_t const v (10 + rand_int(9));
+        std::uint8_t const n (10 + rand_int(9));
         gossip.items.reserve (n);
-        for (int i = 0; i < n; ++i)
+        for (std::uint8_t i = 0; i < n; ++i)
         {
             Gossip::Item item;
             item.balance = 100 + rand_int(499);
-            item.address = beast::IP::Endpoint (
-                beast::IP::AddressV4 (192, 0, 2, v + i));
+            beast::IP::AddressV4::bytes_type d =
+                {{192,0,2,static_cast<std::uint8_t>(v + i)}};
+            item.address = beast::IP::Endpoint { beast::IP::AddressV4 {d} };
             gossip.items.push_back (item);
         }
     }
@@ -144,10 +146,11 @@ public:
         // Makes sure the Consumer is eventually removed from blacklist
         bool readmitted = false;
         {
+            using namespace std::chrono_literals;
             // Give Consumer time to become readmitted.  Should never
             // exceed expiration time.
-            std::size_t n (secondsUntilExpiration + 1);
-            while (--n > 0)
+            auto n = secondsUntilExpiration + 1s;
+            while (--n > 0s)
             {
                 ++logic.clock ();
                 logic.periodicActivity();
@@ -193,8 +196,8 @@ public:
         Gossip g;
         Gossip::Item item;
         item.balance = 100;
-        item.address = beast::IP::Endpoint (
-            beast::IP::AddressV4 (192, 0, 2, 1));
+        beast::IP::AddressV4::bytes_type d = {{192, 0, 2, 1}};
+        item.address = beast::IP::Endpoint { beast::IP::AddressV4 {d} };
         g.items.push_back (item);
 
         logic.importConsumers ("g", g);
@@ -243,18 +246,20 @@ public:
         pass();
     }
 
-    void run()
+    void run() override
     {
-        beast::Journal j;
+        using namespace beast::severities;
+        test::SuiteJournal journal ("ResourceManager_test", *this);
 
-        testDrop (j);
-        testCharges (j);
-        testImports (j);
-        testImport (j);
+        testDrop (journal);
+        testCharges (journal);
+        testImports (journal);
+        testImport (journal);
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Manager,resource,casinocoin);
+BEAST_DEFINE_TESTSUITE(ResourceManager,resource,casinocoin);
 
 }
 }
+

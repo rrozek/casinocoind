@@ -71,7 +71,7 @@ public:
         std::uint32_t count() const
         {
             return count_;
-        };
+        }
     };
 
 protected:

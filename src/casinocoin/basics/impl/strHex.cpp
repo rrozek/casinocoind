@@ -23,11 +23,10 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
-#include <casinocoin/basics/Slice.h>
+ 
 #include <casinocoin/basics/strHex.h>
 #include <algorithm>
-
+#include <string>
 namespace casinocoin {
 
 int charUnHex (unsigned char c)
@@ -58,10 +57,5 @@ int charUnHex (unsigned char c)
     return xtab[c];
 }
 
-std::string
-strHex(Slice const& slice)
-{
-    return strHex(slice.data(), slice.size());
 }
 
-}

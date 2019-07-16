@@ -26,11 +26,14 @@
 #ifndef CASINOCOIN_PROTOCOL_SERIALIZER_H_INCLUDED
 #define CASINOCOIN_PROTOCOL_SERIALIZER_H_INCLUDED
 
-#include <casinocoin/protocol/SField.h>
+
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Buffer.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/basics/Slice.h>
+#include <casinocoin/beast/crypto/secure_erase.h>
+#include <casinocoin/protocol/SField.h>
 #include <cassert>
 #include <cstdint>
 #include <iomanip>
@@ -54,14 +57,15 @@ public:
         mData.reserve (n);
     }
 
-    Serializer (void const* data,
-        std::size_t size)
+    Serializer (void const* data, std::size_t size)
     {
         mData.resize(size);
-        std::memcpy(mData.data(),
-            reinterpret_cast<
-                unsigned char const*>(
-                    data), size);
+
+        if (size)
+        {
+            assert(data != nullptr);
+            std::memcpy(mData.data(), data, size);
+        }
     }
 
     Slice slice() const noexcept
@@ -162,7 +166,7 @@ public:
     int addFieldID (int type, int name);
     int addFieldID (SerializedTypeID type, int name)
     {
-        return addFieldID (static_cast<int> (type), name);
+        return addFieldID (safe_cast<int> (type), name);
     }
 
     // DEPRECATED
@@ -204,8 +208,8 @@ public:
     }
     void secureErase ()
     {
-        memset (& (mData.front ()), 0, mData.size ());
-        erase ();
+        beast::secure_erase(mData.data(), mData.size());
+        mData.clear ();
     }
     void erase ()
     {
@@ -270,7 +274,7 @@ public:
                 std::setw (2) <<
                 std::hex <<
                 std::setfill ('0') <<
-                static_cast<unsigned int>(element);
+                safe_cast<unsigned int>(element);
         }
         return h.str ();
     }
@@ -321,6 +325,14 @@ public:
     SerialIter (Slice const& slice)
         : SerialIter(slice.data(), slice.size())
     {
+    }
+
+    // Infer the size of the data based on the size of the passed array.
+    template<int N>
+    explicit SerialIter (std::uint8_t const (&data)[N])
+        : SerialIter(&data[0], N)
+    {
+        static_assert (N > 0, "");
     }
 
     std::size_t
@@ -422,3 +434,4 @@ SerialIter::getBitString()
 } // casinocoin
 
 #endif
+

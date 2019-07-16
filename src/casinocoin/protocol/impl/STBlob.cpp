@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/STBlob.h>
 #include <casinocoin/basics/StringUtilities.h>
 
@@ -38,7 +38,7 @@ STBlob::STBlob (SerialIter& st, SField const& name)
 std::string
 STBlob::getText () const
 {
-    return strHex (value_.data (), value_.size ());
+    return strHex (value_);
 }
 
 bool
@@ -49,3 +49,4 @@ STBlob::isEquivalent (const STBase& t) const
 }
 
 } // casinocoin
+

@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/pay.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/TxFlags.h>
@@ -36,7 +36,7 @@ pay (Account const& account,
     jv[jss::Account] = account.human();
     jv[jss::Amount] = amount.value.getJson(0);
     jv[jss::Destination] = to.human();
-    jv[jss::TransactionType] = "Payment";
+    jv[jss::TransactionType] = jss::Payment;
     jv[jss::Flags] = tfUniversal;
     return jv;
 }
@@ -44,3 +44,4 @@ pay (Account const& account,
 } // jtx
 } // test
 } // casinocoin
+

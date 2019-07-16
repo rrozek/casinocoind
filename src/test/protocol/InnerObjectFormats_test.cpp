@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/protocol/InnerObjectFormats.h>
 #include <casinocoin/protocol/ErrorCodes.h>          // RPC::containsError
@@ -172,7 +172,7 @@ static TestJSONTxt const testArray[] =
 class InnerObjectFormatsParsedJSON_test : public beast::unit_test::suite
 {
 public:
-    void run()
+    void run() override
     {
         using namespace InnerObjectFormatsUnitTestDetail;
 

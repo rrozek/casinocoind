@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
@@ -116,7 +116,7 @@ struct PayChan_test : public beast::unit_test::suite
     {
         using namespace jtx;
         Json::Value jv;
-        jv[jss::TransactionType] = "PaymentChannelCreate";
+        jv[jss::TransactionType] = jss::PaymentChannelCreate;
         jv[jss::Flags] = tfUniversal;
         jv[jss::Account] = account.human ();
         jv[jss::Destination] = to.human ();
@@ -139,7 +139,7 @@ struct PayChan_test : public beast::unit_test::suite
     {
         using namespace jtx;
         Json::Value jv;
-        jv[jss::TransactionType] = "PaymentChannelFund";
+        jv[jss::TransactionType] = jss::PaymentChannelFund;
         jv[jss::Flags] = tfUniversal;
         jv[jss::Account] = account.human ();
         jv["Channel"] = to_string (channel);
@@ -160,7 +160,7 @@ struct PayChan_test : public beast::unit_test::suite
     {
         using namespace jtx;
         Json::Value jv;
-        jv[jss::TransactionType] = "PaymentChannelClaim";
+        jv[jss::TransactionType] = jss::PaymentChannelClaim;
         jv[jss::Flags] = tfUniversal;
         jv[jss::Account] = account.human ();
         jv["Channel"] = to_string (channel);
@@ -181,7 +181,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("simple");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         auto USDA = alice["USD"];
@@ -248,7 +248,7 @@ struct PayChan_test : public beast::unit_test::suite
             auto const reqBal = chanBal + delta;
             auto const authAmt = reqBal + CSC (-100);
             assert (reqBal <= chanAmt);
-            env (claim (alice, chan, reqBal, authAmt), ter (tecNO_PERMISSION));
+            env (claim (alice, chan, reqBal, authAmt), ter (temBAD_AMOUNT));
         }
         {
             // No signature needed since the owner is claiming
@@ -296,7 +296,7 @@ struct PayChan_test : public beast::unit_test::suite
             auto const sig =
                 signClaimAuth (alice.pk (), alice.sk (), chan, authAmt);
             env (claim (bob, chan, reqAmt, authAmt, Slice (sig), alice.pk ()),
-                ter (tecNO_PERMISSION));
+                ter (temBAD_AMOUNT));
             BEAST_EXPECT (channelBalance (*env.current (), chan) == chanBal);
             BEAST_EXPECT (channelAmount (*env.current (), chan) == chanAmt);
             auto const feeDrops = env.current ()->fees ().base;
@@ -353,7 +353,7 @@ struct PayChan_test : public beast::unit_test::suite
         auto const carol = Account ("carol");
         {
             // If dst claims after cancel after, channel closes
-            Env env (*this, features (featurePayChan));
+            Env env (*this);
             env.fund (CSC (10000), alice, bob);
             auto const pk = alice.pk ();
             auto const settleDelay = 100s;
@@ -392,7 +392,7 @@ struct PayChan_test : public beast::unit_test::suite
         }
         {
             // Third party can close after cancel after
-            Env env (*this, features (featurePayChan));
+            Env env (*this);
             env.fund (CSC (10000), alice, bob, carol);
             auto const pk = alice.pk ();
             auto const settleDelay = 100s;
@@ -422,7 +422,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("expiration");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         auto const carol = Account ("carol");
@@ -483,7 +483,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("settle delay");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -543,7 +543,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("close dry");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -579,7 +579,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("default amount");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -636,17 +636,15 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("Disallow CSC");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
+
+        auto const alice = Account ("alice");
+        auto const bob = Account ("bob");
         {
-            // Create a channel where dst disallows CSC
-            Env env (*this, features (featurePayChan));
-            auto const alice = Account ("alice");
-            auto const bob = Account ("bob");
+            // Create a channel where dst disallows XRP
+            Env env (*this, supported_amendments() - featureDepositAuth);
             env.fund (CSC (10000), alice, bob);
             env (fset (bob, asfDisallowCSC));
-            auto const pk = alice.pk ();
-            auto const settleDelay = 3600s;
-            auto const channelFunds = CSC (1000);
-            env (create (alice, bob, channelFunds, settleDelay, pk),
+            env (create (alice, bob, CSC (1000), 3600s, alice.pk()),
                 ter (tecNO_TARGET));
             auto const chan = channel (*env.current (), alice, bob);
             BEAST_EXPECT (!channelExists (*env.current (), chan));
@@ -654,14 +652,20 @@ struct PayChan_test : public beast::unit_test::suite
         {
             // Claim to a channel where dst disallows CSC
             // (channel is created before disallow csc is set)
-            Env env (*this, features (featurePayChan));
-            auto const alice = Account ("alice");
-            auto const bob = Account ("bob");
+            Env env (*this,  supported_amendments());
             env.fund (CSC (10000), alice, bob);
-            auto const pk = alice.pk ();
-            auto const settleDelay = 3600s;
-            auto const channelFunds = CSC (1000);
-            env (create (alice, bob, channelFunds, settleDelay, pk));
+            env (fset (bob, asfDisallowCSC));
+            env (create (alice, bob, CSC (1000), 3600s, alice.pk()));
+            auto const chan = channel (*env.current (), alice, bob);
+            BEAST_EXPECT (channelExists (*env.current (), chan));
+        }
+
+        {
+            // Claim to a channel where dst disallows XRP
+            // (channel is created before disallow xrp is set)
+            Env env (*this, supported_amendments() - featureDepositAuth);
+            env.fund (CSC (10000), alice, bob);
+            env (create (alice, bob, CSC (1000), 3600s, alice.pk()));
             auto const chan = channel (*env.current (), alice, bob);
             BEAST_EXPECT (channelExists (*env.current (), chan));
 
@@ -669,6 +673,20 @@ struct PayChan_test : public beast::unit_test::suite
             auto const preBob = env.balance (bob);
             auto const reqBal = CSC (500).value();
             env (claim (alice, chan, reqBal, reqBal), ter(tecNO_TARGET));
+        }
+        {
+            // Claim to a channel where dst disallows XRP (channel is
+            // created before disallow xrp is set).  Ignore that flag
+            // since it is just advisory.
+            Env env (*this, supported_amendments());
+            env.fund (CSC (10000), alice, bob);
+            env (create (alice, bob, CSC (1000), 3600s, alice.pk()));
+            auto const chan = channel (*env.current (), alice, bob);
+            BEAST_EXPECT (channelExists (*env.current (), chan));
+
+            env (fset (bob, asfDisallowCSC));
+            auto const reqBal = CSC (500).value();
+            env (claim (alice, chan, reqBal, reqBal));
         }
     }
 
@@ -680,7 +698,7 @@ struct PayChan_test : public beast::unit_test::suite
         using namespace jtx;
         using namespace std::literals::chrono_literals;
         // Create a channel where dst disallows CSC
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -699,13 +717,137 @@ struct PayChan_test : public beast::unit_test::suite
     }
 
     void
+    testDepositAuth ()
+    {
+        testcase ("Deposit Authorization");
+        using namespace jtx;
+        using namespace std::literals::chrono_literals;
+
+        auto const alice = Account ("alice");
+        auto const bob = Account ("bob");
+        auto const carol = Account ("carol");
+        auto USDA = alice["USD"];
+        {
+            Env env (*this);
+            env.fund (CSC (10000), alice, bob, carol);
+
+            env (fset (bob, asfDepositAuth));
+            env.close();
+
+            auto const pk = alice.pk ();
+            auto const settleDelay = 100s;
+            env (create (alice, bob, CSC (1000), settleDelay, pk));
+            env.close();
+
+            auto const chan = channel (*env.current (), alice, bob);
+            BEAST_EXPECT (channelBalance (*env.current (), chan) == CSC (0));
+            BEAST_EXPECT (channelAmount (*env.current (), chan) == CSC (1000));
+
+            // alice can add more funds to the channel even though bob has
+            // asfDepositAuth set.
+            env (fund (alice, chan, CSC (1000)));
+            env.close();
+
+            // alice claims. Fails because bob's lsfDepositAuth flag is set.
+            env (claim (alice, chan,
+                CSC (500).value(), CSC (500).value()), ter (tecNO_PERMISSION));
+            env.close();
+
+            // Claim with signature
+            auto const baseFee = env.current()->fees().base;
+            auto const preBob = env.balance (bob);
+            {
+                auto const delta = CSC (500).value();
+                auto const sig = signClaimAuth (pk, alice.sk (), chan, delta);
+
+                // alice claims with signature.  Fails since bob has
+                // lsfDepositAuth flag set.
+                env (claim (alice, chan,
+                    delta, delta, Slice (sig), pk), ter (tecNO_PERMISSION));
+                env.close();
+                BEAST_EXPECT (env.balance (bob) == preBob);
+
+                // bob claims but omits the signature.  Fails because only
+                // alice can claim without a signature.
+                env (claim (bob, chan, delta, delta), ter (temBAD_SIGNATURE));
+                env.close();
+
+                // bob claims with signature.  Succeeds even though bob's
+                // lsfDepositAuth flag is set since bob submitted the
+                // transaction.
+                env (claim (bob, chan, delta, delta, Slice (sig), pk));
+                env.close();
+                BEAST_EXPECT (env.balance (bob) == preBob + delta - baseFee);
+            }
+            {
+                // Explore the limits of deposit preauthorization.
+                auto const delta = CSC (600).value();
+                auto const sig = signClaimAuth (pk, alice.sk (), chan, delta);
+
+                // carol claims and fails.  Only channel participants (bob or
+                // alice) may claim.
+                env (claim (carol, chan,
+                    delta, delta, Slice (sig), pk), ter (tecNO_PERMISSION));
+                env.close();
+
+                // bob preauthorizes carol for deposit.  But after that carol
+                // still can't claim since only channel participants may claim.
+                env(deposit::auth (bob, carol));
+                env.close();
+
+                env (claim (carol, chan,
+                    delta, delta, Slice (sig), pk), ter (tecNO_PERMISSION));
+
+                // Since alice is not preauthorized she also may not claim
+                // for bob.
+                env (claim (alice, chan, delta, delta,
+                    Slice (sig), pk), ter (tecNO_PERMISSION));
+                env.close();
+
+                // However if bob preauthorizes alice for deposit then she can
+                // successfully submit a claim.
+                env(deposit::auth (bob, alice));
+                env.close();
+
+                env (claim (alice, chan, delta, delta, Slice (sig), pk));
+                env.close();
+
+                BEAST_EXPECT (
+                    env.balance (bob) == preBob + delta - (3 * baseFee));
+            }
+            {
+                // bob removes preauthorization of alice.  Once again she
+                // cannot submit a claim.
+                auto const delta = CSC (800).value();
+
+                env(deposit::unauth (bob, alice));
+                env.close();
+
+                // alice claims and fails since she is no longer preauthorized.
+                env (claim (alice, chan, delta, delta), ter (tecNO_PERMISSION));
+                env.close();
+
+                // bob clears lsfDepositAuth.  Now alice can claim.
+                env (fclear (bob, asfDepositAuth));
+                env.close();
+
+                // alice claims successfully.
+                env (claim (alice, chan, delta, delta));
+                env.close();
+                BEAST_EXPECT (
+                    env.balance (bob) == preBob + CSC (800) - (5 * baseFee));
+            }
+        }
+    }
+
+    void
     testMultiple ()
     {
         // auth amount defaults to balance if not present
         testcase ("Multiple channels to the same account");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -727,7 +869,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("RPC");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         env.fund (CSC (10000), alice, bob);
@@ -743,6 +885,7 @@ struct PayChan_test : public beast::unit_test::suite
                 env.rpc ("account_channels", alice.human (), bob.human ());
             BEAST_EXPECT (r[jss::result][jss::channels].size () == 1);
             BEAST_EXPECT (r[jss::result][jss::channels][0u][jss::channel_id] == chan1Str);
+            BEAST_EXPECT (r[jss::result][jss::validated]);
             chan1PkStr = r[jss::result][jss::channels][0u][jss::public_key].asString();
         }
         {
@@ -750,12 +893,14 @@ struct PayChan_test : public beast::unit_test::suite
                 env.rpc ("account_channels", alice.human ());
             BEAST_EXPECT (r[jss::result][jss::channels].size () == 1);
             BEAST_EXPECT (r[jss::result][jss::channels][0u][jss::channel_id] == chan1Str);
+            BEAST_EXPECT (r[jss::result][jss::validated]);
             chan1PkStr = r[jss::result][jss::channels][0u][jss::public_key].asString();
         }
         {
             auto const r =
                 env.rpc ("account_channels", bob.human (), alice.human ());
             BEAST_EXPECT (r[jss::result][jss::channels].size () == 0);
+            BEAST_EXPECT (r[jss::result][jss::validated]);
         }
         env (create (alice, bob, channelFunds, settleDelay, pk));
         env.close();
@@ -764,20 +909,105 @@ struct PayChan_test : public beast::unit_test::suite
             auto const r =
                     env.rpc ("account_channels", alice.human (), bob.human ());
             BEAST_EXPECT (r[jss::result][jss::channels].size () == 2);
+            BEAST_EXPECT (r[jss::result][jss::validated]);
             BEAST_EXPECT (chan1Str != chan2Str);
             for (auto const& c : {chan1Str, chan2Str})
                 BEAST_EXPECT (r[jss::result][jss::channels][0u][jss::channel_id] == c ||
                         r[jss::result][jss::channels][1u][jss::channel_id] == c);
         }
+
+        auto sliceToHex = [](Slice const& slice) {
+            std::string s;
+            s.reserve(2 * slice.size());
+            for (int i = 0; i < slice.size(); ++i)
+            {
+                s += "0123456789ABCDEF"[((slice[i] & 0xf0) >> 4)];
+                s += "0123456789ABCDEF"[((slice[i] & 0x0f) >> 0)];
+            }
+            return s;
+        };
+
         {
             // Verify chan1 auth
             auto const rs =
                 env.rpc ("channel_authorize", "alice", chan1Str, "1000");
             auto const sig = rs[jss::result][jss::signature].asString ();
             BEAST_EXPECT (!sig.empty ());
-            auto const rv = env.rpc (
-                "channel_verify", chan1PkStr, chan1Str, "1000", sig);
-            BEAST_EXPECT (rv[jss::result][jss::signature_verified].asBool ());
+            {
+                auto const rv = env.rpc(
+                    "channel_verify", chan1PkStr, chan1Str, "1000", sig);
+                BEAST_EXPECT(rv[jss::result][jss::signature_verified].asBool());
+            }
+
+            {
+                // use pk hex to verify
+                auto const pkAsHex = sliceToHex(pk.slice());
+                auto const rv = env.rpc (
+                    "channel_verify", pkAsHex, chan1Str, "1000", sig);
+                BEAST_EXPECT (rv[jss::result][jss::signature_verified].asBool ());
+            }
+            {
+                // malformed amount
+                auto const pkAsHex = sliceToHex(pk.slice());
+                auto rv =
+                    env.rpc("channel_verify", pkAsHex, chan1Str, "1000x", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+                rv = env.rpc("channel_verify", pkAsHex, chan1Str, "1000 ", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+                rv = env.rpc("channel_verify", pkAsHex, chan1Str, "x1000", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+                rv = env.rpc("channel_verify", pkAsHex, chan1Str, "x", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+                rv = env.rpc("channel_verify", pkAsHex, chan1Str, " ", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+                rv = env.rpc("channel_verify", pkAsHex, chan1Str, "1000 1000", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+                rv = env.rpc("channel_verify", pkAsHex, chan1Str, "1,000", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+                rv = env.rpc("channel_verify", pkAsHex, chan1Str, " 1000", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+                rv = env.rpc("channel_verify", pkAsHex, chan1Str, "", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelAmtMalformed");
+            }
+            {
+                // malformed channel
+                auto const pkAsHex = sliceToHex(pk.slice());
+                auto chan1StrBad = chan1Str;
+                chan1StrBad.pop_back();
+                auto rv = env.rpc("channel_verify", pkAsHex, chan1StrBad, "1000", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelMalformed");
+                rv = env.rpc ("channel_authorize", "alice", chan1StrBad, "1000");
+                BEAST_EXPECT(rv[jss::error] == "channelMalformed");
+
+                chan1StrBad = chan1Str;
+                chan1StrBad.push_back('0');
+                rv = env.rpc("channel_verify", pkAsHex, chan1StrBad, "1000", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelMalformed");
+                rv = env.rpc ("channel_authorize", "alice", chan1StrBad, "1000");
+                BEAST_EXPECT(rv[jss::error] == "channelMalformed");
+
+                chan1StrBad = chan1Str;
+                chan1StrBad.back() = 'x';
+                rv = env.rpc("channel_verify", pkAsHex, chan1StrBad, "1000", sig);
+                BEAST_EXPECT(rv[jss::error] == "channelMalformed");
+                rv = env.rpc ("channel_authorize", "alice", chan1StrBad, "1000");
+                BEAST_EXPECT(rv[jss::error] == "channelMalformed");
+            }
+            {
+                // give an ill formed base 58 public key
+                auto illFormedPk = chan1PkStr.substr(0, chan1PkStr.size() - 1);
+                auto const rv = env.rpc(
+                    "channel_verify", illFormedPk, chan1Str, "1000", sig);
+                BEAST_EXPECT(!rv[jss::result][jss::signature_verified].asBool());
+            }
+            {
+                // give an ill formed hex public key
+                auto const pkAsHex = sliceToHex(pk.slice());
+                auto illFormedPk = pkAsHex.substr(0, chan1PkStr.size() - 1);
+                auto const rv = env.rpc(
+                    "channel_verify", illFormedPk, chan1Str, "1000", sig);
+                BEAST_EXPECT(!rv[jss::result][jss::signature_verified].asBool());
+            }
         }
         {
             // Try to verify chan2 auth with chan1 key
@@ -785,9 +1015,29 @@ struct PayChan_test : public beast::unit_test::suite
                 env.rpc ("channel_authorize", "alice", chan2Str, "1000");
             auto const sig = rs[jss::result][jss::signature].asString ();
             BEAST_EXPECT (!sig.empty ());
-            auto const rv =
-                env.rpc ("channel_verify", chan1PkStr, chan1Str, "1000", sig);
-            BEAST_EXPECT (!rv[jss::result][jss::signature_verified].asBool ());
+            {
+                auto const rv = env.rpc(
+                    "channel_verify", chan1PkStr, chan1Str, "1000", sig);
+                BEAST_EXPECT(
+                    !rv[jss::result][jss::signature_verified].asBool());
+            }
+            {
+                // use pk hex to verify
+                auto const pkAsHex = sliceToHex(pk.slice());
+                auto const rv = env.rpc(
+                    "channel_verify", pkAsHex, chan1Str, "1000", sig);
+                BEAST_EXPECT(
+                    !rv[jss::result][jss::signature_verified].asBool());
+            }
+        }
+        {
+            // send malformed amounts rpc requests
+            auto rs = env.rpc("channel_authorize", "alice", chan1Str, "1000x");
+            BEAST_EXPECT(rs[jss::error] == "channelAmtMalformed");
+            rs = env.rpc("channel_authorize", "alice", chan1Str, "x1000");
+            BEAST_EXPECT(rs[jss::error] == "channelAmtMalformed");
+            rs = env.rpc("channel_authorize", "alice", chan1Str, "x");
+            BEAST_EXPECT(rs[jss::error] == "channelAmtMalformed");
         }
     }
 
@@ -797,7 +1047,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("Optional Fields");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         auto const carol = Account ("carol");
@@ -837,7 +1087,7 @@ struct PayChan_test : public beast::unit_test::suite
         testcase ("malformed pk");
         using namespace jtx;
         using namespace std::literals::chrono_literals;
-        Env env (*this, features (featurePayChan));
+        Env env (*this);
         auto const alice = Account ("alice");
         auto const bob = Account ("bob");
         auto USDA = alice["USD"];
@@ -878,8 +1128,20 @@ struct PayChan_test : public beast::unit_test::suite
         jv.removeMember("PublicKey");
         env (jv, ter(temMALFORMED));
 
-        jv["PublicKey"] = pkHex;
-        env (jv);
+        {
+            auto const txn = R"*(
+        {
+        "channel_id":"5DB01B7FFED6B67E6B0414DED11E051D2EE2B7619CE0EAA6286D67A3A4D5BDB3",
+                "signature":
+        "304402204EF0AFB78AC23ED1C472E74F4299C0C21F1B21D07EFC0A3838A420F76D783A400220154FB11B6F54320666E4C36CA7F686C16A3A0456800BBC43746F34AF50290064",
+                "public_key":
+        "aKijDDiC2q2gXjMpM7i4BUS6cmixgsEe18e7CjsUxwihKfuoFgS5",
+                "amount": "1000000"
+            }
+        )*";
+            auto const r = env.rpc("json", "channel_verify", txn);
+            BEAST_EXPECT(r["result"]["error"] == "publicMalformed");
+        }
     }
 
     void
@@ -893,6 +1155,7 @@ struct PayChan_test : public beast::unit_test::suite
         testDefaultAmount ();
         testDisallowCSC ();
         testDstTag ();
+        testDepositAuth ();
         testMultiple ();
         testRPC ();
         testOptionalFields ();
@@ -903,3 +1166,4 @@ struct PayChan_test : public beast::unit_test::suite
 BEAST_DEFINE_TESTSUITE (PayChan, app, casinocoin);
 }  // test
 }  // casinocoin
+

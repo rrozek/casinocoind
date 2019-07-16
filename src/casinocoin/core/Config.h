@@ -34,7 +34,6 @@
 #include <casinocoin/beast/net/IPEndpoint.h>
 #include <casinocoin/json/json_value.h>
 #include <casinocoin/beast/utility/Journal.h>
-#include <boost/asio/ip/tcp.hpp> // VFALCO FIX: This include should not be here
 #include <boost/filesystem.hpp> // VFALCO FIX: This include should not be here
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
@@ -47,7 +46,6 @@
 
 namespace casinocoin {
 
-using namespace std::chrono_literals;
 
 class Rules;
 
@@ -94,15 +92,14 @@ public:
     /** Returns the full path and filename of the debug log file. */
     boost::filesystem::path getDebugLogFile () const;
 
-    /** Returns the full path and filename of the entropy seed file. */
-    boost::filesystem::path getEntropyFile () const;
-
     /** Returns the string for a given network id **/
     std::string getPeerNetworkString(uint32_t network);
 
 private:
     boost::filesystem::path CONFIG_FILE;
+public:
     boost::filesystem::path CONFIG_DIR;
+private:
     boost::filesystem::path DEBUG_LOGFILE;
 
     void load ();
@@ -125,8 +122,17 @@ private:
     */
     bool                        RUN_STANDALONE = false;
 
+    /** Determines if the server will sign a tx, given an account's secret seed.
+        In the past, this was allowed, but this functionality can have security
+        implications. The new default is to not allow this functionality, but
+        a config option is included to enable this.
+    */
+    bool signingEnabled_ = false;
+
 public:
     bool doImport = false;
+    bool nodeToShard = false;
+    bool validateShards = false;
     bool ELB_SUPPORT = false;
 
     std::vector<std::string>    IPS;                    // Peer IPs from casinocoind.cfg.
@@ -152,13 +158,14 @@ public:
     int const                   TRANSACTION_FEE_BASE = 1000;   // The number of fee units a reference transaction costs
 
     // Note: The following parameters do not relate to the UNL or trust at all
-    std::size_t                 NETWORK_QUORUM = 0;         // Minimum number of nodes to consider the network present
+    // Minimum number of nodes to consider the network present
+    std::size_t                 NETWORK_QUORUM = 1;
 
     // Peer networking parameters
     bool                        PEER_PRIVATE = false;           // True to ask peers not to relay current IP.
-    int                         PEERS_MAX = 0;
+    std::size_t                 PEERS_MAX = 0;
 
-    std::chrono::seconds        WEBSOCKET_PING_FREQ = 5min;
+    std::chrono::seconds        WEBSOCKET_PING_FREQ = std::chrono::minutes {5};
 
     // Path searching
     int                         PATH_SEARCH_OLD = 7;
@@ -167,7 +174,7 @@ public:
     int                         PATH_SEARCH_MAX = 10;
 
     // Validation
-    boost::optional<std::size_t> VALIDATION_QUORUM;     // Minimum validations to consider ledger authoritative
+    boost::optional<std::size_t> VALIDATION_QUORUM;     // validations to consider ledger authoritative
 
     std::uint64_t                      FEE_DEFAULT = 1000000;
     std::uint64_t                      FEE_ACCOUNT_RESERVE = 10 * SYSTEM_CURRENCY_PARTS;
@@ -192,15 +199,16 @@ public:
     bool                        PEER_NETWORK_SET = false;
     
     // These override the command line client settings
-    boost::optional<boost::asio::ip::address_v4> rpc_ip;
-    boost::optional<std::uint16_t> rpc_port;
+    boost::optional<beast::IP::Endpoint> rpc_ip;
 
     std::unordered_set<uint256, beast::uhash<>> features;
 
     std::vector<std::string> KYCTrustedAccounts;
 
 public:
-    Config() = default;
+    Config()
+    : j_ {beast::Journal::getNullSink()}
+    { }
 
     int getSize (SizedItemName) const;
     /* Be very careful to make sure these bool params
@@ -222,8 +230,11 @@ public:
     bool quiet() const { return QUIET; }
     bool silent() const { return SILENT; }
     bool standalone() const { return RUN_STANDALONE; }
+
+    bool canSign() const { return signingEnabled_; }
 };
 
 } // casinocoin
 
 #endif
+

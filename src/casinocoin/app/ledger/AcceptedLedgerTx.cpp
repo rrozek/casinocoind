@@ -23,13 +23,13 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/ledger/AcceptedLedgerTx.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/JsonFields.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 
 namespace casinocoin {
 
@@ -42,8 +42,8 @@ AcceptedLedgerTx::AcceptedLedgerTx (
     : mLedger (ledger)
     , mTxn (txn)
     , mMeta (std::make_shared<TxMeta> (
-        txn->getTransactionID(), ledger->seq(), *met, logs.journal ("View")))
-    , mAffected (mMeta->getAffectedAccounts ())
+        txn->getTransactionID(), ledger->seq(), *met))
+    , mAffected (mMeta->getAffectedAccounts (logs.journal("View")))
     , accountCache_ (accountCache)
     , logs_ (logs)
 {
@@ -117,3 +117,4 @@ void AcceptedLedgerTx::buildJson ()
 }
 
 } // casinocoin
+

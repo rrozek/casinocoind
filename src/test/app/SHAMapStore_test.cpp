@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/SHAMapStore.h>
 #include <casinocoin/core/ConfigSections.h>
@@ -624,7 +624,7 @@ public:
         lastRotated = ledgerSeq - 1;
     }
 
-    void run()
+    void run() override
     {
         testClear();
         testAutomatic();

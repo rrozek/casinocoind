@@ -56,6 +56,8 @@ namespace detail {
 
 struct ripemd160_context
 {
+    explicit ripemd160_context() = default;
+
     static unsigned int const block_size = 64;
     static unsigned int const digest_size = 20;
 
@@ -427,3 +429,4 @@ void finish (ripemd160_context& ctx,
 } // beast
 
 #endif
+

@@ -46,10 +46,13 @@ namespace detail {
 
 struct ci_equal_pred
 {
+    explicit ci_equal_pred() = default;
+
     bool operator()(char c1, char c2)
     {
         // VFALCO TODO Use a table lookup here
-        return std::tolower(c1) == std::tolower(c2);
+        return std::tolower(static_cast<unsigned char>(c1)) ==
+               std::tolower(static_cast<unsigned char>(c2));
     }
 };
 
@@ -481,3 +484,4 @@ is_keep_alive(beast::http::message<isRequest, Body, Fields> const& m)
 } // beast
 
 #endif
+

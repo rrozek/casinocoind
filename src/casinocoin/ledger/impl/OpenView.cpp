@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/OpenView.h>
 #include <casinocoin/basics/contract.h>
 

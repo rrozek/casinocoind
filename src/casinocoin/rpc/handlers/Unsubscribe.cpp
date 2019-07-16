@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/net/RPCErr.h>
@@ -35,13 +35,12 @@
 
 namespace casinocoin {
 
-// FIXME: This leaks RPCSub objects for JSON-RPC.  Shouldn't matter for anyone
-// sane.
 Json::Value doUnsubscribe (RPC::Context& context)
 {
 
     InfoSub::pointer ispSub;
     Json::Value jvResult (Json::objectValue);
+    bool removeUrl {false};
 
     if (! context.infoSub && ! context.params.isMember(jss::url))
     {
@@ -58,6 +57,7 @@ Json::Value doUnsubscribe (RPC::Context& context)
         ispSub = context.netOps.findRpcSub (strUrl);
         if (! ispSub)
             return jvResult;
+        removeUrl = true;
     }
     else
     {
@@ -66,7 +66,7 @@ Json::Value doUnsubscribe (RPC::Context& context)
 
     if (context.params.isMember (jss::streams))
     {
-        if (! context.params[jss::streams].isArray ())
+        if (! context.params[jss::streams].isArray())
             return rpcError (rpcINVALID_PARAMS);
 
         for (auto& it: context.params[jss::streams])
@@ -145,8 +145,8 @@ Json::Value doUnsubscribe (RPC::Context& context)
             if (! jv.isObject() ||
                 ! jv.isMember(jss::taker_pays) ||
                 ! jv.isMember(jss::taker_gets) ||
-                ! jv[jss::taker_pays].isObject() ||
-                ! jv[jss::taker_gets].isObject())
+                ! jv[jss::taker_pays].isObjectOrNull() ||
+                ! jv[jss::taker_gets].isObjectOrNull())
             {
                 return rpcError(rpcINVALID_PARAMS);
             }
@@ -183,9 +183,9 @@ Json::Value doUnsubscribe (RPC::Context& context)
                     || !to_currency (book.out.currency,
                                      taker_gets[jss::currency].asString ()))
             {
-                JLOG (context.j.info()) << "Bad taker_pays currency.";
+                JLOG (context.j.info()) << "Bad taker_gets currency.";
 
-                return rpcError (rpcSRC_CUR_MALFORMED);
+                return rpcError (rpcDST_AMT_MALFORMED);
             }
             // Parse optional issuer.
             else if (((taker_gets.isMember (jss::issuer))
@@ -219,7 +219,13 @@ Json::Value doUnsubscribe (RPC::Context& context)
         }
     }
 
+    if (removeUrl)
+    {
+        context.netOps.tryRemoveRpcSub(context.params[jss::url].asString ());
+    }
+
     return jvResult;
 }
 
 } // casinocoin
+

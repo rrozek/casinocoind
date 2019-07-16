@@ -64,14 +64,15 @@ private:
     {
         switch(flag)
         {
-        case asfRequireDest:    mask_ |= lsfRequireDestTag; break;
-        case asfRequireAuth:    mask_ |= lsfRequireAuth; break;
-        case asfDisallowCSC:    mask_ |= lsfDisallowCSC; break;
-        case asfDisableMaster:  mask_ |= lsfDisableMaster; break;
+        case asfRequireDest:    	mask_ |= lsfRequireDestTag; 	break;
+        case asfRequireAuth:    	mask_ |= lsfRequireAuth;   		break;
+        case asfDisallowCSC:    	mask_ |= lsfDisallowCSC;    	break;
+        case asfDisableMaster:  	mask_ |= lsfDisableMaster;  	break;
         //case asfAccountTxnID: // ???
-        case asfNoFreeze:       mask_ |= lsfNoFreeze; break;
-        case asfGlobalFreeze:   mask_ |= lsfGlobalFreeze; break;
-        case asfDefaultCasinocoin:  mask_ |= lsfDefaultCasinocoin; break;
+        case asfNoFreeze:       	mask_ |= lsfNoFreeze;       	break;
+        case asfGlobalFreeze:   	mask_ |= lsfGlobalFreeze;   	break;
+        case asfDefaultCasinocoin:  mask_ |= lsfDefaultCasinocoin;  break;
+        case asfDepositAuth:    	mask_ |= lsfDepositAuth;    	break;
         default:
         Throw<std::runtime_error> (
             "unknown flag");
@@ -141,3 +142,4 @@ public:
 } // casinocoin
 
 #endif
+

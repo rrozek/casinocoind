@@ -18,9 +18,8 @@
 //==============================================================================
 
 #if BEAST_INCLUDE_BEASTCONFIG
-#include <BeastConfig.h>
+ 
 #endif
 
-#include <casinocoin/beast/utility/src/beast_Debug.cpp>
 #include <casinocoin/beast/utility/src/beast_Journal.cpp>
 #include <casinocoin/beast/utility/src/beast_PropertyStream.cpp>

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/ReadView.h>
 #include <casinocoin/protocol/AmountConversions.h>
 #include <casinocoin/protocol/STAmount.h>

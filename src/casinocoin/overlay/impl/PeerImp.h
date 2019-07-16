@@ -27,25 +27,20 @@
 #define CASINOCOIN_OVERLAY_PEERIMP_H_INCLUDED
 
 #include <casinocoin/app/consensus/CCLCxPeerPos.h>
-#include <casinocoin/basics/Log.h> // deprecated
-#include <casinocoin/nodestore/Database.h>
-#include <casinocoin/overlay/predicates.h>
+#include <casinocoin/basics/Log.h>
+#include <casinocoin/beast/utility/WrappedSink.h>
+#include <casinocoin/basics/RangeSet.h>
+#include <casinocoin/beast/utility/WrappedSink.h>
 #include <casinocoin/overlay/impl/ProtocolMessage.h>
 #include <casinocoin/overlay/impl/OverlayImpl.h>
-#include <casinocoin/resource/Fees.h>
-#include <casinocoin/core/Config.h>
-#include <casinocoin/core/Job.h>
-#include <casinocoin/core/LoadEvent.h>
+#include <casinocoin/peerfinder/PeerfinderManager.h>
 #include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/STValidation.h>
-#include <casinocoin/beast/core/ByteOrder.h>
-#include <casinocoin/beast/net/IPAddressConversion.h>
-#include <beast/core/multi_buffer.hpp>
-#include <casinocoin/beast/asio/ssl_bundle.h>
-#include <beast/http/message.hpp>
-#include <beast/http/parser.hpp>
-#include <casinocoin/beast/utility/WrappedSink.h>
+#include <casinocoin/resource/Fees.h>
+
+#include <boost/endian/conversion.hpp>
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <deque>
 #include <queue>
@@ -91,6 +86,12 @@ public:
         ,sane
     };
 
+    struct ShardInfo
+    {
+        beast::IP::Endpoint endpoint;
+        RangeSet<std::uint32_t> shardIndexes;
+    };
+
     using ptr = std::shared_ptr <PeerImp>;
 
 private:
@@ -121,7 +122,7 @@ private:
 
     // Updated at each stage of the connection process to reflect
     // the current conditions as closely as possible.
-    beast::IP::Endpoint remote_address_;
+    beast::IP::Endpoint const remote_address_;
 
     // These are up here to prevent warnings about order of initializations
     //
@@ -145,8 +146,8 @@ private:
     std::deque<uint256> recentLedgers_;
     std::deque<uint256> recentTxSets_;
 
-    std::chrono::milliseconds latency_ = std::chrono::milliseconds (-1);
-    std::uint64_t lastPingSeq_ = 0;
+    boost::optional<std::chrono::milliseconds> latency_;
+    boost::optional<std::uint32_t> lastPingSeq_;
     clock_type::time_point lastPingTime_;
     clock_type::time_point creationTime_;
 
@@ -166,7 +167,9 @@ private:
     int large_sendq_ = 0;
     int no_ping_ = 0;
     std::unique_ptr <LoadEvent> load_event_;
-    bool hopsAware_ = false;
+
+    std::mutex mutable shardInfoMutex_;
+    hash_map<PublicKey, ShardInfo> shardInfo_;
 
     friend class OverlayImpl;
 
@@ -248,6 +251,7 @@ public:
         return id_;
     }
 
+    /** Returns `true` if this connection will publicly share its IP address. */
     bool
     crawl() const;
 
@@ -255,12 +259,6 @@ public:
     cluster() const override
     {
         return slot_->cluster();
-    }
-
-    bool
-    hopsAware() const
-    {
-        return hopsAware_;
     }
 
     void
@@ -312,6 +310,9 @@ public:
     ledgerRange (std::uint32_t& minSeq, std::uint32_t& maxSeq) const override;
 
     bool
+    hasShard (std::uint32_t shardIndex) const override;
+
+    bool
     hasTxSet (uint256 const& hash) const override;
 
     void
@@ -332,6 +333,14 @@ public:
 
     void
     fail(std::string const& reason);
+
+    /** Return a range set of known shard indexes from this peer. */
+    boost::optional<RangeSet<std::uint32_t>>
+    getShardIndexes() const;
+
+    /** Return any known shard info from this peer and its sub peers. */
+    boost::optional<hash_map<PublicKey, ShardInfo>>
+    getPeerShardInfo() const;
 
 private:
     void
@@ -419,6 +428,10 @@ public:
     void onMessage (std::shared_ptr <protocol::TMManifests> const& m);
     void onMessage (std::shared_ptr <protocol::TMPing> const& m);
     void onMessage (std::shared_ptr <protocol::TMCluster> const& m);
+    void onMessage (std::shared_ptr <protocol::TMGetShardInfo> const& m);
+    void onMessage (std::shared_ptr <protocol::TMShardInfo> const& m);
+    void onMessage (std::shared_ptr <protocol::TMGetPeerShardInfo> const& m);
+    void onMessage (std::shared_ptr <protocol::TMPeerShardInfo> const& m);
     void onMessage (std::shared_ptr <protocol::TMGetPeers> const& m);
     void onMessage (std::shared_ptr <protocol::TMPeers> const& m);
     void onMessage (std::shared_ptr <protocol::TMEndpoints> const& m);
@@ -457,11 +470,11 @@ private:
     void
     checkPropose (Job& job,
         std::shared_ptr<protocol::TMProposeSet> const& packet,
-            CCLCxPeerPos::pointer peerPos);
+            CCLCxPeerPos peerPos);
 
     void
     checkValidation (STValidation::pointer val,
-        bool isTrusted, std::shared_ptr<protocol::TMValidation> const& packet);
+        std::shared_ptr<protocol::TMValidation> const& packet);
 
     void
     getLedger (std::shared_ptr<protocol::TMGetLedger> const&packet);
@@ -521,16 +534,24 @@ PeerImp::sendEndpoints (FwdIt first, FwdIt last)
     for (;first != last; ++first)
     {
         auto const& ep = *first;
+        // eventually remove endpoints and just keep endpoints_v2
+        // (once we are sure the entire network understands endpoints_v2)
         protocol::TMEndpoint& tme (*tm.add_endpoints());
         if (ep.address.is_v4())
             tme.mutable_ipv4()->set_ipv4(
-                beast::toNetworkByteOrder (ep.address.to_v4().value));
+                boost::endian::native_to_big(
+                    static_cast<std::uint32_t>(ep.address.to_v4().to_ulong())));
         else
             tme.mutable_ipv4()->set_ipv4(0);
         tme.mutable_ipv4()->set_ipv4port (ep.address.port());
         tme.set_hops (ep.hops);
+
+        // add v2 endpoints (strings)
+        auto& tme2 (*tm.add_endpoints_v2());
+        tme2.set_endpoint(ep.address.to_string());
+        tme2.set_hops (ep.hops);
     }
-    tm.set_version (1);
+    tm.set_version (2);
 
     send (std::make_shared <Message> (tm, protocol::mtENDPOINTS));
 }
@@ -538,3 +559,4 @@ PeerImp::sendEndpoints (FwdIt first, FwdIt last)
 }
 
 #endif
+

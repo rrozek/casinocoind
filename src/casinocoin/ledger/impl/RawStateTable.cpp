@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/detail/RawStateTable.h>
 #include <casinocoin/basics/contract.h>
 

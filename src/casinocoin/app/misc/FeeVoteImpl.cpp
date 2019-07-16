@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/protocol/st.h>
 #include <casinocoin/app/misc/FeeVote.h>
 #include <casinocoin/app/main/Application.h>
@@ -105,7 +105,7 @@ public:
 
     void
     doValidation (std::shared_ptr<ReadView const> const& lastClosedLedger,
-        STObject& baseValidation) override;
+        STValidation::FeeSettings& fees) override;
 
     void
     doVoting (std::shared_ptr<ReadView const> const& lastClosedLedger,
@@ -127,22 +127,22 @@ FeeVoteImpl::FeeVoteImpl (Setup const& setup, beast::Journal journal)
 void
 FeeVoteImpl::doValidation(
     std::shared_ptr<ReadView const> const& lastClosedLedger,
-        STObject& baseValidation)
+        STValidation::FeeSettings& fees)
 {
     if (lastClosedLedger->fees().base != target_.reference_fee)
     {
         JLOG(journal_.info()) <<
             "Voting for base fee of " << target_.reference_fee;
 
-        baseValidation.setFieldU64 (sfBaseFee, target_.reference_fee);
+        fees.baseFee = target_.reference_fee;
     }
 
     if (lastClosedLedger->fees().accountReserve(0) != target_.account_reserve)
     {
         JLOG(journal_.info()) <<
-            "Voting for base resrve of " << target_.account_reserve;
+            "Voting for base reserve of " << target_.account_reserve;
 
-        baseValidation.setFieldU32(sfReserveBase, target_.account_reserve);
+        fees.reserveBase = target_.account_reserve;
     }
 
     if (lastClosedLedger->fees().increment != target_.owner_reserve)
@@ -150,8 +150,7 @@ FeeVoteImpl::doValidation(
         JLOG(journal_.info()) <<
             "Voting for reserve increment of " << target_.owner_reserve;
 
-        baseValidation.setFieldU32 (sfReserveIncrement,
-            target_.owner_reserve);
+        fees.reserveIncrement = target_.owner_reserve;
     }
 }
 
@@ -279,3 +278,4 @@ make_FeeVote (FeeVote::Setup const& setup, beast::Journal journal)
 }
 
 } // casinocoin
+

@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/trust.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/basics/contract.h>
@@ -38,7 +38,7 @@ trust (Account const& account,
     Json::Value jv;
     jv[jss::Account] = account.human();
     jv[jss::LimitAmount] = amount.getJson(0);
-    jv[jss::TransactionType] = "TrustSet";
+    jv[jss::TransactionType] = jss::TrustSet;
     jv[jss::Flags] = flags;
     return jv;
 }
@@ -58,7 +58,7 @@ trust (Account const& account,
         auto& ja = jv[jss::LimitAmount] = amount.getJson(0);
         ja[jss::issuer] = peer.human();
     }
-    jv[jss::TransactionType] = "TrustSet";
+    jv[jss::TransactionType] = jss::TrustSet;
     jv[jss::Flags] = flags;
     return jv;
 }
@@ -67,3 +67,4 @@ trust (Account const& account,
 } // jtx
 } // test
 } // casinocoin
+

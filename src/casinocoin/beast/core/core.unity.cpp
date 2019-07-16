@@ -22,7 +22,7 @@
 //==============================================================================
 
 #if BEAST_INCLUDE_BEASTCONFIG
-#include <BeastConfig.h>
+ 
 #endif
 
 //==============================================================================
@@ -43,9 +43,6 @@
 
 //------------------------------------------------------------------------------
 
-// New header-only library modeled more closely according to boost
-#include <casinocoin/beast/core/ByteOrder.h>
-
 #include <casinocoin/beast/core/StandardIncludes.h>
 
 // Order matters, since headers don't have their own #include lines.
@@ -53,7 +50,6 @@
 
 #include <casinocoin/beast/core/LexicalCast.h>
 
-#include <casinocoin/beast/core/SystemStats.h>
 #include <casinocoin/beast/core/SemanticVersion.h>
 
 #if BEAST_MSVC
@@ -160,41 +156,8 @@
 #undef _aligned_msize
 #endif
 
-#include <casinocoin/beast/core/Memory.h>
-
-#if BEAST_MAC || BEAST_IOS
-#include <casinocoin/beast/core/osx_ObjCHelpers.h>
-#endif
-
-#if BEAST_ANDROID
-#include "native/android_JNIHelpers.h"
-#endif
-
-#if BEAST_MAC || BEAST_IOS
-#include <casinocoin/beast/core/mac_SystemStats.mm>
-
-#elif BEAST_WINDOWS
-#include <casinocoin/beast/core/win32_SystemStats.cpp>
-
-#elif BEAST_LINUX
-#include <casinocoin/beast/core/linux_SystemStats.cpp>
-
-#elif BEAST_BSD
-#include <casinocoin/beast/core/bsd_SystemStats.cpp>
-
-#elif BEAST_ANDROID
-#include "native/android_Files.cpp"
-#include "native/android_Misc.cpp"
-#include "native/android_SystemStats.cpp"
-#include "native/android_Threads.cpp"
-
-#endif
-
 #include <casinocoin/beast/core/CurrentThreadName.cpp>
 #include <casinocoin/beast/core/SemanticVersion.cpp>
-#include <casinocoin/beast/core/SystemStats.cpp>
-#include <casinocoin/beast/core/Time.cpp>
-#include <casinocoin/beast/core/WaitableEvent.cpp>
 
 #ifdef _CRTDBG_MAP_ALLOC
 #pragma pop_macro("calloc")
@@ -211,3 +174,4 @@
 #pragma pop_macro("_aligned_offset_recalloc")
 #pragma pop_macro("_aligned_msize")
 #endif
+

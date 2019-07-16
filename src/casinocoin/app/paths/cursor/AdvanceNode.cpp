@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/cursor/CasinocoinLiquidity.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/ledger/View.h>
@@ -34,8 +34,8 @@ namespace path {
 TER PathCursor::advanceNode (STAmount const& amount, bool reverse, bool callerHasLiquidity) const
 {
     bool const multi = fix1141 (view ().info ().parentCloseTime)
-        ? (multiQuality_ || (!callerHasLiquidity && amount == zero))
-        : (multiQuality_ || amount == zero);
+        ? (multiQuality_ || (!callerHasLiquidity && amount == beast::zero))
+        : (multiQuality_ || amount == beast::zero);
 
     // If the multiQuality_ is unchanged, use the PathCursor we're using now.
     if (multi == multiQuality_)
@@ -231,7 +231,7 @@ TER PathCursor::advanceNode (bool const bReverse) const
                     continue;
                 }
 
-                if (node().saTakerPays <= zero || node().saTakerGets <= zero)
+                if (node().saTakerPays <= beast::zero || node().saTakerGets <= beast::zero)
                 {
                     // Offer has bad amounts. Offers should never have a bad
                     // amounts.
@@ -343,7 +343,7 @@ TER PathCursor::advanceNode (bool const bReverse) const
                     fhZERO_IF_FROZEN, viewJ);
                 // Funds held.
 
-                if (node().saOfferFunds <= zero)
+                if (node().saOfferFunds <= beast::zero)
                 {
                     // Offer is unfunded.
                     JLOG (j_.trace())

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/InboundLedgers.h>
 #include <casinocoin/app/ledger/LedgerToJson.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
@@ -100,7 +100,7 @@ Json::Value doLedgerRequest (RPC::Context& context)
                 // they want. Try to get it.
 
                 if (auto il = context.app.getInboundLedgers().acquire (
-                        *refHash, refIndex, InboundLedger::fcGENERIC))
+                        *refHash, refIndex, InboundLedger::Reason::GENERIC))
                 {
                     Json::Value jvResult = RPC::make_error(
                         rpcLGR_NOT_FOUND,
@@ -125,13 +125,13 @@ Json::Value doLedgerRequest (RPC::Context& context)
             neededHash = hashOfSeq(*ledger, ledgerIndex, j);
         }
         assert (neededHash);
-        ledgerHash = neededHash ? *neededHash : zero; // kludge
+        ledgerHash = neededHash ? *neededHash : beast::zero; // kludge
     }
 
     // Try to get the desired ledger
     // Verify all nodes even if we think we have it
     auto ledger = context.app.getInboundLedgers().acquire (
-        ledgerHash, ledgerIndex, InboundLedger::fcGENERIC);
+        ledgerHash, ledgerIndex, InboundLedger::Reason::GENERIC);
 
     // In standalone mode, accept the ledger from the ledger cache
     if (! ledger && context.app.config().standalone())
@@ -154,3 +154,4 @@ Json::Value doLedgerRequest (RPC::Context& context)
 }
 
 } // casinocoin
+

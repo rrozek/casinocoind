@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
@@ -76,12 +76,18 @@ Json::Value doSubscribe (RPC::Context& context)
         {
             JLOG (context.j.debug())
                 << "doSubscribe: building: " << strUrl;
-
-            auto rspSub = make_RPCSub (context.app.getOPs (),
-                context.app.getIOService (), context.app.getJobQueue (),
-                    strUrl, strUsername, strPassword, context.app.logs ());
-            ispSub  = context.netOps.addRpcSub (
-                strUrl, std::dynamic_pointer_cast<InfoSub> (rspSub));
+            try
+            {
+                auto rspSub = make_RPCSub (context.app.getOPs (),
+                    context.app.getIOService (), context.app.getJobQueue (),
+                        strUrl, strUsername, strPassword, context.app.logs ());
+                ispSub  = context.netOps.addRpcSub (
+                    strUrl, std::dynamic_pointer_cast<InfoSub> (rspSub));
+            }
+            catch (std::runtime_error& ex)
+            {
+                return RPC::make_param_error (ex.what());
+            }
         }
         else
         {
@@ -192,11 +198,11 @@ Json::Value doSubscribe (RPC::Context& context)
 
         for (auto& j: context.params[jss::books])
         {
-            if (!j.isObject ()
+            if (!j.isObject()
                     || !j.isMember (jss::taker_pays)
                     || !j.isMember (jss::taker_gets)
-                    || !j[jss::taker_pays].isObject ()
-                    || !j[jss::taker_gets].isObject ())
+                    || !j[jss::taker_pays].isObjectOrNull ()
+                    || !j[jss::taker_gets].isObjectOrNull ())
                 return rpcError (rpcINVALID_PARAMS);
 
             Book book;
@@ -228,8 +234,8 @@ Json::Value doSubscribe (RPC::Context& context)
             if (! taker_gets.isMember (jss::currency) || !to_currency (
                 book.out.currency, taker_gets[jss::currency].asString ()))
             {
-                JLOG (context.j.info()) << "Bad taker_pays currency.";
-                return rpcError (rpcSRC_CUR_MALFORMED);
+                JLOG (context.j.info()) << "Bad taker_gets currency.";
+                return rpcError (rpcDST_AMT_MALFORMED);
             }
 
             // Parse optional issuer.
@@ -330,3 +336,4 @@ Json::Value doSubscribe (RPC::Context& context)
 }
 
 } // casinocoin
+

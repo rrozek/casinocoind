@@ -22,7 +22,6 @@
 #include <casinocoin/beast/insight/Insight.h>
 
 #include <casinocoin/beast/insight/impl/Collector.cpp>
-#include <casinocoin/beast/insight/impl/Group.cpp>
 #include <casinocoin/beast/insight/impl/Groups.cpp>
 #include <casinocoin/beast/insight/impl/Hook.cpp>
 #include <casinocoin/beast/insight/impl/Metric.cpp>

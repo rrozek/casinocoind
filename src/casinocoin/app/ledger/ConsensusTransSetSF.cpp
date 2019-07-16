@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/ledger/ConsensusTransSetSF.h>
 #include <casinocoin/app/ledger/TransactionMaster.h>
 #include <casinocoin/app/main/Application.h>
@@ -44,9 +44,9 @@ ConsensusTransSetSF::ConsensusTransSetSF (Application& app, NodeCache& nodeCache
 {
 }
 
-void ConsensusTransSetSF::gotNode (
-    bool fromFilter, SHAMapHash const& nodeHash,
-    Blob&& nodeData, SHAMapTreeNode::TNType type) const
+void
+ConsensusTransSetSF::gotNode(bool fromFilter, SHAMapHash const& nodeHash,
+    std::uint32_t, Blob&& nodeData, SHAMapTreeNode::TNType type) const
 {
     if (fromFilter)
         return;

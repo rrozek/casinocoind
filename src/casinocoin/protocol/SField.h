@@ -25,9 +25,10 @@
 
 #ifndef CASINOCOIN_PROTOCOL_SFIELD_H_INCLUDED
 #define CASINOCOIN_PROTOCOL_SFIELD_H_INCLUDED
-
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/json/json_value.h>
 #include <cstdint>
+#include <map>
 #include <utility>
 
 namespace casinocoin {
@@ -94,7 +95,7 @@ inline
 int
 field_code(SerializedTypeID id, int index)
 {
-    return (static_cast<int>(id) << 16) | index;
+    return (safe_cast<int>(id) << 16) | index;
 }
 
 // constexpr
@@ -108,18 +109,8 @@ field_code(int id, int index)
 /** Identifies fields.
 
     Fields are necessary to tag data in signed transactions so that
-    the binary format of the transaction can be canonicalized.
-
-    There are two categories of these fields:
-
-    1.  Those that are created at compile time.
-    2.  Those that are created at run time.
-
-    Both are always const.  Category 1 can only be created in FieldNames.cpp.
-    This is enforced at compile time.  Category 2 can only be created by
-    calling getField with an as yet unused fieldType and fieldValue (or the
-    equivalent fieldCode).
-
+    the binary format of the transaction can be canonicalized.  All
+    SFields are created at compile time.
     Each SField, once constructed, lives until program termination, and there
     is only one instance per fieldType/fieldValue pair which serves the entire
     application.
@@ -147,46 +138,60 @@ public:
     static IsSigning const notSigning = IsSigning::no;
     static IsSigning const notSigningNotHashed = IsSigning::noAndNotHashed;
 
-    int const               fieldCode;      // (type<<16)|index
-    SerializedTypeID const  fieldType;      // STI_*
-    int const               fieldValue;     // Code number for protocol
-    std::string             fieldName;
-    int                     fieldMeta;
-    int                     fieldNum;
-    IsSigning const         signingField;
-    std::string             jsonName;
+    enum class WhichFields : unsigned char
+    {
+        onlySigning             = 0x0000,
+        includeNotSigning       = 0x0001,
+        includeNotHashed        = 0x0002,
+        includeAll              = 0xFFFF,
+    };
+
+    int const                fieldCode;      // (type<<16)|index
+    SerializedTypeID const   fieldType;      // STI_*
+    int const                fieldValue;     // Code number for protocol
+    std::string const        fieldName;
+    int const                fieldMeta;
+    int const                fieldNum;
+    IsSigning const          signingField;
+    Json::StaticString const jsonName;
 
     SField(SField const&) = delete;
     SField& operator=(SField const&) = delete;
-    SField(SField&&) = default;
-
-protected:
-    // These constructors can only be called from FieldNames.cpp
-    SField (SerializedTypeID tid, int fv, const char* fn,
-            int meta = sMD_Default, IsSigning signing = IsSigning::yes);
-    explicit SField (int fc);
-    SField (SerializedTypeID id, int val);
+    SField(SField&&) = delete;
+    SField& operator=(SField&&) = delete;
 
 public:
-    // getField will dynamically construct a new SField if necessary
+    struct private_access_tag_t;   // public, but still an implementation detail
+
+    // These constructors can only be called from SField.cpp
+    SField (private_access_tag_t, SerializedTypeID tid, int fv,
+        const char* fn, int meta = sMD_Default,
+        IsSigning signing = IsSigning::yes);
+    explicit SField (private_access_tag_t, int fc);
+
     static const SField& getField (int fieldCode);
     static const SField& getField (std::string const& fieldName);
     static const SField& getField (int type, int value)
     {
         return getField (field_code (type, value));
     }
+
     static const SField& getField (SerializedTypeID type, int value)
     {
         return getField (field_code (type, value));
     }
 
-    std::string getName () const;
-    bool hasName () const
+    std::string const& getName () const
     {
-        return !fieldName.empty ();
+        return fieldName;
     }
 
-    std::string const& getJsonName () const
+    bool hasName () const
+    {
+        return fieldCode > 0;
+    }
+
+    Json::StaticString const& getJsonName () const
     {
         return jsonName;
     }
@@ -242,16 +247,12 @@ public:
     {
         return (fieldMeta & c) != 0;
     }
-    void setMeta (int c)
-    {
-        fieldMeta = c;
-    }
 
-    bool shouldInclude (bool withSigningField, bool withNotHashedField = true) const
+    bool shouldInclude (WhichFields fields) const
     {
         return (fieldValue < 256 &&
-                (withSigningField || (signingField == IsSigning::yes)) &&
-                (withNotHashedField || (signingField != IsSigning::noAndNotHashed)));
+                (fields & WhichFields::includeNotSigning || (signingField == IsSigning::yes)) &&
+                (fields & WhichFields::includeNotHashed || (signingField != IsSigning::noAndNotHashed)));
     }
 
     bool operator== (const SField& f) const
@@ -266,10 +267,9 @@ public:
 
     static int compare (const SField& f1, const SField& f2);
 
-    struct make;  // public, but still an implementation detail
-
 private:
     static int num;
+    static std::map<int, SField const*> knownCodeToField;
 };
 
 /** A field with a type known at compile time. */
@@ -349,6 +349,9 @@ extern SF_U16 const sfLedgerEntryType;
 extern SF_U16 const sfTransactionType;
 extern SF_U16 const sfSignerWeight;
 
+// 16-bit integers (uncommon)
+extern SF_U16 const sfVersion;
+
 // 32-bit integers (common)
 extern SF_U32 const sfFlags;
 extern SF_U32 const sfSourceTag;
@@ -404,6 +407,7 @@ extern SF_U64 const sfLowNode;
 extern SF_U64 const sfHighNode;
 extern SF_U64 const sfDestinationNode;
 extern SF_U64 const sfIssuerNode;
+extern SF_U64 const sfCookie;
 
 // 128-bit
 extern SF_U128 const sfEmailHash;
@@ -433,6 +437,8 @@ extern SF_U256 const sfAmendment;
 extern SF_U256 const sfTicketID;
 extern SF_U256 const sfDigest;
 extern SF_U256 const sfPayChannel;
+extern SF_U256 const sfConsensusHash;
+extern SF_U256 const sfCheckID;
 
 // currency amount (common)
 extern SF_Amount const sfAmount;
@@ -478,6 +484,8 @@ extern SF_Account const sfAccount;
 extern SF_Account const sfOwner;
 extern SF_Account const sfDestination;
 extern SF_Account const sfIssuer;
+extern SF_Account const sfAuthorize;
+extern SF_Account const sfUnauthorize;
 extern SF_Account const sfTarget;
 extern SF_Account const sfRegularKey;
 
@@ -528,3 +536,4 @@ extern SField const sfConfiguration;
 } // casinocoin
 
 #endif
+

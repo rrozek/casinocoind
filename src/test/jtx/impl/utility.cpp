@@ -17,14 +17,14 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/utility.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/HashPrefix.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/STParsedJSON.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/basics/contract.h>
 #include <cstring>
 

@@ -35,6 +35,8 @@ namespace insight {
 class StatsDCollector : public Collector
 {
 public:
+    explicit StatsDCollector() = default;
+
     /** Create a StatsD collector.
         @param address The IP address and port of the StatsD server.
         @param prefix A string pre-pended before each metric name.
@@ -50,3 +52,4 @@ public:
 }
 
 #endif
+

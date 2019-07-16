@@ -54,6 +54,10 @@ class StatsDMetricBase : public List <StatsDMetricBase>::Node
 {
 public:
     virtual void do_process () = 0;
+    virtual ~StatsDMetricBase() = default;
+    StatsDMetricBase() = default;
+    StatsDMetricBase(StatsDMetricBase const&) = delete;
+    StatsDMetricBase& operator=(StatsDMetricBase const&) = delete;
 };
 
 //------------------------------------------------------------------------------
@@ -67,9 +71,9 @@ public:
         HandlerType const& handler,
             std::shared_ptr <StatsDCollectorImp> const& impl);
 
-    ~StatsDHookImpl ();
+    ~StatsDHookImpl () override;
 
-    void do_process ();
+    void do_process () override;
 
 private:
     StatsDHookImpl& operator= (StatsDHookImpl const&);
@@ -88,13 +92,13 @@ public:
     StatsDCounterImpl (std::string const& name,
         std::shared_ptr <StatsDCollectorImp> const& impl);
 
-    ~StatsDCounterImpl ();
+    ~StatsDCounterImpl () override;
 
-    void increment (CounterImpl::value_type amount);
+    void increment  (CounterImpl::value_type amount)override;
 
     void flush ();
     void do_increment (CounterImpl::value_type amount);
-    void do_process ();
+    void do_process () override;
 
 private:
     StatsDCounterImpl& operator= (StatsDCounterImpl const&);
@@ -114,9 +118,9 @@ public:
     StatsDEventImpl (std::string const& name,
         std::shared_ptr <StatsDCollectorImp> const& impl);
 
-    ~StatsDEventImpl ();
+    ~StatsDEventImpl () = default;;
 
-    void notify (EventImpl::value_type const& alue);
+    void notify (EventImpl::value_type const& value) override;
 
     void do_notify (EventImpl::value_type const& value);
     void do_process ();
@@ -138,15 +142,15 @@ public:
     StatsDGaugeImpl (std::string const& name,
         std::shared_ptr <StatsDCollectorImp> const& impl);
 
-    ~StatsDGaugeImpl ();
+    ~StatsDGaugeImpl () override;
 
-    void set (GaugeImpl::value_type value);
-    void increment (GaugeImpl::difference_type amount);
+    void set (GaugeImpl::value_type value) override;
+    void increment (GaugeImpl::difference_type amount) override;
 
     void flush ();
     void do_set (GaugeImpl::value_type value);
     void do_increment (GaugeImpl::difference_type amount);
-    void do_process ();
+    void do_process () override;
 
 private:
     StatsDGaugeImpl& operator= (StatsDGaugeImpl const&);
@@ -168,13 +172,13 @@ public:
     explicit StatsDMeterImpl (std::string const& name,
         std::shared_ptr <StatsDCollectorImp> const& impl);
 
-    ~StatsDMeterImpl ();
+    ~StatsDMeterImpl () override;
 
-    void increment (MeterImpl::value_type amount);
+    void increment (MeterImpl::value_type amount) override;
 
     void flush ();
     void do_increment (MeterImpl::value_type amount);
-    void do_process ();
+    void do_process () override;
 
 private:
     StatsDMeterImpl& operator= (StatsDMeterImpl const&);
@@ -214,19 +218,9 @@ private:
     std::thread m_thread;
 
     static boost::asio::ip::udp::endpoint to_endpoint (
-        IP::Endpoint const &address)
+        IP::Endpoint const &ep)
     {
-        if (address.is_v4 ())
-        {
-            return boost::asio::ip::udp::endpoint (
-                boost::asio::ip::address_v4 (
-                    address.to_v4().value), address.port ());
-        }
-
-        // VFALCO TODO IPv6 support
-        assert(false);
-        return boost::asio::ip::udp::endpoint (
-            boost::asio::ip::address_v6 (), 0);
+        return boost::asio::ip::udp::endpoint (ep.address(), ep.port());
     }
 
 public:
@@ -245,7 +239,7 @@ public:
     {
     }
 
-    ~StatsDCollectorImp ()
+    ~StatsDCollectorImp () override
     {
         boost::system::error_code ec;
         m_timer.cancel (ec);
@@ -254,31 +248,31 @@ public:
         m_thread.join ();
     }
 
-    Hook make_hook (HookImpl::HandlerType const& handler)
+    Hook make_hook (HookImpl::HandlerType const& handler) override
     {
         return Hook (std::make_shared <detail::StatsDHookImpl> (
             handler, shared_from_this ()));
     }
 
-    Counter make_counter (std::string const& name)
+    Counter make_counter (std::string const& name) override
     {
         return Counter (std::make_shared <detail::StatsDCounterImpl> (
             name, shared_from_this ()));
     }
 
-    Event make_event (std::string const& name)
+    Event make_event (std::string const& name) override
     {
         return Event (std::make_shared <detail::StatsDEventImpl> (
             name, shared_from_this ()));
     }
 
-    Gauge make_gauge (std::string const& name)
+    Gauge make_gauge (std::string const& name) override
     {
         return Gauge (std::make_shared <detail::StatsDGaugeImpl> (
             name, shared_from_this ()));
     }
 
-    Meter make_meter (std::string const& name)
+    Meter make_meter (std::string const& name) override
     {
         return Meter (std::make_shared <detail::StatsDMeterImpl> (
             name, shared_from_this ()));
@@ -342,15 +336,13 @@ public:
     {
         (void)buffers;
 #if BEAST_STATSDCOLLECTOR_TRACING_ENABLED
-        std::stringstream ss;
         for (auto const& buffer : buffers)
         {
             std::string const s (boost::asio::buffer_cast <char const*> (buffer),
                 boost::asio::buffer_size (buffer));
-            ss << s;
+            std::cerr << s;
         }
-        //m_journal.trace << std::endl << ss.str ();
-        outputDebugString (ss.str ());
+        std::cerr << '\n';
 #endif
     }
 
@@ -378,9 +370,7 @@ public:
             assert (! s.empty ());
             if (! buffers.empty () && (size + length) > max_packet_size)
             {
-#if BEAST_STATSDCOLLECTOR_TRACING_ENABLED
                 log (buffers);
-#endif
                 m_socket.async_send (buffers, std::bind (
                     &StatsDCollectorImp::on_send, this, keepAlive,
                         std::placeholders::_1,
@@ -395,9 +385,7 @@ public:
 
         if (! buffers.empty ())
         {
-#if BEAST_STATSDCOLLECTOR_TRACING_ENABLED
             log (buffers);
-#endif
             m_socket.async_send (buffers, std::bind (
                 &StatsDCollectorImp::on_send, this, keepAlive,
                     std::placeholders::_1,
@@ -541,9 +529,7 @@ StatsDEventImpl::StatsDEventImpl (std::string const& name,
 {
 }
 
-StatsDEventImpl::~StatsDEventImpl ()
-{
-}
+
 
 void StatsDEventImpl::notify (EventImpl::value_type const& value)
 {
@@ -717,3 +703,4 @@ std::shared_ptr <StatsDCollector> StatsDCollector::New (
 
 }
 }
+

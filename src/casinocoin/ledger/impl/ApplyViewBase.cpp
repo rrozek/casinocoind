@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/detail/ApplyViewBase.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/ledger/CashDiff.h>

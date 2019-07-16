@@ -35,6 +35,7 @@ namespace casinocoin {
 
 /** The types of node objects. */
 enum NodeObjectType
+    : std::uint32_t
 {
     hotUNKNOWN = 0,
     hotLEDGER = 1,
@@ -72,7 +73,10 @@ private:
     // This hack is used to make the constructor effectively private
     // except for when we use it in the call to make_shared.
     // There's no portable way to make make_shared<> a friend work.
-    struct PrivateAccess { };
+    struct PrivateAccess
+    {
+        explicit PrivateAccess() = default;
+    };
 public:
     // This constructor is private, use createObject instead.
     NodeObject (NodeObjectType type,
@@ -114,3 +118,4 @@ private:
 }
 
 #endif
+

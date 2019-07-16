@@ -23,9 +23,15 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+#endif
+
+ 
 
 // Core soci
+#include <core/common.cpp>
 #include <core/connection-parameters.cpp>
 #include <core/connection-pool.cpp>
 #include <core/error.cpp>
@@ -44,7 +50,6 @@
 #include <core/use-type.cpp>
 #include <core/values.cpp>
 
-#include <backends/sqlite3/common.cpp>
 #include <backends/sqlite3/error.cpp>
 #include <backends/sqlite3/factory.cpp>
 #include <backends/sqlite3/row-id.cpp>
@@ -57,3 +62,7 @@
 
 #include <core/blob.cpp>
 #include <backends/sqlite3/blob.cpp>
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

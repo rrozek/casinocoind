@@ -100,13 +100,19 @@ getCasinocoinStateIndex (AccountID const& a, Issue const& issue);
 uint256
 getSignerListIndex (AccountID const& account);
 
+uint256
+getCheckIndex (AccountID const& account, std::uint32_t uSequence);
+
+uint256
+getDepositPreauthIndex (AccountID const& owner, AccountID const& preauthorized);
+
 //------------------------------------------------------------------------------
 
 /* VFALCO TODO
     For each of these operators that take just the uin256 and
     only attach the LedgerEntryType, we can comment out that
     operator to see what breaks, and those call sites are
-    candidates for having the Keylet either passed in a a
+    candidates for having the Keylet either passed in as a
     parameter, or having a data member that stores the keylet.
 */
 
@@ -116,6 +122,8 @@ namespace keylet {
 /** AccountID root */
 struct account_t
 {
+    explicit account_t() = default;
+
     Keylet operator()(AccountID const& id) const;
 };
 static account_t const account {};
@@ -123,6 +131,8 @@ static account_t const account {};
 /** The amendment table */
 struct amendments_t
 {
+    explicit amendments_t() = default;
+
     Keylet operator()() const;
 };
 static amendments_t const amendments {};
@@ -133,6 +143,8 @@ Keylet child (uint256 const& key);
 /** Skip list */
 struct skip_t
 {
+    explicit skip_t() = default;
+
     Keylet operator()() const;
 
     Keylet operator()(LedgerIndex ledger) const;
@@ -142,6 +154,8 @@ static skip_t const skip {};
 /** The ledger fees */
 struct fees_t
 {
+    explicit fees_t() = default;
+
     // VFALCO This could maybe be constexpr
     Keylet operator()() const;
 };
@@ -158,6 +172,8 @@ static configuration_t const configuration {};
 /** The beginning of an order book */
 struct book_t
 {
+    explicit book_t() = default;
+
     Keylet operator()(Book const& b) const;
 };
 static book_t const book {};
@@ -165,6 +181,8 @@ static book_t const book {};
 /** A trust line */
 struct line_t
 {
+    explicit line_t() = default;
+
     Keylet operator()(AccountID const& id0,
         AccountID const& id1, Currency const& currency) const;
 
@@ -181,6 +199,8 @@ static line_t const line {};
 /** An offer from an account */
 struct offer_t
 {
+    explicit offer_t() = default;
+
     Keylet operator()(AccountID const& id,
         std::uint32_t seq) const;
 
@@ -194,6 +214,8 @@ static offer_t const offer {};
 /** The initial directory page for a specific quality */
 struct quality_t
 {
+    explicit quality_t() = default;
+
     Keylet operator()(Keylet const& k,
         std::uint64_t q) const;
 };
@@ -202,6 +224,8 @@ static quality_t const quality {};
 /** The directry for the next lower quality */
 struct next_t
 {
+    explicit next_t() = default;
+
     Keylet operator()(Keylet const& k) const;
 };
 static next_t const next {};
@@ -209,6 +233,8 @@ static next_t const next {};
 /** A ticket belonging to an account */
 struct ticket_t
 {
+    explicit ticket_t() = default;
+
     Keylet operator()(AccountID const& id,
         std::uint32_t seq) const;
 
@@ -222,6 +248,8 @@ static ticket_t const ticket {};
 /** A SignerList */
 struct signers_t
 {
+    explicit signers_t() = default;
+
     Keylet operator()(AccountID const& id) const;
 
     Keylet operator()(uint256 const& key) const
@@ -230,6 +258,36 @@ struct signers_t
     }
 };
 static signers_t const signers {};
+
+/** A Check */
+struct check_t
+{
+    explicit check_t() = default;
+
+    Keylet operator()(AccountID const& id,
+        std::uint32_t seq) const;
+
+    Keylet operator()(uint256 const& key) const
+    {
+        return { ltCHECK, key };
+    }
+};
+static check_t const check {};
+
+/** A DepositPreauth */
+struct depositPreauth_t
+{
+    explicit depositPreauth_t() = default;
+
+    Keylet operator()(AccountID const& owner,
+        AccountID const& preauthorized) const;
+
+    Keylet operator()(uint256 const& key) const
+    {
+        return { ltDEPOSIT_PREAUTH, key };
+    }
+};
+static depositPreauth_t const depositPreauth {};
 
 //------------------------------------------------------------------------------
 
@@ -265,3 +323,4 @@ payChan (AccountID const& source, AccountID const& dst, std::uint32_t seq);
 }
 
 #endif
+

@@ -26,8 +26,11 @@
 #ifndef CASINOCOIN_JSON_JSON_ASSERT_H_INCLUDED
 #define CASINOCOIN_JSON_JSON_ASSERT_H_INCLUDED
 
+#include "casinocoin/json/json_errors.h"
+
 #define JSON_ASSERT_UNREACHABLE assert( false )
 #define JSON_ASSERT( condition ) assert( condition );  // @todo <= change this into an exception throw
-#define JSON_ASSERT_MESSAGE( condition, message ) if (!( condition )) casinocoin::Throw<std::runtime_error> ( message );
+#define JSON_ASSERT_MESSAGE( condition, message ) if (!( condition )) casinocoin::Throw<Json::error> ( message );
 
 #endif
+

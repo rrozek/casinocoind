@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <casinocoin/beast/unit_test.h>
 #include <casinocoin/protocol/Feature.h>
@@ -29,7 +29,7 @@ class DeliverMin_test : public beast::unit_test::suite
 {
 public:
     void
-    test_convert_all_of_an_asset(std::initializer_list<uint256> fs)
+    test_convert_all_of_an_asset(FeatureBitset features)
     {
         testcase("Convert all of an asset using DeliverMin");
 
@@ -38,7 +38,7 @@ public:
         auto const USD = gw["USD"];
 
         {
-            Env env(*this, features(fs));
+            Env env(*this, features);
             env.fund(CSC(10000), "alice", "bob", "carol", gw);
             env.trust(USD(100), "alice", "bob", "carol");
             env(pay("alice", "bob", USD(10)), delivermin(USD(10)),  ter(temBAD_AMOUNT));
@@ -61,7 +61,7 @@ public:
         }
 
         {
-            Env env(*this, features(fs));
+            Env env(*this, features);
             env.fund(CSC(10000), "alice", "bob", gw);
             env.trust(USD(1000), "alice", "bob");
             env(pay(gw, "bob", USD(100)));
@@ -73,7 +73,7 @@ public:
         }
 
         {
-            Env env(*this, features(fs));
+            Env env(*this, features);
             env.fund(CSC(10000), "alice", "bob", "carol", gw);
             env.trust(USD(1000), "bob", "carol");
             env(pay(gw, "bob", USD(200)));
@@ -91,7 +91,7 @@ public:
         }
 
         {
-            Env env(*this, features(fs));
+            Env env(*this, features);
             env.fund(CSC(10000), "alice", "bob", "carol", "dan", gw);
             env.trust(USD(1000), "bob", "carol", "dan");
             env(pay(gw, "bob", USD(100)));
@@ -109,13 +109,14 @@ public:
     }
 
     void
-    run()
+    run() override
     {
-        test_convert_all_of_an_asset({});
-        test_convert_all_of_an_asset({featureFlow});
-        test_convert_all_of_an_asset({featureFlow, fix1373});
-        test_convert_all_of_an_asset(
-            {featureFlow, fix1373, featureFlowCross});
+        using namespace jtx;
+        auto const sa = supported_amendments();
+        test_convert_all_of_an_asset(sa - featureFlow - fix1373 - featureFlowCross);
+        test_convert_all_of_an_asset(sa - fix1373 - featureFlowCross);
+        test_convert_all_of_an_asset(sa - featureFlowCross);
+        test_convert_all_of_an_asset(sa);
     }
 };
 

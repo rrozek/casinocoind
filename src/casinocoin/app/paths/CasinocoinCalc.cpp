@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/Flow.h>
 #include <casinocoin/app/paths/CasinocoinCalc.h>
 #include <casinocoin/app/paths/Tuning.h>
@@ -155,7 +155,12 @@ CasinocoinCalc::Output CasinocoinCalc::casinocoinCalculate (
         {
             JLOG (j.error()) << "Exception from flow: " << e.what ();
             if (!useFlowV1Output)
-                Rethrow();
+            {
+                // return a tec so the tx is stored
+                path::CasinocoinCalc::Output exceptResult;
+                exceptResult.setResult(tecINTERNAL);
+                return exceptResult;
+            }
         }
     }
 
@@ -383,7 +388,7 @@ TER CasinocoinCalc::casinocoinCalculate (detail::FlowDebugInfo* flowDebugInfo)
 
                     ++iDry;
                 }
-                else if (pathState->outPass() == zero)
+                else if (pathState->outPass() == beast::zero)
                 {
                     // Path is not dry, but moved no funds
                     // This should never happen. Consider the path dry

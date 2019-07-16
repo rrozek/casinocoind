@@ -26,27 +26,11 @@
 #ifndef CASINOCOIN_OVERLAY_CONNECTATTEMPT_H_INCLUDED
 #define CASINOCOIN_OVERLAY_CONNECTATTEMPT_H_INCLUDED
 
-#include "casinocoin.pb.h"
+#include <casinocoin/protocol/messages.h>
 #include <casinocoin/overlay/impl/OverlayImpl.h>
-#include <casinocoin/overlay/impl/ProtocolMessage.h>
-#include <casinocoin/overlay/impl/TMHello.h>
 #include <casinocoin/overlay/impl/Tuning.h>
-#include <casinocoin/overlay/Message.h>
-#include <casinocoin/protocol/BuildInfo.h>
-#include <casinocoin/protocol/UintTypes.h>
-#include <casinocoin/beast/asio/ssl_bundle.h>
-#include <casinocoin/beast/net/IPAddressConversion.h>
-#include <casinocoin/beast/utility/WrappedSink.h>
-#include <beast/core/multi_buffer.hpp>
-#include <beast/http/empty_body.hpp>
-#include <beast/http/string_body.hpp>
-#include <beast/http/parser.hpp>
-#include <boost/asio/basic_waitable_timer.hpp>
-#include <boost/asio/buffers_iterator.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <chrono>
-#include <functional>
-#include <memory>
+
+
 
 namespace casinocoin {
 

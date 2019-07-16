@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/paths/CasinocoinState.h>
@@ -128,7 +128,7 @@ Json::Value doNoCasinocoinCheck (RPC::Context& context)
         if (transactions)
         {
             Json::Value& tx = jvTransactions.append (Json::objectValue);
-            tx["TransactionType"] = "AccountSet";
+            tx["TransactionType"] = jss::AccountSet;
             tx["SetFlag"] = 8;
             fillTransaction (context, tx, accountID, seq, *ledger);
         }
@@ -171,7 +171,7 @@ Json::Value doNoCasinocoinCheck (RPC::Context& context)
                     limitAmount.setIssuer (peer);
 
                     Json::Value& tx = jvTransactions.append (Json::objectValue);
-                    tx["TransactionType"] = "TrustSet";
+                    tx["TransactionType"] = jss::TrustSet;
                     tx["LimitAmount"] = limitAmount.getJson (0);
                     tx["Flags"] = bNoCasinocoin ? tfClearNoCasinocoin : tfSetNoCasinocoin;
                     fillTransaction(context, tx, accountID, seq, *ledger);
@@ -186,3 +186,4 @@ Json::Value doNoCasinocoinCheck (RPC::Context& context)
 }
 
 } // casinocoin
+

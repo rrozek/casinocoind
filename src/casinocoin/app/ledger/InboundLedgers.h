@@ -49,7 +49,7 @@ public:
     virtual
     std::shared_ptr<Ledger const>
     acquire (uint256 const& hash,
-        std::uint32_t seq, InboundLedger::fcReason) = 0;
+        std::uint32_t seq, InboundLedger::Reason) = 0;
 
     virtual std::shared_ptr<InboundLedger> find (LedgerHash const& hash) = 0;
 
@@ -78,7 +78,7 @@ public:
     virtual std::size_t fetchRate() = 0;
 
     /** Called when a complete ledger is obtained. */
-    virtual void onLedgerFetched (InboundLedger::fcReason why) = 0;
+    virtual void onLedgerFetched() = 0;
 
     virtual void gotFetchPack () = 0;
     virtual void sweep () = 0;
@@ -95,3 +95,4 @@ make_InboundLedgers (Application& app,
 } // casinocoin
 
 #endif
+

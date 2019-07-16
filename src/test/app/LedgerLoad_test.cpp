@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/unit_test.h>
 #include <test/jtx.h>
 #include <test/jtx/Env.h>
@@ -86,7 +86,7 @@ class LedgerLoad_test : public beast::unit_test::suite
         retval.hashes = [&] {
             for(auto const& it : retval.ledger[jss::ledger][jss::accountState])
             {
-                if(it[sfLedgerEntryType.fieldName] == "LedgerHashes")
+                if(it[sfLedgerEntryType.fieldName] == jss::LedgerHashes)
                     return it[sfHashes.fieldName];
             }
             return Json::Value {};
@@ -218,7 +218,7 @@ class LedgerLoad_test : public beast::unit_test::suite
     }
 
 public:
-    void run ()
+    void run () override
     {
         beast::temp_dir td;
         auto sd = setupLedger(td);
@@ -235,3 +235,4 @@ public:
 BEAST_DEFINE_TESTSUITE (LedgerLoad, app, casinocoin);
 
 }  // ripple
+

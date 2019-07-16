@@ -23,9 +23,10 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/basics/safe_cast.h>
 #include <casinocoin/protocol/LedgerFormats.h>
 #include <casinocoin/protocol/STInteger.h>
 #include <casinocoin/protocol/TxFormats.h>
@@ -55,7 +56,7 @@ STUInt8::getText () const
     {
         std::string token, human;
 
-        if (transResultInfo (static_cast<TER> (value_), token, human))
+        if (transResultInfo (TER::fromInt (value_), token, human))
             return human;
 
         JLOG (debugLog().error())
@@ -73,7 +74,7 @@ STUInt8::getJson (int) const
     {
         std::string token, human;
 
-        if (transResultInfo (static_cast<TER> (value_), token, human))
+        if (transResultInfo (TER::fromInt (value_), token, human))
             return token;
 
         JLOG (debugLog().error())
@@ -105,7 +106,7 @@ STUInt16::getText () const
     if (getFName () == sfLedgerEntryType)
     {
         auto item = LedgerFormats::getInstance ().findByType (
-            static_cast <LedgerEntryType> (value_));
+            safe_cast<LedgerEntryType> (value_));
 
         if (item != nullptr)
             return item->getName ();
@@ -114,7 +115,7 @@ STUInt16::getText () const
     if (getFName () == sfTransactionType)
     {
         auto item =TxFormats::getInstance().findByType (
-            static_cast <TxType> (value_));
+            safe_cast<TxType> (value_));
 
         if (item != nullptr)
             return item->getName ();
@@ -130,7 +131,7 @@ STUInt16::getJson (int) const
     if (getFName () == sfLedgerEntryType)
     {
         auto item = LedgerFormats::getInstance ().findByType (
-            static_cast <LedgerEntryType> (value_));
+            safe_cast<LedgerEntryType> (value_));
 
         if (item != nullptr)
             return item->getName ();
@@ -139,7 +140,7 @@ STUInt16::getJson (int) const
     if (getFName () == sfTransactionType)
     {
         auto item = TxFormats::getInstance().findByType (
-            static_cast <TxType> (value_));
+            safe_cast<TxType> (value_));
 
         if (item != nullptr)
             return item->getName ();
@@ -207,3 +208,4 @@ STUInt64::getJson (int) const
 }
 
 } // casinocoin
+

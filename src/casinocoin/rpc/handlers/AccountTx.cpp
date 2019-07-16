@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
@@ -33,9 +33,10 @@
 #include <casinocoin/net/RPCErr.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/JsonFields.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/resource/Fees.h>
 #include <casinocoin/rpc/Context.h>
+#include <casinocoin/rpc/DeliveredAmount.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <casinocoin/rpc/Role.h>
 
@@ -97,7 +98,8 @@ Json::Value doAccountTx (RPC::Context& context)
         if (uLedgerMax < uLedgerMin)
             return rpcError (rpcLGR_IDXS_INVALID);
     }
-    else
+    else if(params.isMember (jss::ledger_hash) ||
+            params.isMember (jss::ledger_index))
     {
         std::shared_ptr<ReadView const> ledger;
         auto ret = RPC::lookupLedger (ledger, context);
@@ -113,6 +115,11 @@ Json::Value doAccountTx (RPC::Context& context)
         }
 
         uLedgerMin = uLedgerMax = ledger->info().seq;
+    }
+    else
+    {
+        uLedgerMin = uValidatedMin;
+        uLedgerMax = uValidatedMax;
     }
 
     Json::Value resumeToken;
@@ -167,7 +174,7 @@ Json::Value doAccountTx (RPC::Context& context)
                 if (it.second)
                 {
                     auto meta = it.second->getJson (1);
-                    addPaymentDeliveredAmount (meta, context, it.first, it.second);
+                    insertDeliveredAmount (meta, context, it.first, *it.second);
                     jvObj[jss::meta] = std::move(meta);
 
                     std::uint32_t uLedgerIndex = it.second->getLgrSeq ();
@@ -200,3 +207,4 @@ Json::Value doAccountTx (RPC::Context& context)
 }
 
 } // casinocoin
+

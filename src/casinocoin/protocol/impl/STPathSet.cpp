@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/STPathSet.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/basics/contract.h>
@@ -163,7 +163,7 @@ STPath::getJson (int) const
     for (auto it: mPath)
     {
         Json::Value elem (Json::objectValue);
-        int         iType   = it.getNodeType ();
+        auto const iType   = it.getNodeType ();
 
         elem[jss::type]      = iType;
         elem[jss::type_hex]  = strHex (iType);
@@ -228,3 +228,4 @@ STPathSet::add (Serializer& s) const
 }
 
 } // casinocoin
+

@@ -24,9 +24,10 @@
 #include <casinocoin/app/misc/detail/Work.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/json/json_value.h>
 #include <boost/asio.hpp>
 #include <mutex>
-
+#include <memory>
 namespace casinocoin {
 
 /**
@@ -44,9 +45,9 @@ namespace casinocoin {
         "expiration", and @c "validators" field. @c "expiration" contains the
         Casinocoin timestamp (seconds since January 1st, 2000 (00:00 UTC)) for when
         the list expires. @c "validators" contains an array of objects with a
-        @c "validation_public_key" field.
+        @c "validation_public_key" and optional @c "manifest" field.
         @c "validation_public_key" should be the hex-encoded master public key.
-
+        @c "manifest" should be the base64-encoded validator manifest.
     @li @c "manifest": Base64-encoded serialization of a manifest containing the
         publisher's master and signing public keys.
 
@@ -54,8 +55,8 @@ namespace casinocoin {
         signing key.
 
     @li @c "version": 1
-
-    @li @c "refreshInterval" (optional)
+    @li @c "refreshInterval" (optional, integer minutes).
+        This value is clamped internally to [1,1440] (1 min - 1 day)
 */
 class ValidatorSite
 {
@@ -67,10 +68,40 @@ private:
 
     struct Site
     {
-        std::string uri;
-        parsedURL pUrl;
+        struct Status
+        {
+            clock_type::time_point refreshed;
+            ListDisposition disposition;
+            std::string message;
+        };
+
+        struct Resource
+        {
+            explicit Resource(std::string u);
+            std::string uri;
+            parsedURL pUrl;
+        };
+        using ResourcePtr = std::shared_ptr<Resource>;
+
+        explicit Site(std::string uri);
+
+        /// the original uri as loaded from config
+        ResourcePtr loadedResource;
+
+        /// the resource to to request at <timer>
+        /// intervals. same as loadedResource
+        /// except in the case of a permanent redir.
+        ResourcePtr startingResource;
+
+        /// the active resource being requested.
+        /// same as startingResource except
+        /// when we've gotten a temp redirect
+        ResourcePtr activeResource;
+
+        unsigned short redirCount;
         std::chrono::minutes refreshInterval;
         clock_type::time_point nextRefresh;
+        boost::optional<Status> lastRefreshStatus;
     };
 
     boost::asio::io_service& ios_;
@@ -93,11 +124,15 @@ private:
     // The configured list of URIs for fetching lists
     std::vector<Site> sites_;
 
+    // time to allow for requests to complete
+    const std::chrono::seconds requestTimeout_;
+
 public:
     ValidatorSite (
         boost::asio::io_service& ios,
         ValidatorList& validators,
-        beast::Journal j);
+        beast::Journal j,
+        std::chrono::seconds timeout = std::chrono::seconds{20});
     ~ValidatorSite ();
 
     /** Load configured site URIs.
@@ -145,10 +180,22 @@ public:
     void
     stop ();
 
+    /** Return JSON representation of configured validator sites
+     */
+    Json::Value
+    getJson() const;
+
 private:
     /// Queue next site to be fetched
+    /// lock over state_mutex_ required
     void
-    setTimer ();
+    setTimer (std::lock_guard<std::mutex>&);
+
+    /// request took too long
+    void
+    onRequestTimeout (
+        std::size_t siteIdx,
+        error_code const& ec);
 
     /// Fetch site whose time has come
     void
@@ -162,8 +209,33 @@ private:
         boost::system::error_code const& ec,
         detail::response_type&& res,
         std::size_t siteIdx);
+
+    /// Initiate request to given resource.
+    /// lock over sites_mutex_ required
+    void
+    makeRequest (
+        Site::ResourcePtr resource,
+        std::size_t siteIdx,
+        std::lock_guard<std::mutex>& lock);
+
+    /// Parse json response from validator list site.
+    /// lock over sites_mutex_ required
+    void
+    parseJsonResponse (
+        detail::response_type& res,
+        std::size_t siteIdx,
+        std::lock_guard<std::mutex>& lock);
+
+    /// Interpret a redirect response.
+    /// lock over sites_mutex_ required
+    Site::ResourcePtr
+    processRedirect (
+        detail::response_type& res,
+        std::size_t siteIdx,
+        std::lock_guard<std::mutex>& lock);
 };
 
 } // casinocoin
 
 #endif
+

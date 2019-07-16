@@ -23,19 +23,13 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/nodestore/DummyScheduler.h>
 
 namespace casinocoin {
 namespace NodeStore {
 
-DummyScheduler::DummyScheduler ()
-{
-}
 
-DummyScheduler::~DummyScheduler ()
-{
-}
 
 void
 DummyScheduler::scheduleTask (Task& task)

@@ -23,27 +23,19 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/ledger/TransactionStateSF.h>
 
 namespace casinocoin {
 
-TransactionStateSF::TransactionStateSF(Family& f,
-    AbstractFetchPackContainer& fp)
-        : f_(f)
-        , fp_(fp)
-{
-}
+void
+TransactionStateSF::gotNode(bool, SHAMapHash const& nodeHash,
+    std::uint32_t ledgerSeq, Blob&& nodeData, SHAMapTreeNode::TNType type) const
 
-void TransactionStateSF::gotNode (bool fromFilter,
-                                  SHAMapHash const& nodeHash,
-                                  Blob&& nodeData,
-                                  SHAMapTreeNode::TNType type) const
 {
-    assert(type !=
-        SHAMapTreeNode::tnTRANSACTION_NM);
-    f_.db().store(hotTRANSACTION_NODE,
-        std::move (nodeData), nodeHash.as_uint256());
+    assert(type != SHAMapTreeNode::tnTRANSACTION_NM);
+    db_.store(hotTRANSACTION_NODE, std::move(nodeData),
+        nodeHash.as_uint256(), ledgerSeq);
 }
 
 boost::optional<Blob>
@@ -53,3 +45,4 @@ TransactionStateSF::getNode(SHAMapHash const& nodeHash) const
 }
 
 } // casinocoin
+

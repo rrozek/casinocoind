@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/OpenLedger.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/TxQ.h>
@@ -35,14 +35,6 @@ namespace casinocoin
 {
     Json::Value doFee(RPC::Context& context)
     {
-        // Bail if fee escalation is not enabled.
-        auto const view = context.app.openLedger().current();
-        if (!view || !view->rules().enabled(featureFeeEscalation))
-        {
-            RPC::inject_error(rpcNOT_ENABLED, context.params);
-            return context.params;
-        }
-
         auto result = context.app.getTxQ().doRPC(context.app);
         if (result.type() == Json::objectValue)
             return result;
@@ -51,3 +43,4 @@ namespace casinocoin
         return context.params;
     }
 } // casinocoin
+

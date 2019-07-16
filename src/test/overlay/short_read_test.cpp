@@ -17,10 +17,11 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/make_SSLContext.h>
 #include <casinocoin/beast/core/CurrentThreadName.h>
 #include <casinocoin/beast/unit_test.h>
+#include <test/jtx/envconfig.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/optional.hpp>
@@ -64,13 +65,6 @@ private:
     std::thread thread_;
     std::shared_ptr<boost::asio::ssl::context> context_;
 
-    static
-    endpoint_type
-    endpoint()
-    {
-        return endpoint_type(address_type::from_string("127.0.0.1"), 9000);
-    }
-
     template <class Streambuf>
     static
     void
@@ -94,7 +88,7 @@ private:
             Base& base_;
 
         public:
-            Child(Base& base)
+            explicit Child(Base& base)
                 : base_(base)
             {
             }
@@ -175,6 +169,7 @@ private:
     {
     private:
         short_read_test& test_;
+        endpoint_type endpoint_;
 
         struct Acceptor
             : Child, std::enable_shared_from_this<Acceptor>
@@ -185,15 +180,20 @@ private:
             socket_type socket_;
             strand_type strand_;
 
-            Acceptor(Server& server)
+            explicit Acceptor(Server& server)
                 : Child(server)
                 , server_(server)
                 , test_(server_.test_)
-                , acceptor_(test_.io_service_, endpoint())
+                , acceptor_(test_.io_service_,
+                    endpoint_type(beast::IP::Address::from_string(
+                        test::getEnvLocalhostAddr()), 0))
                 , socket_(test_.io_service_)
                 , strand_(socket_.get_io_service())
             {
                 acceptor_.listen();
+                server_.endpoint_ = acceptor_.local_endpoint();
+                test_.log << "[server] up on port: " <<
+                    server_.endpoint_.port() << std::endl;
             }
 
             void
@@ -369,7 +369,7 @@ private:
         };
 
     public:
-        Server(short_read_test& test)
+        explicit Server(short_read_test& test)
             : test_(test)
         {
             auto const p = std::make_shared<Acceptor>(*this);
@@ -382,11 +382,17 @@ private:
             close();
             wait();
         }
+
+        endpoint_type const&
+        endpoint () const
+        {
+            return endpoint_;
+        }
     };
 
     //--------------------------------------------------------------------------
-
     class Client : public Base
+
     {
     private:
         short_read_test& test_;
@@ -401,8 +407,9 @@ private:
             strand_type strand_;
             timer_type timer_;
             boost::asio::streambuf buf_;
+            endpoint_type const& ep_;
 
-            Connection (Client& client)
+            Connection (Client& client, endpoint_type const& ep)
                 : Child(client)
                 , client_(client)
                 , test_(client_.test_)
@@ -410,6 +417,7 @@ private:
                 , stream_(socket_, *test_.context_)
                 , strand_(socket_.get_io_service())
                 , timer_(socket_.get_io_service())
+                , ep_(ep)
             {
             }
 
@@ -427,12 +435,12 @@ private:
             }
 
             void
-            run()
+            run(endpoint_type const& ep)
             {
                 timer_.expires_from_now(std::chrono::seconds(3));
                 timer_.async_wait(strand_.wrap(std::bind(&Connection::on_timer,
                     shared_from_this(), std::placeholders::_1)));
-                socket_.async_connect(endpoint(), strand_.wrap(std::bind(
+                socket_.async_connect(ep, strand_.wrap(std::bind(
                     &Connection::on_connect, shared_from_this(),
                         std::placeholders::_1)));
             }
@@ -531,12 +539,12 @@ private:
         };
 
     public:
-        Client(short_read_test& test)
+        Client(short_read_test& test, endpoint_type const& ep)
             : test_(test)
         {
-            auto const p = std::make_shared<Connection>(*this);
+            auto const p = std::make_shared<Connection>(*this, ep);
             add(p);
-            p->run();
+            p->run(ep);
         }
 
         ~Client()
@@ -567,7 +575,7 @@ public:
     void run() override
     {
         Server s(*this);
-        Client c(*this);
+        Client c(*this, s.endpoint());
         c.wait();
         pass();
     }
@@ -576,3 +584,4 @@ public:
 BEAST_DEFINE_TESTSUITE(short_read,overlay,casinocoin);
 
 }
+

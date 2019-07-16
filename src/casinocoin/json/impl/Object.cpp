@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/json/Object.h>
 #include <cassert>
@@ -202,7 +202,7 @@ namespace {
 template <class Object>
 void doCopyFrom (Object& to, Json::Value const& from)
 {
-    assert (from.isObject());
+    assert (from.isObjectOrNull());
     auto members = from.getMemberNames();
     for (auto& m: members)
         to[m] = from[m];
@@ -229,3 +229,4 @@ WriterObject stringWriterObject (std::string& s)
 }
 
 } // Json
+

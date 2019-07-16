@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/paths/CasinocoinState.cpp>
 #include <casinocoin/app/paths/AccountCurrencies.cpp>

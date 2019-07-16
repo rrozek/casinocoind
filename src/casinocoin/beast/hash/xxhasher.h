@@ -20,12 +20,6 @@
 #ifndef BEAST_HASH_XXHASHER_H_INCLUDED
 #define BEAST_HASH_XXHASHER_H_INCLUDED
 
-#ifndef BEAST_NO_XXHASH
-#define BEAST_NO_XXHASH 0
-#endif
-
-#if ! BEAST_NO_XXHASH
-
 #include <casinocoin/beast/hash/endian.h>
 #include <casinocoin/beast/hash/impl/xxhash.h>
 #include <type_traits>
@@ -85,4 +79,3 @@ public:
 
 #endif
 
-#endif

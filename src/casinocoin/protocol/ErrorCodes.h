@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
-    Copyright (c) 2012, 2013 Ripple Labs Inc.
+    Copyright (c) 2012 - 2019 Ripple Labs Inc.
 
     Permission to use, copy, modify, and/or distribute this software for any
     purpose  with  or without fee is hereby granted, provided that the above
@@ -47,17 +47,15 @@ enum error_code_i
     // Programs should use error tokens.
 
     // Misc failure
-    rpcGENERAL,
-    rpcLOAD_FAILED,
     rpcNO_PERMISSION,
     rpcNO_EVENTS,
-    rpcNOT_STANDALONE,
     rpcTOO_BUSY,
     rpcSLOW_DOWN,
     rpcHIGH_FEE,
     rpcBAD_FEE,
     rpcNOT_ENABLED,
     rpcNOT_READY,
+    rpcAMENDMENT_BLOCKED,
 
     // Networking
     rpcNO_CLOSED,
@@ -65,19 +63,11 @@ enum error_code_i
     rpcNO_NETWORK,
 
     // Ledger state
-    rpcACT_EXISTS,
     rpcACT_NOT_FOUND,
-    rpcINSUF_FUNDS,
     rpcLGR_NOT_FOUND,
     rpcLGR_NOT_VALIDATED,
     rpcMASTER_DISABLED,
-    rpcNO_ACCOUNT,
-    rpcNO_PATH,
-    rpcPASSWD_CHANGED,
-    rpcSRC_MISSING,
-    rpcSRC_UNCLAIMED,
     rpcTXN_NOT_FOUND,
-    rpcWRONG_SEED,
 
     // Malformed command
     rpcINVALID_PARAMS,
@@ -87,8 +77,8 @@ enum error_code_i
     // Bad parameter
     rpcACT_BITCOIN,
     rpcACT_MALFORMED,
-    rpcQUALITY_MALFORMED,
-    rpcBAD_BLOB,
+    rpcALREADY_MULTISIG,
+    rpcALREADY_SINGLE_SIG,
     rpcBAD_FEATURE,
     rpcBAD_ISSUER,
     rpcBAD_MARKET,
@@ -99,24 +89,18 @@ enum error_code_i
     rpcCOMMAND_MISSING,
     rpcDST_ACT_MALFORMED,
     rpcDST_ACT_MISSING,
+    rpcDST_ACT_NOT_FOUND,
     rpcDST_AMT_MALFORMED,
     rpcDST_AMT_MISSING,
     rpcDST_ISR_MALFORMED,
-    rpcGETS_ACT_MALFORMED,
-    rpcGETS_AMT_MALFORMED,
-    rpcHOST_IP_MALFORMED,
     rpcLGR_IDXS_INVALID,
     rpcLGR_IDX_MALFORMED,
-    rpcPAYS_ACT_MALFORMED,
-    rpcPAYS_AMT_MALFORMED,
-    rpcPORT_MALFORMED,
     rpcPUBLIC_MALFORMED,
-    rpcSIGN_FOR_MALFORMED,
+    rpcSIGNING_MALFORMED,
     rpcSENDMAX_MALFORMED,
     rpcSRC_ACT_MALFORMED,
     rpcSRC_ACT_MISSING,
     rpcSRC_ACT_NOT_FOUND,
-    rpcSRC_AMT_MALFORMED,
     rpcSRC_CUR_MALFORMED,
     rpcSRC_ISR_MALFORMED,
     rpcSTREAM_MALFORMED,
@@ -126,6 +110,7 @@ enum error_code_i
     rpcINTERNAL,        // Generic internal error.
     rpcNOT_IMPL,
     rpcNOT_SUPPORTED,
+    rpcLAST = rpcNOT_SUPPORTED   // rpcLAST should always equal the last code.
 };
 
 //------------------------------------------------------------------------------
@@ -137,16 +122,23 @@ namespace RPC {
 /** Maps an rpc error code to its token and default message. */
 struct ErrorInfo
 {
-    ErrorInfo (error_code_i code_, std::string const& token_,
-        std::string const& message_)
+    // Default ctor needed to produce an empty std::array during constexpr eval.
+    constexpr ErrorInfo ()
+    : code (rpcUNKNOWN)
+    , token ("unknown")
+    , message ("An unknown error code.")
+    { }
+
+    constexpr ErrorInfo (error_code_i code_, char const* token_,
+        char const* message_)
         : code (code_)
         , token (token_)
         , message (message_)
     { }
 
     error_code_i code;
-    std::string token;
-    std::string message;
+    Json::StaticString token;
+    Json::StaticString message;
 };
 
 /** Returns an ErrorInfo that reflects the error code. */
@@ -281,3 +273,4 @@ std::string rpcErrorString(Json::Value const& jv);
 }
 
 #endif
+

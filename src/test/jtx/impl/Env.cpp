@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/balance.h>
 #include <test/jtx/Env.h>
 #include <test/jtx/fee.h>
@@ -47,7 +47,7 @@
 #include <casinocoin/protocol/SystemParameters.h>
 #include <casinocoin/protocol/TER.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/protocol/Feature.h>
 #include <memory>
 
@@ -55,86 +55,21 @@ namespace casinocoin {
 namespace test {
 namespace jtx {
 
-class SuiteSink : public beast::Journal::Sink
-{
-    std::string partition_;
-    beast::unit_test::suite& suite_;
-
-public:
-    SuiteSink(std::string const& partition,
-            beast::severities::Severity threshold,
-            beast::unit_test::suite& suite)
-        : Sink (threshold, false)
-        , partition_(partition + " ")
-        , suite_ (suite)
-    {
-    }
-
-    // For unit testing, always generate logging text.
-    bool active(beast::severities::Severity level) const override
-    {
-        return true;
-    }
-
-    void
-    write(beast::severities::Severity level,
-        std::string const& text) override
-    {
-        using namespace beast::severities;
-        std::string s;
-        switch(level)
-        {
-        case kTrace:    s = "TRC:"; break;
-        case kDebug:    s = "DBG:"; break;
-        case kInfo:     s = "INF:"; break;
-        case kWarning:  s = "WRN:"; break;
-        case kError:    s = "ERR:"; break;
-        default:
-        case kFatal:    s = "FTL:"; break;
-        }
-
-        // Only write the string if the level at least equals the threshold.
-        if (level >= threshold())
-            suite_.log << s << partition_ << text << std::endl;
-    }
-};
-
-class SuiteLogs : public Logs
-{
-    beast::unit_test::suite& suite_;
-
-public:
-    explicit
-    SuiteLogs(beast::unit_test::suite& suite)
-        : Logs (beast::severities::kError)
-        , suite_(suite)
-    {
-    }
-
-    ~SuiteLogs() override = default;
-
-    std::unique_ptr<beast::Journal::Sink>
-    makeSink(std::string const& partition,
-        beast::severities::Severity threshold) override
-    {
-        return std::make_unique<SuiteSink>(partition, threshold, suite_);
-    }
-};
-
 //------------------------------------------------------------------------------
 
 Env::AppBundle::AppBundle(beast::unit_test::suite& suite,
-    std::unique_ptr<Config> config)
+    std::unique_ptr<Config> config,
+    std::unique_ptr<Logs> logs)
 {
     using namespace beast::severities;
     // Use kFatal threshold to reduce noise from STObject.
-    setDebugLogSink (std::make_unique<SuiteSink>("Debug", kFatal, suite));
-    auto logs = std::make_unique<SuiteLogs>(suite);
+    setDebugLogSink (std::make_unique<SuiteJournalSink>(
+        "Debug", kFatal, suite));
     auto timeKeeper_ =
         std::make_unique<ManualTimeKeeper>();
     timeKeeper = timeKeeper_.get();
     // Hack so we don't have to call Config::setup
-    HTTPClient::initializeSSLContext(*config);
+    HTTPClient::initializeSSLContext(*config, debugLog());
     owned = make_Application(std::move(config),
         std::move(logs), std::move(timeKeeper_));
     app = owned.get();
@@ -176,6 +111,7 @@ Env::close(NetClock::time_point closeTime,
     boost::optional<std::chrono::milliseconds> consensusDelay)
 {
     // Round up to next distinguishable value
+    using namespace std::chrono_literals;
     closeTime += closed()->info().closeTimeResolution - 1s;
     timeKeeper().set(closeTime);
     // Go through the rpc interface unless we need to simulate
@@ -324,8 +260,7 @@ Env::parseResult(Json::Value const& jr)
     TER ter;
     if (jr.isObject() && jr.isMember(jss::result) &&
         jr[jss::result].isMember(jss::engine_result_code))
-        ter = static_cast<TER>(
-            jr[jss::result][jss::engine_result_code].asInt());
+        ter = TER::fromInt (jr[jss::result][jss::engine_result_code].asInt());
     else
         ter = temINVALID;
     return std::make_pair(ter,
@@ -510,34 +445,19 @@ Env::st (JTx const& jt)
 Json::Value
 Env::do_rpc(std::vector<std::string> const& args)
 {
-    auto jv = cmdLineToJSONRPC(args, journal);
-    if (!jv.isMember(jss::jsonrpc))
-    {
-        jv[jss::jsonrpc] = "2.0";
-        jv[jss::casinocoinrpc] = "2.0";
-        jv[jss::id] = 5;
-    }
-    auto response = client().invoke(
-        jv[jss::method].asString(),
-        jv[jss::params][0U]);
+    return rpcClient(args, app().config(), app().logs()).second;
+}
 
-    if (jv.isMember(jss::jsonrpc))
-    {
-        response[jss::jsonrpc] = jv[jss::jsonrpc];
-        response[jss::casinocoinrpc] = jv[jss::casinocoinrpc];
-        response[jss::id] = jv[jss::id];
-    }
-
-    if (jv[jss::params][0u].isMember(jss::error) &&
-        (! response.isMember(jss::error)))
-    {
-        response["client_error"] = jv[jss::params][0u];
-    }
-
-    return response;
+void
+Env::enableFeature(uint256 const feature)
+{
+    // Env::close() must be called for feature
+    // enable to take place.
+    app().config().features.insert(feature);
 }
 
 } // jtx
 
 } // test
 } // casinocoin
+

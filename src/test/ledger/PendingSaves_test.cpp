@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/PendingSaves.h>
 #include <casinocoin/beast/unit_test.h>
 

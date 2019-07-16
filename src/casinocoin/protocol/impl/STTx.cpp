@@ -23,7 +23,10 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+#include <casinocoin/basics/contract.h>
+#include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/safe_cast.h>
+#include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/HashPrefix.h>
 #include <casinocoin/protocol/JsonFields.h>
@@ -33,10 +36,7 @@
 #include <casinocoin/protocol/STAccount.h>
 #include <casinocoin/protocol/STArray.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/protocol/types.h>
-#include <casinocoin/basics/contract.h>
-#include <casinocoin/basics/Log.h>
-#include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/json/to_string.h>
 #include <boost/format.hpp>
 #include <array>
@@ -56,37 +56,34 @@ auto getTxFormat (TxType type)
         Throw<std::runtime_error> (
             "Invalid transaction type " +
             std::to_string (
-                static_cast<std::underlying_type_t<TxType>>(type)));
+                safe_cast<std::underlying_type_t<TxType>>(type)));
     }
 
     return format;
 }
 
-STTx::STTx (STObject&& object)
+STTx::STTx (STObject&& object) noexcept (false)
     : STObject (std::move (object))
 {
-    tx_type_ = static_cast <TxType> (getFieldU16 (sfTransactionType));
-
-    if (!setType (getTxFormat (tx_type_)->elements))
-        Throw<std::runtime_error> ("transaction not valid");
-
+    tx_type_ = safe_cast<TxType> (getFieldU16 (sfTransactionType));
+    applyTemplate (getTxFormat (tx_type_)->getSOTemplate());  //  may throw
     tid_ = getHash(HashPrefix::transactionID);
 }
 
-STTx::STTx (SerialIter& sit)
+STTx::STTx (SerialIter& sit) noexcept (false)
     : STObject (sfTransaction)
 {
     int length = sit.getBytesLeft ();
 
-    if ((length < Protocol::txMinSizeBytes) || (length > Protocol::txMaxSizeBytes))
+    if ((length < txMinSizeBytes) || (length > txMaxSizeBytes))
         Throw<std::runtime_error> ("Transaction length invalid");
 
-    set (sit);
-    tx_type_ = static_cast<TxType> (getFieldU16 (sfTransactionType));
+    if (set (sit))
+        Throw<std::runtime_error> ("Transaction contains an object terminator");
 
-    if (!setType (getTxFormat (tx_type_)->elements))
-        Throw<std::runtime_error> ("transaction not valid");
+    tx_type_ = safe_cast<TxType> (getFieldU16 (sfTransactionType));
 
+    applyTemplate (getTxFormat (tx_type_)->getSOTemplate());  // May throw
     tid_ = getHash(HashPrefix::transactionID);
 }
 
@@ -97,12 +94,12 @@ STTx::STTx (
 {
     auto format = getTxFormat (type);
 
-    set (format->elements);
+    set (format->getSOTemplate());
     setFieldU16 (sfTransactionType, format->getType ());
 
     assembler (*this);
 
-    tx_type_ = static_cast<TxType>(getFieldU16 (sfTransactionType));
+    tx_type_ = safe_cast<TxType>(getFieldU16 (sfTransactionType));
 
     if (tx_type_ != type)
         LogicError ("Transaction type was mutated during assembly");
@@ -247,7 +244,7 @@ std::string STTx::getMetaSQL (std::uint32_t inLedger,
 {
     Serializer s;
     add (s);
-    return getMetaSQL (s, inLedger, TXN_SQL_VALIDATED, escapedMetaData);
+    return getMetaSQL (s, inLedger, txnSqlValidated, escapedMetaData);
 }
 
 // VFALCO This could be a free function elsewhere
@@ -533,8 +530,9 @@ isPseudoTx(STObject const& tx)
     auto t = tx[~sfTransactionType];
     if (!t)
         return false;
-    auto tt = static_cast<TxType>(*t);
+    auto tt = safe_cast<TxType>(*t);
     return tt == ttAMENDMENT || tt == ttFEE || tt == ttCONFIG;
 }
 
 } // casinocoin
+

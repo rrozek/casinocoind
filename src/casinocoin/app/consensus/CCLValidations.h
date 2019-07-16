@@ -18,9 +18,11 @@
 #ifndef CASINOCOIN_APP_CONSENSUSS_VALIDATIONS_H_INCLUDED
 #define CASINOCOIN_APP_CONSENSUSS_VALIDATIONS_H_INCLUDED
 
+#include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/basics/ScopedLock.h>
 #include <casinocoin/consensus/Validations.h>
 #include <casinocoin/protocol/Protocol.h>
+#include <casinocoin/protocol/CasinocoinLedgerHash.h>
 #include <casinocoin/protocol/STValidation.h>
 #include <vector>
 
@@ -36,6 +38,8 @@ class CCLValidation
 {
     STValidation::pointer val_;
 public:
+    using NodeKey = casinocoin::PublicKey;
+    using NodeID = casinocoin::NodeID;
 
     /** Constructor
         @param v The validation to wrap.
@@ -55,9 +59,7 @@ public:
     std::uint32_t
     seq() const
     {
-        if(auto res = (*val_)[~sfLedgerSequence])
-            return *res;
-        return 0;
+        return val_->getFieldU32(sfLedgerSequence);
     }
 
     /// Validation's signing time
@@ -95,25 +97,23 @@ public:
         return val_->isTrusted();
     }
 
-    /// Set the prior ledger hash this validation is following
     void
-    setPreviousLedgerID(uint256 const& hash)
+    setTrusted()
     {
-        val_->setPreviousHash(hash);
+        val_->setTrusted();
     }
 
-    /// Get the prior ledger hash this validation is following
-    uint256
-    getPreviousLedgerID() const
+    void
+    setUntrusted()
     {
-        return val_->getPreviousHash();
+        val_->setUntrusted();
     }
 
-    /// Check whether the given hash matches this validation's prior hash
+    /// Whether the validation is full (not-partial)
     bool
-    isPreviousLedgerID(uint256 const& hash) const
+    full() const
     {
-        return val_->isPreviousHash(hash);
+        return val_->isFull();
     }
 
     /// Get the load fee of the validation if it exists
@@ -132,31 +132,72 @@ public:
 
 };
 
-/** Implements the StalePolicy policy class for adapting Validations in the CCL
-    Manages storing and writing stale CCLValidations to the sqlite DB.
+/** Wraps a ledger instance for use in generic Validations LedgerTrie.
+    The LedgerTrie models a ledger's history as a map from Seq -> ID. Any
+    two ledgers that have the same ID for a given Seq have the same ID for
+    all earlier sequences (e.g. shared ancestry). In practice, a ledger only
+    conveniently has the prior 256 ancestor hashes available. For
+    RCLValidatedLedger, we treat any ledgers separated by more than 256 Seq as
+    distinct.
 */
-class CCLValidationsPolicy
+class CCLValidatedLedger
 {
-    using LockType = std::mutex;
-    using ScopedLockType = std::lock_guard<LockType>;
-    using ScopedUnlockType = GenericScopedUnlock<LockType>;
-
-    Application& app_;
-
-    // Lock for managing staleValidations_ and writing_
-    std::mutex staleLock_;
-    std::vector<CCLValidation> staleValidations_;
-    bool staleWriting_ = false;
-
-    // Write the stale validations to sqlite DB, the scoped lock argument
-    // is used to remind callers that the staleLock_ must be *locked* prior
-    // to making the call
-    void
-    doStaleWrite(ScopedLockType&);
-
 public:
+    using ID = LedgerHash;
+    using Seq = LedgerIndex;
+    struct MakeGenesis
+    {
+        explicit MakeGenesis() = default;
+    };
 
-    CCLValidationsPolicy(Application & app);
+    CCLValidatedLedger(MakeGenesis);
+
+    CCLValidatedLedger(
+        std::shared_ptr<Ledger const> const& ledger,
+        beast::Journal j);
+
+    /// The sequence (index) of the ledger
+    Seq
+    seq() const;
+
+    /// The ID (hash) of the ledger
+    ID
+    id() const;
+
+    /** Lookup the ID of the ancestor ledger
+        @param s The sequence (index) of the ancestor
+        @return The ID of this ledger's ancestor with that sequence number or
+                ID{0} if one was not determined
+    */
+    ID operator[](Seq const& s) const;
+
+    /// Find the sequence number of the earliest mismatching ancestor
+    friend Seq
+    mismatch(CCLValidatedLedger const& a, CCLValidatedLedger const& b);
+
+    Seq
+    minSeq() const;
+
+private:
+    ID ledgerID_;
+    Seq ledgerSeq_;
+    std::vector<uint256> ancestors_;
+    beast::Journal j_;
+};
+
+/** Generic validations adaptor class for RCL
+    Manages storing and writing stale RCLValidations to the sqlite DB and
+    acquiring validated ledgers from the network.
+*/
+class CCLValidationsAdaptor
+{
+public:
+    // Type definitions for generic Validation
+    using Mutex = std::mutex;
+    using Validation = CCLValidation;
+    using Ledger = CCLValidatedLedger;
+
+    CCLValidationsAdaptor(Application& app, beast::Journal j);
 
     /** Current time used to determine if validations are stale.
     */
@@ -176,28 +217,56 @@ public:
         @param remaining The remaining validations to flush
     */
     void
-    flush(hash_map<PublicKey, CCLValidation> && remaining);
+    flush(hash_map<NodeID, CCLValidation>&& remaining);
+
+    /** Attempt to acquire the ledger with given id from the network */
+    boost::optional<CCLValidatedLedger>
+    acquire(LedgerHash const & id);
+
+    beast::Journal
+    journal() const
+    {
+        return j_;
+    }
+
+private:
+    using ScopedLockType = std::lock_guard<Mutex>;
+    using ScopedUnlockType = GenericScopedUnlock<Mutex>;
+
+    Application& app_;
+    beast::Journal j_;
+
+    // Lock for managing staleValidations_ and writing_
+    std::mutex staleLock_;
+    std::vector<CCLValidation> staleValidations_;
+    bool staleWriting_ = false;
+
+    // Write the stale validations to sqlite DB, the scoped lock argument
+    // is used to remind callers that the staleLock_ must be *locked* prior
+    // to making the call
+    void
+    doStaleWrite(ScopedLockType&);
 };
 
-
 /// Alias for CCL-specific instantiation of generic Validations
-using CCLValidations =
-    Validations<CCLValidationsPolicy, CCLValidation, std::mutex>;
+using CCLValidations = Validations<CCLValidationsAdaptor>;
+
 
 /** Handle a new validation
-    1. Set the trust status of a validation based on the validating node's
-       public key and this node's current UNL.
-    2. Add the validation to the set of validations if current.
-    3. If new and trusted, send the validation to the ledgerMaster.
+    Also sets the trust status of a validation based on the validating node's
+    public key and this node's current UNL.
     @param app Application object containing validations and ledgerMaster
     @param val The validation to add
     @param source Name associated with validation used in logging
     @return Whether the validation should be relayed
 */
 bool
-handleNewValidation(Application & app, STValidation::ref val, std::string const& source);
-
+handleNewValidation(
+    Application& app,
+    STValidation::ref val,
+    std::string const& source);
 
 }  // namespace casinocoin
 
 #endif
+

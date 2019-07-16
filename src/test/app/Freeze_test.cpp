@@ -53,12 +53,12 @@ class Freeze_test : public beast::unit_test::suite
         return val.isArray() && val.size() == size;
     }
 
-    void testCasinocoinState(std::initializer_list<uint256> fs)
+    void testCasinocoinState(FeatureBitset features)
     {
         testcase("CasinocoinState Freeze");
 
         using namespace test::jtx;
-        Env env(*this, features(fs));
+        Env env(*this, features);
 
         Account G1 {"G1"};
         Account alice {"alice"};
@@ -207,12 +207,12 @@ class Freeze_test : public beast::unit_test::suite
     }
 
     void
-    testGlobalFreeze(std::initializer_list<uint256> fs)
+    testGlobalFreeze(FeatureBitset features)
     {
         testcase("Global Freeze");
 
         using namespace test::jtx;
-        Env env(*this, features(fs));
+        Env env(*this, features);
 
         Account G1 {"G1"};
         Account A1 {"A1"};
@@ -365,12 +365,12 @@ class Freeze_test : public beast::unit_test::suite
     }
 
     void
-    testNoFreeze(std::initializer_list<uint256> fs)
+    testNoFreeze(FeatureBitset features)
     {
         testcase("No Freeze");
 
         using namespace test::jtx;
-        Env env(*this, features(fs));
+        Env env(*this, features);
 
         Account G1 {"G1"};
         Account A1 {"A1"};
@@ -415,16 +415,16 @@ class Freeze_test : public beast::unit_test::suite
 
         auto let =
             affected[0u][sfModifiedNode.fieldName][sfLedgerEntryType.fieldName];
-        BEAST_EXPECT(let == "AccountRoot");
+        BEAST_EXPECT(let == jss::AccountRoot);
     }
 
     void
-    testOffersWhenFrozen(std::initializer_list<uint256> fs)
+    testOffersWhenFrozen(FeatureBitset features)
     {
         testcase("Offers for Frozen Trust Lines");
 
         using namespace test::jtx;
-        Env env(*this, features(fs));
+        Env env(*this, features);
 
         Account G1 {"G1"};
         Account A2 {"A2"};
@@ -521,19 +521,21 @@ class Freeze_test : public beast::unit_test::suite
 
 public:
 
-    void run()
+    void run() override
     {
-        auto testAll = [this](std::initializer_list<uint256> fs)
+        auto testAll = [this](FeatureBitset features)
         {
-            testCasinocoinState(fs);
-            testGlobalFreeze(fs);
-            testNoFreeze(fs);
-            testOffersWhenFrozen(fs);
+            testCasinocoinState(features);
+            testGlobalFreeze(features);
+            testNoFreeze(features);
+            testOffersWhenFrozen(features);
         };
-        testAll({});
-        testAll({featureFlow});
-        testAll({featureFlow, fix1373});
-        testAll({featureFlow, fix1373, featureFlowCross});
+        using namespace test::jtx;
+        auto const sa = supported_amendments();
+        testAll(sa - featureFlow - fix1373 - featureFlowCross);
+        testAll(sa               - fix1373 - featureFlowCross);
+        testAll(sa                         - featureFlowCross);
+        testAll(sa);
     }
 };
 

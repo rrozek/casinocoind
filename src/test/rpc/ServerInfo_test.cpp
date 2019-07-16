@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/JsonFields.h>
 #include <test/jtx.h>
 #include <casinocoin/beast/unit_test.h>
@@ -73,23 +73,23 @@ public:
 
         {
             Env env(*this);
-            auto const result = env.rpc("server_info", "1");
+            auto const result = env.rpc("server_info");
             BEAST_EXPECT(!result[jss::result].isMember (jss::error));
-            BEAST_EXPECT(result[jss::status] == "success");
+            BEAST_EXPECT(result[jss::result][jss::status] == "success");
             BEAST_EXPECT(result[jss::result].isMember(jss::info));
         }
         {
             Env env(*this, makeValidatorConfig());
-            auto const result = env.rpc("server_info", "1");
+            auto const result = env.rpc("server_info");
             BEAST_EXPECT(!result[jss::result].isMember (jss::error));
-            BEAST_EXPECT(result[jss::status] == "success");
+            BEAST_EXPECT(result[jss::result][jss::status] == "success");
             BEAST_EXPECT(result[jss::result].isMember(jss::info));
             BEAST_EXPECT(result[jss::result][jss::info]
                 [jss::pubkey_validator] == validator_data::public_key);
         }
     }
 
-    void run ()
+    void run () override
     {
         testServerInfo ();
     }

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/cursor/PathCursor.h>
 #include <casinocoin/basics/Log.h>
 #include <tuple>
@@ -37,7 +37,7 @@ TER PathCursor::forwardLiquidity () const
         return forwardLiquidityForAccount ();
 
     // Otherwise, node is an offer.
-    if (previousNode().account_ == zero)
+    if (previousNode().account_ == beast::zero)
         return tesSUCCESS;
 
     // Previous is an account node, resolve its deliver.

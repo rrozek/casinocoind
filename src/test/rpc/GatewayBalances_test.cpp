@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <test/jtx/WSClient.h>
@@ -30,11 +30,11 @@ class GatewayBalances_test : public beast::unit_test::suite
 public:
 
     void
-    testGWB(std::initializer_list<uint256> fs)
+    testGWB(FeatureBitset features)
     {
         using namespace std::chrono_literals;
         using namespace jtx;
-        Env env(*this, features(fs));
+        Env env(*this, features);
 
         // Gateway account and assets
         Account const alice {"alice"};
@@ -153,9 +153,11 @@ public:
     void
     run() override
     {
-        testGWB({});
-        testGWB({featureFlow, fix1373});
-        testGWB({featureFlow, fix1373, featureFlowCross});
+        using namespace jtx;
+        auto const sa = supported_amendments();
+        testGWB(sa - featureFlow - fix1373 - featureFlowCross);
+        testGWB(sa                         - featureFlowCross);
+        testGWB(sa);
     }
 };
 

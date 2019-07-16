@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/CancelOffer.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/st.h>
@@ -31,7 +31,7 @@
 
 namespace casinocoin {
 
-TER
+NotTEC
 CancelOffer::preflight (PreflightContext const& ctx)
 {
     auto const ret = preflight1 (ctx);

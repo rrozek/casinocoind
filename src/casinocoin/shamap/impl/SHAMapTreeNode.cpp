@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/shamap/SHAMapTreeNode.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
@@ -482,6 +482,7 @@ SHAMapInnerNodeV2::addRaw(Serializer& s, SHANodeFormat format) const
 {
     if (format == snfPREFIX)
     {
+        assert(depth_ <= 64);
         s.add32 (HashPrefix::innerNodeV2);
 
         for (int i = 0 ; i < 16; ++i)
@@ -606,17 +607,6 @@ int SHAMapInnerNode::getBranchCount () const
 
     return count;
 }
-
-#ifdef BEAST_DEBUG
-
-void
-SHAMapAbstractNode::dump(const SHAMapNodeID & id, beast::Journal journal)
-{
-    JLOG(journal.debug()) <<
-        "SHAMapTreeNode(" << id.getNodeID () << ")";
-}
-
-#endif  // BEAST_DEBUG
 
 std::string
 SHAMapAbstractNode::getString(const SHAMapNodeID & id) const
@@ -950,3 +940,4 @@ SHAMapTreeNode::invariants(bool, bool) const
 }
 
 } // casinocoin
+

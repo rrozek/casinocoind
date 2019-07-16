@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/core/SociDB.h>
@@ -368,7 +368,7 @@ public:
         testSQLiteSelect ();
         testSQLiteDeleteWithSubselect();
     }
-    void run ()
+    void run () override
     {
         testSQLite ();
     }

@@ -287,7 +287,7 @@ public:
 
     void importConsumers (std::string const& origin, Gossip const& gossip)
     {
-        clock_type::rep const elapsed (m_clock.now().time_since_epoch().count());
+        auto const elapsed = m_clock.now();
         {
             std::lock_guard<std::recursive_mutex> _(lock_);
             auto result =
@@ -347,7 +347,7 @@ public:
     {
         std::lock_guard<std::recursive_mutex> _(lock_);
 
-        clock_type::rep const elapsed (m_clock.now().time_since_epoch().count());
+        auto const elapsed = m_clock.now();
 
         for (auto iter (inactive_.begin()); iter != inactive_.end();)
         {
@@ -441,7 +441,7 @@ public:
                 break;
             }
             inactive_.push_back (entry);
-            entry.whenExpires = m_clock.now().time_since_epoch().count() + secondsUntilExpiration;
+            entry.whenExpires = m_clock.now() + secondsUntilExpiration;
         }
     }
 
@@ -462,7 +462,7 @@ public:
 
         std::lock_guard<std::recursive_mutex> _(lock_);
         bool notify (false);
-        clock_type::rep const elapsed (m_clock.now().time_since_epoch().count());
+        auto const elapsed = m_clock.now();
         if (entry.balance (m_clock.now()) >= warningThreshold &&
             elapsed != entry.lastWarningTime)
         {

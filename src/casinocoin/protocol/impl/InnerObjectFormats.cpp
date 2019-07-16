@@ -24,38 +24,38 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/InnerObjectFormats.h>
 
 namespace casinocoin {
 
 InnerObjectFormats::InnerObjectFormats ()
 {
-    add (sfSignerEntry.getJsonName ().c_str (), sfSignerEntry.getCode ())
-        << SOElement (sfAccount,              SOE_REQUIRED)
-        << SOElement (sfSignerWeight,         SOE_REQUIRED)
-        ;
+    add (sfSignerEntry.jsonName.c_str(), sfSignerEntry.getCode(),
+        {
+            {sfAccount,       soeREQUIRED},
+            {sfSignerWeight,  soeREQUIRED},
+        });
 
-    add (sfSigner.getJsonName ().c_str (), sfSigner.getCode ())
-        << SOElement (sfAccount,              SOE_REQUIRED)
-        << SOElement (sfSigningPubKey,        SOE_REQUIRED)
-        << SOElement (sfTxnSignature,         SOE_REQUIRED)
-        ;
+    add (sfSigner.jsonName.c_str(), sfSigner.getCode(),
+        {
+            {sfAccount,       soeREQUIRED},
+            {sfSigningPubKey, soeREQUIRED},
+            {sfTxnSignature,  soeREQUIRED},
+        });
+		
+	add (sfKYC.getJsonName ().c_str (), sfKYC.getCode (),
+		{
+            {sfKYCTime,           soeREQUIRED},
+            {sfKYCVerifications,  soeOPTIONAL},
+        });
 
-    add (sfKYC.getJsonName ().c_str (), sfKYC.getCode ())
-        << SOElement (sfKYCTime,              SOE_REQUIRED)
-        << SOElement (sfKYCVerifications,     SOE_OPTIONAL)
-        ;
-
-    add (sfConfigEntry.getJsonName ().c_str (), sfConfigEntry.getCode ())
-        << SOElement (sfConfigID,             SOE_REQUIRED)
-        << SOElement (sfConfigType,           SOE_REQUIRED)
-        << SOElement (sfConfigData,           SOE_REQUIRED)
-        ;
-}
-
-void InnerObjectFormats::addCommonFields (Item& item)
-{
+    add (sfConfigEntry.jsonName.c_str(), sfConfigEntry.getCode(),
+        {
+            {sfConfigID,      soeREQUIRED},
+            {sfConfigType,    soeREQUIRED},
+            {sfConfigData,    soeREQUIRED},
+        });
 }
 
 InnerObjectFormats const&
@@ -68,12 +68,12 @@ InnerObjectFormats::getInstance ()
 SOTemplate const*
 InnerObjectFormats::findSOTemplateBySField (SField const& sField) const
 {
-    SOTemplate const* ret = nullptr;
     auto itemPtr = findByType (sField.getCode ());
     if (itemPtr)
-        ret = &(itemPtr->elements);
+        return &(itemPtr->getSOTemplate());
 
-    return ret;
+    return nullptr;
 }
 
 } // casinocoin
+

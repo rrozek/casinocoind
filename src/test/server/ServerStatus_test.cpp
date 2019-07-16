@@ -17,27 +17,35 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/rpc/ServerHandler.h>
 #include <casinocoin/json/json_reader.h>
+#include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <test/jtx.h>
 #include <test/jtx/envconfig.h>
 #include <test/jtx/WSClient.h>
 #include <test/jtx/JSONRPCClient.h>
-#include <casinocoin/core/DeadlineTimer.h>
+#include <casinocoin/app/misc/NetworkOPs.h>
+#include <casinocoin/app/ledger/LedgerMaster.h>
+#include <casinocoin/basics/base64.h>
 #include <beast/http.hpp>
 #include <beast/test/yield_to.hpp>
-#include <beast/websocket/detail/mask.hpp>
+#include <beast/core/multi_buffer.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-
+#include <algorithm>
+#include <array>
+#include <random>
+#include <regex>
 namespace casinocoin {
 namespace test {
 
 class ServerStatus_test :
     public beast::unit_test::suite, public beast::test::enable_yield_to
 {
+    class myFields : public beast::http::fields {};
+
     auto makeConfig(
         std::string const& proto,
         bool admin = true,
@@ -68,10 +76,10 @@ class ServerStatus_test :
             // which requires an http endpoint to talk to. In the connection
             // failure test, this endpoint should never be used
             (*p)["server"].append("port_alt");
-            (*p)["port_alt"].set("ip", "127.0.0.1");
+            (*p)["port_alt"].set("ip", getEnvLocalhostAddr());
             (*p)["port_alt"].set("port", "8099");
             (*p)["port_alt"].set("protocol", "http");
-            (*p)["port_alt"].set("admin", "127.0.0.1");
+            (*p)["port_alt"].set("admin", getEnvLocalhostAddr());
         }
 
         return p;
@@ -87,14 +95,20 @@ class ServerStatus_test :
 
         req.target("/");
         req.version = 11;
-        req.insert("Host", host + ":" + to_string(port));
+        req.insert("Host", host + ":" + std::to_string(port));
         req.insert("User-Agent", "test");
         req.method(beast::http::verb::get);
         req.insert("Upgrade", "websocket");
-        beast::websocket::detail::maskgen maskgen;
-        beast::websocket::detail::sec_ws_key_type key;
-        beast::websocket::detail::make_sec_ws_key(key, maskgen);
-        req.insert("Sec-WebSocket-Key", key);
+        {
+            // not secure, but OK for a testing
+            std::random_device rd;
+            std::mt19937 e{rd()};
+            std::uniform_int_distribution<> d(0, 255);
+            std::array<std::uint8_t, 16> key;
+            for(auto& v : key)
+                v = d(e);
+            req.insert("Sec-WebSocket-Key", base64_encode(key.data(), key.size()));
+        };
         req.insert("Sec-WebSocket-Version", "13");
         req.insert(beast::http::field::connection, "upgrade");
         return req;
@@ -103,7 +117,8 @@ class ServerStatus_test :
     auto makeHTTPRequest(
         std::string const& host,
         uint16_t port,
-        std::string const& body)
+        std::string const& body,
+        myFields const& fields)
     {
         using namespace boost::asio;
         using namespace beast::http;
@@ -111,7 +126,9 @@ class ServerStatus_test :
 
         req.target("/");
         req.version = 11;
-        req.insert("Host", host + ":" + to_string(port));
+        for(auto const& f : fields)
+            req.insert(f.name(), f.value());
+        req.insert("Host", host + ":" + std::to_string(port));
         req.insert("User-Agent", "test");
         if(body.empty())
         {
@@ -131,7 +148,7 @@ class ServerStatus_test :
     void
     doRequest(
         boost::asio::yield_context& yield,
-        beast::http::request<beast::http::string_body>& req,
+        beast::http::request<beast::http::string_body>&& req,
         std::string const& host,
         uint16_t port,
         bool secure,
@@ -146,7 +163,7 @@ class ServerStatus_test :
 
         auto it =
             r.async_resolve(
-                ip::tcp::resolver::query{host, to_string(port)}, yield[ec]);
+                ip::tcp::resolver::query{host, std::to_string(port)}, yield[ec]);
         if(ec)
             return;
 
@@ -197,9 +214,14 @@ class ServerStatus_test :
             get<std::uint16_t>("port");
         auto ip = env.app().config()["port_ws"].
             get<std::string>("ip");
-        auto req = makeWSUpgrade(*ip, *port);
         doRequest(
-            yield, req, *ip, *port, secure, resp, ec);
+            yield,
+            makeWSUpgrade(*ip, *port),
+            *ip,
+            *port,
+            secure,
+            resp,
+            ec);
         return;
     }
 
@@ -210,16 +232,16 @@ class ServerStatus_test :
         bool secure,
         beast::http::response<beast::http::string_body>& resp,
         boost::system::error_code& ec,
-        std::string const& body = "")
+        std::string const& body = "",
+        myFields const& fields = {})
     {
         auto const port = env.app().config()["port_rpc"].
             get<std::uint16_t>("port");
         auto const ip = env.app().config()["port_rpc"].
             get<std::string>("ip");
-        auto req = makeHTTPRequest(*ip, *port, body);
         doRequest(
             yield,
-            req,
+            makeHTTPRequest(*ip, *port, body, fields),
             *ip,
             *port,
             secure,
@@ -271,6 +293,91 @@ class ServerStatus_test :
 // ------------
 //  Test Cases
 // ------------
+
+    void
+    testAdminRequest(std::string const& proto, bool admin, bool credentials)
+    {
+        testcase << "Admin request over " << proto <<
+            ", config " << (admin ? "enabled" : "disabled") <<
+            ", credentials " << (credentials ? "" : "not ") << "set";
+        using namespace jtx;
+        Env env {*this, makeConfig(proto, admin, credentials)};
+
+        Json::Value jrr;
+        auto const proto_ws = boost::starts_with(proto, "w");
+
+        // the set of checks we do are different depending
+        // on how the admin config options are set
+
+        if(admin && credentials)
+        {
+            auto const user = env.app().config()
+                [proto_ws ? "port_ws" : "port_rpc"].
+                get<std::string>("admin_user");
+
+            auto const password = env.app().config()
+                [proto_ws ? "port_ws" : "port_rpc"].
+                get<std::string>("admin_password");
+
+            //1 - FAILS with wrong pass
+            jrr = makeAdminRequest(env, proto, *user, *password + "_")
+                [jss::result];
+            BEAST_EXPECT(jrr["error"] == proto_ws ? "forbidden" : "noPermission");
+            BEAST_EXPECT(jrr["error_message"] ==
+                proto_ws ?
+                "Bad credentials." :
+                "You don't have permission for this command.");
+
+            //2 - FAILS with password in an object
+            jrr = makeAdminRequest(env, proto, *user, *password, true)[jss::result];
+            BEAST_EXPECT(jrr["error"] == proto_ws ? "forbidden" : "noPermission");
+            BEAST_EXPECT(jrr["error_message"] ==
+                proto_ws ?
+                "Bad credentials." :
+                "You don't have permission for this command.");
+
+            //3 - FAILS with wrong user
+            jrr = makeAdminRequest(env, proto, *user + "_", *password)[jss::result];
+            BEAST_EXPECT(jrr["error"] == proto_ws ? "forbidden" : "noPermission");
+            BEAST_EXPECT(jrr["error_message"] ==
+                proto_ws ?
+                "Bad credentials." :
+                "You don't have permission for this command.");
+
+            //4 - FAILS no credentials
+            jrr = makeAdminRequest(env, proto, "", "")[jss::result];
+            BEAST_EXPECT(jrr["error"] == proto_ws ? "forbidden" : "noPermission");
+            BEAST_EXPECT(jrr["error_message"] ==
+                proto_ws ?
+                "Bad credentials." :
+                "You don't have permission for this command.");
+
+            //5 - SUCCEEDS with proper credentials
+            jrr = makeAdminRequest(env, proto, *user, *password)[jss::result];
+            BEAST_EXPECT(jrr["status"] == "success");
+        }
+        else if(admin)
+        {
+            //1 - SUCCEEDS with proper credentials
+            jrr = makeAdminRequest(env, proto, "u", "p")[jss::result];
+            BEAST_EXPECT(jrr["status"] == "success");
+
+            //2 - SUCCEEDS without proper credentials
+            jrr = makeAdminRequest(env, proto, "", "")[jss::result];
+            BEAST_EXPECT(jrr["status"] == "success");
+        }
+        else
+        {
+            //1 - FAILS - admin disabled
+            jrr = makeAdminRequest(env, proto, "", "")[jss::result];
+            BEAST_EXPECT(jrr["error"] == proto_ws ? "forbidden" : "noPermission");
+            BEAST_EXPECT(jrr["error_message"] ==
+                proto_ws ?
+                "Bad credentials." :
+                "You don't have permission for this command.");
+        }
+    }
+
     void
     testWSClientToHttpServer(boost::asio::yield_context& yield)
     {
@@ -334,7 +441,7 @@ class ServerStatus_test :
                 return;
             BEAST_EXPECT(resp.result() == beast::http::status::ok);
         }
-    };
+    }
 
     void
     testTruncatedWSUpgrade(boost::asio::yield_context& yield)
@@ -368,7 +475,7 @@ class ServerStatus_test :
 
         auto it =
             r.async_resolve(
-                ip::tcp::resolver::query{*ip, to_string(*port)}, yield[ec]);
+                ip::tcp::resolver::query{*ip, std::to_string(*port)}, yield[ec]);
         if(! BEAST_EXPECTS(! ec, ec.message()))
             return;
 
@@ -383,7 +490,7 @@ class ServerStatus_test :
         // keep trying to read until it gives up (by timeout)
         async_read(sock, sb, resp, yield[ec]);
         BEAST_EXPECT(ec);
-    };
+    }
 
     void
     testCantConnect(
@@ -424,118 +531,534 @@ class ServerStatus_test :
     }
 
     void
-    testAdminRequest(std::string const& proto, bool admin, bool credentials)
+    testAuth(bool secure, boost::asio::yield_context& yield)
     {
-        testcase << "Admin request over " << proto <<
-            ", config " << (admin ? "enabled" : "disabled") <<
-            ", credentials " << (credentials ? "" : "not ") << "set";
+        testcase << "Server with authorization, " <<
+            (secure ? "secure" : "non-secure");
+
+        using namespace test::jtx;
+        Env env {*this, envconfig([secure](std::unique_ptr<Config> cfg) {
+            (*cfg)["port_rpc"].set("user","me");
+            (*cfg)["port_rpc"].set("password","secret");
+            (*cfg)["port_rpc"].set("protocol", secure ? "https" : "http");
+            if (secure)
+                (*cfg)["port_ws"].set("protocol","http,ws");
+            return cfg;
+        })};
+
+        Json::Value jr;
+        jr[jss::method] = "server_info";
+        beast::http::response<beast::http::string_body> resp;
+        boost::system::error_code ec;
+        doHTTPRequest(env, yield, secure, resp, ec, to_string(jr));
+        BEAST_EXPECT(resp.result() == beast::http::status::forbidden);
+
+        myFields auth;
+        auth.insert("Authorization", "");
+        doHTTPRequest(env, yield, secure, resp, ec, to_string(jr), auth);
+        BEAST_EXPECT(resp.result() == beast::http::status::forbidden);
+
+        auth.set("Authorization", "Basic NOT-VALID");
+        doHTTPRequest(env, yield, secure, resp, ec, to_string(jr), auth);
+        BEAST_EXPECT(resp.result() == beast::http::status::forbidden);
+
+        auth.set("Authorization", "Basic " + base64_encode("me:badpass"));
+        doHTTPRequest(env, yield, secure, resp, ec, to_string(jr), auth);
+        BEAST_EXPECT(resp.result() == beast::http::status::forbidden);
+
+        auto const user = env.app().config().section("port_rpc").
+            get<std::string>("user").value();
+        auto const pass = env.app().config().section("port_rpc").
+            get<std::string>("password").value();
+
+        // try with the correct user/pass, but not encoded
+        auth.set("Authorization", "Basic " + user + ":" + pass);
+        doHTTPRequest(env, yield, secure, resp, ec, to_string(jr), auth);
+        BEAST_EXPECT(resp.result() == beast::http::status::forbidden);
+
+        // finally if we use the correct user/pass encoded, we should get a 200
+        auth.set("Authorization", "Basic " +
+            base64_encode(user + ":" + pass));
+        doHTTPRequest(env, yield, secure, resp, ec, to_string(jr), auth);
+        BEAST_EXPECT(resp.result() == beast::http::status::ok);
+        BEAST_EXPECT(! resp.body.empty());
+    }
+
+    void
+    testLimit(boost::asio::yield_context& yield, int limit)
+    {
+        testcase << "Server with connection limit of " << limit;
+
+        using namespace test::jtx;
+        using namespace boost::asio;
+        using namespace beast::http;
+        Env env {*this, envconfig([&](std::unique_ptr<Config> cfg) {
+            (*cfg)["port_rpc"].set("limit", to_string(limit));
+            return cfg;
+        })};
+
+
+        auto const port = env.app().config()["port_rpc"].
+            get<std::uint16_t>("port").value();
+        auto const ip = env.app().config()["port_rpc"].
+            get<std::string>("ip").value();
+
+        boost::system::error_code ec;
+        io_service& ios = get_io_service();
+        ip::tcp::resolver r{ios};
+
+        Json::Value jr;
+        jr[jss::method] = "server_info";
+
+        auto it =
+            r.async_resolve(
+                ip::tcp::resolver::query{ip, to_string(port)}, yield[ec]);
+        BEAST_EXPECT(! ec);
+
+        std::vector<std::pair<ip::tcp::socket, beast::multi_buffer>> clients;
+        int connectionCount {1}; //starts at 1 because the Env already has one
+                                 //for JSONRPCCLient
+
+        // for nonzero limits, go one past the limit, although failures happen
+        // at the limit, so this really leads to the last two clients failing.
+        // for zero limit, pick an arbitrary nonzero number of clients - all should
+        // connect fine.
+
+        int testTo = (limit == 0) ? 50 : limit + 1;
+        while (connectionCount < testTo)
+        {
+            clients.emplace_back(
+                std::make_pair(ip::tcp::socket {ios}, beast::multi_buffer{}));
+            async_connect(clients.back().first, it, yield[ec]);
+            BEAST_EXPECT(! ec);
+            auto req = makeHTTPRequest(ip, port, to_string(jr), {});
+            async_write(
+                clients.back().first,
+                req,
+                yield[ec]);
+            BEAST_EXPECT(! ec);
+            ++connectionCount;
+        }
+
+        int readCount = 0;
+        for (auto& c : clients)
+        {
+            beast::http::response<beast::http::string_body> resp;
+            async_read(c.first, c.second, resp, yield[ec]);
+            ++readCount;
+            // expect the reads to fail for the clients that connected at or
+            // above the limit. If limit is 0, all reads should succeed
+            BEAST_EXPECT((limit == 0 || readCount < limit-1) ? (! ec) : bool(ec));
+        }
+    }
+
+    void
+    testWSHandoff(boost::asio::yield_context& yield)
+    {
+        testcase ("Connection with WS handoff");
+
+        using namespace test::jtx;
+        Env env {*this, envconfig([](std::unique_ptr<Config> cfg) {
+            (*cfg)["port_ws"].set("protocol","wss");
+            return cfg;
+        })};
+
+        auto const port = env.app().config()["port_ws"].
+            get<std::uint16_t>("port").value();
+        auto const ip = env.app().config()["port_ws"].
+            get<std::string>("ip").value();
+        beast::http::response<beast::http::string_body> resp;
+        boost::system::error_code ec;
+        doRequest(
+            yield, makeWSUpgrade(ip, port), ip, port, true, resp, ec);
+        BEAST_EXPECT(resp.result() == beast::http::status::switching_protocols);
+        BEAST_EXPECT(resp.find("Upgrade") != resp.end() &&
+               resp["Upgrade"] == "websocket");
+        BEAST_EXPECT(resp.find("Connection") != resp.end() &&
+               resp["Connection"] == "upgrade");
+    }
+
+    void
+    testNoRPC(boost::asio::yield_context& yield)
+    {
+        testcase ("Connection to port with no RPC enabled");
+
+        using namespace test::jtx;
+        Env env {*this};
+
+        auto const port = env.app().config()["port_ws"].
+            get<std::uint16_t>("port").value();
+        auto const ip = env.app().config()["port_ws"].
+            get<std::string>("ip").value();
+        beast::http::response<beast::http::string_body> resp;
+        boost::system::error_code ec;
+        // body content is required here to avoid being
+        // detected as a status request
+        doRequest(yield,
+            makeHTTPRequest(ip, port, "foo", {}), ip, port, false, resp, ec);
+        BEAST_EXPECT(resp.result() == beast::http::status::forbidden);
+        BEAST_EXPECT(resp.body == "Forbidden\r\n");
+    }
+
+    void
+    testWSRequests(boost::asio::yield_context& yield)
+    {
+        testcase ("WS client sends assorted input");
+
+        using namespace test::jtx;
+        using namespace boost::asio;
+        using namespace beast::http;
+        Env env {*this};
+
+        auto const port = env.app().config()["port_ws"].
+            get<std::uint16_t>("port").value();
+        auto const ip = env.app().config()["port_ws"].
+            get<std::string>("ip").value();
+        boost::system::error_code ec;
+
+        io_service& ios = get_io_service();
+        ip::tcp::resolver r{ios};
+
+        auto it =
+            r.async_resolve(
+                ip::tcp::resolver::query{ip, to_string(port)}, yield[ec]);
+        if(! BEAST_EXPECT(! ec))
+            return;
+
+        ip::tcp::socket sock{ios};
+        async_connect(sock, it, yield[ec]);
+        if(! BEAST_EXPECT(! ec))
+            return;
+
+        beast::websocket::stream<boost::asio::ip::tcp::socket&> ws{sock};
+        ws.handshake(ip + ":" + to_string(port), "/");
+
+        // helper lambda, used below
+        auto sendAndParse = [&](std::string const& req) -> Json::Value
+        {
+            ws.async_write_frame(true, buffer(req), yield[ec]);
+            if(! BEAST_EXPECT(! ec))
+                return Json::objectValue;
+
+            beast::multi_buffer sb;
+            ws.async_read(sb, yield[ec]);
+            if(! BEAST_EXPECT(! ec))
+                return Json::objectValue;
+
+            Json::Value resp;
+            Json::Reader jr;
+            if(! BEAST_EXPECT(jr.parse(
+                boost::lexical_cast<std::string>(
+                    beast::buffers(sb.data())), resp)))
+                return Json::objectValue;
+            sb.consume(sb.size());
+            return resp;
+        };
+
+        { // send invalid json
+            auto resp = sendAndParse("NOT JSON");
+            BEAST_EXPECT(resp.isMember(jss::error) &&
+                resp[jss::error] == "jsonInvalid");
+            BEAST_EXPECT(! resp.isMember(jss::status));
+        }
+
+        { // send incorrect json (method and command fields differ)
+            Json::Value jv;
+            jv[jss::command] = "foo";
+            jv[jss::method] = "bar";
+            auto resp = sendAndParse(to_string(jv));
+            BEAST_EXPECT(resp.isMember(jss::error) &&
+                resp[jss::error] == "missingCommand");
+            BEAST_EXPECT(resp.isMember(jss::status) &&
+                resp[jss::status] == "error");
+        }
+
+        { // send a ping (not an error)
+            Json::Value jv;
+            jv[jss::command] = "ping";
+            auto resp = sendAndParse(to_string(jv));
+            BEAST_EXPECT(resp.isMember(jss::status) &&
+                resp[jss::status] == "success");
+            BEAST_EXPECT(resp.isMember(jss::result) &&
+                resp[jss::result].isMember(jss::role) &&
+                resp[jss::result][jss::role] == "admin");
+        }
+    }
+
+    void
+    testAmendmentBlock(boost::asio::yield_context& yield)
+    {
+        testcase("Status request over WS and RPC with/without Amendment Block");
         using namespace jtx;
-        Env env {*this, makeConfig(proto, admin, credentials)};
+        using namespace boost::asio;
+        using namespace beast::http;
+        Env env {*this, validator( envconfig([](std::unique_ptr<Config> cfg)
+            {
+                cfg->section("port_rpc").set("protocol", "http");
+                return cfg;
+            }), "")};
 
-        auto const user = env.app().config()
-            [boost::starts_with(proto, "h") ? "port_rpc" : "port_ws"].
-            get<std::string>("admin_user");
+        env.close();
 
-        auto const password = env.app().config()
-            [boost::starts_with(proto, "h") ? "port_rpc" : "port_ws"].
-            get<std::string>("admin_password");
+        // advance the ledger so that server status
+        // sees a published ledger -- without this, we get a status
+        // failure message about no published ledgers
+        env.app().getLedgerMaster().tryAdvance();
 
-        Json::Value jrr;
+        // make an RPC server info request and look for
+        // amendment_blocked status
+        auto si = env.rpc("server_info") [jss::result];
+        BEAST_EXPECT(! si[jss::info].isMember(jss::amendment_blocked));
+        BEAST_EXPECT(
+            env.app().getOPs().getConsensusInfo()["validating"] == true);
 
-        // the set of checks we do are different depending
-        // on how the admin config options are set
+        auto const port_ws = env.app().config()["port_ws"].
+            get<std::uint16_t>("port");
+        auto const ip_ws = env.app().config()["port_ws"].
+            get<std::string>("ip");
 
-        if(admin && credentials)
+
+        boost::system::error_code ec;
+        response<string_body> resp;
+
+        doRequest(
+            yield,
+            makeHTTPRequest(*ip_ws, *port_ws, "", {}),
+            *ip_ws,
+            *port_ws,
+            false,
+            resp,
+            ec);
+
+        if(! BEAST_EXPECTS(! ec, ec.message()))
+            return;
+        BEAST_EXPECT(resp.result() == beast::http::status::ok);
+        BEAST_EXPECT(
+            resp.body.find("connectivity is working.") != std::string::npos);
+
+        // mark the Network as Amendment Blocked, but still won't fail until
+        // ELB is enabled (next step)
+        env.app().getOPs().setAmendmentBlocked ();
+        env.app().getOPs().beginConsensus(env.closed()->info().hash);
+
+        // consensus now sees validation disabled
+        BEAST_EXPECT(
+            env.app().getOPs().getConsensusInfo()["validating"] == false);
+
+        // RPC request server_info again, now AB should be returned
+        si = env.rpc("server_info") [jss::result];
+        BEAST_EXPECT(
+            si[jss::info].isMember(jss::amendment_blocked) &&
+            si[jss::info][jss::amendment_blocked] == true);
+
+        // but status does not indicate because it still relies on ELB
+        // being enabled
+        doRequest(
+            yield,
+            makeHTTPRequest(*ip_ws, *port_ws, "", {}),
+            *ip_ws,
+            *port_ws,
+            false,
+            resp,
+            ec);
+
+        if(! BEAST_EXPECTS(! ec, ec.message()))
+            return;
+        BEAST_EXPECT(resp.result() == beast::http::status::ok);
+        BEAST_EXPECT(
+            resp.body.find("connectivity is working.") != std::string::npos);
+
+        env.app().config().ELB_SUPPORT = true;
+
+        doRequest(
+            yield,
+            makeHTTPRequest(*ip_ws, *port_ws, "", {}),
+            *ip_ws,
+            *port_ws,
+            false,
+            resp,
+            ec);
+
+        if(! BEAST_EXPECTS(! ec, ec.message()))
+            return;
+        BEAST_EXPECT(resp.result() == beast::http::status::internal_server_error);
+        BEAST_EXPECT(
+            resp.body.find("cannot accept clients:") != std::string::npos);
+        BEAST_EXPECT(
+            resp.body.find("Server version too old") != std::string::npos);
+    }
+
+    void
+    testRPCRequests(boost::asio::yield_context& yield)
+    {
+        testcase ("RPC client sends assorted input");
+
+        using namespace test::jtx;
+        Env env {*this};
+
+        boost::system::error_code ec;
         {
-            //1 - FAILS with wrong pass
-            jrr = makeAdminRequest(env, proto, *user, *password + "_")[jss::result];
-            BEAST_EXPECT(jrr["error"] ==
-                boost::starts_with(proto, "h") ? "noPermission" : "forbidden");
-            BEAST_EXPECT(jrr["error_message"] ==
-                boost::starts_with(proto, "h") ?
-                "You don't have permission for this command." :
-                "Bad credentials.");
-
-            //2 - FAILS with password in an object
-            jrr = makeAdminRequest(env, proto, *user, *password, true)[jss::result];
-            BEAST_EXPECT(jrr["error"] ==
-                boost::starts_with(proto, "h") ? "noPermission" : "forbidden");
-            BEAST_EXPECT(jrr["error_message"] ==
-                boost::starts_with(proto, "h") ?
-                "You don't have permission for this command." :
-                "Bad credentials.");
-
-            //3 - FAILS with wrong user
-            jrr = makeAdminRequest(env, proto, *user + "_", *password)[jss::result];
-            BEAST_EXPECT(jrr["error"] ==
-                boost::starts_with(proto, "h") ? "noPermission" : "forbidden");
-            BEAST_EXPECT(jrr["error_message"] ==
-                boost::starts_with(proto, "h") ?
-                "You don't have permission for this command." :
-                "Bad credentials.");
-
-            //4 - FAILS no credentials
-            jrr = makeAdminRequest(env, proto, "", "")[jss::result];
-            BEAST_EXPECT(jrr["error"] ==
-                boost::starts_with(proto, "h") ? "noPermission" : "forbidden");
-            BEAST_EXPECT(jrr["error_message"] ==
-                boost::starts_with(proto, "h") ?
-                "You don't have permission for this command." :
-                "Bad credentials.");
-
-            //5 - SUCCEEDS with proper credentials
-            jrr = makeAdminRequest(env, proto, *user, *password)[jss::result];
-            BEAST_EXPECT(jrr["status"] == "success");
+            beast::http::response<beast::http::string_body> resp;
+            doHTTPRequest(env, yield, false, resp, ec, "{}");
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "Unable to parse request: \r\n");
         }
-        else if(admin)
+
         {
-            //1 - SUCCEEDS with proper credentials
-            jrr = makeAdminRequest(env, proto, "u", "p")[jss::result];
-            BEAST_EXPECT(jrr["status"] == "success");
+            beast::http::response<beast::http::string_body> resp;
+            Json::Value jv;
+            jv["invalid"] = 1;
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "Null method\r\n");
+        }
 
-            //2 - SUCCEEDS without proper credentials
-            jrr = makeAdminRequest(env, proto, "", "")[jss::result];
-            BEAST_EXPECT(jrr["status"] == "success");
-        }
-        else
         {
-            //1 - FAILS - admin disabled
-            jrr = makeAdminRequest(env, proto, "", "")[jss::result];
-            BEAST_EXPECT(jrr["error"] ==
-                boost::starts_with(proto, "h") ? "noPermission" : "forbidden");
-            BEAST_EXPECT(jrr["error_message"] ==
-                boost::starts_with(proto, "h") ?
-                "You don't have permission for this command." :
-                "Bad credentials.");
+            beast::http::response<beast::http::string_body> resp;
+            Json::Value jv(Json::arrayValue);
+            jv.append("invalid");
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "Unable to parse request: \r\n");
         }
+
+        {
+            beast::http::response<beast::http::string_body> resp;
+            Json::Value jv(Json::arrayValue);
+            Json::Value j;
+            j["invalid"] = 1;
+            jv.append(j);
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "Unable to parse request: \r\n");
+        }
+
+        {
+            beast::http::response<beast::http::string_body> resp;
+            Json::Value jv;
+            jv[jss::method] = "batch";
+            jv[jss::params] = 2;
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "Malformed batch request\r\n");
+        }
+
+        {
+            beast::http::response<beast::http::string_body> resp;
+            Json::Value jv;
+            jv[jss::method] = "batch";
+            jv[jss::params] = Json::objectValue;
+            jv[jss::params]["invalid"] = 3;
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "Malformed batch request\r\n");
+        }
+
+        Json::Value jv;
+        {
+            beast::http::response<beast::http::string_body> resp;
+            jv[jss::method] = Json::nullValue;
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "Null method\r\n");
+        }
+
+        {
+            beast::http::response<beast::http::string_body> resp;
+            jv[jss::method] = 1;
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "method is not string\r\n");
+        }
+
+        {
+            beast::http::response<beast::http::string_body> resp;
+            jv[jss::method] = "";
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "method is empty\r\n");
+        }
+
+        {
+            beast::http::response<beast::http::string_body> resp;
+            jv[jss::method] = "some_method";
+            jv[jss::params] = "params";
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "params unparseable\r\n");
+        }
+
+        {
+            beast::http::response<beast::http::string_body> resp;
+            jv[jss::params] = Json::arrayValue;
+            jv[jss::params][0u] = "not an object";
+            doHTTPRequest(env, yield, false, resp, ec, to_string(jv));
+            BEAST_EXPECT(resp.result() == beast::http::status::bad_request);
+            BEAST_EXPECT(resp.body == "params unparseable\r\n");
+        }
+    }
+
+    void
+    testStatusNotOkay(boost::asio::yield_context& yield)
+    {
+        testcase ("Server status not okay");
+
+        using namespace test::jtx;
+        Env env {*this, envconfig([](std::unique_ptr<Config> cfg) {
+            cfg->ELB_SUPPORT = true;
+            return cfg;
+        })};
+
+        //raise the fee so that the server is considered overloaded
+        env.app().getFeeTrack().raiseLocalFee();
+
+        beast::http::response<beast::http::string_body> resp;
+        boost::system::error_code ec;
+        doHTTPRequest(env, yield, false, resp, ec);
+        BEAST_EXPECT(resp.result() == beast::http::status::internal_server_error);
+        std::regex body {"Server cannot accept clients"};
+        BEAST_EXPECT(std::regex_search(resp.body, body));
     }
 
 public:
     void
-    run()
+    run() override
     {
-        yield_to([&](boost::asio::yield_context& yield)
-        {
-            testWSClientToHttpServer(yield);
-            testStatusRequest(yield);
-            testTruncatedWSUpgrade(yield);
-            // these are secure/insecure protocol pairs, i.e. for
-            // each item, the second value is the secure or insecure equivalent
-            testCantConnect("ws", "wss", yield);
-            testCantConnect("ws2", "wss2", yield);
-            testCantConnect("http", "https", yield);
-            //THIS HANGS - testCantConnect("wss", "ws", yield);
-            testCantConnect("wss2", "ws2", yield);
-            testCantConnect("https", "http", yield);
-        });
-
         for (auto it : {"http", "ws", "ws2"})
         {
-            testAdminRequest(it, true, true);
-            testAdminRequest(it, true, false);
-            testAdminRequest(it, false, false);
+            testAdminRequest (it, true, true);
+            testAdminRequest (it, true, false);
+            testAdminRequest (it, false, false);
         }
-    };
+
+        yield_to([&](boost::asio::yield_context& yield)
+        {
+            testWSClientToHttpServer (yield);
+            testStatusRequest (yield);
+            testTruncatedWSUpgrade (yield);
+
+            // these are secure/insecure protocol pairs, i.e. for
+            // each item, the second value is the secure or insecure equivalent
+            testCantConnect ("ws", "wss", yield);
+            testCantConnect ("ws2", "wss2", yield);
+            testCantConnect ("http", "https", yield);
+            testCantConnect ("wss", "ws", yield);
+            testCantConnect ("wss2", "ws2", yield);
+            testCantConnect ("https", "http", yield);
+
+            testAmendmentBlock(yield);
+            testAuth (false, yield);
+            testAuth (true, yield);
+            testLimit (yield, 5);
+            testLimit (yield, 0);
+            testWSHandoff (yield);
+            testNoRPC (yield);
+            testWSRequests (yield);
+            testRPCRequests (yield);
+            testStatusNotOkay (yield);
+        });
+
+    }
 };
 
 BEAST_DEFINE_TESTSUITE(ServerStatus, server, casinocoin);

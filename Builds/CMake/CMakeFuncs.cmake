@@ -12,7 +12,7 @@ endif()
 
 macro(parse_target)
 
-  if (NOT target)
+  if (NOT target OR target STREQUAL "default")
     if (NOT CMAKE_BUILD_TYPE)
       set(CMAKE_BUILD_TYPE Debug)
     endif()
@@ -110,14 +110,27 @@ macro(parse_target)
 
     endwhile()
   endif()
-  # Promote these values to the CACHE, then unset the locals
-  # to prevent shadowing.
-  set(CMAKE_C_COMPILER ${CMAKE_C_COMPILER} CACHE FILEPATH
-    "Path to a program" FORCE)
-  unset(CMAKE_C_COMPILER)
-  set(CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH
-    "Path to a program" FORCE)
-  unset(CMAKE_CXX_COMPILER)
+
+  if(CMAKE_C_COMPILER MATCHES "-NOTFOUND$" OR
+    CMAKE_CXX_COMPILER MATCHES "-NOTFOUND$")
+    message(FATAL_ERROR "Can not find appropriate compiler for target ${target}")
+  endif()
+
+  # If defined, promote the compiler path values to the CACHE, then
+  # unset the locals to prevent shadowing. Some scenarios do not
+  # need or want to find a compiler, such as -GNinja under Windows.
+  # Setting these values in those case may prevent CMake from finding
+  # a valid compiler.
+  if (CMAKE_C_COMPILER)
+    set(CMAKE_C_COMPILER ${CMAKE_C_COMPILER} CACHE FILEPATH
+      "Path to a program" FORCE)
+    unset(CMAKE_C_COMPILER)
+  endif (CMAKE_C_COMPILER)
+  if (CMAKE_CXX_COMPILER)
+    set(CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH
+      "Path to a program" FORCE)
+    unset(CMAKE_CXX_COMPILER)
+  endif (CMAKE_CXX_COMPILER)
 
   if (release)
     set(CMAKE_BUILD_TYPE Release)
@@ -156,9 +169,15 @@ macro(setup_build_cache)
   set(assert false CACHE BOOL "Enables asserts, even in release builds")
   set(static false CACHE BOOL
     "On linux, link protobuf, openssl, libc++, and boost statically")
+    set(jemalloc false CACHE BOOL "Enables jemalloc for heap profiling")
+  set(perf false CACHE BOOL "Enables flags that assist with perf recording")
 
   if (static AND (WIN32 OR APPLE))
     message(FATAL_ERROR "Static linking is only supported on linux.")
+  endif()
+
+  if (perf AND (WIN32 OR APPLE))
+    message(FATAL_ERROR "perf flags are only supported on linux.")
   endif()
 
   if (${CMAKE_GENERATOR} STREQUAL "Unix Makefiles" AND NOT CMAKE_BUILD_TYPE)
@@ -302,6 +321,7 @@ macro(use_boost)
     if ((NOT DEFINED BOOST_ROOT) AND (DEFINED ENV{BOOST_ROOT}))
         set(BOOST_ROOT $ENV{BOOST_ROOT})
     endif()
+    file(TO_CMAKE_PATH "${BOOST_ROOT}" BOOST_ROOT)
     if(WIN32 OR CYGWIN)
         # Workaround for MSVC having two boost versions - x86 and x64 on same PC in stage folders
         if(DEFINED BOOST_ROOT)
@@ -317,7 +337,13 @@ macro(use_boost)
       set(BOOST_ROOT $ENV{CLANG_BOOST_ROOT})
     endif()
 
-    set(Boost_USE_STATIC_LIBS on)
+    # boost dynamic libraries don't trivially support @rpath
+    # linking right now (cmake's default), so just force
+    # static linking for macos, or if requested on linux
+    # by flag
+    if (static OR APPLE)
+      set(Boost_USE_STATIC_LIBS on)
+    endif()
     set(Boost_USE_MULTITHREADED on)
     set(Boost_USE_STATIC_RUNTIME off)
     if(MSVC)
@@ -368,6 +394,11 @@ macro(use_openssl openssl_min)
     endif()
 
     find_package(OpenSSL)
+    # depending on how openssl is built, it might depend
+    # on zlib. In fact, the openssl find package should
+    # figure this out for us, but it does not currently...
+    # so let's add zlib ourselves to the lib list
+    find_package(ZLIB)
 
     if (static)
       set(CMAKE_FIND_LIBRARY_SUFFIXES tmp)
@@ -375,6 +406,7 @@ macro(use_openssl openssl_min)
 
     if (OPENSSL_FOUND)
       include_directories(${OPENSSL_INCLUDE_DIR})
+      list(APPEND OPENSSL_LIBRARIES ${ZLIB_LIBRARIES})
     else()
       message(FATAL_ERROR "OpenSSL not found")
     endif()
@@ -507,6 +539,10 @@ macro(setup_build_boilerplate)
     endif()
   endif()
 
+  if (perf)
+    add_compile_options(-fno-omit-frame-pointer)
+  endif()
+
   ############################################################
 
   add_definitions(
@@ -518,15 +554,30 @@ macro(setup_build_boilerplate)
     -DBOOST_NO_AUTO_PTR
     )
 
+  # `ripple.pb.h`, generated from protobuf triggers some warnings
+  # Set the directory that file lives in as SYSTEM
+  include_directories(SYSTEM ${CMAKE_BINARY_DIR})
+
   if (is_gcc)
     add_compile_options(-Wno-unused-but-set-variable -Wno-deprecated)
+    append_flags(CMAKE_CXX_FLAGS  -Wsuggest-override)
 
     # use gold linker if available
     execute_process(
       COMMAND ${CMAKE_CXX_COMPILER} -fuse-ld=gold -Wl,--version
       ERROR_QUIET OUTPUT_VARIABLE LD_VERSION)
-    if ("${LD_VERSION}" MATCHES "GNU gold")
-      append_flags(CMAKE_EXE_LINKER_FLAGS -fuse-ld=gold)
+    # NOTE: THE gold linker inserts -rpath as DT_RUNPATH by default
+    #  intead of DT_RPATH, so you might have slightly unexpected
+    #  runtime ld behavior if you were expecting DT_RPATH.
+    #  Specify --disable-new-dtags to gold if you do not want
+    #  the default DT_RUNPATH behavior. This rpath treatment as well
+    #  as static/dynamic selection means that gold does not currently
+    #  have ideal default behavior when we are using jemalloc. Thus
+    #  for simplicity we don't use it when jemalloc is requested.
+    #  An alternative to disabling would be to figure out all the settings
+    #  required to make gold play nicely with jemalloc.
+    if (("${LD_VERSION}" MATCHES "GNU gold") AND (NOT jemalloc))
+        append_flags(CMAKE_EXE_LINKER_FLAGS -fuse-ld=gold)
     endif ()
     unset(LD_VERSION)
   endif()
@@ -555,9 +606,18 @@ macro(setup_build_boilerplate)
     STRING(REGEX REPLACE "[-/]DNDEBUG" "" CMAKE_C_FLAGS_RELEASECLASSIC "${CMAKE_C_FLAGS_RELEASECLASSIC}")
   endif()
 
+  if (jemalloc)
+    find_package(jemalloc REQUIRED)
+    add_definitions(-DPROFILE_JEMALLOC)
+    include_directories(SYSTEM ${JEMALLOC_INCLUDE_DIRS})
+    link_libraries(${JEMALLOC_LIBRARIES})
+    get_filename_component(JEMALLOC_LIB_PATH ${JEMALLOC_LIBRARIES} DIRECTORY)
+    set(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} ${JEMALLOC_LIB_PATH})
+  endif()
+
   if (NOT WIN32)
     add_definitions(-D_FILE_OFFSET_BITS=64)
-    append_flags(CMAKE_CXX_FLAGS -frtti -std=c++14 -Wno-invalid-offsetof
+    append_flags(CMAKE_CXX_FLAGS -frtti -std=c++14 -Wno-invalid-offsetof -Wdeprecated -Wnon-virtual-dtor
       -DBOOST_COROUTINE_NO_DEPRECATION_WARNING -DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
     add_compile_options(-Wall -Wno-sign-compare -Wno-char-subscripts -Wno-format
       -Wno-unused-local-typedefs -g)
@@ -583,7 +643,6 @@ macro(setup_build_boilerplate)
     endif()
 
     if (APPLE)
-      add_definitions(-DBEAST_COMPILE_OBJECTIVE_CPP=1)
       add_compile_options(
         -Wno-deprecated -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-function)
     endif()
@@ -594,27 +653,27 @@ macro(setup_build_boilerplate)
     endif (is_gcc)
   else(NOT WIN32)
     add_compile_options(
-      /bigobj              # Increase object file max size
-      /EHa                 # ExceptionHandling all
-      /fp:precise          # Floating point behavior
-      /Gd                  # __cdecl calling convention
-      /Gm-                 # Minimal rebuild: disabled
-      /GR                  # Enable RTTI
-      /Gy-                 # Function level linking: disabled
+      /bigobj            # Increase object file max size
+      /EHa               # ExceptionHandling all
+      /fp:precise        # Floating point behavior
+      /Gd                # __cdecl calling convention
+      /Gm-               # Minimal rebuild: disabled
+      /GR                # Enable RTTI
+      /Gy-               # Function level linking: disabled
       /FS
-      /MP                  # Multiprocessor compilation
-      /openmp-             # pragma omp: disabled
-      /Zc:forScope         # Language extension: for scope
-      /Zi                  # Generate complete debug info
-      /errorReport:none    # No error reporting to Internet
-      /nologo              # Suppress login banner
-      /W3                  # Warning level 3
-      /WX-                 # Disable warnings as errors
-      /wd"4018"
-      /wd"4244"
-      /wd"4267"
-      /wd"4800"            # Disable C4800(int to bool performance)
-      /wd"4503"            # Decorated name length exceeded, name was truncated
+      /MP                # Multiprocessor compilation
+      /openmp-           # pragma omp: disabled
+      /Zc:forScope       # Language conformance: for scope
+      /Zi                # Generate complete debug info
+      /errorReport:none  # No error reporting to Internet
+      /nologo            # Suppress login banner
+      /W3                # Warning level 3
+      /WX-               # Disable warnings as errors
+      /wd4018            # Disable signed/unsigned comparison warnings
+      /wd4244            # Disable float to int possible loss of data warnings
+      /wd4267            # Disable size_t to T possible loss of data warnings
+      /wd4800            # Disable C4800(int to bool performance)
+      /wd4503            # Decorated name length exceeded, name was truncated
       )
     add_definitions(
       -D_WIN32_WINNT=0x6000
@@ -666,6 +725,75 @@ macro(setup_build_boilerplate)
     # set_target_properties(ripple-libpp PROPERTIES LINK_SEARCH_START_STATIC 1)
     # set_target_properties(ripple-libpp PROPERTIES LINK_SEARCH_END_STATIC 1)
   endif()
+
+  ## The following options were migrated from the erstwhile BeastConfig.h
+  ## Some of these should be considered for removal in the future if
+  ## unused or unmaintained
+
+  # beast_no_unit_test_inline
+  #    Prevents unit test definitions from being inserted into a global table
+  if (beast_no_unit_test_inline)
+    add_definitions(-DBEAST_NO_UNIT_TEST_INLINE=1)
+  endif()
+
+  # beast_force_debug
+  #    Force BEAST_DEBUG behavior regardless of other compiler settings
+  if (beast_force_debug)
+    add_definitions(-DBEAST_FORCE_DEBUG=1)
+  endif()
+
+  # beast_check_mem_leaks
+  #    Force BEAST_CHECK_MEMORY_LEAKS to be ON.  Default is ON only for debug
+  #    builds. Only implemeted for windows builds.
+  if (beast_check_mem_leaks)
+    add_definitions(-DBEAST_CHECK_MEMORY_LEAKS=1)
+  elseif(DEFINED beast_check_mem_leaks)
+    add_definitions(-DBEAST_CHECK_MEMORY_LEAKS=0)
+  endif()
+
+  if (WIN32)
+    # beast_disable_auto_link
+    #    Disables autolinking of system library dependencies on windows
+    if (beast_disable_auto_link)
+      add_definitions(-DBEAST_DONT_AUTOLINK_TO_WIN32_LIBRARIES=1)
+    endif()
+  endif()
+
+  # dump_leaks_on_exit
+  #    Displays heap blocks and counted objects which were not disposed of
+  #    during exit. Only implemented for windows builds.
+  if (DEFINED dump_leaks_on_exit AND NOT dump_leaks_on_exit)
+    add_definitions(-DRIPPLE_DUMP_LEAKS_ON_EXIT=0)
+  else ()
+    add_definitions(-DRIPPLE_DUMP_LEAKS_ON_EXIT=1)
+  endif()
+
+  # NOTE - THIS OPTION CURRENTLY DOES NOT COMPILE !!
+  # verify_nodeobject_keys
+  #    This verifies that the hash of node objects matches the payload.
+  #    This check is expensive - use with caution.
+  if (verify_nodeobject_keys)
+    add_definitions(-DRIPPLE_VERIFY_NODEOBJECT_KEYS=1)
+  endif()
+
+  # single_io_service_thread
+  #    Restricts the number of threads calling io_service::run to one.
+  #    This can be useful when debugging."
+  if (single_io_service_thread)
+    add_definitions(-DRIPPLE_SINGLE_IO_SERVICE_THREAD=1)
+  endif()
+
+  # use_rocksdb
+  #    Controls whether or not the RocksDB database back-end is compiled into
+  #    rippled. RocksDB requires a relatively modern C++ compiler (tested with
+  #    gcc versions 4.8.1 and later) that supports some C++11 features. The
+  #    default is ON for modern unix compilers and OFF for everything else.
+  if (use_rocksdb)
+    add_definitions(-DRIPPLE_ROCKSDB_AVAILABLE=1)
+  elseif(DEFINED use_rocksdb)
+    add_definitions(-DRIPPLE_ROCKSDB_AVAILABLE=0)
+  endif()
+
 endmacro()
 
 ############################################################
@@ -712,6 +840,6 @@ macro(link_common_libraries cur_project)
       $<$<OR:$<CONFIG:Release>,$<CONFIG:ReleaseClassic>>:VC/static/libeay32MT>)
     target_link_libraries(${cur_project}
       legacy_stdio_definitions.lib Shlwapi kernel32 user32 gdi32 winspool comdlg32
-      advapi32 shell32 ole32 oleaut32 uuid odbc32 odbccp32)
+      advapi32 shell32 ole32 oleaut32 uuid odbc32 odbccp32 crypt32)
   endif (NOT MSVC)
 endmacro()

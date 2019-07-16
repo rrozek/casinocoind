@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <test/jtx/Env.h>
 #include <casinocoin/beast/utility/Journal.h>
@@ -53,14 +53,21 @@ class Invariants_test : public beast::unit_test::suite
     // this is common setup/method for running a failing invariant check. The
     // precheck function is used to manipulate the ApplyContext with view
     // changes that will cause the check to fail.
+    using Precheck = std::function <
+        bool (
+            test::jtx::Account const& a,
+            test::jtx::Account const& b,
+            ApplyContext& ac)>;
+
+    using TXMod = std::function <
+        void (STTx& tx)>;
+
     void
     doInvariantCheck( bool enabled,
-        std::function <
-            bool (
-                test::jtx::Account const& a,
-                test::jtx::Account const& b,
-                ApplyContext& ac)>
-            const& precheck )
+        std::vector<std::string> const& expect_logs,
+        Precheck const& precheck,
+        CSCAmount fee = CSCAmount{},
+        TXMod txmod = [](STTx&){})
     {
         using namespace test::jtx;
         Env env {*this};
@@ -79,6 +86,7 @@ class Invariants_test : public beast::unit_test::suite
 
         // dummy/empty tx to setup the AccountContext
         auto tx = STTx {ttACCOUNT_SET, [](STObject&){  } };
+        txmod(tx);
         OpenView ov {*env.current()};
         TestSink sink;
         beast::Journal jlog {sink};
@@ -94,18 +102,32 @@ class Invariants_test : public beast::unit_test::suite
 
         BEAST_EXPECT(precheck(A1, A2, ac));
 
-        auto tr = ac.checkInvariants(tesSUCCESS);
-        if (enabled)
+        TER tr = tesSUCCESS;
+        // invoke check twice to cover tec and tef cases
+        for (auto i : {0,1})
         {
-            BEAST_EXPECT(tr == tecINVARIANT_FAILED);
-            BEAST_EXPECT(boost::starts_with(sink.strm_.str(), "Invariant failed:"));
-            //uncomment if you want to log the invariant failure message
-            //log << "   --> " << sink.strm_.str() << std::endl;
-        }
-        else
-        {
-            BEAST_EXPECT(tr == tesSUCCESS);
-            BEAST_EXPECT(sink.strm_.str().empty());
+            tr = ac.checkInvariants(tr, fee);
+            if (enabled)
+            {
+                BEAST_EXPECT(tr == (i == 0
+                    ? TER {tecINVARIANT_FAILED}
+                    : TER {tefINVARIANT_FAILED}));
+                BEAST_EXPECT(
+                    boost::starts_with(sink.strm_.str(), "Invariant failed:") ||
+                    boost::starts_with(sink.strm_.str(),
+                        "Transaction caused an exception"));
+                //uncomment if you want to log the invariant failure message
+                //log << "   --> " << sink.strm_.str() << std::endl;
+                for (auto const& m : expect_logs)
+                {
+                    BEAST_EXPECT(sink.strm_.str().find(m) != std::string::npos);
+                }
+            }
+            else
+            {
+                BEAST_EXPECT(tr == tesSUCCESS);
+                BEAST_EXPECT(sink.strm_.str().empty());
+            }
         }
     }
 
@@ -130,6 +152,7 @@ class Invariants_test : public beast::unit_test::suite
         testcase << "checks " << (enabled ? "enabled" : "disabled") <<
             " - CSC created";
         doInvariantCheck (enabled,
+            {{ "CSC net change was positive: 500" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // put a single account in the view and "manufacture" some CSC
@@ -150,6 +173,7 @@ class Invariants_test : public beast::unit_test::suite
         testcase << "checks " << (enabled ? "enabled" : "disabled") <<
             " - account root removed";
         doInvariantCheck (enabled,
+            {{ "an account root was deleted" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // remove an account from the view
@@ -168,6 +192,8 @@ class Invariants_test : public beast::unit_test::suite
         testcase << "checks " << (enabled ? "enabled" : "disabled") <<
             " - LE types don't match";
         doInvariantCheck (enabled,
+            {{ "ledger entry type mismatch" },
+             { "CSC net change of -1000000000 doesn't match fee 0" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // replace an entry in the table with an SLE of a different type
@@ -180,6 +206,7 @@ class Invariants_test : public beast::unit_test::suite
             });
 
         doInvariantCheck (enabled,
+            {{ "invalid ledger entry type added" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // add an entry in the table with an SLE of an invalid type
@@ -204,6 +231,7 @@ class Invariants_test : public beast::unit_test::suite
         testcase << "checks " << (enabled ? "enabled" : "disabled") <<
             " - trust lines with CSC not allowed";
         doInvariantCheck (enabled,
+            {{ "an CSC trust line was created" }},
             [](Account const& A1, Account const& A2, ApplyContext& ac)
             {
                 // create simple trust SLE with csc currency
@@ -215,8 +243,209 @@ class Invariants_test : public beast::unit_test::suite
             });
     }
 
+    void
+    testCSCBalanceCheck(bool enabled)
+    {
+        using namespace test::jtx;
+        testcase << "checks " << (enabled ? "enabled" : "disabled") <<
+            " - CSC balance checks";
+
+        doInvariantCheck (enabled,
+            {{ "Cannot return non-native STAmount as CSCAmount" }},
+            [](Account const& A1, Account const& A2, ApplyContext& ac)
+            {
+                //non-native balance
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                STAmount nonNative (A2["USD"](51));
+                sle->setFieldAmount (sfBalance, nonNative);
+                ac.view().update (sle);
+                return true;
+            });
+
+        doInvariantCheck (enabled,
+            {{ "incorrect account CSC balance" },
+             {  "CSC net change was positive: 99999999000000001" }},
+            [](Account const& A1, Account const&, ApplyContext& ac)
+            {
+                // balance exceeds genesis amount
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                sle->setFieldAmount (sfBalance, SYSTEM_CURRENCY_START + 1);
+                ac.view().update (sle);
+                return true;
+            });
+
+        doInvariantCheck (enabled,
+            {{ "incorrect account CSC balance" },
+             { "CSC net change of -1000000001 doesn't match fee 0" }},
+            [](Account const& A1, Account const&, ApplyContext& ac)
+            {
+                // balance is negative
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                sle->setFieldAmount (sfBalance, -1);
+                ac.view().update (sle);
+                return true;
+            });
+    }
+
+    void
+    testTransactionFeeCheck(bool enabled)
+    {
+        using namespace test::jtx;
+        using namespace std::string_literals;
+        testcase << "checks " << (enabled ? "enabled" : "disabled") <<
+            " - Transaction fee checks";
+
+        doInvariantCheck (enabled,
+            {{ "fee paid was negative: -1" },
+             { "CSC net change of 0 doesn't match fee -1" }},
+            [](Account const&, Account const&, ApplyContext&) { return true; },
+            CSCAmount{-1});
+
+        doInvariantCheck (enabled,
+            {{ "fee paid exceeds system limit: "s +
+                std::to_string(SYSTEM_CURRENCY_START) },
+             { "CSC net change of 0 doesn't match fee "s +
+                std::to_string(SYSTEM_CURRENCY_START) }},
+            [](Account const&, Account const&, ApplyContext&) { return true; },
+            CSCAmount{SYSTEM_CURRENCY_START});
+
+         doInvariantCheck (enabled,
+            {{ "fee paid is 20 exceeds fee specified in transaction." },
+             { "CSC net change of 0 doesn't match fee 20" }},
+            [](Account const&, Account const&, ApplyContext&) { return true; },
+            CSCAmount{20},
+            [](STTx& tx) { tx.setFieldAmount(sfFee, CSCAmount{10}); } );
+    }
+
+
+    void
+    testNoBadOffers(bool enabled)
+    {
+        using namespace test::jtx;
+        testcase << "checks " << (enabled ? "enabled" : "disabled") <<
+            " - no bad offers";
+
+        doInvariantCheck (enabled,
+            {{ "offer with a bad amount" }},
+            [](Account const& A1, Account const&, ApplyContext& ac)
+            {
+                // offer with negative takerpays
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                auto const offer_index =
+                    getOfferIndex (A1.id(), (*sle)[sfSequence]);
+                auto sleNew = std::make_shared<SLE> (ltOFFER, offer_index);
+                sleNew->setAccountID (sfAccount, A1.id());
+                sleNew->setFieldU32 (sfSequence, (*sle)[sfSequence]);
+                sleNew->setFieldAmount (sfTakerPays, CSC(-1));
+                ac.view().insert (sleNew);
+                return true;
+            });
+
+        doInvariantCheck (enabled,
+            {{ "offer with a bad amount" }},
+            [](Account const& A1, Account const&, ApplyContext& ac)
+            {
+                // offer with negative takergets
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                auto const offer_index =
+                    getOfferIndex (A1.id(), (*sle)[sfSequence]);
+                auto sleNew = std::make_shared<SLE> (ltOFFER, offer_index);
+                sleNew->setAccountID (sfAccount, A1.id());
+                sleNew->setFieldU32 (sfSequence, (*sle)[sfSequence]);
+                sleNew->setFieldAmount (sfTakerPays, A1["USD"](10));
+                sleNew->setFieldAmount (sfTakerGets, CSC(-1));
+                ac.view().insert (sleNew);
+                return true;
+            });
+
+        doInvariantCheck (enabled,
+            {{ "offer with a bad amount" }},
+            [](Account const& A1, Account const&, ApplyContext& ac)
+            {
+                // offer CSC to CSC
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                auto const offer_index =
+                    getOfferIndex (A1.id(), (*sle)[sfSequence]);
+                auto sleNew = std::make_shared<SLE> (ltOFFER, offer_index);
+                sleNew->setAccountID (sfAccount, A1.id());
+                sleNew->setFieldU32 (sfSequence, (*sle)[sfSequence]);
+                sleNew->setFieldAmount (sfTakerPays, CSC(10));
+                sleNew->setFieldAmount (sfTakerGets, CSC(11));
+                ac.view().insert (sleNew);
+                return true;
+            });
+    }
+
+    void
+    testNoZeroEscrow(bool enabled)
+    {
+        using namespace test::jtx;
+        testcase << "checks " << (enabled ? "enabled" : "disabled") <<
+            " - no zero escrow";
+
+        doInvariantCheck (enabled,
+            {{ "Cannot return non-native STAmount as CSCAmount" }},
+            [](Account const& A1, Account const& A2, ApplyContext& ac)
+            {
+                // escrow with nonnative amount
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                auto sleNew = std::make_shared<SLE> (
+                    keylet::escrow(A1, (*sle)[sfSequence] + 2));
+                STAmount nonNative (A2["USD"](51));
+                sleNew->setFieldAmount (sfAmount, nonNative);
+                ac.view().insert (sleNew);
+                return true;
+            });
+
+        doInvariantCheck (enabled,
+            {{ "CSC net change of -1000000 doesn't match fee 0"},
+             {  "escrow specifies invalid amount" }},
+            [](Account const& A1, Account const&, ApplyContext& ac)
+            {
+                // escrow with negative amount
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                auto sleNew = std::make_shared<SLE> (
+                    keylet::escrow(A1, (*sle)[sfSequence] + 2));
+                sleNew->setFieldAmount (sfAmount, CSC(-1));
+                ac.view().insert (sleNew);
+                return true;
+            });
+
+        doInvariantCheck (enabled,
+            {{ "CSC net change was positive: 100000000000000001" },
+             {  "escrow specifies invalid amount" }},
+            [](Account const& A1, Account const&, ApplyContext& ac)
+            {
+                // escrow with too-large amount
+                auto const sle = ac.view().peek (keylet::account(A1.id()));
+                if(! sle)
+                    return false;
+                auto sleNew = std::make_shared<SLE> (
+                    keylet::escrow(A1, (*sle)[sfSequence] + 2));
+                sleNew->setFieldAmount (sfAmount, SYSTEM_CURRENCY_START + 1);
+                ac.view().insert (sleNew);
+                return true;
+            });
+    }
+
 public:
-    void run ()
+    void run () override
     {
         testEnabled ();
         // all invariant checks are run with
@@ -227,6 +456,10 @@ public:
             testAccountsNotRemoved (b);
             testTypesMatch (b);
             testNoCSCTrustLine (b);
+            testCSCBalanceCheck (b);
+            testTransactionFeeCheck(b);
+            testNoBadOffers (b);
+            testNoZeroEscrow (b);
         }
     }
 };
@@ -234,3 +467,4 @@ public:
 BEAST_DEFINE_TESTSUITE (Invariants, ledger, casinocoin);
 
 }  // ripple
+

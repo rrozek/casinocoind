@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/rate.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/basics/contract.h>
@@ -37,10 +37,11 @@ rate (Account const& account, double multiplier)
     jv[jss::Account] = account.human();
     jv[jss::TransferRate] = std::uint32_t(
         1000000000 * multiplier);
-    jv[jss::TransactionType] = "AccountSet";
+    jv[jss::TransactionType] = jss::AccountSet;
     return jv;
 }
 
 } // jtx
 } // test
 } // casinocoin
+

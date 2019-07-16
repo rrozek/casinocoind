@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/consensus/CCLCxPeerPos.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/protocol/HashPrefix.h>
@@ -39,14 +39,15 @@ CCLCxPeerPos::CCLCxPeerPos(
     Slice const& signature,
     uint256 const& suppression,
     Proposal&& proposal)
-    : proposal_{std::move(proposal)}
-    , mSuppression{suppression}
-    , publicKey_{publicKey}
-    , signature_{signature}
+    : data_{std::make_shared<Data>(
+          publicKey,
+          signature,
+          suppression,
+          std::move(proposal))}
 {
 }
 uint256
-CCLCxPeerPos::getSigningHash() const
+CCLCxPeerPos::signingHash() const
 {
     return sha512Half(
         HashPrefix::proposal,
@@ -59,7 +60,8 @@ CCLCxPeerPos::getSigningHash() const
 bool
 CCLCxPeerPos::checkSign() const
 {
-    return verifyDigest(publicKey_, getSigningHash(), signature_, false);
+    return verifyDigest(
+        publicKey(), signingHash(), signature(), false);
 }
 
 Json::Value
@@ -67,8 +69,8 @@ CCLCxPeerPos::getJson() const
 {
     auto ret = proposal().getJson();
 
-    if (publicKey_.size())
-        ret[jss::peer_id] = toBase58(TokenType::TOKEN_NODE_PUBLIC, publicKey_);
+    if (publicKey().size())
+        ret[jss::peer_id] = toBase58(TokenType::NodePublic, publicKey());
 
     return ret;
 }
@@ -93,4 +95,17 @@ proposalUniqueId(
     return s.getSHA512Half();
 }
 
-}  // ripple
+CCLCxPeerPos::Data::Data(
+    PublicKey const& publicKey,
+    Slice const& signature,
+    uint256 const& suppress,
+    Proposal&& proposal)
+    : publicKey_{publicKey}
+    , signature_{signature}
+    , suppression_{suppress}
+    , proposal_{std::move(proposal)}
+{
+}
+
+} // casinocoin
+

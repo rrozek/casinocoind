@@ -34,6 +34,8 @@ namespace PeerFinder {
 */
 struct Reporting
 {
+    explicit Reporting() = default;
+
     // Report simulation parameters
     static bool const params = true;
 
@@ -51,3 +53,4 @@ struct Reporting
 }
 
 #endif
+

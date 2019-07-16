@@ -31,12 +31,12 @@
 #include <casinocoin/basics/UnorderedContainers.h>
 #include <casinocoin/core/TimeKeeper.h>
 #include <casinocoin/crypto/csprng.h>
+#include <casinocoin/json/json_value.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/range/adaptors.hpp>
-#include <boost/thread/locks.hpp>
-#include <boost/thread/shared_mutex.hpp>
 #include <mutex>
+#include <shared_mutex>
 #include <numeric>
 
 namespace casinocoin {
@@ -45,6 +45,9 @@ enum class ListDisposition
 {
     /// List is valid
     accepted = 0,
+
+    /// Same sequence as current list
+    same_sequence,
 
     /// List version is not supported
     unsupported_version,
@@ -56,7 +59,20 @@ enum class ListDisposition
     stale,
 
     /// Invalid format or signature
-    invalid,
+    invalid
+};
+
+std::string
+to_string(ListDisposition disposition);
+
+/** Changes in trusted nodes after updating validator list
+*/
+struct TrustChanges
+{
+    explicit TrustChanges() = default;
+
+    hash_set<NodeID> added;
+    hash_set<NodeID> removed;
 };
 
 /**
@@ -78,9 +94,9 @@ enum class ListDisposition
         "expiration", and @c "validators" field. @c "expiration" contains the
         Casinocoin timestamp (seconds since January 1st, 2000 (00:00 UTC)) for when
         the list expires. @c "validators" contains an array of objects with a
-        @c "validation_public_key" field.
+        @c "validation_public_key" and optional @c "manifest" field.
         @c "validation_public_key" should be the hex-encoded master public key.
-
+        @c "manifest" should be the base64-encoded validator manifest.
     @li @c "manifest": Base64-encoded serialization of a manifest containing the
         publisher's master and signing public keys.
 
@@ -105,17 +121,20 @@ class ValidatorList
 {
     struct PublisherList
     {
+        explicit PublisherList() = default;
+
         bool available;
         std::vector<PublicKey> list;
         std::size_t sequence;
-        std::size_t expiration;
+        TimeKeeper::time_point expiration;
+        std::string siteUri;
     };
 
     ManifestCache& validatorManifests_;
     ManifestCache& publisherManifests_;
     TimeKeeper& timeKeeper_;
     beast::Journal j_;
-    boost::shared_mutex mutable mutex_;
+    std::shared_timed_mutex mutable mutex_;
 
     std::atomic<std::size_t> quorum_;
     boost::optional<std::size_t> minimumQuorum_;
@@ -131,6 +150,9 @@ class ValidatorList
 
     PublicKey localPubKey_;
 
+    // Currently supported version of publisher list format
+    static constexpr std::uint32_t requiredListVersion = 1;
+
 public:
     ValidatorList (
         ManifestCache& validatorManifests,
@@ -138,7 +160,8 @@ public:
         TimeKeeper& timeKeeper,
         beast::Journal j,
         boost::optional<std::size_t> minimumQuorum = boost::none);
-    ~ValidatorList ();
+    ~ValidatorList () = default;
+
 
     /** Load configured trusted keys.
 
@@ -184,24 +207,22 @@ public:
         std::string const& manifest,
         std::string const& blob,
         std::string const& signature,
-        std::uint32_t version);
+        std::uint32_t version,
+        std::string siteUri);
 
-    /** Update trusted keys
-
-        Reset the trusted keys based on latest manifests, received validations,
+    /** Update trusted nodes
+        Reset the trusted nodes based on latest manifests, received validations,
         and lists.
-
-        @param seenValidators Set of public keys used to sign recently
-        received validations
-
+        @param seenValidators Set of NodeIDs of validators that have signed
+        recently received validations
+        @return TrustedKeyChanges instance with newly trusted or untrusted
+        node identities.
         @par Thread Safety
 
         May be called concurrently
     */
-    template<class KeySet>
-    void
-    onConsensusStart (
-        KeySet const& seenValidators);
+    TrustChanges
+    updateTrusted (hash_set<NodeID> const& seenValidators);
 
     /** Get quorum value for current trusted key set
 
@@ -220,7 +241,7 @@ public:
     quorum () const
     {
         return quorum_;
-    };
+    }
 
     /** Returns `true` if public key is trusted
 
@@ -314,8 +335,39 @@ public:
     for_each_listed (
         std::function<void(PublicKey const&, bool)> func) const;
 
-    static std::size_t
-    calculateQuorum (std::size_t nTrustedKeys);
+    /** Return the number of configured validator list sites. */
+    std::size_t
+    count() const;
+
+    /** Return the time when the validator list will expire
+        @note This may be a time in the past if a published list has not
+        been updated since its expiration. It will be boost::none if any
+        configured published list has not been fetched.
+        @par Thread Safety
+        May be called concurrently
+    */
+    boost::optional<TimeKeeper::time_point>
+    expires() const;
+
+    /** Return a JSON representation of the state of the validator list
+        @par Thread Safety
+        May be called concurrently
+    */
+    Json::Value
+    getJson() const;
+
+    using QuorumKeys = std::pair<std::size_t const, hash_set<PublicKey>>;
+    /** Get the quorum and all of the trusted keys.
+     *
+     * @return quorum and keys.
+     */
+    QuorumKeys
+    getQuorumKeys() const
+    {
+        std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
+        return {quorum_, trustedKeys_};
+    }
+
 
 private:
     /** Check response for trusted valid published list
@@ -347,129 +399,15 @@ private:
     bool
     removePublisherList (PublicKey const& publisherKey);
 
+    /** Return quorum for trusted validator set
+        @param trusted Number of trusted validator keys
+        @param seen Number of trusted validators that have signed
+        recently received validations */
+    std::size_t
+    calculateQuorum (
+        std::size_t trusted, std::size_t seen);
 };
-
-//------------------------------------------------------------------------------
-
-template<class KeySet>
-void
-ValidatorList::onConsensusStart (
-    KeySet const& seenValidators)
-{
-    boost::unique_lock<boost::shared_mutex> lock{mutex_};
-
-    // Check that lists from all configured publishers are available
-    bool allListsAvailable = true;
-
-    for (auto const& list : publisherLists_)
-    {
-        // Remove any expired published lists
-        if (list.second.expiration &&
-                list.second.expiration <=
-                timeKeeper_.now().time_since_epoch().count())
-            removePublisherList (list.first);
-        else if (! list.second.available)
-            allListsAvailable = false;
-    }
-
-    std::multimap<std::size_t, PublicKey> rankedKeys;
-    bool localKeyListed = false;
-
-    // "Iterate" the listed keys in random order so that the rank of multiple
-    // keys with the same number of listings is not deterministic
-    std::vector<std::size_t> indexes (keyListings_.size());
-    std::iota (indexes.begin(), indexes.end(), 0);
-    std::shuffle (indexes.begin(), indexes.end(), crypto_prng());
-
-    for (auto const& index : indexes)
-    {
-        auto const& val = std::next (keyListings_.begin(), index);
-
-        if (validatorManifests_.revoked (val->first))
-            continue;
-
-        if (val->first == localPubKey_)
-        {
-            localKeyListed = val->second > 1;
-            rankedKeys.insert (
-                std::pair<std::size_t,PublicKey>(
-                    std::numeric_limits<std::size_t>::max(), localPubKey_));
-        }
-        // If no validations are being received, use all validators.
-        // Otherwise, do not use validators whose validations aren't being received
-        else if (seenValidators.empty() ||
-            seenValidators.find (val->first) != seenValidators.end ())
-        {
-            rankedKeys.insert (
-                std::pair<std::size_t,PublicKey>(val->second, val->first));
-        }
-    }
-
-    // This quorum guarantees sufficient overlap with the trusted sets of other
-    // nodes using the same set of published lists.
-    std::size_t quorum = keyListings_.size()/2 + 1;
-
-    // Increment the quorum to prevent two unlisted validators using the same
-    // even number of listed validators from forking.
-    if (localPubKey_.size() && ! localKeyListed &&
-            rankedKeys.size () > 1 && keyListings_.size () % 2 != 0)
-        ++quorum;
-
-    JLOG (j_.debug()) <<
-        rankedKeys.size() << "  of " << keyListings_.size() <<
-        " listed validators eligible for inclusion in the trusted set";
-
-    auto size = rankedKeys.size();
-
-    // Use all eligible keys if there is less than 10 listed validators or
-    // only one trusted list
-    if (size < 10 || publisherLists_.size() == 1)
-    {
-        // Try to raise the quorum toward or above 80% of the trusted set
-        std::size_t const targetQuorum = ValidatorList::calculateQuorum (size);
-        if (targetQuorum > quorum)
-            quorum = targetQuorum;
-    }
-    else
-    {
-        // reduce the trusted set size so that the quorum represents
-        // at least 80%
-        size = quorum * 1.25;
-    }
-
-    if (minimumQuorum_ && (seenValidators.empty() ||
-            rankedKeys.size() < quorum))
-        quorum = *minimumQuorum_;
-
-    // Do not use achievable quorum until lists from all configured
-    // publishers are available
-    else if (! allListsAvailable)
-        quorum = std::numeric_limits<std::size_t>::max();
-
-    trustedKeys_.clear();
-    quorum_ = quorum;
-
-    for (auto const& val : boost::adaptors::reverse (rankedKeys))
-    {
-        if (size <= trustedKeys_.size())
-            break;
-
-        trustedKeys_.insert (val.second);
-    }
-
-    JLOG (j_.debug()) <<
-        "Using quorum of " << quorum_ << " for new set of " <<
-        trustedKeys_.size() << " trusted validators";
-
-    if (trustedKeys_.size() < quorum_)
-    {
-        JLOG (j_.warn()) <<
-            "New quorum of " << quorum_ <<
-            " exceeds the number of trusted validators (" <<
-            trustedKeys_.size() << ")";
-    }
-}
-
-} // casinocoin
+} // ripple
 
 #endif
+

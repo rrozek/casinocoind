@@ -15,7 +15,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <test/jtx/WSClient.h>
@@ -97,7 +97,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == USD(100).value().getJson(0) &&
                             t[jss::TakerPays] == CSC(700).value().getJson(0);
                 }));
@@ -184,7 +184,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == USD(100).value().getJson(0) &&
                             t[jss::TakerPays] == CSC(700).value().getJson(0);
                 }));
@@ -260,7 +260,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == USD(100).value().getJson(0) &&
                             t[jss::TakerPays] == CSC(700).value().getJson(0);
                 }));
@@ -277,7 +277,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == CSC(75).value().getJson(0) &&
                             t[jss::TakerPays] == USD(100).value().getJson(0);
                 }));
@@ -362,7 +362,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == USD(100).value().getJson(0) &&
                             t[jss::TakerPays] == CSC(700).value().getJson(0);
                 }));
@@ -379,7 +379,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == CSC(75).value().getJson(0) &&
                             t[jss::TakerPays] == USD(100).value().getJson(0);
                 }));
@@ -455,7 +455,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == USD(100).value().getJson(0) &&
                             t[jss::TakerPays] == CSC(700).value().getJson(0);
                 }));
@@ -480,7 +480,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == JPY(100).value().getJson(0) &&
                             t[jss::TakerPays] == CNY(700).value().getJson(0);
                 }));
@@ -589,7 +589,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == USD(100).value().getJson(0) &&
                             t[jss::TakerPays] == CSC(700).value().getJson(0);
                 }));
@@ -614,7 +614,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == JPY(100).value().getJson(0) &&
                             t[jss::TakerPays] == CNY(700).value().getJson(0);
                 }));
@@ -718,7 +718,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == CSC(75).value().getJson(0) &&
                             t[jss::TakerPays] == USD(100).value().getJson(0);
                 }));
@@ -735,7 +735,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == JPY(100).value().getJson(0) &&
                             t[jss::TakerPays] == CNY(700).value().getJson(0);
                 }));
@@ -752,7 +752,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == CNY(75).value().getJson(0) &&
                             t[jss::TakerPays] == JPY(100).value().getJson(0);
                 }));
@@ -865,7 +865,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == USD(100).value().getJson(0) &&
                             t[jss::TakerPays] == CSC(700).value().getJson(0);
                 }));
@@ -882,7 +882,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == CSC(75).value().getJson(0) &&
                             t[jss::TakerPays] == USD(100).value().getJson(0);
                 }));
@@ -899,7 +899,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == JPY(100).value().getJson(0) &&
                             t[jss::TakerPays] == CNY(700).value().getJson(0);
                 }));
@@ -916,7 +916,7 @@ public:
                 [&](auto const& jv)
                 {
                     auto const& t = jv[jss::transaction];
-                    return t[jss::TransactionType] == "OfferCreate" &&
+                    return t[jss::TransactionType] == jss::OfferCreate &&
                         t[jss::TakerGets] == CNY(75).value().getJson(0) &&
                             t[jss::TakerPays] == JPY(100).value().getJson(0);
                 }));
@@ -1006,7 +1006,7 @@ public:
             getBookDir(env, CSC, USD.issue()));
         BEAST_EXPECT(jrOffer[sfBookNode.fieldName] == "0000000000000000");
         BEAST_EXPECT(jrOffer[jss::Flags] == 0);
-        BEAST_EXPECT(jrOffer[sfLedgerEntryType.fieldName] == "Offer");
+        BEAST_EXPECT(jrOffer[sfLedgerEntryType.fieldName] == jss::Offer);
         BEAST_EXPECT(jrOffer[sfOwnerNode.fieldName] == "0000000000000000");
         BEAST_EXPECT(jrOffer[sfSequence.fieldName] == 3);
         BEAST_EXPECT(jrOffer[jss::TakerGets] == USD(10).value().getJson(0));
@@ -1014,11 +1014,12 @@ public:
         BEAST_EXPECT(jrOffer[jss::owner_funds] == "100");
         BEAST_EXPECT(jrOffer[jss::quality] == "40000000000");
 
+        using namespace std::chrono_literals;
         BEAST_EXPECT(wsc->findMsg(5s,
             [&](auto const& jv)
             {
                 auto const& t = jv[jss::transaction];
-                return t[jss::TransactionType] == "OfferCreate" &&
+                return t[jss::TransactionType] == jss::OfferCreate &&
                        t[jss::TakerGets] == USD(10).value().getJson(0) &&
                        t[jss::owner_funds] == "100" &&
                        t[jss::TakerPays] == CSC(4000).value().getJson(0);
@@ -1031,7 +1032,7 @@ public:
             [&](auto const& jv)
             {
                 auto const& t = jv[jss::transaction];
-                return t[jss::TransactionType] == "OfferCreate" &&
+                return t[jss::TransactionType] == jss::OfferCreate &&
                        t[jss::TakerGets] == USD(5).value().getJson(0) &&
                        t[jss::owner_funds] == "50" &&
                        t[jss::TakerPays] == CSC(2000).value().getJson(0);
@@ -1054,7 +1055,7 @@ public:
             getBookDir(env, CSC, USD.issue()));
         BEAST_EXPECT(jrNextOffer[sfBookNode.fieldName] == "0000000000000000");
         BEAST_EXPECT(jrNextOffer[jss::Flags] == 0);
-        BEAST_EXPECT(jrNextOffer[sfLedgerEntryType.fieldName] == "Offer");
+        BEAST_EXPECT(jrNextOffer[sfLedgerEntryType.fieldName] == jss::Offer);
         BEAST_EXPECT(jrNextOffer[sfOwnerNode.fieldName] == "0000000000000000");
         BEAST_EXPECT(jrNextOffer[sfSequence.fieldName] == 3);
         BEAST_EXPECT(jrNextOffer[jss::TakerGets] == USD(5).value().getJson(0));
@@ -1089,13 +1090,13 @@ public:
         if(!(*maybeJv).isMember(jss::transaction))
             return false;
         auto const& t = (*maybeJv)[jss::transaction];
-        if (t[jss::TransactionType] != "OfferCreate" ||
+        if (t[jss::TransactionType] != jss::OfferCreate ||
             t[jss::TakerGets] != takerGets.value().getJson(0) ||
             t[jss::TakerPays] != takerPays.value().getJson(0))
             return false;
         // Make sure no other message is waiting
         return wsc->getMsg(timeout) == boost::none;
-    };
+    }
 
     void
     testCrossingSingleBookOffer()
@@ -1157,6 +1158,7 @@ public:
         env(offer(charlie, USD(1000), CSC(1000)));
         env.close();
         env.require(offers(alice, 0), offers(bob, 0), offers(charlie, 0));
+        using namespace std::chrono_literals;
         BEAST_EXPECT(offerOnlyOnceInStream(wsc, 1s, CSC(1000), USD(1000)));
 
         // RPC unsubscribe
@@ -1239,6 +1241,7 @@ public:
         // Charlies places an on offer for EUR -> USD that should auto-bridge
         env(offer(charlie, USD(1), EUR(1)));
         env.close();
+        using namespace std::chrono_literals;
         BEAST_EXPECT(offerOnlyOnceInStream(wsc, 1s, EUR(1), USD(1)));
 
         // RPC unsubscribe
@@ -1648,7 +1651,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Book,app,casinocoin);
+BEAST_DEFINE_TESTSUITE_PRIO(Book,app,casinocoin,1);
 
 } // test
 } // casinocoin

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/json/JsonPropertyStream.h>
 #include <casinocoin/json/json_value.h>

@@ -33,7 +33,10 @@ namespace casinocoin {
 // VFALCO DEPRECATED in favor of the BasicConfig interface
 struct ConfigSection
 {
+    explicit ConfigSection() = default;
+
     static std::string nodeDatabase ()       { return "node_db"; }
+    static std::string shardDatabase ()      { return "shard_db"; }
     static std::string importNodeDatabase () { return "import_db"; }
 };
 
@@ -61,6 +64,7 @@ struct ConfigSection
 #define SECTION_PEER_PRIVATE            "peer_private"
 #define SECTION_PEERS_MAX               "peers_max"
 #define SECTION_RPC_STARTUP             "rpc_startup"
+#define SECTION_SIGNING_SUPPORT         "signing_support"
 #define SECTION_SNTP                    "sntp_servers"
 #define SECTION_SSL_VERIFY              "ssl_verify"
 #define SECTION_SSL_VERIFY_FILE         "ssl_verify_file"
@@ -86,3 +90,4 @@ struct ConfigSection
 } // casinocoin
 
 #endif
+

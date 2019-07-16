@@ -123,6 +123,8 @@ private:
         // need to see the container declaration.
         struct stashed
         {
+            explicit stashed() = default;
+
             using value_type = typename aged_unordered_container::value_type;
             using time_point = typename aged_unordered_container::time_point;
         };
@@ -162,9 +164,16 @@ private:
     // VFALCO TODO hoist to remove template argument dependencies
     class ValueHash
         : private empty_base_optimization <Hash>
+#ifdef _LIBCPP_VERSION
         , public std::unary_function <element, std::size_t>
+#endif
     {
     public:
+#ifndef _LIBCPP_VERSION
+        using argument_type = element;
+        using result_type = size_t;
+#endif
+
         ValueHash ()
         {
         }
@@ -194,9 +203,17 @@ private:
     // VFALCO TODO hoist to remove template argument dependencies
     class KeyValueEqual
         : private empty_base_optimization <KeyEqual>
+#ifdef _LIBCPP_VERSION
         , public std::binary_function <Key, element, bool>
+#endif
     {
     public:
+#ifndef _LIBCPP_VERSION
+        using first_argument_type = Key;
+        using second_argument_type = element;
+        using result_type = bool;
+#endif
+
         KeyValueEqual ()
         {
         }
@@ -2514,6 +2531,7 @@ struct is_aged_container <beast::detail::aged_unordered_container <
         IsMulti, IsMap, Key, T, Clock, Hash, KeyEqual, Allocator>>
     : std::true_type
 {
+    explicit is_aged_container() = default;
 };
 
 // Free functions
@@ -2552,3 +2570,4 @@ std::size_t expire (beast::detail::aged_unordered_container <
 }
 
 #endif
+

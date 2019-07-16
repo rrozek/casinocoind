@@ -80,6 +80,8 @@ private:
         AccountID, AccountID, Currency>;
     struct Value
     {
+        explicit Value() = default;
+
         STAmount lowAcctCredits;
         STAmount highAcctCredits;
         STAmount lowAcctOrigBalance;
@@ -211,3 +213,4 @@ private:
 }  // ripple
 
 #endif
+

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/app/tx/applySteps.h>
@@ -130,16 +130,12 @@ applyTransaction (Application& app, OpenView& view,
     if (retryAssured)
         flags = flags | tapRETRY;
 
-    JLOG (j.debug()) << "TXN "
-        << txn.getTransactionID ()
-        //<< (engine.view().open() ? " open" : " closed")
-        // because of the optional in engine
+    JLOG (j.debug()) << "TXN " << txn.getTransactionID ()
         << (retryAssured ? "/retry" : "/final");
 
     try
     {
-        auto const result = apply(app,
-            view, txn, flags, j);
+        auto const result = apply(app, view, txn, flags, j);
         if (result.second)
         {
             JLOG (j.debug())
@@ -168,3 +164,4 @@ applyTransaction (Application& app, OpenView& view,
 }
 
 } // casinocoin
+

@@ -23,10 +23,13 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
+#include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/basics/ByteUtilities.h>
 #include <casinocoin/net/RPCCall.h>
 #include <casinocoin/net/RPCErr.h>
+#include <casinocoin/basics/base64.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/core/Config.h>
@@ -38,11 +41,12 @@
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/SystemParameters.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/rpc/ServerHandler.h>
 #include <casinocoin/beast/core/LexicalCast.h>
 #include <beast/core/string.hpp>
 #include <boost/asio/streambuf.hpp>
+#include <boost/optional.hpp>
 #include <boost/regex.hpp>
 #include <array>
 #include <iostream>
@@ -150,7 +154,7 @@ private:
     {
         Json::Value v (Json::objectValue);
 
-        if (jvParams.isArray () && (jvParams.size () > 0))
+        if (jvParams.isArray() && (jvParams.size () > 0))
             v[jss::params] = jvParams;
 
         return v;
@@ -418,6 +422,19 @@ private:
         return jvRequest;
     }
 
+    // deposit_authorized <source_account> <destination_account> [<ledger>]
+    Json::Value parseDepositAuthorized (Json::Value const& jvParams)
+    {
+        Json::Value jvRequest (Json::objectValue);
+        jvRequest[jss::source_account] = jvParams[0u].asString ();
+        jvRequest[jss::destination_account] = jvParams[1u].asString ();
+
+        if (jvParams.size () == 3)
+            jvParseLedger (jvRequest, jvParams[2u].asString ());
+
+        return jvRequest;
+    }
+
     // Return an error for attemping to subscribe/unsubscribe via RPC.
     Json::Value parseEvented (Json::Value const& jvParams)
     {
@@ -474,7 +491,7 @@ private:
             if (reader.parse (jvParams[2u].asString (), txJSON))
             {
                 // sign_for txJSON.
-                Json::Value jvRequest;
+                Json::Value jvRequest{Json::objectValue};
 
                 jvRequest[jss::account] = jvParams[0u].asString ();
                 jvRequest[jss::secret]  = jvParams[1u].asString ();
@@ -500,7 +517,7 @@ private:
 
         if (reader.parse (jvParams[1u].asString (), jvRequest))
         {
-            if (!jvRequest.isObject ())
+            if (!jvRequest.isObjectOrNull ())
                 return rpcError (rpcINVALID_PARAMS);
 
             jvRequest[jss::method] = jvParams[0u];
@@ -513,6 +530,17 @@ private:
 
     bool isValidJson2(Json::Value const& jv)
     {
+        if (jv.isArray())
+        {
+            if (jv.size() == 0)
+                return false;
+            for (auto const& j : jv)
+            {
+                if (!isValidJson2(j))
+                    return false;
+            }
+            return true;
+        }
         if (jv.isObject())
         {
             if (jv.isMember(jss::jsonrpc) && jv[jss::jsonrpc] == "2.0" &&
@@ -520,7 +548,8 @@ private:
                 jv.isMember(jss::id) && jv.isMember(jss::method))
             {
                 if (jv.isMember(jss::params) &&
-                      !(jv[jss::params].isArray() || jv[jss::params].isNull()))
+                      !(jv[jss::params].isNull() || jv[jss::params].isArray() ||
+                                                    jv[jss::params].isObject()))
                     return false;
                 return true;
             }
@@ -535,17 +564,36 @@ private:
         bool valid_parse = reader.parse(jvParams[0u].asString(), jv);
         if (valid_parse && isValidJson2(jv))
         {
-            Json::Value jv1{Json::objectValue};
-            if (jv.isMember(jss::params))
+            if (jv.isObject())
             {
-                auto const& params = jv[jss::params][0u];
-                for (auto i = params.begin(); i != params.end(); ++i)
-                    jv1[i.key().asString()] = *i;
+                Json::Value jv1{Json::objectValue};
+                if (jv.isMember(jss::params))
+                {
+                    auto const& params = jv[jss::params];
+                    for (auto i = params.begin(); i != params.end(); ++i)
+                        jv1[i.key().asString()] = *i;
+                }
+                jv1[jss::jsonrpc] = jv[jss::jsonrpc];
+                jv1[jss::casinocoinrpc] = jv[jss::casinocoinrpc];
+                jv1[jss::id] = jv[jss::id];
+                jv1[jss::method] = jv[jss::method];
+                return jv1;
             }
-            jv1[jss::jsonrpc] = jv[jss::jsonrpc];
-            jv1[jss::casinocoinrpc] = jv[jss::casinocoinrpc];
-            jv1[jss::id] = jv[jss::id];
-            jv1[jss::method] = jv[jss::method];
+            // else jv.isArray()
+            Json::Value jv1{Json::arrayValue};
+            for (Json::UInt j = 0; j < jv.size(); ++j)
+            {
+                if (jv[j].isMember(jss::params))
+                {
+                    auto const& params = jv[j][jss::params];
+                    for (auto i = params.begin(); i != params.end(); ++i)
+                        jv1[j][i.key().asString()] = *i;
+                }
+                jv1[j][jss::jsonrpc] = jv[j][jss::jsonrpc];
+                jv1[j][jss::casinocoinrpc] = jv[j][jss::casinocoinrpc];
+                jv1[j][jss::id] = jv[j][jss::id];
+                jv1[j][jss::method] = jv[j][jss::method];
+            }
             return jv1;
         }
         auto jv_error = rpcError(rpcINVALID_PARAMS);
@@ -666,16 +714,9 @@ private:
         }
         jvRequest[jss::channel_id] = jvParams[1u].asString ();
 
-        try
-        {
-            auto const drops = std::stoul (jvParams[2u].asString ());
-            (void)drops;  // just used for error checking
-            jvRequest[jss::amount] = jvParams[2u];
-        }
-        catch (std::exception const&)
-        {
-            return rpcError (rpcCHANNEL_AMT_MALFORMED);
-        }
+        if (!jvParams[2u].isString() || !to_uint64(jvParams[2u].asString()))
+            return rpcError(rpcCHANNEL_AMT_MALFORMED);
+        jvRequest[jss::amount] = jvParams[2u];
 
         return jvRequest;
     }
@@ -685,7 +726,21 @@ private:
     {
         std::string const strPk = jvParams[0u].asString ();
 
-        if (!parseBase58<PublicKey> (TokenType::TOKEN_ACCOUNT_PUBLIC, strPk))
+        bool const validPublicKey = [&strPk]{
+            if (parseBase58<PublicKey> (TokenType::AccountPublic, strPk))
+                return true;
+
+            std::pair<Blob, bool> pkHex(strUnHex (strPk));
+            if (!pkHex.second)
+                return false;
+
+            if (!publicKeyType(makeSlice(pkHex.first)))
+                return false;
+
+            return true;
+        }();
+
+        if (!validPublicKey)
             return rpcError (rpcPUBLIC_MALFORMED);
 
         Json::Value jvRequest (Json::objectValue);
@@ -698,16 +753,11 @@ private:
                 return rpcError (rpcCHANNEL_MALFORMED);
         }
         jvRequest[jss::channel_id] = jvParams[1u].asString ();
-        try
-        {
-            auto const drops = std::stoul (jvParams[2u].asString ());
-            (void)drops;  // just used for error checking
-            jvRequest[jss::amount] = jvParams[2u];
-        }
-        catch (std::exception const&)
-        {
-            return rpcError (rpcCHANNEL_AMT_MALFORMED);
-        }
+
+        if (!jvParams[2u].isString() || !to_uint64(jvParams[2u].asString()))
+            return rpcError(rpcCHANNEL_AMT_MALFORMED);
+        jvRequest[jss::amount] = jvParams[2u];
+
         jvRequest[jss::signature] = jvParams[3u].asString ();
 
         return jvRequest;
@@ -730,7 +780,7 @@ private:
             if (i < 2)
             {
                 if (parseBase58<PublicKey> (
-                        TokenType::TOKEN_ACCOUNT_PUBLIC, strParam) ||
+                        TokenType::AccountPublic, strParam) ||
                     parseBase58<AccountID> (strParam) ||
                     parseGenericSeed (strParam))
                 {
@@ -765,7 +815,7 @@ private:
             --iCursor;
         }
 
-        if (! parseBase58<PublicKey>(TokenType::TOKEN_ACCOUNT_PUBLIC, strIdent) &&
+        if (! parseBase58<PublicKey>(TokenType::AccountPublic, strIdent) &&
             ! parseBase58<AccountID>(strIdent) &&
             ! parseGenericSeed(strIdent))
             return rpcError (rpcACT_MALFORMED);
@@ -788,7 +838,7 @@ private:
     Json::Value parseCasinocoinPathFind (Json::Value const& jvParams)
     {
         Json::Reader    reader;
-        Json::Value     jvRequest;
+        Json::Value     jvRequest{Json::objectValue};
         bool            bLedger     = 2 == jvParams.size ();
 
         JLOG (j_.trace()) << "RPC json: " << jvParams[0u];
@@ -821,7 +871,7 @@ private:
         {
             // Submitting tx_blob
 
-            Json::Value jvRequest;
+            Json::Value jvRequest{Json::objectValue};
 
             jvRequest[jss::tx_blob]    = jvParams[0u].asString ();
 
@@ -831,7 +881,7 @@ private:
                  && reader.parse (jvParams[1u].asString (), txJSON))
         {
             // Signing or submitting tx_json.
-            Json::Value jvRequest;
+            Json::Value jvRequest{Json::objectValue};
 
             jvRequest[jss::secret]     = jvParams[0u].asString ();
             jvRequest[jss::tx_json]    = txJSON;
@@ -850,7 +900,7 @@ private:
     {
         if (2 == jvParams.size ())
         {
-            Json::Value jvRequest;
+            Json::Value jvRequest{Json::objectValue};
             jvRequest[jss::secret] = jvParams[0u].asString();
             jvRequest[jss::message] = jvParams[1u].asString();
             return jvRequest;
@@ -906,7 +956,7 @@ private:
             Json::Reader    reader;
             if (reader.parse (jvParams[0u].asString (), txJSON))
             {
-                Json::Value jvRequest;
+                Json::Value jvRequest{Json::objectValue};
                 jvRequest[jss::tx_json] = txJSON;
                 return jvRequest;
             }
@@ -915,10 +965,35 @@ private:
         return rpcError (rpcINVALID_PARAMS);
     }
 
+    // transaction_entry <tx_hash> <ledger_hash/ledger_index>
+    Json::Value parseTransactionEntry (Json::Value const& jvParams)
+    {
+        // Parameter count should have already been verified.
+        assert (jvParams.size() == 2);
+
+        std::string const txHash = jvParams[0u].asString();
+        if (txHash.length() != 64)
+            return rpcError (rpcINVALID_PARAMS);
+
+        Json::Value jvRequest{Json::objectValue};
+        jvRequest[jss::tx_hash] = txHash;
+
+        jvParseLedger (jvRequest, jvParams[1u].asString());
+
+        // jvParseLedger inserts a "ledger_index" of 0 if it doesn't
+        // find a match.
+        if (jvRequest.isMember(jss::ledger_index) &&
+            jvRequest[jss::ledger_index] == 0)
+                return rpcError (rpcINVALID_PARAMS);
+
+        return jvRequest;
+    }
+
+
     // tx <transaction_id>
     Json::Value parseTx (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         if (jvParams.size () > 1)
         {
@@ -933,7 +1008,7 @@ private:
     // tx_history <index>
     Json::Value parseTxHistory (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         jvRequest[jss::start]  = jvParams[0u].asUInt ();
 
@@ -946,21 +1021,7 @@ private:
     // shell history file (e.g. .bash_history) and it may be leaked via the process status command (i.e. ps).
     Json::Value parseValidationCreate (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
-
-        if (jvParams.size ())
-            jvRequest[jss::secret]     = jvParams[0u].asString ();
-
-        return jvRequest;
-    }
-
-    // validation_seed [<pass_phrase>|<seed>|<seed_key>]
-    //
-    // NOTE: It is poor security to specify secret information on the command line.  This information might be saved in the command
-    // shell history file (e.g. .bash_history) and it may be leaked via the process status command (i.e. ps).
-    Json::Value parseValidationSeed (Json::Value const& jvParams)
-    {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         if (jvParams.size ())
             jvRequest[jss::secret]     = jvParams[0u].asString ();
@@ -974,7 +1035,7 @@ private:
 
         if (3 == jvParams.size ())
         {
-            Json::Value jvRequest;
+            Json::Value jvRequest{Json::objectValue};
             jvRequest[jss::message] = jvParams[0u].asString ();
             jvRequest[jss::signature] = jvParams[1u].asString ();
             jvRequest[jss::public_key_hex] = jvParams[2u].asString ();
@@ -989,21 +1050,10 @@ private:
     // <passphrase> is only for testing. Master seeds should only be generated randomly.
     Json::Value parseWalletPropose (Json::Value const& jvParams)
     {
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         if (jvParams.size ())
             jvRequest[jss::passphrase]     = jvParams[0u].asString ();
-
-        return jvRequest;
-    }
-
-    // wallet_seed [<seed>|<passphrase>|<passkey>]
-    Json::Value parseWalletSeed (Json::Value const& jvParams)
-    {
-        Json::Value jvRequest;
-
-        if (jvParams.size ())
-            jvRequest[jss::secret]     = jvParams[0u].asString ();
 
         return jvRequest;
     }
@@ -1016,7 +1066,7 @@ private:
         unsigned int index = 0;
         const unsigned int size = jvParams.size ();
 
-        Json::Value jvRequest;
+        Json::Value jvRequest{Json::objectValue};
 
         std::string param = jvParams[index++].asString ();
         if (param.empty ())
@@ -1045,6 +1095,15 @@ private:
                 hotWallets.append (jvParams[index++].asString ());
         }
 
+        return jvRequest;
+    }
+
+    // server_info [counters]
+    Json::Value parseServerInfo (Json::Value const& jvParams)
+    {
+        Json::Value     jvRequest (Json::objectValue);
+        if (jvParams.size() == 1 && jvParams[0u].asString() == "counters")
+            jvRequest[jss::counters] = true;
         return jvRequest;
     }
 
@@ -1098,11 +1157,12 @@ public:
             {   "config_info",          &RPCParser::parseConfigInfo,            0,  1   },
             {   "connect",              &RPCParser::parseConnect,               1,  2   },
             {   "consensus_info",       &RPCParser::parseAsIs,                  0,  0   },
+            {   "deposit_authorized",   &RPCParser::parseDepositAuthorized,     2,  3   },
             {   "decrypt_msg",          &RPCParser::parseDecryptMsg,            2,  2   },
             {   "encrypt_msg",          &RPCParser::parseEncryptMsg,            2,  3   },
             {   "feature",              &RPCParser::parseFeature,               0,  2   },
             {   "fetch_info",           &RPCParser::parseFetchInfo,             0,  1   },
-            {   "gateway_balances",     &RPCParser::parseGatewayBalances  ,     1,  -1  },
+            {   "gateway_balances",     &RPCParser::parseGatewayBalances,       1, -1   },
             {   "get_counts",           &RPCParser::parseGetCounts,             0,  1   },
             {   "json",                 &RPCParser::parseJson,                  2,  2   },
             {   "json2",                &RPCParser::parseJson2,                 1,  1   },
@@ -1127,26 +1187,25 @@ public:
             {   "sign_msg",             &RPCParser::parseSignMsg,               2,  2   },
             {   "submit",               &RPCParser::parseSignSubmit,            1,  3   },
             {   "submit_multisigned",   &RPCParser::parseSubmitMultiSigned,     1,  1   },
-            {   "server_info",          &RPCParser::parseAsIs,                  0,  0   },
-            {   "server_state",         &RPCParser::parseAsIs,                  0,  0   },
+            {   "server_info",          &RPCParser::parseServerInfo,            0,  1   },
+            {   "server_state",         &RPCParser::parseServerInfo,            0,  1   },
+            {   "crawl_shards",         &RPCParser::parseAsIs,                  0,  2   },
             {   "stop",                 &RPCParser::parseAsIs,                  0,  0   },
-    //      {   "transaction_entry",    &RPCParser::parseTransactionEntry,     -1,  -1  },
+            {   "transaction_entry",    &RPCParser::parseTransactionEntry,      2,  2   },
             {   "tx",                   &RPCParser::parseTx,                    1,  2   },
             {   "tx_account",           &RPCParser::parseTxAccount,             1,  7   },
             {   "tx_history",           &RPCParser::parseTxHistory,             1,  1   },
             {   "unl_list",             &RPCParser::parseAsIs,                  0,  0   },
             {   "validation_create",    &RPCParser::parseValidationCreate,      0,  1   },
-            {   "validation_seed",      &RPCParser::parseValidationSeed,        0,  1   },
             {   "verify_msg",           &RPCParser::parseVerifyMsg,             3,  3   },
             {   "version",              &RPCParser::parseAsIs,                  0,  0   },
             {   "wallet_propose",       &RPCParser::parseWalletPropose,         0,  1   },
-            {   "wallet_seed",          &RPCParser::parseWalletSeed,            0,  1   },
-            {   "internal",             &RPCParser::parseInternal,              1,  -1  },
+            {   "internal",             &RPCParser::parseInternal,              1, -1   },
 
             // Evented methods
-            {   "path_find",            &RPCParser::parseEvented,               -1, -1  },
-            {   "subscribe",            &RPCParser::parseEvented,               -1, -1  },
-            {   "unsubscribe",          &RPCParser::parseEvented,               -1, -1  },
+            {   "path_find",            &RPCParser::parseEvented,              -1, -1   },
+            {   "subscribe",            &RPCParser::parseEvented,              -1, -1   },
+            {   "unsubscribe",          &RPCParser::parseEvented,              -1, -1   },
         };
 
         auto const count = jvParams.size ();
@@ -1199,8 +1258,19 @@ std::string JSONRPCRequest (std::string const& strMethod, Json::Value const& par
     return to_string (request) + "\n";
 }
 
+namespace
+{
+    // Special local exception type thrown when request can't be parsed.
+    class RequestNotParseable : public std::runtime_error
+    {
+        using std::runtime_error::runtime_error; // Inherit constructors
+    };
+};
+
 struct RPCCallImp
 {
+    explicit RPCCallImp() = default;
+
     // VFALCO NOTE Is this a to-do comment or a doc comment?
     // Place the async result somewhere useful.
     static void callRPCHandler (Json::Value* jvOutput, Json::Value const& jvInput)
@@ -1230,10 +1300,10 @@ struct RPCCallImp
 
             // Parse reply
             JLOG (j.debug()) << "RPC reply: " << strData << std::endl;
-
+            if (strData.find("Unable to parse request") == 0)
+                Throw<RequestNotParseable> (strData);
             Json::Reader    reader;
             Json::Value     jvReply;
-
             if (!reader.parse (strData, jvReply))
                 Throw<std::runtime_error> ("couldn't parse reply from server");
 
@@ -1290,7 +1360,6 @@ rpcCmdLineToJson (std::vector<std::string> const& args,
     jvRequest   = rpParser.parseCommand (args[0], jvRpcParams, true);
 
     JLOG (j.trace()) << "RPC Request: " << jvRequest << std::endl;
-
     return jvRequest;
 }
 
@@ -1363,9 +1432,10 @@ rpcClient(std::vector<std::string> const& args,
             }
 
             if (config.rpc_ip)
-                setup.client.ip = config.rpc_ip->to_string();
-            if (config.rpc_port)
-                setup.client.port = *config.rpc_port;
+            {
+                setup.client.ip = config.rpc_ip->address().to_string();
+                setup.client.port = config.rpc_ip->port();
+            }
 
             Json::Value jvParams (Json::arrayValue);
 
@@ -1375,14 +1445,14 @@ rpcClient(std::vector<std::string> const& args,
             if (!setup.client.admin_password.empty ())
                 jvRequest["admin_password"] = setup.client.admin_password;
 
-            jvParams.append (jvRequest);
-
-            if (jvRequest.isMember(jss::params))
+            if (jvRequest.isObject())
+                jvParams.append (jvRequest);
+            else if (jvRequest.isArray())
             {
-                auto const& params = jvRequest[jss::params];
-                assert(params.size() == 1);
-                jvParams.append(params[0u]);
+                for (Json::UInt i = 0; i < jvRequest.size(); ++i)
+                    jvParams.append(jvRequest[i]);
             }
+
             {
                 boost::asio::io_service isService;
                 RPCCall::fromNetwork (
@@ -1393,7 +1463,10 @@ rpcClient(std::vector<std::string> const& args,
                     setup.client.password,
                     "",
                     jvRequest.isMember (jss::method)           // Allow parser to rewrite method.
-                        ? jvRequest[jss::method].asString () : args[0],
+                        ? jvRequest[jss::method].asString ()
+                        : jvRequest.isArray()
+                           ? "batch"
+                           : args[0],
                     jvParams,                               // Parsed, execute.
                     setup.client.secure != 0,                // Use SSL
                     config.quiet(),
@@ -1402,7 +1475,6 @@ rpcClient(std::vector<std::string> const& args,
                                std::placeholders::_1));
                 isService.run(); // This blocks until there is no more outstanding async calls.
             }
-
             if (jvOutput.isMember ("result"))
             {
                 // Had a successful JSON-RPC 2.0 call.
@@ -1431,14 +1503,22 @@ rpcClient(std::vector<std::string> const& args,
         if (jvOutput.isMember (jss::error))
         {
             jvOutput[jss::status]  = "error";
-
-            nRet    = jvOutput.isMember (jss::error_code)
-                      ? beast::lexicalCast <int> (jvOutput[jss::error_code].asString ())
-                      : rpcBAD_SYNTAX;
+            if (jvOutput.isMember(jss::error_code))
+                nRet = std::stoi(jvOutput[jss::error_code].asString());
+            else if (jvOutput[jss::error].isMember(jss::error_code))
+                nRet = std::stoi(jvOutput[jss::error][jss::error_code].asString());
+            else
+                nRet = rpcBAD_SYNTAX;
         }
 
         // YYY We could have a command line flag for single line output for scripts.
         // YYY We would intercept output here and simplify it.
+    }
+    catch (RequestNotParseable& e)
+    {
+        jvOutput                = rpcError(rpcINVALID_PARAMS);
+        jvOutput["error_what"]  = e.what();
+        nRet                    = rpcINVALID_PARAMS;
     }
     catch (std::exception& e)
     {
@@ -1446,13 +1526,6 @@ rpcClient(std::vector<std::string> const& args,
         jvOutput["error_what"]  = e.what ();
         nRet                    = rpcINTERNAL;
     }
-
-    if (jvRequest.isMember(jss::jsonrpc))
-        jvOutput[jss::jsonrpc] = jvRequest[jss::jsonrpc];
-    if (jvRequest.isMember(jss::casinocoinrpc))
-        jvOutput[jss::casinocoinrpc] = jvRequest[jss::casinocoinrpc];
-    if (jvRequest.isMember(jss::id))
-        jvOutput[jss::id] = jvRequest[jss::id];
 
     return { nRet, std::move(jvOutput) };
 }
@@ -1495,7 +1568,7 @@ void fromNetwork (
     }
 
     // HTTP basic authentication
-    auto const auth = beast::detail::base64_encode(strUsername + ":" + strPassword);
+    auto const auth = base64_encode(strUsername + ":" + strPassword);
 
     std::map<std::string, std::string> mapRequestHeaders;
 
@@ -1505,7 +1578,7 @@ void fromNetwork (
 
     // Number of bytes to try to receive if no
     // Content-Length header received
-    const int RPC_REPLY_MAX_BYTES (256*1024*1024);
+    constexpr auto RPC_REPLY_MAX_BYTES = megabytes(256);
 
     using namespace std::chrono_literals;
     auto constexpr RPC_NOTIFY = 10min;
@@ -1532,3 +1605,4 @@ void fromNetwork (
 } // RPCCall
 
 } // casinocoin
+

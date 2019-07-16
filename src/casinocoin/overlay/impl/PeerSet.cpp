@@ -23,9 +23,9 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
-#include <casinocoin/app/main/Application.h>
+ 
 #include <casinocoin/overlay/PeerSet.h>
+#include <casinocoin/app/main/Application.h>
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/overlay/Overlay.h>
 
@@ -61,9 +61,7 @@ PeerSet::PeerSet (Application& app, uint256 const& hash,
     assert ((mTimerInterval > 10ms) && (mTimerInterval < 30s));
 }
 
-PeerSet::~PeerSet ()
-{
-}
+PeerSet::~PeerSet () = default;
 
 bool PeerSet::insert (std::shared_ptr<Peer> const& ptr)
 {

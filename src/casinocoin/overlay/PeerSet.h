@@ -27,11 +27,9 @@
 #define CASINOCOIN_APP_PEERS_PEERSET_H_INCLUDED
 
 #include <casinocoin/app/main/Application.h>
-#include <casinocoin/basics/Log.h>
-#include <casinocoin/core/Job.h>
-#include <casinocoin/overlay/Peer.h>
 #include <casinocoin/beast/clock/abstract_clock.h>
 #include <casinocoin/beast/utility/Journal.h>
+#include <casinocoin/overlay/Peer.h>
 #include <boost/asio/basic_waitable_timer.hpp>
 #include <mutex>
 #include <set>

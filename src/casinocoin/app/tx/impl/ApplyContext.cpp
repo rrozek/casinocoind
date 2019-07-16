@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/ApplyContext.h>
 #include <casinocoin/app/tx/impl/InvariantCheck.h>
 #include <casinocoin/app/tx/impl/Transactor.h>
@@ -77,56 +77,84 @@ ApplyContext::visit (std::function <void (
     view_->visit(base_, func);
 }
 
+TER
+ApplyContext::failInvariantCheck (TER const result)
+{
+    // If we already failed invariant checks before and we are now attempting to
+    // only charge a fee, and even that fails the invariant checks something is
+    // very wrong. We switch to tefINVARIANT_FAILED, which does NOT get included
+    // in a ledger.
+
+    return (result == tecINVARIANT_FAILED || result == tefINVARIANT_FAILED)
+        ? TER{tefINVARIANT_FAILED}
+        : TER{tecINVARIANT_FAILED};
+}
+
 template<std::size_t... Is>
 TER
-ApplyContext::checkInvariantsHelper(TER terResult, std::index_sequence<Is...>)
+ApplyContext::checkInvariantsHelper(
+    TER const result,
+    CSCAmount const fee,
+    std::index_sequence<Is...>)
 {
     if (view_->rules().enabled(featureEnforceInvariants))
     {
         auto checkers = getInvariantChecks();
-
-        // call each check's per-entry method
-        visit (
-            [&checkers](
-                uint256 const& index,
-                bool isDelete,
-                std::shared_ptr <SLE const> const& before,
-                std::shared_ptr <SLE const> const& after)
-            {
-                // Sean Parent for_each_argument trick
-                (void)std::array<int, sizeof...(Is)>{
-                    {((std::get<Is>(checkers).
-                            visitEntry(index, isDelete, before, after)), 0)...}
-                };
-            });
-
-        // Sean Parent for_each_argument trick
-        // (a fold expression with `&&` would be really nice here when we move
-        // to C++-17)
-        std::array<bool, sizeof...(Is)> finalizers {{
-            std::get<Is>(checkers).finalize(tx, terResult, journal)...}};
-
-        // call each check's finalizer to see that it passes
-        if (! std::all_of( finalizers.cbegin(), finalizers.cend(),
-                [](auto const& b) { return b; }))
+        try
         {
-            terResult = (terResult == tecINVARIANT_FAILED) ?
-                tefINVARIANT_FAILED :
-                tecINVARIANT_FAILED ;
-            JLOG(journal.error()) <<
-                "Transaction has failed one or more invariants: " <<
-                to_string(tx.getJson (0));
+            // call each check's per-entry method
+            visit (
+                [&checkers](
+                    uint256 const& index,
+                    bool isDelete,
+                    std::shared_ptr <SLE const> const& before,
+                    std::shared_ptr <SLE const> const& after)
+                {
+                    // Sean Parent for_each_argument trick
+                    (void)std::array<int, sizeof...(Is)>{
+                        {((std::get<Is>(checkers).
+                            visitEntry(index, isDelete, before, after)), 0)...}
+                    };
+                });
+
+            // Sean Parent for_each_argument trick (a fold expression with `&&`
+            // would be really nice here when we move to C++-17)
+            std::array<bool, sizeof...(Is)> finalizers {{
+                std::get<Is>(checkers).finalize(tx, result, fee, journal)...}};
+
+            // call each check's finalizer to see that it passes
+            if (! std::all_of( finalizers.cbegin(), finalizers.cend(),
+                    [](auto const& b) { return b; }))
+            {
+                JLOG(journal.fatal()) <<
+                    "Transaction has failed one or more invariants: " <<
+                    to_string(tx.getJson (0));
+
+                return failInvariantCheck (result);
+            }
+        }
+        catch(std::exception const& ex)
+        {
+            JLOG(journal.fatal()) <<
+                "Transaction caused an exception in an invariant" <<
+                ", ex: " << ex.what() <<
+                ", tx: " << to_string(tx.getJson (0));
+
+            return failInvariantCheck (result);
         }
     }
 
-    return terResult;
+    return result;
 }
 
 TER
-ApplyContext::checkInvariants(TER terResult)
+ApplyContext::checkInvariants(TER const result, CSCAmount const fee)
 {
-    return checkInvariantsHelper(
-        terResult, std::make_index_sequence<std::tuple_size<InvariantChecks>::value>{});
+    assert (isTesSuccess(result) || isTecClaim(result));
+
+    return checkInvariantsHelper(result, fee,
+        std::make_index_sequence<std::tuple_size<InvariantChecks>::value>{});
 }
 
 } // casinocoin
+

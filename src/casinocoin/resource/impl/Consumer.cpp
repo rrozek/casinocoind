@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/resource/Consumer.h>
 #include <casinocoin/resource/impl/Entry.h>
 #include <casinocoin/resource/impl/Logic.h>

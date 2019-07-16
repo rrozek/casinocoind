@@ -23,8 +23,9 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
+#include <casinocoin/app/ledger/OpenLedger.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/Transaction.h>
 #include <casinocoin/ledger/View.h>
@@ -34,6 +35,7 @@
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/rpc/Context.h>
+#include <casinocoin/rpc/DeliveredAmount.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <casinocoin/crypto/ECIES.h>
@@ -48,7 +50,7 @@ accountFromStringStrict(std::string const& account)
     boost::optional <AccountID> result;
 
     auto const publicKey = parseBase58<PublicKey> (
-        TokenType::TOKEN_ACCOUNT_PUBLIC,
+        TokenType::AccountPublic,
         account);
 
     if (publicKey)
@@ -109,7 +111,7 @@ getAccountObjects(ReadView const& ledger, AccountID const& account,
         return false;
 
     std::uint32_t i = 0;
-    auto& jvObjects = jvResult[jss::account_objects];
+    auto& jvObjects = (jvResult[jss::account_objects] = Json::arrayValue);
     for (;;)
     {
         auto const& entries = dir->getFieldV256 (sfIndexes);
@@ -476,41 +478,6 @@ isWLT(Json::Value const& jvRequest,
 }
 
 void
-addPaymentDeliveredAmount(Json::Value& meta, RPC::Context& context,
-    std::shared_ptr<Transaction> transaction, TxMeta::pointer transactionMeta)
-{
-    // We only want to add a "delivered_amount" field if the transaction
-    // succeeded - otherwise nothing could have been delivered.
-    if (! transaction)
-        return;
-
-    auto serializedTx = transaction->getSTransaction ();
-    if (! serializedTx || serializedTx->getTxnType () != ttPAYMENT)
-        return;
-
-    if (transactionMeta)
-    {
-        if (transactionMeta->getResultTER() != tesSUCCESS)
-            return;
-
-        // If the transaction explicitly specifies a DeliveredAmount in the
-        // metadata then we use it.
-        if (transactionMeta->hasDeliveredAmount ())
-        {
-            meta[jss::delivered_amount] =
-                transactionMeta->getDeliveredAmount ().getJson (1);
-            return;
-        }
-    }
-    else if (transaction->getResult() != tesSUCCESS)
-    {
-        return;
-    }
-
-    meta[jss::delivered_amount] = serializedTx->getFieldAmount (sfAmount).getJson (1);
-}
-
-void
 injectSLE(Json::Value& jv, SLE const& sle)
 {
     jv = sle.getJson(0);
@@ -666,6 +633,25 @@ readLimitField(unsigned int& limit, Tuning::LimitRange const& range,
 }
 
 boost::optional<Seed>
+parseCasinocoinLibSeed(Json::Value const& value)
+{
+    // ripple-lib encodes seed used to generate an Ed25519 wallet in a
+    // non-standard way. While rippled never encode seeds that way, we
+    // try to detect such keys to avoid user confusion.
+    if (!value.isString())
+        return boost::none;
+
+    auto const result = decodeBase58Token(value.asString(), TokenType::None);
+
+    if (result.size() == 18 &&
+            static_cast<std::uint8_t>(result[0]) == std::uint8_t(0xE1) &&
+            static_cast<std::uint8_t>(result[1]) == std::uint8_t(0x4B))
+        return Seed(makeSlice(result.substr(2)));
+
+    return boost::none;
+}
+
+boost::optional<Seed>
 getSeedFromRPC(Json::Value const& params, Json::Value& error)
 {
     // The array should be constexpr, but that makes Visual Studio unhappy.
@@ -772,7 +758,7 @@ keypairForSignature(Json::Value const& params, Json::Value& error)
         return { };
     }
 
-    KeyType keyType = KeyType::secp256k1;
+    boost::optional<KeyType> keyType;
     boost::optional<Seed> seed;
 
     if (has_key_type)
@@ -784,10 +770,9 @@ keypairForSignature(Json::Value const& params, Json::Value& error)
             return { };
         }
 
-        keyType = keyTypeFromString (
-            params[jss::key_type].asString());
+        keyType = keyTypeFromString(params[jss::key_type].asString());
 
-        if (keyType == KeyType::invalid)
+        if (!keyType)
         {
             error = RPC::invalid_field_error(jss::key_type);
             return { };
@@ -800,20 +785,47 @@ keypairForSignature(Json::Value const& params, Json::Value& error)
                 std::string(jss::key_type) + " is used.");
             return { };
         }
-
-        seed = getSeedFromRPC (params, error);
     }
-    else
-    {
-        if (! params[jss::secret].isString())
-        {
-            error = RPC::expected_field_error (
-                jss::secret, "string");
-            return { };
-        }
 
-        seed = parseGenericSeed (
-            params[jss::secret].asString ());
+    // ripple-lib encodes seed used to generate an Ed25519 wallet in a
+    // non-standard way. While we never encode seeds that way, we try
+    // to detect such keys to avoid user confusion.
+    if (secretType != jss::seed_hex.c_str())
+    {
+        seed = RPC::parseCasinocoinLibSeed(params[secretType]);
+
+        if (seed)
+        {
+            // If the user passed in an Ed25519 seed but *explicitly*
+            // requested another key type, return an error.
+            if (keyType.value_or(KeyType::ed25519) != KeyType::ed25519)
+            {
+                error = RPC::make_error (rpcBAD_SEED,
+                    "Specified seed is for an Ed25519 wallet.");
+                return { };
+            }
+
+            keyType = KeyType::ed25519;
+        }
+    }
+
+    if (!keyType)
+        keyType = KeyType::secp256k1;
+
+    if (!seed)
+    {
+        if (has_key_type)
+            seed = getSeedFromRPC(params, error);
+        else
+        {
+            if (!params[jss::secret].isString())
+            {
+                error = RPC::expected_field_error(jss::secret, "string");
+                return {};
+            }
+
+            seed = parseGenericSeed(params[jss::secret].asString());
+        }
     }
 
     if (!seed)
@@ -821,7 +833,7 @@ keypairForSignature(Json::Value const& params, Json::Value& error)
         if (!contains_error (error))
         {
             error = RPC::make_error (rpcBAD_SEED,
-            RPC::invalid_field_message (secretType));
+                RPC::invalid_field_message (secretType));
         }
 
         return { };
@@ -830,7 +842,7 @@ keypairForSignature(Json::Value const& params, Json::Value& error)
     if (keyType != KeyType::secp256k1 && keyType != KeyType::ed25519)
         LogicError ("keypairForSignature: invalid key type");
 
-    return generateKeyPair (keyType, *seed);
+    return generateKeyPair (*keyType, *seed);
 }
 
 std::pair<RPC::Status, LedgerEntryType>
@@ -840,19 +852,21 @@ chooseLedgerEntryType(Json::Value const& params)
     if (params.isMember(jss::type))
     {
         static
-            std::array<std::pair<char const *, LedgerEntryType>, 11> const types
+            std::array<std::pair<char const *, LedgerEntryType>, 13> const types
         { {
             { jss::account,         ltACCOUNT_ROOT },
             { jss::amendments,      ltAMENDMENTS },
+            { jss::check,           ltCHECK },
+            { jss::deposit_preauth, ltDEPOSIT_PREAUTH },
             { jss::directory,       ltDIR_NODE },
+            { jss::escrow,          ltESCROW },
             { jss::fee,             ltFEE_SETTINGS },
             { jss::hashes,          ltLEDGER_HASHES },
             { jss::offer,           ltOFFER },
+            { jss::payment_channel, ltPAYCHAN },
             { jss::signer_list,     ltSIGNER_LIST },
             { jss::state,           ltCASINOCOIN_STATE },
-            { jss::ticket,          ltTICKET },
-            { jss::escrow,          ltESCROW },
-            { jss::payment_channel, ltPAYCHAN }
+            { jss::ticket,          ltTICKET }
             } };
 
         auto const& p = params[jss::type];
@@ -888,3 +902,4 @@ beast::SemanticVersion const lastVersion("1.0.0");
 
 } // RPC
 } // casinocoin
+

@@ -108,7 +108,7 @@ public:
         {
             BEAST_EXPECT(jro[0u][jss::quality]                   == "10000000000");
             BEAST_EXPECT(jro[0u][jss::taker_gets][jss::currency] == "USD");
-            BEAST_EXPECT(jro[0u][jss::taker_gets][jss::issuer]   == bob.human());
+            BEAST_EXPECT(jro[0u][jss::taker_gets][jss::issuer]   == gw.human());
             BEAST_EXPECT(jro[0u][jss::taker_gets][jss::value]    == "1");
             BEAST_EXPECT(jro[0u][jss::taker_pays]                == "10000000000");
 
@@ -197,10 +197,10 @@ public:
 
         {
             // no account field
-            auto const jrr = env.rpc ("account_offers")[jss::result];
-            BEAST_EXPECT(jrr[jss::error]         == "invalidParams");
+            auto const jrr = env.rpc ("account_offers");
+            BEAST_EXPECT(jrr[jss::error]         == "badSyntax");
             BEAST_EXPECT(jrr[jss::status]        == "error");
-            BEAST_EXPECT(jrr[jss::error_message] == "Missing field 'account'.");
+            BEAST_EXPECT(jrr[jss::error_message] == "Syntax error.");
         }
 
         {
@@ -267,7 +267,7 @@ public:
 
     }
 
-    void run()
+    void run() override
     {
         testSequential(true);
         testSequential(false);

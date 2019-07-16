@@ -41,7 +41,11 @@ namespace casinocoin {
 
 namespace detail {
 
-class AccountIDTag { };
+class AccountIDTag
+{
+public:
+    explicit AccountIDTag() = default;
+};
 
 } // detail
 
@@ -122,7 +126,7 @@ inline
 bool
 isCSC(AccountID const& c)
 {
-    return c == zero;
+    return c == beast::zero;
 }
 
 // DEPRECATED
@@ -189,8 +193,10 @@ namespace std {
 template <>
 struct hash <casinocoin::AccountID> : casinocoin::AccountID::hasher
 {
+    explicit hash() = default;
 };
 
 } // std
 
 #endif
+

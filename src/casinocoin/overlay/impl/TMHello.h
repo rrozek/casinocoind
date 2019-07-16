@@ -25,18 +25,16 @@
 
 #ifndef CASINOCOIN_OVERLAY_TMHELLO_H_INCLUDED
 #define CASINOCOIN_OVERLAY_TMHELLO_H_INCLUDED
-
+#include <casinocoin/protocol/messages.h>
 #include <casinocoin/app/main/Application.h>
-#include <casinocoin/protocol/BuildInfo.h>
-#include <casinocoin/protocol/PublicKey.h>
-#include <casinocoin/protocol/UintTypes.h>
-#include <beast/http/message.hpp>
 #include <casinocoin/beast/utility/Journal.h>
-#include <utility>
+#include <casinocoin/protocol/BuildInfo.h>
+
+#include <beast/http/message.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/optional.hpp>
-#include <boost/utility/string_ref.hpp>
-#include "casinocoin.pb.h"
+#include <utility>
+
 
 namespace casinocoin {
 

@@ -44,6 +44,8 @@ private:
     std::uint8_t buf_[32];
 
 public:
+    using const_iterator = std::uint8_t const*;
+
     SecretKey() = default;
     SecretKey (SecretKey const&) = default;
     SecretKey& operator= (SecretKey const&) = default;
@@ -72,6 +74,30 @@ public:
     */
     std::string
     to_string() const;
+
+    const_iterator
+    begin() const noexcept
+    {
+        return buf_;
+    }
+
+    const_iterator
+    cbegin() const noexcept
+    {
+        return buf_;
+    }
+
+    const_iterator
+    end() const noexcept
+    {
+        return buf_ + sizeof(buf_);
+    }
+
+    const_iterator
+    cend() const noexcept
+    {
+        return buf_ + sizeof(buf_);
+    }
 };
 
 inline
@@ -91,30 +117,6 @@ operator!= (SecretKey const& lhs,
 {
     return ! (lhs == rhs);
 }
-
-//------------------------------------------------------------------------------
-
-/** Produces a sequence of secp256k1 key pairs. */
-class Generator
-{
-private:
-    Blob gen_; // VFALCO compile time size?
-
-public:
-    explicit
-    Generator (Seed const& seed);
-
-    /** Generate the nth key pair.
-
-        The seed is required to produce the private key.
-    */
-    std::pair<PublicKey, SecretKey>
-    operator()(Seed const& seed, std::size_t ordinal) const;
-
-    /** Generate the nth public key. */
-    PublicKey
-    operator()(std::size_t ordinal) const;
-};
 
 //------------------------------------------------------------------------------
 
@@ -198,3 +200,4 @@ sign (KeyType type, SecretKey const& sk,
 } // casinocoin
 
 #endif
+

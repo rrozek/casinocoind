@@ -30,7 +30,7 @@ public:
     void testMonitorRoot()
     {
         using namespace test::jtx;
-        Env env {*this};
+        Env env {*this, FeatureBitset{}};
         Account const alice {"alice"};
         env.fund(CSC(10000), alice);
 
@@ -52,7 +52,7 @@ public:
         BEAST_EXPECT(lc_result[jss::ledger_index] == 3);
     }
 
-    void run()
+    void run() override
     {
         testMonitorRoot();
     }

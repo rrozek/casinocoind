@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/ledger/OrderBookDB.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/main/Application.h>
@@ -107,6 +107,15 @@ void OrderBookDB::update(
     {
         for(auto& sle : ledger->sles)
         {
+            if (isStopping())
+            {
+                JLOG (j_.info())
+                    << "OrderBookDB::update exiting due to isStopping";
+                std::lock_guard <std::recursive_mutex> sl (mLock);
+                mSeq = 0;
+                return;
+            }
+
             if (sle->getType () == ltDIR_NODE &&
                 sle->isFieldPresent (sfExchangeRate) &&
                 sle->getFieldH256 (sfRootIndex) == sle->key())

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/json/Output.h>
 #include <casinocoin/json/Writer.h>
 

@@ -46,7 +46,7 @@ public:
 
 public:
     TransactionAcquire (Application& app, uint256 const& hash, clock_type& clock);
-    ~TransactionAcquire ();
+    ~TransactionAcquire () = default;
 
     std::shared_ptr<SHAMap> const& getMap ()
     {

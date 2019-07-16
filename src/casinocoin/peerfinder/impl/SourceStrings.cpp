@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/peerfinder/impl/SourceStrings.h>
 
 namespace casinocoin {
@@ -38,16 +38,14 @@ public:
     {
     }
 
-    ~SourceStringsImp ()
-    {
-    }
+    ~SourceStringsImp () = default;
 
-    std::string const& name ()
+    std::string const& name () override
     {
         return m_name;
     }
 
-    void fetch (Results& results, beast::Journal journal)
+    void fetch (Results& results, beast::Journal journal) override
     {
         results.addresses.resize (0);
         results.addresses.reserve (m_strings.size());
@@ -55,7 +53,7 @@ public:
         {
             beast::IP::Endpoint ep (beast::IP::Endpoint::from_string (m_strings [i]));
             if (is_unspecified (ep))
-                ep = beast::IP::Endpoint::from_string_altform (m_strings [i]);
+                ep = beast::IP::Endpoint::from_string (m_strings [i]);
             if (! is_unspecified (ep))
                 results.addresses.push_back (ep);
         }
@@ -68,11 +66,12 @@ private:
 
 //------------------------------------------------------------------------------
 
-beast::SharedPtr <Source>
+std::shared_ptr<Source>
 SourceStrings::New (std::string const& name, Strings const& strings)
 {
-    return new SourceStringsImp (name, strings);
+    return std::make_shared<SourceStringsImp> (name, strings);
 }
 
 }
 }
+

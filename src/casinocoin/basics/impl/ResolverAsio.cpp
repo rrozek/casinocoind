@@ -23,17 +23,19 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/ResolverAsio.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/beast/net/IPAddressConversion.h>
-#include <casinocoin/beast/core/WaitableEvent.h>
+#include <casinocoin/beast/net/IPEndpoint.h>
 #include <boost/asio.hpp>
 #include <atomic>
 #include <cassert>
+#include <condition_variable>
 #include <deque>
 #include <locale>
 #include <memory>
+#include <mutex>
 
 namespace casinocoin {
 
@@ -116,7 +118,10 @@ public:
     boost::asio::io_service::strand m_strand;
     boost::asio::ip::tcp::resolver m_resolver;
 
-    beast::WaitableEvent m_stop_complete;
+    std::condition_variable m_cv;
+    std::mutex              m_mut;
+    bool m_asyncHandlersCompleted;
+
     std::atomic <bool> m_stop_called;
     std::atomic <bool> m_stopped;
 
@@ -145,14 +150,14 @@ public:
             , m_io_service (io_service)
             , m_strand (io_service)
             , m_resolver (io_service)
-            , m_stop_complete (true, true)
+            , m_asyncHandlersCompleted (true)
             , m_stop_called (false)
             , m_stopped (true)
     {
 
     }
 
-    ~ResolverAsioImpl ()
+    ~ResolverAsioImpl () override
     {
         assert (m_work.empty ());
         assert (m_stopped);
@@ -162,7 +167,9 @@ public:
     // AsyncObject
     void asyncHandlersComplete()
     {
-        m_stop_complete.signal ();
+        std::unique_lock<std::mutex> lk{m_mut};
+        m_asyncHandlersCompleted = true;
+        m_cv.notify_all();
     }
 
     //--------------------------------------------------------------------------
@@ -171,19 +178,22 @@ public:
     //
     //--------------------------------------------------------------------------
 
-    void start ()
+    void start () override
     {
         assert (m_stopped == true);
         assert (m_stop_called == false);
 
         if (m_stopped.exchange (false) == true)
         {
-            m_stop_complete.reset ();
+            {
+                std::lock_guard<std::mutex> lk{m_mut};
+                m_asyncHandlersCompleted = false;
+            }
             addReference ();
         }
     }
 
-    void stop_async ()
+    void stop_async () override
     {
         if (m_stop_called.exchange (true) == false)
         {
@@ -195,18 +205,20 @@ public:
         }
     }
 
-    void stop ()
+    void stop () override
     {
         stop_async ();
 
         JLOG(m_journal.debug()) << "Waiting to stop";
-        m_stop_complete.wait();
+        std::unique_lock<std::mutex> lk{m_mut};
+        m_cv.wait(lk, [this]{return m_asyncHandlersCompleted;});
+        lk.unlock();
         JLOG(m_journal.debug()) << "Stopped";
     }
 
     void resolve (
         std::vector <std::string> const& names,
-        HandlerType const& handler)
+        HandlerType const& handler) override
     {
         assert (m_stop_called == false);
         assert (m_stopped == true);
@@ -248,7 +260,7 @@ public:
 
         // If we get an error message back, we don't return any
         // results that we may have gotten.
-        if (ec == 0)
+        if (!ec)
         {
             while (iter != boost::asio::ip::tcp::resolver::iterator())
             {
@@ -266,6 +278,21 @@ public:
 
     HostAndPort parseName(std::string const& str)
     {
+        // first attempt to parse as an endpoint (IP addr + port).
+        // If that doesn't succeed, fall back to generic name + port parsing
+
+        auto result {beast::IP::Endpoint::from_string_checked (str)};
+        if (result.second)
+        {
+            return make_pair (
+                result.first.address().to_string(),
+                std::to_string(result.first.port()));
+        }
+
+        // generic name/port parsing, which doesn't work for
+        // IPv6 addresses in particular because it considers a colon
+        // a port separator
+
         // Attempt to find the first and last non-whitespace
         auto const find_whitespace = std::bind (
             &std::isspace <std::string::value_type>,
@@ -285,7 +312,7 @@ public:
         // Attempt to find the first and last valid port separators
         auto const find_port_separator = [](char const c) -> bool
         {
-            if (std::isspace (c))
+            if (std::isspace (static_cast<unsigned char>(c)))
                 return true;
 
             if (c == ':')
@@ -379,8 +406,7 @@ std::unique_ptr<ResolverAsio> ResolverAsio::New (
 }
 
 //-----------------------------------------------------------------------------
-Resolver::~Resolver ()
-{
-}
+Resolver::~Resolver () = default;
 
 }
+

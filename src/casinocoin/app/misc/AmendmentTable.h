@@ -53,6 +53,14 @@ public:
     virtual bool isEnabled (uint256 const& amendment) = 0;
     virtual bool isSupported (uint256 const& amendment) = 0;
 
+    /**
+     * @brief returns true if one or more amendments on the network
+     * have been enabled that this server does not support
+     *
+     * @return true if an unsupported feature is enabled on the network
+     */
+    virtual bool hasUnsupportedEnabled () = 0;
+
     virtual Json::Value getJson (int) = 0;
 
     /** Returns a Json::objectValue. */
@@ -98,22 +106,11 @@ public:
     virtual std::vector <uint256>
     getDesired () = 0;
 
-    // The two function below adapt the API callers expect to the
+    // The function below adapts the API callers expect to the
     // internal amendment table API. This allows the amendment
     // table implementation to be independent of the ledger
     // implementation. These APIs will merge when the view code
     // supports a full ledger API
-
-    void
-    doValidation (std::shared_ptr <ReadView const> const& lastClosedLedger,
-        STObject& baseValidation)
-    {
-        auto ourAmendments =
-            doValidation (getEnabledAmendments(*lastClosedLedger));
-        if (! ourAmendments.empty())
-            baseValidation.setFieldV256 (sfAmendments,
-               STVector256 (sfAmendments, ourAmendments));
-    }
 
     void
     doVoting (
@@ -167,3 +164,4 @@ std::unique_ptr<AmendmentTable> make_AmendmentTable (
 }  // casinocoin
 
 #endif
+

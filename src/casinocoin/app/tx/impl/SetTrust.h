@@ -38,13 +38,13 @@ class SetTrust
     : public Transactor
 {
 public:
-    SetTrust (ApplyContext& ctx)
+    explicit SetTrust (ApplyContext& ctx)
         : Transactor(ctx)
     {
     }
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     static

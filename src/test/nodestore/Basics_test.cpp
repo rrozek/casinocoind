@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/nodestore/TestBase.h>
 #include <casinocoin/nodestore/DummyScheduler.h>
 #include <casinocoin/nodestore/Manager.h>
@@ -77,7 +77,7 @@ public:
         }
     }
 
-    void run ()
+    void run () override
     {
         std::uint64_t const seedValue = 50;
 

@@ -17,11 +17,13 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/basics/hardened_hash.h>
 #include <casinocoin/beast/unit_test.h>
 #include <boost/algorithm/string.hpp>
+
+#include <type_traits>
 
 namespace casinocoin {
 namespace test {
@@ -51,8 +53,10 @@ struct nonhash
 struct base_uint_test : beast::unit_test::suite
 {
     using test96 = base_uint<96>;
+    static_assert(std::is_copy_constructible<test96>::value, "");
+    static_assert(std::is_copy_assignable<test96>::value, "");
 
-    void run()
+    void run() override
     {
         // used to verify set insertion (hashing required)
         std::unordered_set<test96, hardened_hash<>> uset;
@@ -199,3 +203,4 @@ BEAST_DEFINE_TESTSUITE(base_uint, casinocoin_basics, casinocoin);
 
 }  // namespace test
 }  // namespace casinocoin
+

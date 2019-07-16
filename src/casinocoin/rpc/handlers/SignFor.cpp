@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/Feature.h>
@@ -40,6 +40,12 @@ namespace casinocoin {
 // }
 Json::Value doSignFor (RPC::Context& context)
 {
+    if (context.role != Role::ADMIN && !context.app.config().canSign())
+    {
+        return RPC::make_error (rpcNOT_SUPPORTED,
+            "Signing is not supported by this server.");
+    }
+
     // Bail if multisign is not enabled.
     if (! context.app.getLedgerMaster().getValidatedRules().
         enabled (featureMultiSign))
@@ -51,12 +57,15 @@ Json::Value doSignFor (RPC::Context& context)
     auto const failHard = context.params[jss::fail_hard].asBool();
     auto const failType = NetworkOPs::doFailHard (failHard);
 
-    return RPC::transactionSignFor (
-        context.params,
-        failType,
-        context.role,
-        context.ledgerMaster.getValidatedLedgerAge(),
-        context.app);
+    auto ret = RPC::transactionSignFor (
+        context.params, failType, context.role,
+        context.ledgerMaster.getValidatedLedgerAge(), context.app);
+
+    ret[jss::deprecated] = "This command has been deprecated and will be "
+                           "removed in a future version of the server. Please "
+                           "migrate to a standalone signing tool.";
+    return ret;
 }
 
 } // casinocoin
+

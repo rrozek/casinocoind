@@ -23,6 +23,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
-#include <casinocoin/consensus/LedgerTiming.cpp>
+#include <casinocoin/consensus/Consensus.cpp>

@@ -1,345 +1,169 @@
 
-cmake_minimum_required (VERSION 3.9.0)
-set (CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Builds/CMake ${CMAKE_MODULE_PATH})
-include (CheckCXXCompilerFlag)
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.11)
-  include (FetchContent)
-endif ()
-include (ExternalProject)
-include (CMakeFuncs) # must come *after* ExternalProject b/c it overrides one function in EP
-include (ProcessorCount)
-if (target)
-  message (WARNING
-    "The target option is deprecated and will be removed in a future release")
-  parse_target()
-endif ()
-project (casinocoind)
+# !!! The official build system is SConstruct !!!
+# This is an experimental cmake build file for rippled
+#
+# cmake support in rippled. Currently supports:
+#
+#  * unity/nounity debug/release
+#  * running protobuf
+#  * sanitizer builds
+#  * optional release build with assert turned on
+#  * `target` variable to easily set compiler/debug/unity
+#     (i.e. -Dtarget=gcc.debug.nounity)
+#  * gcc/clang/visual studio/xcode
+#  * linux/mac/win
+#  * gcc 4 ABI, when needed
+#  * ninja builds
+#  * check openssl version on linux
+#  * static builds (swd TBD: needs to be tested by building & deploying on different systems)
+#  * jemalloc enabled builds (linux and macos only)
+#  * perf builds (linux only) - which just sets recommended compiler flags
+#          for running perf on the executable
+#
+# Notes:
+#  * Use the -G"Visual Studio 14 2015 Win64" generator, or the "VS2015 x86 x64
+#    Cross Tools" Command Prompt on Windows. Without this a 32-bit project will be
+#    created. There is no way to set the generator or force a 64-bit build in
+#    CMakeLists.txt (setting CMAKE_GENERATOR_PLATFORM won't work). The best solution
+#    may be to wrap cmake with a script.
+#
+#  * Ninja command line builds seem to work under Windows, but only from within
+#    the "VS2015 x86 x64 Cross Tools" Command Prompt.
+#
+#  * It is not possible to generate a visual studio project on linux or
+#    mac. The visual studio generator is only available on windows.
+#
+#  * The Visual Studio solution will be generated with two projects, one
+#    unity, one non-unity. Which is default depends on the nounity flag in
+#    -Dtarget. Unity targets will create `rippled` and `rippled_classic`.
+#    Non-unity targets will create `rippled` and `rippled_unity`. In either
+#    case, only the `rippled` build will be enabled by default. It does
+#    not appear possible to include both unity and non-unity configs in one
+#    project and disable compilation based on configuration.
+#
+#  * Language is _much_ worse than python, poor documentation and "quirky"
+#    language support (for example, generator expressions can only be used
+#    in limited contexts and seem to work differently based on
+#    context (set_property can set multiple values, add_compile_options
+#    can not/or is buggy)
+#
+#  * Could not call out to `sed` because cmake messed with the regular
+#    expression before calling the external command. I did not see a way
+#    around this.
+#
+#  * Makefile generators want to be single target. It wants a separate
+#    directory for each target type. I saw some mentions on the web for
+#    ways around this bug haven't look into it. The visual studio project
+#    does support debug/release configurations in the same project (but
+#    not unity/non-unity).
 
-#[===================================================================[
-   convenience variables and sanity checks
-#]===================================================================]
+############################################################
 
-ProcessorCount(num_procs)
-get_property (is_multiconfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-if (is_multiconfig STREQUAL "NOTFOUND")
-  if (${CMAKE_GENERATOR} STREQUAL "Xcode" OR ${CMAKE_GENERATOR} MATCHES "^Visual Studio")
-    set (is_multiconfig TRUE)
-  endif ()
-endif ()
+#########################################################
+# CMAKE_C_COMPILER and CMAKE_CXX_COMPILER must be defined
+# before the project statement; However, the project
+# statement will clear CMAKE_BUILD_TYPE. CACHE variables,
+# along with the order of this code, are used to work
+# around these constraints.
+#
+# Don't put any code above or in this block, unless it
+# has similar constraints.
+cmake_minimum_required(VERSION 3.1.0)
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Builds/CMake")
+include(CMakeFuncs)
+set(openssl_min 1.0.2)
+parse_target()
+project(rippled)
+#########################################################
 
-set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
-if (NOT is_multiconfig)
-  if (NOT CMAKE_BUILD_TYPE)
-    message (STATUS "Build type not specified - defaulting to Release")
-    set (CMAKE_BUILD_TYPE Release CACHE STRING "build type" FORCE)
-  elseif (NOT (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL Release))
-    # for simplicity, these are the only two config types we care about. Limiting
-    # the build types simplifies dealing with external project builds especially
-    message (FATAL_ERROR " *** Only Debug or Release build types are currently supported ***")
-  endif ()
-endif ()
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+  set(dir "build")
+  set(cmd "cmake")
+  if (target)
+    set(dir "${dir}/${target}")
+    set(cmd "${cmd} -Dtarget=${target}")
+  elseif(CMAKE_BUILD_TYPE)
+    set(dir "${dir}/${CMAKE_BUILD_TYPE}")
+    set(cmd "${cmd} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+  else()
+    set(dir "${dir}/default")
+  endif()
+  set(cmd "${cmd} ${CMAKE_SOURCE_DIR}")
 
-if (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
-  set (is_root_project ON)
-else ()
-  set (is_root_project OFF)
-endif ()
-
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES ".*Clang") # both Clang and AppleClang
-  set (is_clang TRUE)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  set (is_gcc TRUE)
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.1)
-    message (FATAL_ERROR "This project requires GCC 5.1 or later")
-  endif ()
-endif ()
-if (CMAKE_GENERATOR STREQUAL "Xcode")
-  set (is_xcode TRUE)
-endif ()
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set (is_linux TRUE)
-else ()
-  set (is_linux FALSE)
-endif ()
-
-# check for in-source build and fail
-if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
-  message (FATAL_ERROR "Builds (in-source) are not allowed in "
-    "${CMAKE_CURRENT_SOURCE_DIR}. Please remove CMakeCache.txt and the CMakeFiles "
-    "directory from ${CMAKE_CURRENT_SOURCE_DIR} and try building in a separate directory.")
-endif ()
-
-if ("${CMAKE_GENERATOR}" MATCHES "Visual Studio" AND
+  message(FATAL_ERROR "Builds are not allowed in ${CMAKE_SOURCE_DIR}.\n"
+    "Instead:\n"
+    "1) Remove the CMakeCache.txt file and CMakeFiles directory "
+   "from ${CMAKE_SOURCE_DIR}.\n"
+    "2) Create a directory to hold your build files, for example: ${dir}.\n"
+    "3) Change to that directory.\n"
+    "4) Run cmake targetting ${CMAKE_SOURCE_DIR}, for example: ${cmd}")
+endif()
+if("${CMAKE_GENERATOR}" MATCHES "Visual Studio" AND
     NOT ("${CMAKE_GENERATOR}" MATCHES .*Win64.*))
-  message (FATAL_ERROR
-    "Visual Studio 32-bit build is not supported. Use -G\"${CMAKE_GENERATOR} Win64\"")
-endif ()
+  message(FATAL_ERROR "Visual Studio 32-bit build is unsupported. Use
+    -G\"${CMAKE_GENERATOR} Win64\"")
+endif()
 
-if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-  message (FATAL_ERROR "casinocoind requires a 64 bit target architecture.\n"
-    "The most likely cause of this warning is trying to build casinocoind with a 32-bit OS.")
-endif ()
+setup_build_cache()
 
-if (APPLE AND NOT HOMEBREW)
-  find_program (HOMEBREW brew)
-endif ()
+if(nonunity)
+    get_cmake_property(allvars VARIABLES)
+    string(REGEX MATCHALL "[^;]*(DEBUG|RELEASE)[^;]*" matchvars "${allvars}")
+    foreach(var IN LISTS matchvars)
+        string(REGEX REPLACE "(DEBUG|RELEASE)" "\\1CLASSIC" newvar ${var})
+        set(${newvar} ${${var}})
+    endforeach()
 
-#[===================================================================[
-   read version from source
-#]===================================================================]
+    get_cmake_property(allvars CACHE_VARIABLES)
+    string(REGEX MATCHALL "[^;]*(DEBUG|RELEASE)[^;]*" matchvars "${allvars}")
+    foreach(var IN LISTS matchvars)
+        string(REGEX REPLACE "(DEBUG|RELEASE)" "\\1CLASSIC" newvar ${var})
+        set(${newvar} ${${var}} CACHE STRING "Copied from ${var}")
+    endforeach()
+endif()
 
-file (STRINGS src/casinocoin/protocol/impl/BuildInfo.cpp BUILD_INFO)
-foreach (line_ ${BUILD_INFO})
-  if (line_ MATCHES "versionString[ ]*=[ ]*\"(.+)\"")
-    set (casinocoind_version ${CMAKE_MATCH_1})
-  endif ()
-endforeach ()
-if (casinocoind_version)
-  message (STATUS "casinocoind version: ${casinocoind_version}")
-else ()
-  message (FATAL_ERROR "unable to determine casinocoind version")
-endif ()
+determine_build_type()
 
-#[===================================================================[
-   declare user options/settings
-#]===================================================================]
+check_gcc4_abi()
 
-option (assert "Enables asserts, even in release builds" OFF)
-option (unity "Creates a build based on unity sources. This is the default" ON)
-if (is_gcc OR is_clang)
-  option (coverage "Generates coverage info." OFF)
-  option (profile "Add profiling flags" OFF)
-  set (coverage_test "" CACHE STRING
-    "On gcc & clang, the specific unit test(s) to run for coverage. Default is all tests.")
-  if (coverage_test AND NOT coverage)
-    set (coverage ON CACHE BOOL "gcc/clang only" FORCE)
-  endif ()
-  option (coverage_core_only
-    "Include only src/casinocoin files when generating coverage report. \
-    Set to OFF to include all sources in coverage report."
-    ON)
-else ()
-  set (profile OFF CACHE BOOL "gcc/clang only" FORCE)
-  set (coverage OFF CACHE BOOL "gcc/clang only" FORCE)
-endif ()
-if (is_linux)
-  option (BUILD_SHARED_LIBS "build shared casinocoin libraries" OFF)
-  option (static "link protobuf, openssl, libc++, and boost statically" ON)
-  option (perf "Enables flags that assist with perf recording" OFF)
-  option (use_gold "enables detection of gold (binutils) linker" ON)
-else ()
-  # we are not ready to allow shared-libs on windows because it would require
-  # export declarations. On macos it's more feasible, but static openssl
-  # produces odd linker errors, thus we disable shared lib builds for now.
-  set (BUILD_SHARED_LIBS OFF CACHE BOOL "build shared casinocoin libraries - OFF for win/macos" FORCE)
-  set (static ON CACHE BOOL "static link, linux only. ON for WIN/macos" FORCE)
-  set (perf OFF CACHE BOOL "perf flags, linux only" FORCE)
-  set (use_gold OFF CACHE BOOL "gold linker, linux only" FORCE)
-endif ()
-option (jemalloc "Enables jemalloc for heap profiling" OFF)
-option (werr "treat warnings as errors" OFF)
-option (local_protobuf
-  "Force use of a local build of protobuf instead of system version." OFF)
+############################################################
 
-# this one is a string and therefore can't be an option
-set (san "" CACHE STRING "On gcc & clang, add sanitizer instrumentation")
-set_property (CACHE san PROPERTY STRINGS ";undefined;memory;address;thread")
-if (san)
-  string (TOLOWER ${san} san)
-  set (SAN_FLAG "-fsanitize=${san}")
-  set (SAN_LIB "")
-  if (is_gcc)
-    if (san STREQUAL "address")
-      set (SAN_LIB "asan")
-    elseif (san STREQUAL "thread")
-      set (SAN_LIB "tsan")
-    elseif (san STREQUAL "memory")
-      set (SAN_LIB "msan")
-    elseif (san STREQUAL "undefined")
-      set (SAN_LIB "ubsan")
-    endif ()
-  endif ()
-  set (_saved_CRL ${CMAKE_REQUIRED_LIBRARIES})
-  set (CMAKE_REQUIRED_LIBRARIES "${SAN_FLAG};${SAN_LIB}")
-  check_cxx_compiler_flag (${SAN_FLAG} COMPILER_SUPPORTS_SAN)
-  set (CMAKE_REQUIRED_LIBRARIES ${_saved_CRL})
-  if (NOT COMPILER_SUPPORTS_SAN)
-    message (FATAL_ERROR "${san} sanitizer does not seem to be supported by your compiler")
-  endif ()
-endif ()
+include_directories(
+  src
+  src/beast
+  src/beast/include
+  src/beast/extras
+  src/nudb/include
+  src/soci/src
+  src/soci/include)
 
-# the remaining options are obscure and rarely used
-option (beast_no_unit_test_inline
-  "Prevents unit test definitions from being inserted into global table"
-  OFF)
-# NOTE - THIS OPTION CURRENTLY DOES NOT COMPILE :
-# TODO: fix or remove
-option (verify_nodeobject_keys
-  "This verifies that the hash of node objects matches the payload. \
-  This check is expensive - use with caution."
-  OFF)
-option (single_io_service_thread
-  "Restricts the number of threads calling io_service::run to one. \
-  This can be useful when debugging."
-  OFF)
-option (boost_show_deprecated
-  "Allow boost to fail on deprecated usage. Only useful if you're trying\
-  to find deprecated calls."
-  OFF)
-if (WIN32)
-  option (beast_disable_autolink "Disables autolinking of system libraries on WIN32" OFF)
-else ()
-  set (beast_disable_autolink OFF CACHE BOOL "WIN32 only" FORCE)
-endif ()
-if (coverage)
-  message (STATUS "coverage build requested - forcing Debug build")
-  set (CMAKE_BUILD_TYPE Debug CACHE STRING "build type" FORCE)
-endif ()
+special_build_flags()
 
-#[===================================================================[
-   setup project-wide compiler settings
-#]===================================================================]
+############################################################
 
-#[=========================================================[
-   TODO some/most of these common settings belong in a
-   toolchain file, especially the ABI-impacting ones
-#]=========================================================]
-add_library (common INTERFACE)
-add_library (casinocoin::common ALIAS common)
-# add a single global dependency on this interface lib
-link_libraries (casinocoin::common)
-set_target_properties (common
-  PROPERTIES INTERFACE_POSITION_INDEPENDENT_CODE ON)
-target_compile_features (common INTERFACE cxx_std_14)
-target_compile_definitions (common
-  INTERFACE
-    $<$<CONFIG:Debug>:DEBUG _DEBUG>
-    $<$<AND:$<BOOL:profile>,$<NOT:$<BOOL:assert>>>:NDEBUG>)
-    # ^^^^ NOTE: CMAKE release builds already have NDEBUG
-    # defined, so no need to add it explicitly except for
-    # this special case of (profile ON) and (assert OFF)
-    # -- presumably this is because we don't want profile
-    # builds asserting unless asserts were specifically
-    # requested
+use_boost(
+  # resist the temptation to alphabetize these. coroutine
+  # must come before context.
+  chrono
+  coroutine
+  context
+  date_time
+  filesystem
+  program_options
+  regex
+  serialization
+  system
+  thread)
 
-if (MSVC)
-  # remove existing exception flag since we set it to -EHa
-  string (REGEX REPLACE "[-/]EH[a-z]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  # also remove dynamic runtime
-  foreach (var_
-      CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-      CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE)
-    string (REGEX REPLACE "[-/]MD[d]*" " " ${var_} "${${var_}}")
-  endforeach ()
+use_pthread()
 
-  target_compile_options (common
-    INTERFACE
-      -bigobj            # Increase object file max size
-      -fp:precise        # Floating point behavior
-      -Gd                # __cdecl calling convention
-      -Gm-               # Minimal rebuild: disabled
-      -Gy-               # Function level linking: disabled
-      -MP                # Multiprocessor compilation
-      -openmp-           # pragma omp: disabled
-      -errorReport:none  # No error reporting to Internet
-      -nologo            # Suppress login banner
-      -wd4018            # Disable signed/unsigned comparison warnings
-      -wd4244            # Disable float to int possible loss of data warnings
-      -wd4267            # Disable size_t to T possible loss of data warnings
-      -wd4800            # Disable C4800(int to bool performance)
-      -wd4503            # Decorated name length exceeded, name was truncated
-      $<$<COMPILE_LANGUAGE:CXX>:
-        -EHa
-        -GR
-      >
-      $<$<CONFIG:Release>:-Ox>
-      $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>:
-        -GS
-        -Zc:forScope
-      >
-      # static runtime
-      $<$<CONFIG:Debug>:-MTd>
-      $<$<NOT:$<CONFIG:Debug>>:-MT>
-      $<$<BOOL:${werr}>:-WX>
-      )
-  target_compile_definitions (common
-    INTERFACE
-      _WIN32_WINNT=0x6000
-      _SCL_SECURE_NO_WARNINGS
-      _CRT_SECURE_NO_WARNINGS
-      WIN32_CONSOLE
-      NOMINMAX
-      # TODO: Resolve these warnings, don't just silence them
-      _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
-      $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>:_CRTDBG_MAP_ALLOC>)
-  target_link_libraries (common
-    INTERFACE
-      -errorreport:none
-      -machine:X64)
-else ()
-  # HACK : because these need to come first, before any warning demotion
-  string (APPEND CMAKE_CXX_FLAGS " -Wall -Wdeprecated")
-  # not MSVC
-  target_compile_options (common
-    INTERFACE
-      $<$<BOOL:${werr}>:-Werror>
-      $<$<COMPILE_LANGUAGE:CXX>:
-        -frtti
-        -Wnon-virtual-dtor
-      >
-      -Wno-sign-compare
-      -Wno-char-subscripts
-      -Wno-format
-      -Wno-unused-local-typedefs
-      $<$<BOOL:${is_gcc}>:
-        -Wno-unused-but-set-variable
-        -Wno-deprecated
-      >
-      $<$<NOT:$<CONFIG:Debug>>:-fno-strict-aliasing>
-      # tweak gcc optimization for debug
-      $<$<AND:$<BOOL:is_gcc>,$<CONFIG:Debug>>:-O0>
-      # Add debug symbols to release config
-      $<$<CONFIG:Release>:-g>)
-  target_link_libraries (common
-    INTERFACE
-      -rdynamic
-      $<$<AND:$<BOOL:${static}>,$<NOT:$<BOOL:${APPLE}>>>:-static-libstdc++>)
-endif ()
+use_openssl(${openssl_min})
 
-if (use_gold AND is_gcc)
-  # use gold linker if available
-  execute_process (
-    COMMAND ${CMAKE_CXX_COMPILER} -fuse-ld=gold -Wl,--version
-    ERROR_QUIET OUTPUT_VARIABLE LD_VERSION)
-    #[=========================================================[
-       NOTE: THE gold linker inserts -rpath as DT_RUNPATH by
-       default intead of DT_RPATH, so you might have slightly
-       unexpected runtime ld behavior if you were expecting
-       DT_RPATH.  Specify --disable-new-dtags to gold if you do
-       not want the default DT_RUNPATH behavior. This rpath
-       treatment as well as static/dynamic selection means that
-       gold does not currently have ideal default behavior when
-       we are using jemalloc. Thus for simplicity we don't use
-       it when jemalloc is requested. An alternative to
-       disabling would be to figure out all the settings
-       required to make gold play nicely with jemalloc.
-    #]=========================================================]
-  if (("${LD_VERSION}" MATCHES "GNU gold") AND (NOT jemalloc))
-    target_link_libraries (common
-      INTERFACE
-        -fuse-ld=gold
-        -Wl,--no-as-needed
-        #[=========================================================[
-           see https://bugs.launchpad.net/ubuntu/+source/eglibc/+bug/1253638/comments/5
-           DT_RUNPATH does not work great for transitive
-           dependencies (of which boost has a few) - so just
-           switch to DT_RPATH if doing dynamic linking with gold
-        #]=========================================================]
-        $<$<NOT:$<BOOL:${static}>>:-Wl,--disable-new-dtags>)
-  endif ()
-  unset (LD_VERSION)
-endif ()
+use_protobuf()
+
+setup_build_boilerplate()
+
+############################################################
 
 if (is_clang)
   # use lld linker if available
@@ -352,784 +176,202 @@ if (is_clang)
   unset (LD_VERSION)
 endif()
 
-if (assert)
-  foreach (var_ CMAKE_C_FLAGS_RELEASE CMAKE_CXX_FLAGS_RELEASE)
-    STRING (REGEX REPLACE "[-/]DNDEBUG" "" ${var_} "${${var_}}")
-  endforeach ()
-endif ()
+set(soci_extra_includes
+  -I"${CMAKE_SOURCE_DIR}/"src/soci/src/core
+  -I"${CMAKE_SOURCE_DIR}/"src/soci/include/private
+  -I"${CMAKE_SOURCE_DIR}/"src/sqlite)
 
-#[===================================================================[
-   casinocoind compile options/settings via an interface library
-#]===================================================================]
+############################################################
 
-add_library (opts INTERFACE)
-add_library (casinocoin::opts ALIAS opts)
-target_compile_definitions (opts
-  INTERFACE
-    BOOST_ASIO_HAS_STD_ARRAY
-    BOOST_ASIO_DISABLE_HANDLER_TYPE_REQUIREMENTS
-    $<$<BOOL:${boost_show_deprecated}>:
-      BOOST_ASIO_NO_DEPRECATED
-      BOOST_FILESYSTEM_NO_DEPRECATED
-    >
-    $<$<NOT:$<BOOL:${boost_show_deprecated}>>:
-      BOOST_COROUTINES_NO_DEPRECATION_WARNING
-      BOOST_BEAST_ALLOW_DEPRECATED
-      BOOST_FILESYSTEM_DEPRECATED
-    >
-    $<$<BOOL:${beast_no_unit_test_inline}>:BEAST_NO_UNIT_TEST_INLINE=1>
-    $<$<BOOL:${beast_disable_autolink}>:BEAST_DONT_AUTOLINK_TO_WIN32_LIBRARIES=1>
-    $<$<BOOL:${single_io_service_thread}>:casinocoin_SINGLE_IO_SERVICE_THREAD=1>
-    # doesn't currently compile ? :
-    $<$<BOOL:${verify_nodeobject_keys}>:casinocoin_VERIFY_NODEOBJECT_KEYS=1>)
-target_compile_options (opts
-  INTERFACE
-    $<$<AND:$<BOOL:${is_gcc}>,$<COMPILE_LANGUAGE:CXX>>:-Wsuggest-override>
-    $<$<BOOL:${perf}>:-fno-omit-frame-pointer>
-    $<$<AND:$<BOOL:${is_gcc}>,$<BOOL:${coverage}>>:-fprofile-arcs -ftest-coverage>
-    $<$<AND:$<BOOL:${is_clang}>,$<BOOL:${coverage}>>:-fprofile-instr-generate -fcoverage-mapping>
-    $<$<BOOL:${profile}>:-pg>
-    $<$<AND:$<BOOL:${is_gcc}>,$<BOOL:${profile}>>:-p>)
+# Unity sources
+prepend(beast_unity_srcs
+src/ripple/beast/unity/
+beast_insight_unity.cpp
+beast_net_unity.cpp
+beast_hash_unity.cpp
+beast_utility_unity.cpp)
 
-target_link_libraries (opts
-  INTERFACE
-    $<$<AND:$<BOOL:${is_gcc}>,$<BOOL:${coverage}>>:-fprofile-arcs -ftest-coverage>
-    $<$<AND:$<BOOL:${is_clang}>,$<BOOL:${coverage}>>:-fprofile-instr-generate -fcoverage-mapping>
-    $<$<BOOL:${profile}>:-pg>
-    $<$<AND:$<BOOL:${is_gcc}>,$<BOOL:${profile}>>:-p>)
+prepend(ripple_unity_srcs
+src/ripple/unity/
+app_consensus.cpp
+app_ledger.cpp
+app_ledger_impl.cpp
+app_main1.cpp
+app_main2.cpp
+app_misc.cpp
+app_misc_impl.cpp
+app_paths.cpp
+app_tx.cpp
+conditions.cpp
+consensus.cpp
+core.cpp
+basics.cpp
+crypto.cpp
+ledger.cpp
+net.cpp
+overlay1.cpp
+overlay2.cpp
+peerfinder.cpp
+json.cpp
+protocol.cpp
+resource.cpp
+rpcx1.cpp
+rpcx2.cpp
+shamap.cpp
+server.cpp)
 
-if (jemalloc)
-  find_package (jemalloc REQUIRED)
-  target_compile_definitions (opts INTERFACE PROFILE_JEMALLOC)
-  target_include_directories (opts SYSTEM INTERFACE ${JEMALLOC_INCLUDE_DIRS})
-  target_link_libraries (opts INTERFACE ${JEMALLOC_LIBRARIES})
-  get_filename_component (JEMALLOC_LIB_PATH ${JEMALLOC_LIBRARIES} DIRECTORY)
-  ## TODO see if we can use the BUILD_RPATH target property (is it transitive?)
-  set (CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} ${JEMALLOC_LIB_PATH})
-endif ()
+prepend(test_unity_srcs
+src/test/unity/
+app_test_unity1.cpp
+app_test_unity2.cpp
+basics_test_unity.cpp
+beast_test_unity1.cpp
+beast_test_unity2.cpp
+conditions_test_unity.cpp
+consensus_test_unity.cpp
+core_test_unity.cpp
+crypto_test_unity.cpp
+json_test_unity.cpp
+ledger_test_unity.cpp
+overlay_test_unity.cpp
+peerfinder_test_unity.cpp
+protocol_test_unity.cpp
+resource_test_unity.cpp
+rpc_test_unity.cpp
+server_test_unity.cpp
+server_status_test_unity.cpp
+shamap_test_unity.cpp
+jtx_unity1.cpp
+jtx_unity2.cpp
+csf_unity.cpp)
 
-if (san)
-  target_compile_options (opts
-    INTERFACE
-      ${SAN_FLAG}
-      -fno-omit-frame-pointer)
-  target_compile_definitions (opts
-    INTERFACE
-      $<$<STREQUAL:${san},address>:SANITIZER=ASAN>
-      $<$<STREQUAL:${san},thread>:SANITIZER=TSAN>
-      $<$<STREQUAL:${san},memory>:SANITIZER=MSAN>
-      $<$<STREQUAL:${san},undefined>:SANITIZER=UBSAN>)
-  target_link_libraries (opts INTERFACE ${SAN_FLAG} ${SAN_LIB})
-endif ()
+list(APPEND rippled_src_unity ${beast_unity_srcs} ${ripple_unity_srcs} ${test_unity_srcs})
 
-#[===================================================================[
-   casinocoind transitive library deps via an interface library
-#]===================================================================]
+add_with_props(rippled_src_unity src/test/unity/nodestore_test_unity.cpp
+-I"${CMAKE_SOURCE_DIR}/"src/rocksdb2/include
+-I"${CMAKE_SOURCE_DIR}/"src/snappy/snappy
+-I"${CMAKE_SOURCE_DIR}/"src/snappy/config
+${rocks_db_system_header})
 
-add_library (casinocoin_syslibs INTERFACE)
-add_library (casinocoin::syslibs ALIAS casinocoin_syslibs)
-target_link_libraries (casinocoin_syslibs
-  INTERFACE
-    $<$<BOOL:${MSVC}>:
-      legacy_stdio_definitions.lib
-      Shlwapi
-      kernel32
-      user32
-      gdi32
-      winspool
-      comdlg32
-      advapi32
-      shell32
-      ole32
-      oleaut32
-      uuid
-      odbc32
-      odbccp32
-      crypt32
-    >
-    $<$<NOT:$<BOOL:${MSVC}>>:dl>
-    $<$<NOT:$<OR:$<BOOL:${MSVC}>,$<BOOL:${APPLE}>>>:rt>)
+add_with_props(rippled_src_unity src/ripple/unity/nodestore.cpp
+-I"${CMAKE_SOURCE_DIR}/"src/rocksdb2/include
+-I"${CMAKE_SOURCE_DIR}/"src/snappy/snappy
+-I"${CMAKE_SOURCE_DIR}/"src/snappy/config
+${rocks_db_system_header})
 
-if (NOT MSVC)
-  set (THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package (Threads)
-  target_link_libraries (casinocoin_syslibs INTERFACE Threads::Threads)
-endif ()
+add_with_props(rippled_src_unity src/ripple/unity/soci_ripple.cpp ${soci_extra_includes})
 
-add_library (casinocoin_libs INTERFACE)
-add_library (casinocoin::libs ALIAS casinocoin_libs)
-target_link_libraries (casinocoin_libs INTERFACE casinocoin::syslibs)
+list(APPEND ripple_unity_srcs ${beast_unity_srcs} ${test_unity_srcs}
+src/ripple/unity/nodestore.cpp
+src/ripple/unity/soci_ripple.cpp
+src/test/unity/nodestore_test_unity.cpp)
 
-#[===================================================================[
-   NIH prefix path..this is where we will download
-   and build any ExternalProjects, and they will hopefully
-   survive across build directory deletion (manual cleans)
-#]===================================================================]
+############################################################
 
-string (REGEX REPLACE "[ \\/%]+" "_" gen_for_path ${CMAKE_GENERATOR})
-string (TOLOWER ${gen_for_path} gen_for_path)
-# HACK: trying to shorten paths for windows CI (which hits 260 MAXPATH easily)
-# @see:  https://issues.jenkins-ci.org/browse/JENKINS-38706?focusedCommentId=339847
-string (REPLACE "visual_studio" "vs" gen_for_path ${gen_for_path})
-if (NOT DEFINED NIH_CACHE_ROOT)
-  if (DEFINED ENV{NIH_CACHE_ROOT})
-    set (NIH_CACHE_ROOT $ENV{NIH_CACHE_ROOT})
-  else ()
-    set (NIH_CACHE_ROOT ${CMAKE_SOURCE_DIR})
-  endif ()
-endif ()
-set (nih_cache_path
-  "${NIH_CACHE_ROOT}/.nih_c/${gen_for_path}/${CMAKE_CXX_COMPILER_ID}_${CMAKE_CXX_COMPILER_VERSION}")
-if (NOT is_multiconfig)
-  set (nih_cache_path "${nih_cache_path}/${CMAKE_BUILD_TYPE}")
-endif ()
-file(TO_CMAKE_PATH "${nih_cache_path}" nih_cache_path)
-message (STATUS "NIH-EP cache path: ${nih_cache_path}")
-## two convenience variables:
-set (ep_lib_prefix ${CMAKE_STATIC_LIBRARY_PREFIX})
-set (ep_lib_suffix ${CMAKE_STATIC_LIBRARY_SUFFIX})
+# Non-unity sources
+file(GLOB_RECURSE core_srcs src/ripple/core/*.cpp)
+add_with_props(rippled_src_nonunity "${core_srcs}"
+    -I"${CMAKE_SOURCE_DIR}/"src/soci/src/core
+    -I"${CMAKE_SOURCE_DIR}/"src/sqlite)
 
-# this is a setting for FetchContent and needs to be
-# a cache variable
-# https://cmake.org/cmake/help/latest/module/FetchContent.html#populating-the-content
-set (FETCHCONTENT_BASE_DIR ${nih_cache_path} CACHE STRING "" FORCE)
+set(non_unity_srcs ${core_srcs})
 
-#[===================================================================[
-   NIH dep: boost
-#]===================================================================]
+foreach(curdir
+        beast/clock
+        beast/container
+        beast/hash
+        beast/insight
+        beast/net
+        beast/utility
+        app
+        basics
+        conditions
+        consensus
+        crypto
+        json
+        ledger
+        legacy
+        net
+        overlay
+        peerfinder
+        protocol
+        resource
+        rpc
+        server
+        shamap)
+    file(GLOB_RECURSE cursrcs src/ripple/${curdir}/*.cpp)
+    list(APPEND rippled_src_nonunity "${cursrcs}")
+    list(APPEND non_unity_srcs "${cursrcs}")
+endforeach()
 
-if ((NOT DEFINED BOOST_ROOT) AND (DEFINED ENV{BOOST_ROOT}))
-  set (BOOST_ROOT $ENV{BOOST_ROOT})
-endif ()
-file (TO_CMAKE_PATH "${BOOST_ROOT}" BOOST_ROOT)
-if (WIN32 OR CYGWIN)
-  # Workaround for MSVC having two boost versions - x86 and x64 on same PC in stage folders
-  if (DEFINED BOOST_ROOT)
-    if (IS_DIRECTORY ${BOOST_ROOT}/stage64/lib)
-      set (BOOST_LIBRARYDIR ${BOOST_ROOT}/stage64/lib)
-    else ()
-      set (BOOST_LIBRARYDIR ${BOOST_ROOT}/stage/lib)
-    endif ()
-  endif ()
-endif ()
-message (STATUS "BOOST_ROOT: ${BOOST_ROOT}")
-message (STATUS "BOOST_LIBRARYDIR: ${BOOST_LIBRARYDIR}")
+file(GLOB_RECURSE nodestore_srcs src/ripple/nodestore/*.cpp
+    src/test/nodestore/*.cpp)
 
-# uncomment the following as needed to debug FindBoost issues:
-#set (Boost_DEBUG ON)
+add_with_props(rippled_src_nonunity "${nodestore_srcs}"
+    -I"${CMAKE_SOURCE_DIR}/"src/rocksdb2/include
+    -I"${CMAKE_SOURCE_DIR}/"src/snappy/snappy
+    -I"${CMAKE_SOURCE_DIR}/"src/snappy/config
+    ${rocks_db_system_header})
 
-#[=========================================================[
-   boost dynamic libraries don't trivially support @rpath
-   linking right now (cmake's default), so just force
-   static linking for macos, or if requested on linux by flag
-#]=========================================================]
-if (static)
-  set (Boost_USE_STATIC_LIBS ON)
-endif ()
-set (Boost_USE_MULTITHREADED ON)
-if (static AND NOT APPLE)
-  set (Boost_USE_STATIC_RUNTIME ON)
-else ()
-  set (Boost_USE_STATIC_RUNTIME OFF)
-endif ()
-find_package (Boost 1.67 REQUIRED
-  COMPONENTS
-    chrono
-    context
-    coroutine
-    date_time
-    filesystem
-    program_options
-    regex
-    serialization
-    system
-    thread)
+list(APPEND non_unity_srcs "${nodestore_srcs}")
 
-add_library (casinocoin_boost INTERFACE)
-add_library (casinocoin::boost ALIAS casinocoin_boost)
-if (is_xcode)
-  target_include_directories (casinocoin_boost BEFORE INTERFACE ${Boost_INCLUDE_DIRS})
-  target_compile_options (casinocoin_boost INTERFACE --system-header-prefix="boost/")
-else ()
-  target_include_directories (casinocoin_boost SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
-endif()
+# unit test sources
+foreach(curdir
+        app
+        basics
+        beast
+        conditions
+        consensus
+        core
+        crypto
+        csf
+        json
+        jtx
+        ledger
+        nodestore
+        overlay
+        peerfinder
+        protocol
+        resource
+        rpc
+        server
+        shamap
+        unit_test)
+    file(GLOB_RECURSE cursrcs src/test/${curdir}/*.cpp)
+    list(APPEND test_srcs "${cursrcs}")
+endforeach()
 
-target_link_libraries (casinocoin_boost
-  INTERFACE
-    Boost::boost
-    Boost::chrono
-    Boost::coroutine
-    Boost::date_time
-    Boost::filesystem
-    Boost::program_options
-    Boost::regex
-    Boost::serialization
-    Boost::system
-    Boost::thread)
+add_with_props(rippled_src_nonunity "${test_srcs}"
+    -I"${CMAKE_SOURCE_DIR}/"src/rocksdb2/include
+    -I"${CMAKE_SOURCE_DIR}/"src/snappy/snappy
+    -I"${CMAKE_SOURCE_DIR}/"src/snappy/config
+    ${rocks_db_system_header})
 
-#[===================================================================[
-   NIH dep: openssl
-#]===================================================================]
+list(APPEND non_unity_srcs "${test_srcs}")
 
-#[===============================================[
-  OPENSSL_ROOT_DIR is the only variable that
-  FindOpenSSL honors for locating, so convert any
-  OPENSSL_ROOT vars to this
-#]===============================================]
-if (NOT DEFINED OPENSSL_ROOT_DIR)
-  if (DEFINED ENV{OPENSSL_ROOT})
-    set (OPENSSL_ROOT_DIR $ENV{OPENSSL_ROOT})
-  elseif (HOMEBREW)
-    execute_process (COMMAND ${HOMEBREW} --prefix openssl
-      OUTPUT_VARIABLE OPENSSL_ROOT_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-  endif ()
-  file (TO_CMAKE_PATH "${OPENSSL_ROOT_DIR}" OPENSSL_ROOT_DIR)
-endif ()
+if(WIN32 OR is_xcode)
+    # Rippled headers. Only needed for IDEs.
+    file(GLOB_RECURSE rippled_headers src/*.h src/*.hpp *.md)
+    list(APPEND rippled_headers Builds/CMake/CMakeFuncs.cmake)
+    foreach(curdir
+            beast/asio
+            beast/core
+            beast/crypto
+            beast/cxx17
+            proto
+            validators
+            websocket)
+        file(GLOB_RECURSE cursrcs src/ripple/${curdir}/*.cpp)
+        list(APPEND rippled_headers "${cursrcs}")
+    endforeach()
+    list(APPEND rippled_src_nonunity "${rippled_headers}")
 
-if (static)
-  set (OPENSSL_USE_STATIC_LIBS ON)
-endif ()
-set (OPENSSL_MSVC_STATIC_RT ON)
-set (_ssl_min_ver 1.0.2)
-# HACK for travis
-if ("$ENV{CI}" STREQUAL "true" AND "$ENV{TRAVIS}" STREQUAL "true")
-  set (_ssl_min_ver 1.0.1)
-endif ()
-find_package (OpenSSL ${_ssl_min_ver} REQUIRED)
-target_link_libraries (casinocoin_libs
-  INTERFACE
-    OpenSSL::SSL
-    OpenSSL::Crypto)
-# disable SSLv2...this can also be done when building/configuring OpenSSL
-set_target_properties(OpenSSL::SSL PROPERTIES
-    INTERFACE_COMPILE_DEFINITIONS OPENSSL_NO_SSL2)
-#[=========================================================[
-   https://gitlab.kitware.com/cmake/cmake/issues/16885
-   depending on how openssl is built, it might depend
-   on zlib. In fact, the openssl find package should
-   figure this out for us, but it does not currently...
-   so let's add zlib ourselves to the lib list
-   TODO: investigate linking to static zlib for static
-   build option
-#]=========================================================]
-find_package (ZLIB)
-set (has_zlib FALSE)
-if (TARGET ZLIB::ZLIB)
-  set_target_properties(OpenSSL::Crypto PROPERTIES
-    INTERFACE_LINK_LIBRARIES ZLIB::ZLIB)
-  set (has_zlib TRUE)
-endif ()
-
-#[===================================================================[
-   NIH dep: secp256k1
-#]===================================================================]
-
-add_library (secp256k1 STATIC
-  src/secp256k1/src/secp256k1.c)
-target_compile_definitions (secp256k1
-  PRIVATE
-    USE_NUM_NONE
-    USE_FIELD_10X26
-    USE_FIELD_INV_BUILTIN
-    USE_SCALAR_8X32
-    USE_SCALAR_INV_BUILTIN)
-target_include_directories (secp256k1
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    $<INSTALL_INTERFACE:include>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1)
-target_compile_options (secp256k1
-  PRIVATE
-    $<$<BOOL:${MSVC}>:-wd4319>
-    $<$<NOT:$<BOOL:${MSVC}>>:
-      -Wno-deprecated-declarations
-      -Wno-unused-function
-    >
-    $<$<BOOL:${is_gcc}>:-Wno-nonnull-compare>)
-add_library (NIH::secp256k1 ALIAS secp256k1)
-target_link_libraries (casinocoin_libs INTERFACE NIH::secp256k1)
-#[===========================[
-   headers installation
-#]===========================]
-install (
-  FILES
-    src/secp256k1/include/secp256k1.h
-  DESTINATION include/secp256k1/include)
-
-#[===================================================================[
-   NIH dep: ed25519-donna
-#]===================================================================]
-
-add_library (ed25519-donna STATIC
-  src/ed25519-donna/ed25519.c)
-target_include_directories (ed25519-donna
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    $<INSTALL_INTERFACE:include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ed25519-donna)
-#[=========================================================[
-   NOTE for macos:
-   https://github.com/floodyberry/ed25519-donna/issues/29
-   our source for ed25519-donna-portable.h has been
-   patched to workaround this.
-#]=========================================================]
-target_link_libraries (ed25519-donna PUBLIC OpenSSL::SSL)
-add_library (NIH::ed25519-donna ALIAS ed25519-donna)
-target_link_libraries (casinocoin_libs INTERFACE NIH::ed25519-donna)
-#[===========================[
-   headers installation
-#]===========================]
-install (
-  FILES
-    src/ed25519-donna/ed25519.h
-  DESTINATION include/ed25519-donna)
-
-#[===================================================================[
-   NIH dep: lz4
-#]===================================================================]
-
-ExternalProject_Add (lz4
-  PREFIX ${nih_cache_path}
-  GIT_REPOSITORY https://github.com/lz4/lz4.git
-  GIT_TAG v1.8.2
-  SOURCE_SUBDIR contrib/cmake_unofficial
-  CMAKE_ARGS
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-DCMAKE_VERBOSE_MAKEFILE=ON>
-    -DCMAKE_DEBUG_POSTFIX=_d
-    $<$<NOT:$<BOOL:${is_multiconfig}>>:-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}>
-    -DBUILD_STATIC_LIBS=ON
-    -DBUILD_SHARED_LIBS=OFF
-    $<$<BOOL:${MSVC}>:
-      "-DCMAKE_C_FLAGS=-GR -Gd -fp:precise -FS -MP"
-      "-DCMAKE_C_FLAGS_DEBUG=-MTd"
-      "-DCMAKE_C_FLAGS_RELEASE=-MT"
-    >
-  LOG_BUILD ON
-  LOG_CONFIGURE ON
-  BUILD_COMMAND
-    ${CMAKE_COMMAND}
-    --build .
-    --config $<CONFIG>
-    --target lz4_static
-    $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.12>:--parallel$<$<BOOL:${is_xcode}>: ${num_procs}>>
-    $<$<BOOL:${is_multiconfig}>:
-      COMMAND
-        ${CMAKE_COMMAND} -E copy
-        <BINARY_DIR>/$<CONFIG>/${ep_lib_prefix}lz4$<$<CONFIG:Debug>:_d>${ep_lib_suffix}
-        <BINARY_DIR>
-      >
-  TEST_COMMAND ""
-  INSTALL_COMMAND ""
-  BUILD_BYPRODUCTS
-    <BINARY_DIR>/${ep_lib_prefix}lz4${ep_lib_suffix}
-    <BINARY_DIR>/${ep_lib_prefix}lz4_d${ep_lib_suffix}
-)
-ExternalProject_Get_Property (lz4 BINARY_DIR)
-ExternalProject_Get_Property (lz4 SOURCE_DIR)
-ExternalProject_Get_Property (lz4 STAMP_DIR)
-if (CMAKE_VERBOSE_MAKEFILE)
-  print_ep_logs (lz4)
-endif ()
-add_library (lz4_lib STATIC IMPORTED GLOBAL)
-file (MAKE_DIRECTORY ${SOURCE_DIR}/lz4)
-set_target_properties (lz4_lib PROPERTIES
-  IMPORTED_LOCATION_DEBUG
-    ${BINARY_DIR}/${ep_lib_prefix}lz4_d${ep_lib_suffix}
-  IMPORTED_LOCATION_RELEASE
-    ${BINARY_DIR}/${ep_lib_prefix}lz4${ep_lib_suffix}
-  INTERFACE_INCLUDE_DIRECTORIES
-    ${SOURCE_DIR}/lib)
-add_dependencies (lz4_lib lz4)
-target_link_libraries (casinocoin_libs INTERFACE lz4_lib)
-exclude_if_included (lz4)
-exclude_if_included (lz4_lib)
-
-#[===================================================================[
-   NIH dep: libarchive
-#]===================================================================]
-
-set (lib_post "")
-if (MSVC)
-  set (lib_post "_static")
-endif ()
-ExternalProject_Add (libarchive
-  PREFIX ${nih_cache_path}
-  GIT_REPOSITORY https://github.com/libarchive/libarchive.git
-  GIT_TAG v3.3.3
-  CMAKE_ARGS
-    # passing the compiler seems to be needed for windows CI, sadly
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-DCMAKE_VERBOSE_MAKEFILE=ON>
-    -DCMAKE_DEBUG_POSTFIX=_d
-    $<$<NOT:$<BOOL:${is_multiconfig}>>:-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}>
-    -DENABLE_LZ4=ON
-    -ULZ4_*
-    -DLZ4_INCLUDE_DIR=$<TARGET_PROPERTY:lz4_lib,INTERFACE_INCLUDE_DIRECTORIES>
-    # because we are building a static lib, this lz4 library doesn't
-    # actually matter since you can't generally link static libs to other static
-    # libs. The include files are needed, but the library itself is not (until
-    # we link our application, at which point we use the lz4 we built above).
-    # nonetheless, we need to provide a library to libarchive else it will
-    # NOT include lz4 support when configuring
-    -DLZ4_LIBRARY=$<IF:$<CONFIG:Debug>,$<TARGET_PROPERTY:lz4_lib,IMPORTED_LOCATION_DEBUG>,$<TARGET_PROPERTY:lz4_lib,IMPORTED_LOCATION_RELEASE>>
-    -DENABLE_WERROR=OFF
-    -DENABLE_TAR=OFF
-    -DENABLE_TAR_SHARED=OFF
-    -DENABLE_INSTALL=ON
-    -DENABLE_NETTLE=OFF
-    -DENABLE_OPENSSL=OFF
-    -DENABLE_LZO=OFF
-    -DENABLE_LZMA=OFF
-    -DENABLE_ZLIB=OFF
-    -DENABLE_BZip2=OFF
-    -DENABLE_LIBXML2=OFF
-    -DENABLE_EXPAT=OFF
-    -DENABLE_PCREPOSIX=OFF
-    -DENABLE_LibGCC=OFF
-    -DENABLE_CNG=OFF
-    -DENABLE_CPIO=OFF
-    -DENABLE_CPIO_SHARED=OFF
-    -DENABLE_CAT=OFF
-    -DENABLE_CAT_SHARED=OFF
-    -DENABLE_XATTR=OFF
-    -DENABLE_ACL=OFF
-    -DENABLE_ICONV=OFF
-    -DENABLE_TEST=OFF
-    -DENABLE_COVERAGE=OFF
-    $<$<BOOL:${MSVC}>:
-      "-DCMAKE_C_FLAGS=-GR -Gd -fp:precise -FS -MP"
-      "-DCMAKE_C_FLAGS_DEBUG=-MTd"
-      "-DCMAKE_C_FLAGS_RELEASE=-MT"
-    >
-  LOG_BUILD ON
-  LOG_CONFIGURE ON
-  BUILD_COMMAND
-    ${CMAKE_COMMAND}
-    --build .
-    --config $<CONFIG>
-    --target archive_static
-    $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.12>:--parallel$<$<BOOL:${is_xcode}>: ${num_procs}>>
-    $<$<BOOL:${is_multiconfig}>:
-      COMMAND
-        ${CMAKE_COMMAND} -E copy
-          <BINARY_DIR>/libarchive/$<CONFIG>/${ep_lib_prefix}archive${lib_post}$<$<CONFIG:Debug>:_d>${ep_lib_suffix}
-          <BINARY_DIR>/libarchive
-      >
-  TEST_COMMAND ""
-  INSTALL_COMMAND ""
-  DEPENDS lz4
-  BUILD_BYPRODUCTS
-    <BINARY_DIR>/libarchive/${ep_lib_prefix}archive${lib_post}${ep_lib_suffix}
-    <BINARY_DIR>/libarchive/${ep_lib_prefix}archive${lib_post}_d${ep_lib_suffix}
-)
-ExternalProject_Get_Property (libarchive BINARY_DIR)
-ExternalProject_Get_Property (libarchive SOURCE_DIR)
-ExternalProject_Get_Property (libarchive STAMP_DIR)
-if (CMAKE_VERBOSE_MAKEFILE)
-  print_ep_logs (libarchive)
-endif ()
-add_library (archive_lib STATIC IMPORTED GLOBAL)
-file (MAKE_DIRECTORY ${SOURCE_DIR}/libarchive)
-set_target_properties (archive_lib PROPERTIES
-  IMPORTED_LOCATION_DEBUG
-    ${BINARY_DIR}/libarchive/${ep_lib_prefix}archive${lib_post}_d${ep_lib_suffix}
-  IMPORTED_LOCATION_RELEASE
-    ${BINARY_DIR}/libarchive/${ep_lib_prefix}archive${lib_post}${ep_lib_suffix}
-  INTERFACE_INCLUDE_DIRECTORIES
-    ${SOURCE_DIR}/libarchive
-  INTERFACE_COMPILE_DEFINITIONS
-    LIBARCHIVE_STATIC)
-add_dependencies (archive_lib libarchive)
-target_link_libraries (archive_lib INTERFACE lz4_lib)
-target_link_libraries (casinocoin_libs INTERFACE archive_lib)
-exclude_if_included (libarchive)
-exclude_if_included (archive_lib)
-
-#[===================================================================[
-   NIH dep: sqlite
-#]===================================================================]
-
-ExternalProject_Add (sqlite3
-  PREFIX ${nih_cache_path}
-  # sqlite doesn't use git, but it provides versioned tarballs
-  URL https://www.sqlite.org/2018/sqlite-amalgamation-3260000.zip
-  # ^^^ version is apparent in the URL:  3260000 => 3.26.0
-  URL_HASH SHA256=de5dcab133aa339a4cf9e97c40aa6062570086d6085d8f9ad7bc6ddf8a52096e
-  # we wrote a very simple CMake file to build sqlite
-  # so that's what we copy here so that we can build with
-  # CMake. sqlite doesn't generally provided a build system
-  # for the single amalgamation source file.
-  PATCH_COMMAND
-    ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_SOURCE_DIR}/Builds/CMake/CMake_sqlite3.txt
-    <SOURCE_DIR>/CMakeLists.txt
-  CMAKE_ARGS
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-DCMAKE_VERBOSE_MAKEFILE=ON>
-    -DCMAKE_DEBUG_POSTFIX=_d
-    $<$<NOT:$<BOOL:${is_multiconfig}>>:-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}>
-    $<$<BOOL:${MSVC}>:
-      "-DCMAKE_C_FLAGS=-GR -Gd -fp:precise -FS -MP"
-      "-DCMAKE_C_FLAGS_DEBUG=-MTd"
-      "-DCMAKE_C_FLAGS_RELEASE=-MT"
-    >
-  LOG_BUILD ON
-  LOG_CONFIGURE ON
-  BUILD_COMMAND
-    ${CMAKE_COMMAND}
-    --build .
-    --config $<CONFIG>
-    $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.12>:--parallel$<$<BOOL:${is_xcode}>: ${num_procs}>>
-    $<$<BOOL:${is_multiconfig}>:
-      COMMAND
-        ${CMAKE_COMMAND} -E copy
-          <BINARY_DIR>/$<CONFIG>/${ep_lib_prefix}sqlite3$<$<CONFIG:Debug>:_d>${ep_lib_suffix}
-          <BINARY_DIR>
-      >
-  TEST_COMMAND ""
-  INSTALL_COMMAND ""
-  BUILD_BYPRODUCTS
-    <BINARY_DIR>/${ep_lib_prefix}sqlite3${ep_lib_suffix}
-    <BINARY_DIR>/${ep_lib_prefix}sqlite3_d${ep_lib_suffix}
-)
-ExternalProject_Get_Property (sqlite3 BINARY_DIR)
-ExternalProject_Get_Property (sqlite3 SOURCE_DIR)
-ExternalProject_Get_Property (sqlite3 STAMP_DIR)
-if (CMAKE_VERBOSE_MAKEFILE)
-  print_ep_logs (sqlite3)
-endif ()
-add_library (sqlite STATIC IMPORTED GLOBAL)
-set_target_properties (sqlite PROPERTIES
-  IMPORTED_LOCATION_DEBUG
-    ${BINARY_DIR}/${ep_lib_prefix}sqlite3_d${ep_lib_suffix}
-  IMPORTED_LOCATION_RELEASE
-    ${BINARY_DIR}/${ep_lib_prefix}sqlite3${ep_lib_suffix}
-  INTERFACE_INCLUDE_DIRECTORIES
-    ${SOURCE_DIR})
-add_dependencies (sqlite sqlite3)
-target_link_libraries (sqlite INTERFACE $<$<NOT:$<BOOL:${MSVC}>>:dl>)
-target_link_libraries (casinocoin_libs INTERFACE sqlite)
-exclude_if_included (sqlite3)
-exclude_if_included (sqlite)
-set(sqlite_BINARY_DIR ${BINARY_DIR})
-
-#[===================================================================[
-   NIH dep: soci
-#]===================================================================]
-
-set (soci_lib_pre ${ep_lib_prefix})
-set (soci_lib_post "")
-if (WIN32)
-  # for some reason soci on windows still prepends lib (non-standard)
-  set (soci_lib_pre lib)
-  # this version in the name might change if/when we change versions of soci
-  set (soci_lib_post "_4_0")
-endif ()
-ExternalProject_Add (soci
-  PREFIX ${nih_cache_path}
-  GIT_REPOSITORY https://github.com/SOCI/soci.git
-  GIT_TAG 3a1f602b3021b925d38828e3ff95f9e7f8887ff7
-  # We had an issue with soci integer range checking for boost::optional
-  # and needed to remove the exception that SOCI throws in this case.
-  # This is *probably* a bug in SOCI, but has never been investigated more
-  # nor reported to the maintainers.
-  # This cmake script comments out the lines in question.
-  # This patch process is likely fragile and should be reviewed carefully
-  # whenever we update the GIT_TAG above.
-  PATCH_COMMAND
-    ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/Builds/CMake/soci_patch.cmake
-  CMAKE_ARGS
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-DCMAKE_VERBOSE_MAKEFILE=ON>
-    -DCMAKE_PREFIX_PATH=${CMAKE_BINARY_DIR}/sqlite3
-    -DCMAKE_INCLUDE_PATH=$<TARGET_PROPERTY:sqlite,INTERFACE_INCLUDE_DIRECTORIES>
-    -DCMAKE_LIBRARY_PATH=${sqlite_BINARY_DIR}
-    -DCMAKE_DEBUG_POSTFIX=_d
-    $<$<NOT:$<BOOL:${is_multiconfig}>>:-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}>
-    -DSOCI_CXX_C11=ON
-    -DSOCI_STATIC=ON
-    -DSOCI_LIBDIR=lib
-    -DSOCI_SHARED=OFF
-    -DSOCI_TESTS=OFF
-    -DBOOST_ROOT=${Boost_DIR}
-    -DWITH_BOOST=ON
-    -DSOCI_DB2=OFF
-    -DSOCI_FIREBIRD=OFF
-    -DSOCI_MYSQL=OFF
-    -DSOCI_ODBC=OFF
-    -DSOCI_ORACLE=OFF
-    -DSOCI_POSTGRESQL=OFF
-    -DSOCI_SQLITE3=ON
-    -DSQLITE3_INCLUDE_DIR=$<TARGET_PROPERTY:sqlite,INTERFACE_INCLUDE_DIRECTORIES>
-    -DSQLITE3_LIBRARY=$<IF:$<CONFIG:Debug>,$<TARGET_PROPERTY:sqlite,IMPORTED_LOCATION_DEBUG>,$<TARGET_PROPERTY:sqlite,IMPORTED_LOCATION_RELEASE>>
-    $<$<BOOL:${APPLE}>:-DCMAKE_FIND_FRAMEWORK=LAST>
-    $<$<BOOL:${MSVC}>:
-      "-DCMAKE_CXX_FLAGS=-GR -Gd -fp:precise -FS -EHa -MP"
-      "-DCMAKE_CXX_FLAGS_DEBUG=-MTd"
-      "-DCMAKE_CXX_FLAGS_RELEASE=-MT"
-    >
-    $<$<NOT:$<BOOL:${MSVC}>>:
-      "-DCMAKE_CXX_FLAGS=-Wno-deprecated-declarations"
-    >
-    # SEE: https://github.com/SOCI/soci/issues/640
-    $<$<AND:$<BOOL:${is_gcc}>,$<VERSION_GREATER_EQUAL:${CMAKE_CXX_COMPILER_VERSION},8>>:
-      "-DCMAKE_CXX_FLAGS=-Wno-deprecated-declarations -Wno-error=format-overflow -Wno-format-overflow -Wno-error=format-truncation"
-    >
-  LOG_BUILD ON
-  LOG_CONFIGURE ON
-  BUILD_COMMAND
-    ${CMAKE_COMMAND}
-    --build .
-    --config $<CONFIG>
-    $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.12>:--parallel$<$<BOOL:${is_xcode}>: ${num_procs}>>
-    $<$<BOOL:${is_multiconfig}>:
-      COMMAND
-        ${CMAKE_COMMAND} -E copy
-        <BINARY_DIR>/lib/$<CONFIG>/${soci_lib_pre}soci_core${soci_lib_post}$<$<CONFIG:Debug>:_d>${ep_lib_suffix}
-        <BINARY_DIR>/lib/$<CONFIG>/${soci_lib_pre}soci_empty${soci_lib_post}$<$<CONFIG:Debug>:_d>${ep_lib_suffix}
-        <BINARY_DIR>/lib/$<CONFIG>/${soci_lib_pre}soci_sqlite3${soci_lib_post}$<$<CONFIG:Debug>:_d>${ep_lib_suffix}
-        <BINARY_DIR>/lib
-      >
-  TEST_COMMAND ""
-  INSTALL_COMMAND ""
-  DEPENDS sqlite3
-  BUILD_BYPRODUCTS
-    <BINARY_DIR>/lib/${soci_lib_pre}soci_core${soci_lib_post}${ep_lib_suffix}
-    <BINARY_DIR>/lib/${soci_lib_pre}soci_core${soci_lib_post}_d${ep_lib_suffix}
-    <BINARY_DIR>/lib/${soci_lib_pre}soci_empty${soci_lib_post}${ep_lib_suffix}
-    <BINARY_DIR>/lib/${soci_lib_pre}soci_empty${soci_lib_post}_d${ep_lib_suffix}
-    <BINARY_DIR>/lib/${soci_lib_pre}soci_sqlite3${soci_lib_post}${ep_lib_suffix}
-    <BINARY_DIR>/lib/${soci_lib_pre}soci_sqlite3${soci_lib_post}_d${ep_lib_suffix}
-)
-ExternalProject_Get_Property (soci BINARY_DIR)
-ExternalProject_Get_Property (soci SOURCE_DIR)
-if (CMAKE_VERBOSE_MAKEFILE)
-  print_ep_logs (soci)
-endif ()
-file (MAKE_DIRECTORY ${SOURCE_DIR}/include)
-file (MAKE_DIRECTORY ${BINARY_DIR}/include)
-foreach (_comp core empty sqlite3)
-  add_library ("soci_${_comp}" STATIC IMPORTED GLOBAL)
-  set_target_properties ("soci_${_comp}" PROPERTIES
-    IMPORTED_LOCATION_DEBUG
-      ${BINARY_DIR}/lib/${soci_lib_pre}soci_${_comp}${soci_lib_post}_d${ep_lib_suffix}
-    IMPORTED_LOCATION_RELEASE
-      ${BINARY_DIR}/lib/${soci_lib_pre}soci_${_comp}${soci_lib_post}${ep_lib_suffix}
-    INTERFACE_INCLUDE_DIRECTORIES
-      "${SOURCE_DIR}/include;${BINARY_DIR}/include")
-  add_dependencies ("soci_${_comp}" soci) # something has to depend on the ExternalProject to trigger it
-  target_link_libraries (casinocoin_libs INTERFACE "soci_${_comp}")
-  if (NOT _comp STREQUAL "core")
-    target_link_libraries ("soci_${_comp}" INTERFACE soci_core)
-  endif ()
-  exclude_if_included ("soci_${_comp}")
-endforeach ()
-exclude_if_included (soci)
-
-#[===================================================================[
-   NIH dep: snappy
-#]===================================================================]
-
-ExternalProject_Add (snappy
-  PREFIX ${nih_cache_path}
-  GIT_REPOSITORY https://github.com/google/snappy.git
-  GIT_TAG 1.1.7
-  CMAKE_ARGS
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-DCMAKE_VERBOSE_MAKEFILE=ON>
-    -DCMAKE_DEBUG_POSTFIX=_d
-    $<$<NOT:$<BOOL:${is_multiconfig}>>:-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}>
-    -DBUILD_SHARED_LIBS=OFF
-    -DSNAPPY_BUILD_TESTS=OFF
-    $<$<BOOL:${MSVC}>:
-      "-DCMAKE_C_FLAGS=-GR -Gd -fp:precise -FS -MP"
-      "-DCMAKE_C_FLAGS_DEBUG=-MTd"
-      "-DCMAKE_C_FLAGS_RELEASE=-MT"
-    >
-  LOG_BUILD ON
-  LOG_CONFIGURE ON
-  BUILD_COMMAND
-    ${CMAKE_COMMAND}
-    --build .
-    --config $<CONFIG>
-    $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.12>:--parallel$<$<BOOL:${is_xcode}>: ${num_procs}>>
-    $<$<BOOL:${is_multiconfig}>:
-      COMMAND
-        ${CMAKE_COMMAND} -E copy
-        <BINARY_DIR>/$<CONFIG>/${ep_lib_prefix}snappy$<$<CONFIG:Debug>:_d>${ep_lib_suffix}
-        <BINARY_DIR>
-      >
-  TEST_COMMAND ""
-  INSTALL_COMMAND ""
-  BUILD_BYPRODUCTS
-    <BINARY_DIR>/${ep_lib_prefix}snappy${ep_lib_suffix}
-    <BINARY_DIR>/${ep_lib_prefix}snappy_d${ep_lib_suffix}
-)
-ExternalProject_Get_Property (snappy BINARY_DIR)
-ExternalProject_Get_Property (snappy SOURCE_DIR)
-ExternalProject_Get_Property (snappy STAMP_DIR)
-if (CMAKE_VERBOSE_MAKEFILE)
-  print_ep_logs (snappy)
-endif ()
-add_library (snappy_lib STATIC IMPORTED GLOBAL)
-file (MAKE_DIRECTORY ${SOURCE_DIR}/snappy)
-set_target_properties (snappy_lib PROPERTIES
-  IMPORTED_LOCATION_DEBUG
-    ${BINARY_DIR}/${ep_lib_prefix}snappy_d${ep_lib_suffix}
-  IMPORTED_LOCATION_RELEASE
-    ${BINARY_DIR}/${ep_lib_prefix}snappy${ep_lib_suffix}
-  INTERFACE_INCLUDE_DIRECTORIES
-    "${SOURCE_DIR};${BINARY_DIR}")
-add_dependencies (snappy_lib snappy)
-target_link_libraries (casinocoin_libs INTERFACE snappy_lib)
-exclude_if_included (snappy)
-exclude_if_included (snappy_lib)
-
-#[===================================================================[
-   NIH dep: rocksdb
-#]===================================================================]
-
-if (NOT MSVC)
-  add_library (rocksdb STATIC
-    #[=========================================================[
-       this unity file is our interpretation of what sources
-       constitute rocksdb
-    #]=========================================================]
-    src/casinocoin/unity/rocksdb.cpp)
-  target_compile_options (rocksdb
-    PRIVATE
-      $<$<BOOL:${is_gcc}>:-w>
-    PUBLIC
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,7>>:
-        -Wno-inconsistent-missing-override
-        -Wno-uninitialized
-      >
-      $<$<BOOL:${is_clang}>:--system-header-prefix=rocksdb2>)
-  target_include_directories (rocksdb
-    PRIVATE
-      src
-      src/rocksdb2
-    PUBLIC
-      src/rocksdb2/include)
-  target_compile_definitions (rocksdb
-    PUBLIC
-      SNAPPY
-      casinocoin_ROCKSDB_AVAILABLE=1
-      $<$<BOOL:${WIN32}>:ROCKSDB_PLATFORM_WINDOWS>
-      $<$<NOT:$<BOOL:${WIN32}>>:
-        ROCKSDB_PLATFORM_POSIX
-        ROCKSDB_LIB_IO_POSIX
-      >
-      $<$<BOOL:${APPLE}>:OS_MACOSX=1>
-      $<$<PLATFORM_ID:Linux>:OS_LINUX>
+    set_property(
+        SOURCE ${rippled_headers}
+        APPEND
+        PROPERTY HEADER_FILE_ONLY
+        true)
+        # Doesn't work
     )
   target_link_libraries (rocksdb snappy_lib)
   exclude_if_included (rocksdb)
@@ -2497,6 +1739,51 @@ if (is_multiconfig)
       PROPERTY VS_STARTUP_PROJECT casinocoind)
   endif ()
 
+    ${rocks_db_system_header}
+    )
+
+endforeach()
+
+if (NOT is_msvc)
+  set(extra_props -Wno-array-bounds)
+else()
+  unset(extra_props)
+endif()
+
+add_with_props(rippled_src_all src/sqlite/sqlite_unity.c
+  ${extra_props})
+
+add_with_props(rippled_src_all src/ripple/unity/ed25519_donna.c
+  -I"${CMAKE_SOURCE_DIR}/"src/ed25519-donna)
+
+if (is_gcc)
+  set(no_gcc_warnings -w)
+else()
+  unset(no_gcc_warnings)
+endif()
+
+add_with_props(rippled_src_all src/ripple/unity/rocksdb.cpp
+  -I"${CMAKE_SOURCE_DIR}/"src/rocksdb2
+  -I"${CMAKE_SOURCE_DIR}/"src/rocksdb2/include
+  -I"${CMAKE_SOURCE_DIR}/"src/snappy/snappy
+  -I"${CMAKE_SOURCE_DIR}/"src/snappy/config
+  ${no_gcc_warnings} ${rocks_db_system_header})
+
+if (NOT is_msvc)
+  set(no_unused_w -Wno-unused-function)
+endif()
+
+add_with_props(rippled_src_all src/ripple/unity/snappy.cpp
+  -I"${CMAKE_SOURCE_DIR}/"src/snappy/snappy
+  -I"${CMAKE_SOURCE_DIR}/"src/snappy/config
+  ${no_unused_w})
+
+list(APPEND rippled_src_unity "${rippled_src_all}")
+list(APPEND rippled_src_nonunity "${rippled_src_all}")
+
+############################################################
+
+if (WIN32 OR is_xcode)
   group_sources(src)
   group_sources(docs)
   group_sources(Builds)

@@ -28,6 +28,7 @@
 #include <test/jtx/tags.h>
 #include <test/jtx/AbstractClient.h>
 #include <test/jtx/ManualTimeKeeper.h>
+#include <test/unit_test/SuiteJournal.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/app/ledger/OpenLedger.h>
@@ -44,12 +45,11 @@
 #include <casinocoin/protocol/STAmount.h>
 #include <casinocoin/protocol/STObject.h>
 #include <casinocoin/protocol/STTx.h>
-#include <beast/core/detail/type_traits.hpp>
 #include <casinocoin/beast/unit_test.h>
 #include <functional>
 #include <string>
 #include <tuple>
-#include <type_traits>
+#include <casinocoin/beast/cxx17/type_traits.h> // <type_traits>
 #include <utility>
 #include <unordered_map>
 #include <vector>
@@ -67,29 +67,50 @@ noCasinocoin (Account const& account, Args const&... args)
     return {{account, args...}};
 }
 
-/** Activate features in the Env ctor */
-template <class... Args>
-std::array<uint256, 1 + sizeof...(Args)>
-features (uint256 const& key, Args const&... args)
+inline
+FeatureBitset
+supported_amendments()
 {
-    return {{key, args...}};
+    static const FeatureBitset ids = []{
+        auto const& sa = casinocoin::detail::supportedAmendments();
+        std::vector<uint256> feats;
+        feats.reserve(sa.size());
+        for (auto const& s : sa)
+        {
+            if (auto const f = getRegisteredFeature(s))
+                feats.push_back(*f);
+            else
+                Throw<std::runtime_error> ("Unknown feature: " + s + "  in supportedAmendments.");
+        }
+        return FeatureBitset(feats);
+    }();
+    return ids;
 }
 
-/** Activate features in the Env ctor */
-inline
-auto
-features (std::initializer_list<uint256> keys)
-{
-    return keys;
-}
+//------------------------------------------------------------------------------
 
-/** Activate features in the Env ctor */
-inline
-auto
-features (std::vector<uint256> keys)
+class SuiteLogs : public Logs
 {
-    return keys;
-}
+    beast::unit_test::suite& suite_;
+
+public:
+    explicit
+    SuiteLogs(beast::unit_test::suite& suite)
+        : Logs (beast::severities::kError)
+        , suite_(suite)
+    {
+    }
+
+    ~SuiteLogs() override = default;
+
+    std::unique_ptr<beast::Journal::Sink>
+    makeSink(std::string const& partition,
+        beast::severities::Severity threshold) override
+    {
+        return std::make_unique<SuiteJournalSink>(
+            partition, threshold, suite_);
+    }
+};
 
 //------------------------------------------------------------------------------
 
@@ -99,93 +120,118 @@ class Env
 public:
     beast::unit_test::suite& test;
 
-    beast::Journal const journal;
-
     Account const& master = Account::master;
 
 private:
     struct AppBundle
     {
         Application* app;
-        std::unique_ptr<Logs> logs;
         std::unique_ptr<Application> owned;
         ManualTimeKeeper* timeKeeper;
         std::thread thread;
         std::unique_ptr<AbstractClient> client;
 
         AppBundle (beast::unit_test::suite& suite,
-            std::unique_ptr<Config> config);
+            std::unique_ptr<Config> config,
+            std::unique_ptr<Logs> logs);
         ~AppBundle();
     };
 
     AppBundle bundle_;
 
-    inline
-    void
-    construct()
-    {
-    }
-
-    template <class Arg, class... Args>
-    void
-    construct (Arg&& arg, Args&&... args)
-    {
-        construct_arg(std::forward<Arg>(arg));
-        construct(std::forward<Args>(args)...);
-    }
-
-    template<std::size_t N>
-    void
-    construct_arg (
-        std::array<uint256, N> const& list)
-    {
-        for(auto const& key : list)
-            app().config().features.insert(key);
-    }
-
-    void
-    construct_arg (
-        std::initializer_list<uint256> list)
-    {
-        for(auto const& key : list)
-            app().config().features.insert(key);
-    }
-
-    void
-    construct_arg (
-        std::vector<uint256> const& list)
-    {
-        for(auto const& key : list)
-            app().config().features.insert(key);
-    }
-
 public:
-    Env() = delete;
-    Env (Env const&) = delete;
-    Env& operator= (Env const&) = delete;
+    beast::Journal const journal;
 
+    Env() = delete;
+    Env& operator= (Env const&) = delete;
+    Env (Env const&) = delete;
+
+    /**
+     * @brief Create Env using suite, Config pointer, and explicit features.
+     *
+     * This constructor will create an Env with the specified configuration
+     * and takes ownership the passed Config pointer. Features will be enabled
+     * according to rules described below (see next constructor).
+     *
+     * @param suite_ the current unit_test::suite
+     * @param config The desired Config - ownership will be taken by moving
+     * the pointer. See envconfig and related functions for common config tweaks.
+     * @param args with_only_features() to explicitly enable or
+     * supported_features_except() to enable all and disable specific features.
+     */
     // VFALCO Could wrap the suite::log in a Journal here
-    template <class... Args>
     Env (beast::unit_test::suite& suite_,
-        std::unique_ptr<Config> config,
-            Args&&... args)
+            std::unique_ptr<Config> config,
+            FeatureBitset features,
+            std::unique_ptr<Logs> logs = nullptr)
         : test (suite_)
-        , bundle_ (suite_, std::move(config))
+        , bundle_ (
+            suite_,
+            std::move(config),
+            logs ? std::move(logs) : std::make_unique<SuiteLogs>(suite_))
+        , journal {bundle_.app->journal ("Env")}
     {
         memoize(Account::master);
         Pathfinder::initPathTable();
-        // enable the the invariant enforcement amendment by default.
-        construct(
-            features(featureEnforceInvariants),
-            std::forward<Args>(args)...);
+        foreachFeature(
+            features, [& appFeats = app().config().features](uint256 const& f) {
+                appFeats.insert(f);
+            });
     }
 
-    template <class... Args>
+    /**
+     * @brief Create Env with default config and specified
+     * features.
+     *
+     * This constructor will create an Env with the standard Env configuration
+     * (from envconfig()) and features explicitly specified. Use
+     * with_only_features(...) or supported_features_except(...) to create a
+     * collection of features appropriate for passing here.
+     *
+     * @param suite_ the current unit_test::suite
+     * @param args collection of features
+     *
+     */
     Env (beast::unit_test::suite& suite_,
-            Args&&... args)
-        : Env(suite_, envconfig(), std::forward<Args>(args)...)
+            FeatureBitset features)
+        : Env(suite_, envconfig(), features)
     {
     }
+
+    /**
+     * @brief Create Env using suite and Config pointer.
+     *
+     * This constructor will create an Env with the specified configuration
+     * and takes ownership the passed Config pointer. All supported amendments
+     * are enabled by this version of the constructor.
+     *
+     * @param suite_ the current unit_test::suite
+     * @param config The desired Config - ownership will be taken by moving
+     * the pointer. See envconfig and related functions for common config tweaks.
+     */
+    Env (beast::unit_test::suite& suite_,
+        std::unique_ptr<Config> config,
+        std::unique_ptr<Logs> logs = nullptr)
+        : Env(suite_, std::move(config),
+            supported_amendments(), std::move(logs))
+    {
+    }
+
+    /**
+     * @brief Create Env with only the current test suite
+     *
+     * This constructor will create an Env with the standard
+     * test Env configuration (from envconfig()) and all supported
+     * amendments enabled.
+     *
+     * @param suite_ the current unit_test::suite
+     */
+    Env (beast::unit_test::suite& suite_)
+        : Env(suite_, envconfig())
+    {
+    }
+
+    virtual ~Env() = default;
 
     Application&
     app()
@@ -488,6 +534,9 @@ public:
     std::shared_ptr<STTx const>
     tx() const;
 
+    void
+    enableFeature(uint256 const feature);
+
 private:
     void
     fund (bool setDefaultRipple,
@@ -612,73 +661,25 @@ protected:
     std::shared_ptr<STTx const>
     st (JTx const& jt);
 
-    inline
-    void
-    invoke (STTx& stx)
-    {
-    }
-
-    template <class F>
-    inline
-    void
-    maybe_invoke (STTx& stx, F const& f,
-        std::false_type)
-    {
-    }
-
-    template <class F>
-    void
-    maybe_invoke (STTx& stx, F const& f,
-        std::true_type)
-    {
-        f(*this, stx);
-    }
-
     // Invoke funclets on stx
     // Note: The STTx may not be modified
-    template <class F, class... FN>
+    template <class... FN>
     void
-    invoke (STTx& stx, F const& f,
-        FN const&... fN)
+    invoke (STTx& stx, FN const&... fN)
     {
-        maybe_invoke(stx, f,
-            beast::detail::is_invocable<F,
-                void(Env&, STTx const&)>());
-        invoke(stx, fN...);
-    }
-
-    inline
-    void
-    invoke (JTx&)
-    {
-    }
-
-    template <class F>
-    inline
-    void
-    maybe_invoke (JTx& jt, F const& f,
-        std::false_type)
-    {
-    }
-
-    template <class F>
-    void
-    maybe_invoke (JTx& jt, F const& f,
-        std::true_type)
-    {
-        f(*this, jt);
+        // Sean Parent for_each_argument trick (C++ fold expressions would be
+        // nice here)
+        (void)std::array<int, sizeof...(fN)>{{((fN(*this, stx)), 0)...}};
     }
 
     // Invoke funclets on jt
-    template <class F, class... FN>
+    template <class... FN>
     void
-    invoke (JTx& jt, F const& f,
-        FN const&... fN)
+    invoke (JTx& jt, FN const&... fN)
     {
-        maybe_invoke(jt, f,
-            beast::detail::is_invocable<F,
-                void(Env&, JTx&)>());
-        invoke(jt, fN...);
+        // Sean Parent for_each_argument trick (C++ fold expressions would be
+        // nice here)
+        (void)std::array<int, sizeof...(fN)>{{((fN(*this, jt)), 0)...}};
     }
 
     // Map of account IDs to Account
@@ -700,3 +701,4 @@ Env::rpc(std::string const& cmd, Args&&... args)
 } // casinocoin
 
 #endif
+

@@ -237,10 +237,6 @@ private:
     };
 
     static
-    std::string
-    scrub (std::string s);
-
-    static
     void
     format (std::string& output, std::string const& message,
         beast::severities::Severity severity, std::string const& partition);
@@ -275,3 +271,4 @@ debugLog();
 } // casinocoin
 
 #endif
+

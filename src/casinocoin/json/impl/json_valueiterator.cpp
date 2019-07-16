@@ -163,9 +163,7 @@ ValueIteratorBase::memberName () const
 // //////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////
 
-ValueConstIterator::ValueConstIterator ()
-{
-}
+
 
 ValueConstIterator::ValueConstIterator ( const Value::ObjectValues::iterator& current )
     : ValueIteratorBase ( current )
@@ -188,9 +186,7 @@ ValueConstIterator::operator = ( const ValueIteratorBase& other )
 // //////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////
 
-ValueIterator::ValueIterator ()
-{
-}
+
 
 
 ValueIterator::ValueIterator ( const Value::ObjectValues::iterator& current )

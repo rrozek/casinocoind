@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/core/Job.h>
 #include <casinocoin/beast/core/CurrentThreadName.h>
 #include <cassert>
@@ -85,7 +85,7 @@ void Job::doJob ()
 {
     beast::setCurrentThreadName ("doJob: " + mName);
     m_loadEvent->start ();
-    m_loadEvent->reName (mName);
+    m_loadEvent->setName (mName);
 
     mJob (*this);
 

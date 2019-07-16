@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/misc/HashRouter.h>
 
 namespace casinocoin {
@@ -77,6 +77,18 @@ bool HashRouter::addSuppressionPeer (uint256 const& key, PeerShortID peer, int& 
     return result.second;
 }
 
+bool HashRouter::shouldProcess (uint256 const& key, PeerShortID peer,
+    int& flags, std::chrono::seconds tx_interval)
+{
+    std::lock_guard <std::mutex> lock (mutex_);
+
+    auto result = emplace(key);
+    auto& s = result.first;
+    s.addPeer (peer);
+    flags = s.getFlags ();
+    return s.shouldProcess (suppressionMap_.clock().now(), tx_interval);
+}
+
 int HashRouter::getFlags (uint256 const& key)
 {
     std::lock_guard <std::mutex> lock (mutex_);
@@ -113,4 +125,15 @@ HashRouter::shouldRelay (uint256 const& key)
     return s.releasePeerSet();
 }
 
+bool
+HashRouter::shouldRecover(uint256 const& key)
+{
+    std::lock_guard <std::mutex> lock(mutex_);
+
+    auto& s = emplace(key).first;
+
+    return s.shouldRecover(recoverLimit_);
+}
+
 } // casinocoin
+

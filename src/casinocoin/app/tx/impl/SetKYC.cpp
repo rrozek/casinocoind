@@ -22,7 +22,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/tx/impl/SetKYC.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/core/Config.h>
@@ -36,7 +36,7 @@
 
 namespace casinocoin {
 
-TER
+NotTEC
 SetKYC::preflight (PreflightContext const& ctx)
 {
     auto& tx = ctx.tx;
@@ -71,7 +71,7 @@ SetKYC::preflight (PreflightContext const& ctx)
     }
 
     auto const id = tx.getAccountID(sfAccount);
-    if (id == zero)
+    if (id == beast::zero)
         return temBAD_SRC_ACCOUNT;
 
     if (!ctx.rules.enabled(featureConfigObject))

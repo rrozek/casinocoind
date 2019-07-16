@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_RESOURCE_IMPORT_H_INCLUDED
 #define CASINOCOIN_RESOURCE_IMPORT_H_INCLUDED
-
+#include <casinocoin/resource/impl/Entry.h>
 #include <casinocoin/resource/Consumer.h>
 
 namespace casinocoin {
@@ -36,18 +36,20 @@ struct Import
 {
     struct Item
     {
+        explicit Item() = default;
+
         int balance;
         Consumer consumer;
     };
 
     // Dummy argument required for zero-copy construction
     Import (int = 0)
-        : whenExpires (0)
+        : whenExpires ()
     {
     }
 
     // When the imported data expires
-    clock_type::rep whenExpires;
+    clock_type::time_point whenExpires;
 
     // List of remote entries
     std::vector <Item> items;
@@ -57,3 +59,4 @@ struct Import
 }
 
 #endif
+

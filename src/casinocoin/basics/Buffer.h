@@ -45,6 +45,8 @@ private:
     std::size_t size_ = 0;
 
 public:
+    using const_iterator = std::uint8_t const*;
+
     Buffer() = default;
 
     /** Create an uninitialized buffer with the given size. */
@@ -88,7 +90,7 @@ public:
     /** Move-construct.
         The other buffer is reset.
     */
-    Buffer (Buffer&& other)
+    Buffer (Buffer&& other) noexcept
         : p_ (std::move(other.p_))
         , size_ (other.size_)
     {
@@ -98,7 +100,7 @@ public:
     /** Move-assign.
         The other buffer is reset.
     */
-    Buffer& operator= (Buffer&& other)
+    Buffer& operator= (Buffer&& other) noexcept
     {
         if (this != &other)
         {
@@ -197,13 +199,41 @@ public:
     {
         return alloc(n);
     }
+
+    const_iterator
+    begin() const noexcept
+    {
+        return p_.get();
+    }
+
+    const_iterator
+    cbegin() const noexcept
+    {
+        return p_.get();
+    }
+
+    const_iterator
+    end() const noexcept
+    {
+        return p_.get() + size_;
+    }
+
+    const_iterator
+    cend() const noexcept
+    {
+        return p_.get() + size_;
+    }
 };
 
 inline bool operator==(Buffer const& lhs, Buffer const& rhs) noexcept
 {
-    if (lhs.size () != rhs.size ())
+    if (lhs.size() != rhs.size())
         return false;
-    return !std::memcmp (lhs.data (), rhs.data (), lhs.size ());
+
+    if (lhs.size() == 0)
+        return true;
+
+    return std::memcmp(lhs.data(), rhs.data(), lhs.size()) == 0;
 }
 
 inline bool operator!=(Buffer const& lhs, Buffer const& rhs) noexcept
@@ -214,3 +244,4 @@ inline bool operator!=(Buffer const& lhs, Buffer const& rhs) noexcept
 } // casinocoin
 
 #endif
+

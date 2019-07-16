@@ -32,7 +32,6 @@
 #include <string>
 #include <utility>
 
-using beast::zero;
 
 namespace casinocoin {
 
@@ -70,7 +69,7 @@ public:
 
     IOUAmount (beast::Zero)
     {
-        *this = zero;
+        *this = beast::zero;
     }
 
     IOUAmount (std::int64_t mantissa, int exponent)

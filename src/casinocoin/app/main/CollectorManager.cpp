@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/main/CollectorManager.h>
 #include <memory>
 
@@ -59,9 +59,7 @@ public:
         m_groups = beast::insight::make_Groups (m_collector);
     }
 
-    ~CollectorManagerImp ()
-    {
-    }
+    ~CollectorManagerImp() = default;
 
     beast::insight::Collector::ptr const& collector () override
     {
@@ -76,9 +74,7 @@ public:
 
 //------------------------------------------------------------------------------
 
-CollectorManager::~CollectorManager ()
-{
-}
+CollectorManager::~CollectorManager() = default;
 
 std::unique_ptr<CollectorManager> CollectorManager::New(Section const& params,
     beast::Journal journal)

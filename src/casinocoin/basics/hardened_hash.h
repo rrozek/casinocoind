@@ -96,6 +96,8 @@ private:
     }
 
 public:
+    explicit basic_hardened_hash() = default;
+
     using result_type = typename HashAlgorithm::result_type;
 
     template <class T>
@@ -176,3 +178,4 @@ template <class HashAlgorithm = beast::xxhasher>
 } // casinocoin
 
 #endif
+

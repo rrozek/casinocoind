@@ -29,7 +29,7 @@
 #include <casinocoin/app/tx/impl/Transactor.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/protocol/TxFlags.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 
 namespace casinocoin {
 
@@ -37,7 +37,7 @@ class SetRegularKey
     : public Transactor
 {
 public:
-    SetRegularKey (ApplyContext& ctx)
+    explicit SetRegularKey (ApplyContext& ctx)
         : Transactor(ctx)
     {
     }
@@ -50,13 +50,14 @@ public:
     }
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     static
     std::uint64_t
     calculateBaseFee (
-        PreclaimContext const& ctx);
+        ReadView const& view,
+        STTx const& tx);
 
     TER doApply () override;
 };

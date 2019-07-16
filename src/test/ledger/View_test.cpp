@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/ledger/ApplyViewImpl.h>
@@ -26,6 +26,7 @@
 #include <casinocoin/ledger/Sandbox.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/Protocol.h>
 #include <type_traits>
 
 namespace casinocoin {
@@ -363,25 +364,25 @@ class View_test
                 BEAST_EXPECT(v1.parentCloseTime() ==
                     v1.parentCloseTime());
 
-                ApplyViewImpl v2(&v1, tapNO_CHECK_SIGN);
+                ApplyViewImpl v2(&v1, tapRETRY);
                 BEAST_EXPECT(v2.parentCloseTime() ==
                     v1.parentCloseTime());
                 BEAST_EXPECT(v2.seq() == v1.seq());
-                BEAST_EXPECT(v2.flags() == tapNO_CHECK_SIGN);
+                BEAST_EXPECT(v2.flags() == tapRETRY);
 
                 Sandbox v3(&v2);
                 BEAST_EXPECT(v3.seq() == v2.seq());
                 BEAST_EXPECT(v3.parentCloseTime() ==
                     v2.parentCloseTime());
-                BEAST_EXPECT(v3.flags() == tapNO_CHECK_SIGN);
+                BEAST_EXPECT(v3.flags() == tapRETRY);
             }
             {
-                ApplyViewImpl v1(&v0, tapNO_CHECK_SIGN);
+                ApplyViewImpl v1(&v0, tapRETRY);
                 PaymentSandbox v2(&v1);
                 BEAST_EXPECT(v2.seq() == v0.seq());
                 BEAST_EXPECT(v2.parentCloseTime() ==
                     v0.parentCloseTime());
-                BEAST_EXPECT(v2.flags() == tapNO_CHECK_SIGN);
+                BEAST_EXPECT(v2.flags() == tapRETRY);
                 PaymentSandbox v3(&v2);
                 BEAST_EXPECT(v3.seq() == v2.seq());
                 BEAST_EXPECT(v3.parentCloseTime() ==
@@ -689,7 +690,7 @@ class View_test
 
         // The two Env's can't share the same ports, so modifiy the config
         // of the second Env to use higher port numbers
-        Env eB {*this, envconfig(port_increment, 5)};
+        Env eB {*this, envconfig(port_increment, 3)};
 
         // Make ledgers that are incompatible with the first ledgers.  Note
         // that bob is funded before alice.
@@ -763,7 +764,7 @@ class View_test
         }
     }
 
-    void run()
+    void run() override
     {
         // This had better work, or else
         BEAST_EXPECT(k(0).key < k(1).key);
@@ -834,109 +835,9 @@ class GetAmendments_test
     }
 };
 
-class DirIsEmpty_test
-    : public beast::unit_test::suite
-{
-    void
-    testDirIsEmpty()
-    {
-        using namespace jtx;
-        auto const alice = Account("alice");
-        auto const bogie = Account("bogie");
-
-        Env env(*this, features(featureMultiSign));
-
-        env.fund(CSC(10000), alice);
-        env.close();
-
-        // alice should have an empty directory.
-        BEAST_EXPECT(dirIsEmpty (*env.closed(), keylet::ownerDir(alice)));
-
-        // Give alice a signer list, then there will be stuff in the directory.
-        env(signers(alice, 1, { { bogie, 1} }));
-        env.close();
-        BEAST_EXPECT(! dirIsEmpty (*env.closed(), keylet::ownerDir(alice)));
-
-        env(signers(alice, jtx::none));
-        env.close();
-        BEAST_EXPECT(dirIsEmpty (*env.closed(), keylet::ownerDir(alice)));
-
-        // The next test is a bit awkward.  It tests the case where alice
-        // uses 3 directory pages and then deletes all entries from the
-        // first 2 pages.  dirIsEmpty() should still return false in this
-        // circumstance.
-        //
-        // Fill alice's directory with implicit trust lines (produced by
-        // taking offers) and then remove all but the last one.
-        auto const becky = Account ("becky");
-        auto const gw = Account ("gw");
-        env.fund(CSC(10000), becky, gw);
-        env.close();
-
-        // The DIR_NODE_MAX constant is hidden in View.cpp (Feb 2016).  But,
-        // ideally, we'd verify we're doing a good test with the following:
-//      static_assert (64 >= (2 * DIR_NODE_MAX), "");
-
-        // Generate 64 currencies named AAA -> AAP and ADA -> ADP.
-        std::vector<IOU> currencies;
-        currencies.reserve(64);
-        for (char b = 'A'; b <= 'D'; ++b)
-        {
-            for (char c = 'A'; c <= 'P'; ++c)
-            {
-                currencies.push_back(gw[std::string("A") + b + c]);
-                IOU const& currency = currencies.back();
-
-                // Establish trust lines.
-                env(trust(becky, currency(50)));
-                env.close();
-                env(pay(gw, becky, currency(50)));
-                env.close();
-                env(offer(alice, currency(50), CSC(10)));
-                env(offer(becky, CSC(10), currency(50)));
-                env.close();
-            }
-        }
-
-        // Set up one more currency that alice will hold onto.  We expect
-        // this one to go in the third directory page.
-        IOU const lastCurrency = gw["ZZZ"];
-        env(trust(becky, lastCurrency(50)));
-        env.close();
-        env(pay(gw, becky, lastCurrency(50)));
-        env.close();
-        env(offer(alice, lastCurrency(50), CSC(10)));
-        env(offer(becky, CSC(10), lastCurrency(50)));
-        env.close();
-
-        BEAST_EXPECT(! dirIsEmpty (*env.closed(), keylet::ownerDir(alice)));
-
-        // Now alice gives all the currencies except the last one back to becky.
-        for (auto currency : currencies)
-        {
-            env(pay(alice, becky, currency(50)));
-            env.close();
-        }
-
-        // This is the crux of the test.
-        BEAST_EXPECT(! dirIsEmpty (*env.closed(), keylet::ownerDir(alice)));
-
-        // Give the last currency to becky.  Now alice's directory is empty.
-        env(pay(alice, becky, lastCurrency(50)));
-        env.close();
-
-        BEAST_EXPECT(dirIsEmpty (*env.closed(), keylet::ownerDir(alice)));
-    }
-
-    void run() override
-    {
-        testDirIsEmpty();
-    }
-};
-
 BEAST_DEFINE_TESTSUITE(View,ledger,casinocoin);
 BEAST_DEFINE_TESTSUITE(GetAmendments,ledger,casinocoin);
-BEAST_DEFINE_TESTSUITE(DirIsEmpty, ledger,casinocoin);
 
 }  // test
-}  // ripple
+}  // casinocoin
+

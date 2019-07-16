@@ -46,12 +46,12 @@ public:
     void
     missing_backend();
 
-    ManagerImp();
+    ManagerImp() = default;
 
-    ~ManagerImp();
+    ~ManagerImp() = default;
 
     Factory*
-    find (std::string const& name);
+    find (std::string const& name) override;
 
     void
     insert (Factory& factory) override;
@@ -71,17 +71,7 @@ public:
         Scheduler& scheduler,
         int readThreads,
         Stoppable& parent,
-        Section const& backendParameters,
-        beast::Journal journal) override;
-
-    std::unique_ptr <DatabaseRotating>
-    make_DatabaseRotating (
-        std::string const& name,
-        Scheduler& scheduler,
-        std::int32_t readThreads,
-        Stoppable& parent,
-        std::shared_ptr <Backend> writableBackend,
-        std::shared_ptr <Backend> archiveBackend,
+        Section const& config,
         beast::Journal journal) override;
 };
 
@@ -89,3 +79,4 @@ public:
 }
 
 #endif
+

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/ledger/OrderBookDB.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/json/to_string.h>

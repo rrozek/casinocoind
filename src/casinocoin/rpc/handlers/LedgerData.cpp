@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerToJson.h>
 #include <casinocoin/ledger/ReadView.h>
 #include <casinocoin/protocol/ErrorCodes.h>

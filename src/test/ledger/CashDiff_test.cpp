@@ -17,18 +17,23 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/ledger/CashDiff.h>
 #include <casinocoin/protocol/STAmount.h>
 #include <casinocoin/beast/unit_test.h>
-
+#include <type_traits>
 namespace casinocoin {
 namespace test {
 
 class CashDiff_test : public beast::unit_test::suite
 {
+    static_assert(!std::is_default_constructible<CashDiff>{}, "");
+    static_assert(!std::is_copy_constructible<CashDiff>{}, "");
+    static_assert(!std::is_copy_assignable<CashDiff>{}, "");
+    static_assert(std::is_nothrow_move_constructible<CashDiff>{}, "");
+    static_assert(!std::is_move_assignable<CashDiff>{}, "");
 
-    // Exercise diffIsDust (STAmount, STAmount)
+	// Exercise diffIsDust (STAmount, STAmount)
     void
     testDust ()
     {
@@ -92,7 +97,7 @@ class CashDiff_test : public beast::unit_test::suite
     }
 
 public:
-    void run ()
+    void run () override
     {
         testDust();
     }
@@ -102,3 +107,4 @@ BEAST_DEFINE_TESTSUITE (CashDiff, ledger, casinocoin);
 
 }  // test
 }  // ripple
+

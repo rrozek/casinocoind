@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/core/TimeKeeper.h>
@@ -40,8 +40,6 @@ Json::Value doPeers (RPC::Context& context)
     Json::Value jvResult (Json::objectValue);
 
     {
-        auto lock = make_lock(context.app.getMasterMutex());
-
         jvResult[jss::peers] = context.app.overlay ().json ();
 
         auto const now = context.app.timeKeeper().now();
@@ -58,7 +56,7 @@ Json::Value doPeers (RPC::Context& context)
 
                 Json::Value& json = cluster[
                     toBase58(
-                        TokenType::TOKEN_NODE_PUBLIC,
+                        TokenType::NodePublic,
                         node.identity())];
 
                 if (!node.name().empty())
@@ -78,3 +76,4 @@ Json::Value doPeers (RPC::Context& context)
 }
 
 } // casinocoin
+

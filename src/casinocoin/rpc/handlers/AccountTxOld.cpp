@@ -22,7 +22,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
@@ -33,6 +33,7 @@
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/resource/Fees.h>
 #include <casinocoin/rpc/Context.h>
+#include <casinocoin/rpc/DeliveredAmount.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <casinocoin/rpc/Role.h>
 
@@ -189,7 +190,7 @@ Json::Value doAccountTxOld (RPC::Context& context)
                     std::uint32_t uLedgerIndex = it->second->getLgrSeq ();
 
                     auto meta = it->second->getJson(0);
-                    addPaymentDeliveredAmount(meta, context, it->first, it->second);
+                    insertDeliveredAmount(meta, context, it->first, *it->second);
                     jvObj[jss::meta] = std::move(meta);
 
                     jvObj[jss::validated]
@@ -232,3 +233,4 @@ Json::Value doAccountTxOld (RPC::Context& context)
 }
 
 } // casinocoin
+

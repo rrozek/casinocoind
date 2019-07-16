@@ -27,6 +27,10 @@
 #define CASINOCOIN_CORE_JOB_H_INCLUDED
 
 #include <casinocoin/core/LoadMonitor.h>
+#include <functional>
+
+#include <functional>
+
 
 namespace casinocoin {
 

@@ -48,7 +48,10 @@ class TransactionMaster;
 
 class SqliteStatement;
 
-struct create_genesis_t {};
+struct create_genesis_t
+{
+    explicit create_genesis_t() = default;
+};
 extern create_genesis_t const create_genesis;
 
 /** Holds a ledger.
@@ -114,10 +117,13 @@ public:
         Config const& config,
         Family& family);
 
-    // Used for ledgers loaded from JSON files
+    /** Used for ledgers loaded from JSON files
+        @param acquire If true, acquires the ledger if not found locally
+    */
     Ledger (
         LedgerInfo const& info,
         bool& loaded,
+        bool acquire,
         Config const& config,
         Family& family,
         beast::Journal j);
@@ -278,8 +284,10 @@ public:
     void
     setFull() const
     {
-        txMap_->setLedgerSeq (info_.seq);
-        stateMap_->setLedgerSeq (info_.seq);
+        txMap_->setFull();
+        stateMap_->setFull();
+        txMap_->setLedgerSeq(info_.seq);
+        stateMap_->setLedgerSeq(info_.seq);
     }
 
     void setTotalDrops (std::uint64_t totDrops)
@@ -372,16 +380,17 @@ pendSaveValidated(
 extern
 std::shared_ptr<Ledger>
 loadByIndex (std::uint32_t ledgerIndex,
-    Application& app);
+    Application& app, bool acquire = true);
 
 extern
 std::tuple<std::shared_ptr<Ledger>, std::uint32_t, uint256>
 loadLedgerHelper(std::string const& sqlSuffix,
-    Application& app);
+    Application& app, bool acquire = true);
 
 extern
 std::shared_ptr<Ledger>
-loadByHash (uint256 const& ledgerHash, Application& app);
+loadByHash (uint256 const& ledgerHash,
+    Application& app, bool acquire = true);
 
 extern
 uint256
@@ -421,17 +430,7 @@ std::pair<std::shared_ptr<
         STObject const>>
 deserializeTxPlusMeta (SHAMapItem const& item);
 
-// DEPRECATED
-inline
-std::shared_ptr<SLE const>
-cachedRead (ReadView const& ledger, uint256 const& key,
-    boost::optional<LedgerEntryType> type = boost::none)
-{
-    if (type)
-        return ledger.read(Keylet(*type, key));
-    return ledger.read(keylet::unchecked(key));
-}
-
 } // casinocoin
 
 #endif
+

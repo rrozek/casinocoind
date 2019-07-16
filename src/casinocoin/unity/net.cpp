@@ -26,9 +26,10 @@
 #undef DEPRECATED_IN_MAC_OS_X_VERSION_10_7_AND_LATER
 #define DEPRECATED_IN_MAC_OS_X_VERSION_10_7_AND_LATER /**/
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/net/impl/HTTPClient.cpp>
 #include <casinocoin/net/impl/InfoSub.cpp>
 #include <casinocoin/net/impl/RPCCall.cpp>
 #include <casinocoin/net/impl/RPCErr.cpp>
 #include <casinocoin/net/impl/RPCSub.cpp>
+#include <casinocoin/net/impl/RegisterSSLCerts.cpp>

@@ -17,13 +17,13 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx/multisign.h>
 #include <test/jtx/utility.h>
 #include <casinocoin/protocol/HashPrefix.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/Sign.h>
-#include <casinocoin/protocol/types.h>
+#include <casinocoin/protocol/UintTypes.h>
 #include <casinocoin/basics/contract.h>
 
 namespace casinocoin {
@@ -37,7 +37,7 @@ signers (Account const& account,
 {
     Json::Value jv;
     jv[jss::Account] = account.human();
-    jv[jss::TransactionType] = "SignerListSet";
+    jv[jss::TransactionType] = jss::SignerListSet;
     jv[sfSignerQuorum.getJsonName()] = quorum;
     auto& ja = jv[sfSignerEntries.getJsonName()];
     ja.resize(v.size());
@@ -56,7 +56,7 @@ signers (Account const& account, none_t)
 {
     Json::Value jv;
     jv[jss::Account] = account.human();
-    jv[jss::TransactionType] = "SignerListSet";
+    jv[jss::TransactionType] = jss::SignerListSet;
     jv[sfSignerQuorum.getJsonName()] = 0;
     return jv;
 }
@@ -112,3 +112,4 @@ msig::operator()(Env& env, JTx& jt) const
 } // jtx
 } // test
 } // casinocoin
+

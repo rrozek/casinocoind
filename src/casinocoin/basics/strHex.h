@@ -34,6 +34,8 @@
 #include <cassert>
 #include <string>
 
+#include <boost/algorithm/hex.hpp>
+#include <boost/endian/conversion.hpp>
 namespace casinocoin {
 
 /** Converts an integer to the corresponding hex digit
@@ -68,22 +70,37 @@ charUnHex (char c)
 }
 /** @} */
 
-// NIKB TODO cleanup this function and reduce the need for the many overloads
-//           it has in various places.
-template<class FwdIt>
-std::string strHex (FwdIt first, int size)
+template <class FwdIt>
+std::string
+strHex(FwdIt begin, FwdIt end)
 {
-    std::string s;
-    s.resize (size * 2);
-    for (int i = 0; i < size; i++)
-    {
-        unsigned char c = *first++;
-        s[i * 2]     = charHex (c >> 4);
-        s[i * 2 + 1] = charHex (c & 15);
-    }
-    return s;
+    static_assert(
+        std::is_convertible<
+            typename std::iterator_traits<FwdIt>::iterator_category,
+            std::forward_iterator_tag>::value,
+        "FwdIt must be a forward iterator");
+    std::string result;
+    result.reserve(2 * std::distance(begin, end));
+    boost::algorithm::hex(begin, end, std::back_inserter(result));
+    return result;
+}
+
+template <class T, class = decltype(std::declval<T>().begin())>
+std::string strHex(T const& from)
+{
+    return strHex(from.begin(), from.end());
+}
+
+inline std::string strHex (const std::uint64_t uiHost)
+{
+    uint64_t uBig    = boost::endian::native_to_big (uiHost);
+
+    auto const begin = (unsigned char*) &uBig;
+    auto const end   = begin + sizeof(uBig);
+    return strHex(begin, end);
 }
 
 }
 
 #endif
+

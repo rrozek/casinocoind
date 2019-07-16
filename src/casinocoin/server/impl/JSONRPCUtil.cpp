@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/server/impl/JSONRPCUtil.h>
 #include <casinocoin/protocol/JsonFields.h>

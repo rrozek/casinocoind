@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/CheckLibraryVersions.h>
 #include <casinocoin/basics/impl/CheckLibraryVersionsImpl.h>
 #include <casinocoin/beast/unit_test.h>
@@ -41,7 +41,7 @@ struct CheckLibraryVersions_test : beast::unit_test::suite
         except ([&]{ checkBoost ("1.54.0"); });
     }
 
-    void run()
+    void run() override
     {
         unexcept ([&]{ checkLibraryVersions(); });
 

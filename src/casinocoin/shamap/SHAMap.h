@@ -93,6 +93,7 @@ private:
     mutable SHAMapState             state_;
     SHAMapType                      type_;
     bool                            backed_ = true; // Map is backed by the database
+    bool                            full_ = false; // Map is believed complete in database
 
 public:
     class version
@@ -128,6 +129,12 @@ public:
         Family& f,
         version v);
 
+    Family const&
+    family() const
+    {
+        return f_;
+    }
+
     Family&
     family()
     {
@@ -151,11 +158,12 @@ public:
     // Handles copy on write for mutable snapshots.
     std::shared_ptr<SHAMap> snapShot (bool isMutable) const;
 
-    /*  Sets metadata associated with the SHAMap
-
-        Marked `const` because the data is not part of
-        the map contents.
+    /*  Mark this SHAMap as "should be full", indicating
+        that the local server wants all the corresponding nodes
+        in durable storage.
     */
+    void setFull ();
+
     void setLedgerSeq (std::uint32_t lseq);
 
     bool fetchRoot (SHAMapHash const& hash, SHAMapSyncFilter * filter);
@@ -183,10 +191,26 @@ public:
     // traverse functions
     const_iterator upper_bound(uint256 const& id) const;
 
-    void visitNodes (std::function<bool (SHAMapAbstractNode&)> const&) const;
-    void
-        visitLeaves(
-            std::function<void(std::shared_ptr<SHAMapItem const> const&)> const&) const;
+    /**  Visit every node in this SHAMap
+         @param function called with every node visited.
+         If function returns false, visitNodes exits.
+    */
+    void visitNodes (std::function<bool (
+        SHAMapAbstractNode&)> const& function) const;
+
+    /**  Visit every node in this SHAMap that
+         is not present in the specified SHAMap
+         @param function called with every node visited.
+         If function returns false, visitDifferences exits.
+    */
+    void visitDifferences(SHAMap const* have,
+        std::function<bool (SHAMapAbstractNode&)>) const;
+
+    /**  Visit every leaf node in this SHAMap
+         @param function called with every non inner node visited.
+    */
+    void visitLeaves(std::function<void (
+        std::shared_ptr<SHAMapItem const> const&)> const&) const;
 
     // comparison/sync functions
 
@@ -252,8 +276,6 @@ private:
         std::stack<std::pair<std::shared_ptr<SHAMapAbstractNode>, SHAMapNodeID>>;
     using DeltaRef = std::pair<std::shared_ptr<SHAMapItem const> const&,
                                std::shared_ptr<SHAMapItem const> const&>;
-
-    void visitDifferences(SHAMap const* have, std::function<bool(SHAMapAbstractNode&)>) const;
 
      // tree node cache operations
     std::shared_ptr<SHAMapAbstractNode> getCache (SHAMapHash const& hash) const;
@@ -358,7 +380,13 @@ private:
             int,              // while child we check first
             int,              // which child we check next
             bool>;            // whether we've found any missing children yet
-        std::stack <StackEntry> stack_;
+
+        // We explicitly choose to specify the use of std::deque here, because
+        // we need to ensure that pointers and/or references to existing elements
+        // will not be invalidated during the course of element insertion and
+        // removal. Containers that do not offer this guarantee, such as
+        // std::vector, can't be used here.
+        std::stack <StackEntry, std::deque<StackEntry>> stack_;
 
         // nodes we may acquire from deferred reads
         std::vector <std::tuple <SHAMapInnerNode*, SHAMapNodeID, int>> deferredReads_;
@@ -381,6 +409,13 @@ private:
     void gmn_ProcessNodes (MissingNodes&, MissingNodes::StackEntry& node);
     void gmn_ProcessDeferredReads (MissingNodes&);
 };
+
+inline
+void
+SHAMap::setFull ()
+{
+    full_ = true;
+}
 
 inline
 void
@@ -567,3 +602,4 @@ SHAMap::end() const
 }
 
 #endif
+

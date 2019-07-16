@@ -45,7 +45,7 @@ public:
     calculateMaxSpend(STTx const& tx);
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     TER
@@ -65,12 +65,14 @@ public:
     }
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     static
     std::uint64_t
-    calculateBaseFee (PreclaimContext const& ctx);
+    calculateBaseFee (
+        ReadView const& view,
+        STTx const& tx);
 
     TER
     doApply() override;
@@ -89,7 +91,7 @@ public:
     }
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     TER

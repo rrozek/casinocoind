@@ -23,12 +23,14 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/paths/PathRequests.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/core/JobQueue.h>
+#include <casinocoin/net/RPCErr.h>
+#include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/resource/Fees.h>
 #include <algorithm>
@@ -252,7 +254,12 @@ PathRequests::makeLegacyPathRequest(
     else
     {
         insertPathRequest (req);
-        app_.getLedgerMaster().newPathRequest();
+        if (! app_.getLedgerMaster().newPathRequest())
+        {
+            // The newPathRequest failed.  Tell the caller.
+            result.second = rpcError (rpcTOO_BUSY);
+            req.reset();
+        }
     }
 
     return std::move (result.second);

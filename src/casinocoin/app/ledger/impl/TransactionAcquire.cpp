@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+
 #include <casinocoin/app/ledger/impl/TransactionAcquire.h>
 #include <casinocoin/app/ledger/ConsensusTransSetSF.h>
 #include <casinocoin/app/ledger/InboundLedgers.h>
@@ -58,9 +58,7 @@ TransactionAcquire::TransactionAcquire (Application& app, uint256 const& hash, c
     mMap->setUnbacked ();
 }
 
-TransactionAcquire::~TransactionAcquire ()
-{
-}
+
 
 void TransactionAcquire::execute ()
 {
@@ -88,6 +86,11 @@ void TransactionAcquire::done ()
         uint256 const& hash (mHash);
         std::shared_ptr <SHAMap> const& map (mMap);
         auto const pap = &app_;
+        // Note that, when we're in the process of shutting down, addJob()
+        // may reject the request.  If that happens then giveSet() will
+        // not be called.  That's fine.  According to David the giveSet() call
+        // just updates the consensus and related structures when we acquire
+        // a transaction set. No need to update them if we're shutting down.
         app_.getJobQueue().addJob (jtTXN_DATA, "completeAcquire",
             [pap, hash, map](Job&)
             {

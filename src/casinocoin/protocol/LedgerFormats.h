@@ -91,11 +91,15 @@ enum LedgerEntryType
 
     // CSC Ledger dependent configuration object
     ltCONFIGURATION     = 'C',
+    ltCHECK             = 'H',
+
+    ltDEPOSIT_PREAUTH   = 'p',
+
+
 
     // No longer used or supported. Left here to prevent accidental
     // reassignment of the ledger type.
     ltNICKNAME          = 'n',
-
 };
 
 /**
@@ -120,6 +124,8 @@ enum LedgerNameSpace
     spaceSignerList     = 'S',
     spaceCSCUChannel    = 'x',
     spaceConfiguration  = 'C',
+    spaceCheck          = 'H',
+    spaceDepositPreauth = 'p',
 
     // No longer used or supported. Left here to reserve the space and
     // avoid accidental reuse of the space.
@@ -132,28 +138,32 @@ enum LedgerNameSpace
 enum LedgerSpecificFlags
 {
     // ltACCOUNT_ROOT
-    lsfPasswordSpent     = 0x00010000,   // True, if password set fee is spent.
-    lsfRequireDestTag    = 0x00020000,   // True, to require a DestinationTag for payments.
-    lsfRequireAuth       = 0x00040000,   // True, to require a authorization to hold IOUs.
+    lsfPasswordSpent    = 0x00010000,   // True, if password set fee is spent.
+    lsfRequireDestTag   = 0x00020000,   // True, to require a DestinationTag for payments.
+    lsfRequireAuth      = 0x00040000,   // True, to require a authorization to hold IOUs.
     lsfDisallowCSC       = 0x00080000,   // True, to disallow sending CSC.
-    lsfDisableMaster     = 0x00100000,   // True, force regular key
-    lsfNoFreeze          = 0x00200000,   // True, cannot freeze ripple states
-    lsfGlobalFreeze      = 0x00400000,   // True, all assets frozen
+    lsfDisableMaster    = 0x00100000,   // True, force regular key
+    lsfNoFreeze         = 0x00200000,   // True, cannot freeze ripple states
+    lsfGlobalFreeze     = 0x00400000,   // True, all assets frozen
     lsfDefaultCasinocoin = 0x00800000,   // True, trust lines allow rippling by default
     lsfKYCValidated      = 0x01000000,   // True, if account has approved KYC validation
+    lsfDepositAuth      = 0x02000000,   // True, all deposits require authorization
     // ltOFFER
     lsfPassive           = 0x00010000,
     lsfSell              = 0x00020000,   // True, offer was placed as a sell.
 
     // ltCASINOCOIN_STATE
-    lsfLowReserve        = 0x00010000,   // True, if entry counts toward reserve.
-    lsfHighReserve       = 0x00020000,
-    lsfLowAuth           = 0x00040000,
-    lsfHighAuth          = 0x00080000,
+    lsfLowReserve       = 0x00010000,   // True, if entry counts toward reserve.
+    lsfHighReserve      = 0x00020000,
+    lsfLowAuth          = 0x00040000,
+    lsfHighAuth         = 0x00080000,
     lsfLowNoCasinocoin   = 0x00100000,
     lsfHighNoCasinocoin  = 0x00200000,
-    lsfLowFreeze         = 0x00400000,   // True, low side has set freeze flag
-    lsfHighFreeze        = 0x00800000,   // True, high side has set freeze flag
+    lsfLowFreeze        = 0x00400000,   // True, low side has set freeze flag
+    lsfHighFreeze       = 0x00800000,   // True, high side has set freeze flag
+
+    // ltSIGNER_LIST
+    lsfOneOwnerCount    = 0x00010000,   // True, uses only one OwnerCount
 };
 
 //------------------------------------------------------------------------------
@@ -163,15 +173,16 @@ enum LedgerSpecificFlags
 class LedgerFormats : public KnownFormats <LedgerEntryType>
 {
 private:
+    /** Create the object.
+        This will load the object with all the known ledger formats.
+    */
     LedgerFormats ();
 
 public:
     static LedgerFormats const& getInstance ();
-
-private:
-    void addCommonFields (Item& item);
 };
 
 } // casinocoin
 
 #endif
+

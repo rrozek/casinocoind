@@ -34,6 +34,8 @@ namespace casinocoin {
 
 struct AmountSpec
 {
+    explicit AmountSpec() = default;
+
     bool native;
     union
     {
@@ -109,6 +111,18 @@ struct EitherAmount
         else
             iou = a.iou;
     }
+
+#ifndef NDEBUG
+    friend std::ostream&
+    operator<<(std::ostream& stream, EitherAmount const& amt)
+    {
+        if (amt.native)
+            stream << to_string(amt.csc);
+        else
+            stream << to_string(amt.iou);
+        return stream;
+    }
+#endif
 };
 
 template <class T>
@@ -221,3 +235,4 @@ toAmountSpec (
 }
 
 #endif
+

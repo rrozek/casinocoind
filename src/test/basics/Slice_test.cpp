@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/beast/unit_test.h>
 #include <array>
@@ -28,7 +28,7 @@ namespace test {
 
 struct Slice_test : beast::unit_test::suite
 {
-    void run()
+    void run() override
     {
         std::uint8_t const data[] =
         {

@@ -110,7 +110,12 @@ public:
         Thread Safety:
             May be called concurrently
     */
-    void close();
+    void close() override;
+
+    endpoint_type get_endpoint() const
+    {
+        return acceptor_.local_endpoint();
+    }
 
 private:
     template <class ConstBufferSequence>
@@ -370,7 +375,7 @@ void
 Door<Handler>::
 do_accept(boost::asio::yield_context do_yield)
 {
-    for(;;)
+    while (acceptor_.is_open())
     {
         error_code ec;
         endpoint_type remote_address;
@@ -404,3 +409,4 @@ do_accept(boost::asio::yield_context do_yield)
 } // casinocoin
 
 #endif
+

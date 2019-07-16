@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/json/json_reader.h>
 #include <algorithm>
@@ -34,6 +34,8 @@ namespace Json
 {
 // Implementation of class Reader
 // ////////////////////////////////
+
+constexpr unsigned Reader::nest_limit;
 
 static
 std::string
@@ -77,9 +79,7 @@ codePointToUTF8 (unsigned int cp)
 // Class Reader
 // //////////////////////////////////////////////////////////////////
 
-Reader::Reader ()
-{
-}
+
 
 
 bool
@@ -124,12 +124,11 @@ Reader::parse ( const char* beginDoc, const char* endDoc,
         nodes_.pop ();
 
     nodes_.push ( &root );
-
-    bool successful = readValue ();
+    bool successful = readValue(0);
     Token token;
     skipCommentTokens ( token );
 
-    if ( !root.isArray ()  &&  !root.isObject () )
+    if ( !root.isNull() && !root.isArray() && !root.isObject() )
     {
         // Set error location to start of doc, ideally should be first token found in doc
         token.type_ = tokenError;
@@ -144,20 +143,22 @@ Reader::parse ( const char* beginDoc, const char* endDoc,
 }
 
 bool
-Reader::readValue ()
+Reader::readValue(unsigned depth)
 {
     Token token;
     skipCommentTokens ( token );
+    if (depth > nest_limit)
+        return addError("Syntax error: maximum nesting depth exceeded", token);
     bool successful = true;
 
     switch ( token.type_ )
     {
     case tokenObjectBegin:
-        successful = readObject ( token );
+        successful = readObject(token, depth);
         break;
 
     case tokenArrayBegin:
-        successful = readArray ( token );
+        successful = readArray(token, depth);
         break;
 
     case tokenInteger:
@@ -395,7 +396,7 @@ Reader::readNumber ()
 
         while ( current_ != end_ )
         {
-            if (!std::isdigit (*current_))
+            if (!std::isdigit (static_cast<unsigned char>(*current_)))
             {
                 auto ret = std::find (std::begin (extended_tokens),
                     std::end (extended_tokens), *current_);
@@ -433,7 +434,7 @@ Reader::readString ()
 
 
 bool
-Reader::readObject ( Token& tokenStart )
+Reader::readObject(Token& tokenStart, unsigned depth)
 {
     Token tokenName;
     std::string name;
@@ -475,7 +476,7 @@ Reader::readObject ( Token& tokenStart )
 
         Value& value = currentValue ()[ name ];
         nodes_.push ( &value );
-        bool ok = readValue ();
+        bool ok = readValue(depth+1);
         nodes_.pop ();
 
         if ( !ok ) // error already set
@@ -510,7 +511,7 @@ Reader::readObject ( Token& tokenStart )
 
 
 bool
-Reader::readArray ( Token& tokenStart )
+Reader::readArray(Token& tokenStart, unsigned depth)
 {
     currentValue () = Value ( arrayValue );
     skipSpaces ();
@@ -528,7 +529,7 @@ Reader::readArray ( Token& tokenStart )
     {
         Value& value = currentValue ()[ index++ ];
         nodes_.push ( &value );
-        bool ok = readValue ();
+        bool ok = readValue(depth+1);
         nodes_.pop ();
 
         if ( !ok ) // error already set
@@ -965,3 +966,4 @@ std::istream& operator>> ( std::istream& sin, Value& root )
 
 
 } // namespace Json
+

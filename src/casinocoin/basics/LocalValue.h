@@ -36,6 +36,8 @@ namespace detail {
 
 struct LocalValues
 {
+    explicit LocalValues() = default;
+
     bool onCoro = true;
 
     struct BasicValue
@@ -130,3 +132,4 @@ LocalValue<T>::operator*()
 } // casinocoin
 
 #endif
+

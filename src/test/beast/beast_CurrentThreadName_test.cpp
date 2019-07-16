@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/beast/core/CurrentThreadName.h>
 #include <casinocoin/beast/unit_test.h>
 #include <atomic>

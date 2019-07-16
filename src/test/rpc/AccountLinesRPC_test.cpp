@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/TxFlags.h>
@@ -33,6 +33,8 @@ class AccountLinesRPC_test : public beast::unit_test::suite
 public:
     void testAccountLines()
     {
+        testcase ("acccount_lines");
+
         using namespace test::jtx;
         Env env(*this);
         {
@@ -308,35 +310,35 @@ public:
 
         auto const USD = gw1["USD"];
         auto const EUR = gw2["EUR"];
-        env(trust(alice, EUR(200)));
-        env(trust(becky, USD(200)));
-        env(trust(cheri, USD(200)));
+        env(trust(alice, USD(200)));
+        env(trust(becky, EUR(200)));
+        env(trust(cheri, EUR(200)));
         env.close();
 
         // becky gets 100 USD from gw1.
-        env(pay(gw1, becky, USD(100)));
+        env(pay(gw2, becky, EUR(100)));
         env.close();
 
-        // alice offers to buy 100 USD for 100 CSC.
-        env(offer(alice, USD(100), CSC(100)));
+        // alice offers to buy 100 EUR for 100 XRP.
+        env(offer(alice, EUR(100), CSC(100)));
         env.close();
 
-        // becky offers to buy 100 CSC for 100 USD.
-        env(offer(becky, CSC(100), USD(100)));
+        // becky offers to buy 100 XRP for 100 EUR.
+        env(offer(becky, CSC(100), EUR(100)));
         env.close();
 
         // Get account_lines for alice.  Limit at 1, so we get a marker.
         auto const linesBeg = env.rpc ("json", "account_lines",
             R"({"account": ")" + alice.human() + R"(", )"
             R"("limit": 1})");
-        BEAST_EXPECT(linesBeg[jss::result][jss::lines][0u][jss::currency] == "EUR");
+        BEAST_EXPECT(linesBeg[jss::result][jss::lines][0u][jss::currency] == "USD");
         BEAST_EXPECT(linesBeg[jss::result].isMember(jss::marker));
 
-        // alice pays 100 USD to cheri.
-        env(pay(alice, cheri, USD(100)));
+        // alice pays 100 EUR to cheri.
+        env(pay(alice, cheri, EUR(100)));
         env.close();
 
-        // Since alice paid all her USD to cheri, alice should no longer
+        // Since alice paid all her EUR to cheri, alice should no longer
         // have a trust line to gw1.  So the old marker should now be invalid.
         auto const linesEnd = env.rpc ("json", "account_lines",
             R"({"account": ")" + alice.human() + R"(", )"
@@ -349,6 +351,8 @@ public:
     // test API V2
     void testAccountLines2()
     {
+        testcase ("V2: acccount_lines");
+
         using namespace test::jtx;
         Env env(*this);
         {
@@ -369,7 +373,7 @@ public:
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5)"
                 " }");
-            BEAST_EXPECT(lines[jss::result][jss::error_message] ==
+            BEAST_EXPECT(lines[jss::error][jss::message] ==
                 RPC::missing_field_error(jss::account)[jss::error_message]);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(lines.isMember(jss::casinocoinrpc) && lines[jss::casinocoinrpc] == "2.0");
@@ -382,10 +386,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": )"
-                R"("n9MJkEKHDhy5eTLuHUQeAAjo382fcHNbFK4C8hrwN4nwM2ScLdBj"}]})");
-            BEAST_EXPECT(lines[jss::result][jss::error_message] ==
+                R"("n9MJkEKHDhy5eTLuHUQeAAjo382fcHNbFK4C8hrwN4nwM2ScLdBj"}})");
+            BEAST_EXPECT(lines[jss::error][jss::message] ==
                 RPC::make_error(rpcBAD_SEED)[jss::error_message]);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(lines.isMember(jss::casinocoinrpc) && lines[jss::casinocoinrpc] == "2.0");
@@ -399,9 +403,9 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
-                R"({"account": ")" + alice.human() + R"("}]})");
-            BEAST_EXPECT(lines[jss::result][jss::error_message] ==
+                R"("params": )"
+                R"({"account": ")" + alice.human() + R"("}})");
+            BEAST_EXPECT(lines[jss::error][jss::message] ==
                 RPC::make_error(rpcACT_NOT_FOUND)[jss::error_message]);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(lines.isMember(jss::casinocoinrpc) && lines[jss::casinocoinrpc] == "2.0");
@@ -419,8 +423,8 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
-                R"({"account": ")" + alice.human() + R"("}]})");
+                R"("params": )"
+                R"({"account": ")" + alice.human() + R"("}})");
             BEAST_EXPECT(lines[jss::result][jss::lines].isArray());
             BEAST_EXPECT(lines[jss::result][jss::lines].size() == 0);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
@@ -434,10 +438,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
-                R"("ledger_index": "nonsense"}]})");
-            BEAST_EXPECT(lines[jss::result][jss::error_message] ==
+                R"("ledger_index": "nonsense"}})");
+            BEAST_EXPECT(lines[jss::error][jss::message] ==
                 "ledgerIndexMalformed");
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(lines.isMember(jss::casinocoinrpc) && lines[jss::casinocoinrpc] == "2.0");
@@ -450,10 +454,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
-                R"("ledger_index": 50000}]})");
-            BEAST_EXPECT(lines[jss::result][jss::error_message] ==
+                R"("ledger_index": 50000}})");
+            BEAST_EXPECT(lines[jss::error][jss::message] ==
                 "ledgerNotFound");
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(lines.isMember(jss::casinocoinrpc) && lines[jss::casinocoinrpc] == "2.0");
@@ -520,9 +524,9 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + account.human() + R"(", )"
-                R"("ledger_index": )" + std::to_string(info.seq) + "}]}");
+                R"("ledger_index": )" + std::to_string(info.seq) + "}}");
             BEAST_EXPECT(linesSeq[jss::result][jss::lines].isArray());
             BEAST_EXPECT(linesSeq[jss::result][jss::lines].size() == count);
             BEAST_EXPECT(linesSeq.isMember(jss::jsonrpc) && linesSeq[jss::jsonrpc] == "2.0");
@@ -535,9 +539,9 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + account.human() + R"(", )"
-                R"("ledger_hash": ")" + to_string(info.hash) + R"("}]})");
+                R"("ledger_hash": ")" + to_string(info.hash) + R"("}})");
             BEAST_EXPECT(linesHash[jss::result][jss::lines].isArray());
             BEAST_EXPECT(linesHash[jss::result][jss::lines].size() == count);
             BEAST_EXPECT(linesHash.isMember(jss::jsonrpc) && linesHash[jss::jsonrpc] == "2.0");
@@ -562,10 +566,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
                 R"("ledger_hash": ")" + to_string(ledger4Info.hash) + R"(", )"
-                R"("ledger_index": )" + std::to_string(ledger58Info.seq) + "}]}");
+                R"("ledger_index": )" + std::to_string(ledger58Info.seq) + "}}");
             BEAST_EXPECT(lines[jss::result][jss::lines].isArray());
             BEAST_EXPECT(lines[jss::result][jss::lines].size() == 26);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
@@ -579,8 +583,8 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
-                R"({"account": ")" + alice.human() + R"("}]})");
+                R"("params": )"
+                R"({"account": ")" + alice.human() + R"("}})");
             BEAST_EXPECT(lines[jss::result][jss::lines].isArray());
             BEAST_EXPECT(lines[jss::result][jss::lines].size() == 52);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
@@ -594,9 +598,9 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
-                R"("peer": ")" + gw1.human() + R"("}]})");
+                R"("peer": ")" + gw1.human() + R"("}})");
             BEAST_EXPECT(lines[jss::result][jss::lines].isArray());
             BEAST_EXPECT(lines[jss::result][jss::lines].size() == 26);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
@@ -610,11 +614,11 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
                 R"("peer": )"
-                R"("n9MJkEKHDhy5eTLuHUQeAAjo382fcHNbFK4C8hrwN4nwM2ScLdBj"}]})");
-            BEAST_EXPECT(lines[jss::result][jss::error_message] ==
+                R"("n9MJkEKHDhy5eTLuHUQeAAjo382fcHNbFK4C8hrwN4nwM2ScLdBj"}})");
+            BEAST_EXPECT(lines[jss::error][jss::message] ==
                 RPC::make_error(rpcBAD_SEED)[jss::error_message]);
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(lines.isMember(jss::casinocoinrpc) && lines[jss::casinocoinrpc] == "2.0");
@@ -627,10 +631,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
-                R"("limit": -1}]})");
-            BEAST_EXPECT(lines[jss::result][jss::error_message] ==
+                R"("limit": -1}})");
+            BEAST_EXPECT(lines[jss::error][jss::message] ==
                 RPC::expected_field_message(jss::limit, "unsigned integer"));
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(lines.isMember(jss::casinocoinrpc) && lines[jss::casinocoinrpc] == "2.0");
@@ -643,9 +647,9 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
-                R"("limit": 1}]})");
+                R"("limit": 1}})");
             BEAST_EXPECT(linesA[jss::result][jss::lines].isArray());
             BEAST_EXPECT(linesA[jss::result][jss::lines].size() == 1);
             BEAST_EXPECT(linesA.isMember(jss::jsonrpc) && linesA[jss::jsonrpc] == "2.0");
@@ -659,9 +663,9 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
-                R"("marker": ")" + marker + R"("}]})");
+                R"("marker": ")" + marker + R"("}})");
             BEAST_EXPECT(linesB[jss::result][jss::lines].isArray());
             BEAST_EXPECT(linesB[jss::result][jss::lines].size() == 51);
             BEAST_EXPECT(linesB.isMember(jss::jsonrpc) && linesB[jss::jsonrpc] == "2.0");
@@ -674,10 +678,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
                 R"("limit": 3, )"
-                R"("marker": ")" + marker + R"("}]})");
+                R"("marker": ")" + marker + R"("}})");
             BEAST_EXPECT(linesC[jss::result][jss::lines].isArray());
             BEAST_EXPECT(linesC[jss::result][jss::lines].size() == 3);
             BEAST_EXPECT(linesC.isMember(jss::jsonrpc) && linesC[jss::jsonrpc] == "2.0");
@@ -691,10 +695,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
-                R"("marker": ")" + marker + R"("}]})");
-            BEAST_EXPECT(linesD[jss::result][jss::error_message] ==
+                R"("marker": ")" + marker + R"("}})");
+            BEAST_EXPECT(linesD[jss::error][jss::message] ==
                 RPC::make_error(rpcINVALID_PARAMS)[jss::error_message]);
             BEAST_EXPECT(linesD.isMember(jss::jsonrpc) && linesD[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(linesD.isMember(jss::casinocoinrpc) && linesD[jss::casinocoinrpc] == "2.0");
@@ -707,10 +711,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
-                R"("marker": true}]})");
-            BEAST_EXPECT(lines[jss::result][jss::error_message] ==
+                R"("marker": true}})");
+            BEAST_EXPECT(lines[jss::error][jss::message] ==
                 RPC::expected_field_message(jss::marker, "string"));
             BEAST_EXPECT(lines.isMember(jss::jsonrpc) && lines[jss::jsonrpc] == "2.0");
             BEAST_EXPECT(lines.isMember(jss::casinocoinrpc) && lines[jss::casinocoinrpc] == "2.0");
@@ -723,10 +727,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + alice.human() + R"(", )"
                 R"("limit": 1, )"
-                R"("peer": ")" + gw2.human() + R"("}]})");
+                R"("peer": ")" + gw2.human() + R"("}})");
             auto const& line = lines[jss::result][jss::lines][0u];
             BEAST_EXPECT(line[jss::freeze].asBool() == true);
             BEAST_EXPECT(line[jss::no_casinocoin].asBool() == true);
@@ -742,10 +746,10 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + gw2.human() + R"(", )"
                 R"("limit": 1, )"
-                R"("peer": ")" + alice.human() + R"("}]})");
+                R"("peer": ")" + alice.human() + R"("}})");
             auto const& lineA = linesA[jss::result][jss::lines][0u];
             BEAST_EXPECT(lineA[jss::freeze_peer].asBool() == true);
             BEAST_EXPECT(lineA[jss::no_casinocoin_peer].asBool() == true);
@@ -762,11 +766,11 @@ public:
                 R"("jsonrpc" : "2.0",)"
                 R"("casinocoinrpc" : "2.0",)"
                 R"("id" : 5,)"
-                R"("params": [ )"
+                R"("params": )"
                 R"({"account": ")" + gw2.human() + R"(", )"
                 R"("limit": 25, )"
                 R"("marker": ")" + marker + R"(", )"
-                R"("peer": ")" + alice.human() + R"("}]})");
+                R"("peer": ")" + alice.human() + R"("}})");
             BEAST_EXPECT(linesB[jss::result][jss::lines].isArray());
             BEAST_EXPECT(linesB[jss::result][jss::lines].size() == 25);
             BEAST_EXPECT(! linesB[jss::result].isMember(jss::marker));
@@ -779,6 +783,8 @@ public:
     // test API V2
     void testAccountLineDelete2()
     {
+        testcase ("V2: account_lines with removed marker");
+
         using namespace test::jtx;
         Env env(*this);
 
@@ -787,12 +793,12 @@ public:
         //
         // It isn't easy to explicitly delete a trust line, so we do so in a
         // round-about fashion.  It takes 4 actors:
-        //   o Gateway gw1 issues USD
-        //   o alice offers to buy 100 USD for 100 CSC.
-        //   o becky offers to sell 100 USD for 100 CSC.
-        // There will now be an inferred trustline between alice and gw1.
-        //   o alice pays her 100 USD to cheri.
-        // alice should now have no USD and no trustline to gw1.
+        //   o Gateway gw1 issues EUR
+        //   o alice offers to buy 100 EUR for 100 CSC.
+        //   o becky offers to sell 100 EUR for 100 CSC.
+        // There will now be an inferred trustline between alice and gw2.
+        //   o alice pays her 100 EUR to cheri.
+        // alice should now have no EUR and no trustline to gw2.
         Account const alice {"alice"};
         Account const becky {"becky"};
         Account const cheri {"cheri"};
@@ -803,21 +809,21 @@ public:
 
         auto const USD = gw1["USD"];
         auto const EUR = gw2["EUR"];
-        env(trust(alice, EUR(200)));
-        env(trust(becky, USD(200)));
-        env(trust(cheri, USD(200)));
+        env(trust(alice, USD(200)));
+        env(trust(becky, EUR(200)));
+        env(trust(cheri, EUR(200)));
         env.close();
 
-        // becky gets 100 USD from gw1.
-        env(pay(gw1, becky, USD(100)));
+        // becky gets 100 EUR from gw1.
+        env(pay(gw2, becky, EUR(100)));
         env.close();
 
-        // alice offers to buy 100 USD for 100 CSC.
-        env(offer(alice, USD(100), CSC(100)));
+        // alice offers to buy 100 EUR for 100 XRP.
+        env(offer(alice, EUR(100), CSC(100)));
         env.close();
 
-        // becky offers to buy 100 CSC for 100 USD.
-        env(offer(becky, CSC(100), USD(100)));
+        // becky offers to buy 100 XRP for 100 EUR.
+        env(offer(becky, CSC(100), EUR(100)));
         env.close();
 
         // Get account_lines for alice.  Limit at 1, so we get a marker.
@@ -829,35 +835,35 @@ public:
             R"("params": [ )"
             R"({"account": ")" + alice.human() + R"(", )"
             R"("limit": 1}]})");
-        BEAST_EXPECT(linesBeg[jss::result][jss::lines][0u][jss::currency] == "EUR");
+        BEAST_EXPECT(linesBeg[jss::result][jss::lines][0u][jss::currency] == "USD");
         BEAST_EXPECT(linesBeg[jss::result].isMember(jss::marker));
         BEAST_EXPECT(linesBeg.isMember(jss::jsonrpc) && linesBeg[jss::jsonrpc] == "2.0");
         BEAST_EXPECT(linesBeg.isMember(jss::casinocoinrpc) && linesBeg[jss::casinocoinrpc] == "2.0");
         BEAST_EXPECT(linesBeg.isMember(jss::id) && linesBeg[jss::id] == 5);
 
         // alice pays 100 USD to cheri.
-        env(pay(alice, cheri, USD(100)));
+        env(pay(alice, cheri, EUR(100)));
         env.close();
 
-        // Since alice paid all her USD to cheri, alice should no longer
+        // Since alice paid all her EUR to cheri, alice should no longer
         // have a trust line to gw1.  So the old marker should now be invalid.
         auto const linesEnd = env.rpc ("json2", "{ "
             R"("method" : "account_lines",)"
             R"("jsonrpc" : "2.0",)"
             R"("casinocoinrpc" : "2.0",)"
             R"("id" : 5,)"
-            R"("params": [ )"
+            R"("params": )"
             R"({"account": ")" + alice.human() + R"(", )"
             R"("marker": ")" +
-            linesBeg[jss::result][jss::marker].asString() + R"("}]})");
-        BEAST_EXPECT(linesEnd[jss::result][jss::error_message] ==
+            linesBeg[jss::result][jss::marker].asString() + R"("}})");
+        BEAST_EXPECT(linesEnd[jss::error][jss::message] ==
                 RPC::make_error(rpcINVALID_PARAMS)[jss::error_message]);
         BEAST_EXPECT(linesEnd.isMember(jss::jsonrpc) && linesEnd[jss::jsonrpc] == "2.0");
         BEAST_EXPECT(linesEnd.isMember(jss::casinocoinrpc) && linesEnd[jss::casinocoinrpc] == "2.0");
         BEAST_EXPECT(linesEnd.isMember(jss::id) && linesEnd[jss::id] == 5);
     }
 
-    void run ()
+    void run () override
     {
         testAccountLines();
         testAccountLineDelete();

@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/json/impl/json_assert.h>
 #include <casinocoin/json/to_string.h>
@@ -37,44 +37,41 @@ const Int Value::minInt = Int ( ~ (UInt (-1) / 2) );
 const Int Value::maxInt = Int ( UInt (-1) / 2 );
 const UInt Value::maxUInt = UInt (-1);
 
-ValueAllocator::~ValueAllocator ()
-{
-}
+
 
 class DefaultValueAllocator : public ValueAllocator
 {
 public:
-    virtual ~DefaultValueAllocator ()
-    {
-    }
+    virtual ~DefaultValueAllocator() = default;
 
-    virtual char* makeMemberName ( const char* memberName )
+    char* makeMemberName ( const char* memberName ) override
     {
         return duplicateStringValue ( memberName );
     }
 
-    virtual void releaseMemberName ( char* memberName )
+    void releaseMemberName ( char* memberName ) override
     {
         releaseStringValue ( memberName );
     }
 
-    virtual char* duplicateStringValue ( const char* value,
-                                         unsigned int length = unknown )
+    char* duplicateStringValue ( const char* value,
+        unsigned int length = unknown ) override
     {
-        //@todo invesgate this old optimization
+        //@todo investigate this old optimization
         //if ( !value  ||  value[0] == 0 )
         //   return 0;
 
         if ( length == unknown )
-            length = (unsigned int)strlen (value);
+            length = value ? (unsigned int)strlen ( value ) : 0;
 
         char* newString = static_cast<char*> ( malloc ( length + 1 ) );
-        memcpy ( newString, value, length );
+        if ( value )
+            memcpy ( newString, value, length );
         newString[length] = 0;
         return newString;
     }
 
-    virtual void releaseStringValue ( char* value )
+    void releaseStringValue ( char* value ) override
     {
         if ( value )
             free ( value );
@@ -350,7 +347,8 @@ Value::~Value ()
 
     case arrayValue:
     case objectValue:
-        delete value_.map_;
+        if (value_.map_)
+            delete value_.map_;
         break;
 
     default:
@@ -359,10 +357,10 @@ Value::~Value ()
 }
 
 Value&
-Value::operator= ( const Value& other )
+Value::operator=(Value const& other)
 {
-    Value temp ( other );
-    swap ( temp );
+    Value tmp(other);
+    swap(tmp);
     return *this;
 }
 
@@ -371,13 +369,15 @@ Value::Value ( Value&& other ) noexcept
     , type_ ( other.type_ )
     , allocated_ ( other.allocated_ )
 {
-    std::memset( &other, 0, sizeof(Value) );
+    other.type_ = nullValue;
+    other.allocated_ = 0;
 }
 
 Value&
-Value::operator= ( Value&& other ) noexcept
+Value::operator=(Value&& other)
 {
-    swap ( other );
+    Value tmp(std::move(other));
+    swap(tmp);
     return *this;
 }
 
@@ -532,7 +532,11 @@ Value::asString () const
         return beast::lexicalCastThrow <std::string> (value_.int_);
 
     case uintValue:
+        return beast::lexicalCastThrow <std::string> (value_.uint_);
+
     case realValue:
+        return beast::lexicalCastThrow <std::string> (value_.real_);
+
     case arrayValue:
     case objectValue:
         JSON_ASSERT_MESSAGE ( false, "Type is not convertible to string" );
@@ -784,10 +788,10 @@ Value::operator bool () const
     if (isString ())
     {
         auto s = asCString();
-        return s && strlen(s);
+        return s && s[0];
     }
 
-    return ! (isArray () || isObject ()) || size ();
+    return ! (isArray() || isObject()) || size ();
 }
 
 void
@@ -1097,14 +1101,26 @@ Value::isString () const
 
 
 bool
-Value::isArray () const
+Value::isArray() const
+{
+    return type_ == arrayValue;
+}
+
+bool
+Value::isArrayOrNull () const
 {
     return type_ == nullValue  ||  type_ == arrayValue;
 }
 
 
 bool
-Value::isObject () const
+Value::isObject() const
+{
+    return type_ == objectValue;
+}
+
+bool
+Value::isObjectOrNull () const
 {
     return type_ == nullValue  ||  type_ == objectValue;
 }
@@ -1189,3 +1205,4 @@ Value::end ()
 }
 
 } // namespace Json
+

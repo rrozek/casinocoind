@@ -47,7 +47,7 @@ public:
         setVersion (obj);
     }
 
-    static const char* const name()
+    static char const* name()
     {
         return "version";
     }
@@ -67,3 +67,4 @@ public:
 } // casinocoin
 
 #endif
+

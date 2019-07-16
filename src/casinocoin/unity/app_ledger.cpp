@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/app/ledger/AcceptedLedger.cpp>
 #include <casinocoin/app/ledger/AcceptedLedgerTx.cpp>
@@ -34,14 +34,3 @@
 #include <casinocoin/app/ledger/LedgerHistory.cpp>
 #include <casinocoin/app/ledger/OrderBookDB.cpp>
 #include <casinocoin/app/ledger/TransactionStateSF.cpp>
-
-#include <casinocoin/app/ledger/impl/InboundLedger.cpp>
-#include <casinocoin/app/ledger/impl/InboundLedgers.cpp>
-#include <casinocoin/app/ledger/impl/InboundTransactions.cpp>
-#include <casinocoin/app/ledger/impl/LedgerCleaner.cpp>
-#include <casinocoin/app/ledger/impl/LedgerMaster.cpp>
-#include <casinocoin/app/ledger/impl/LocalTxs.cpp>
-#include <casinocoin/app/ledger/impl/OpenLedger.cpp>
-#include <casinocoin/app/ledger/impl/LedgerToJson.cpp>
-#include <casinocoin/app/ledger/impl/TransactionAcquire.cpp>
-#include <casinocoin/app/ledger/impl/TransactionMaster.cpp>

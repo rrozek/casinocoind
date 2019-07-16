@@ -117,10 +117,6 @@ isWLT(Json::Value const& jvRequest,
       std::shared_ptr<ReadView const> const& ledger,
       beast::Journal const& j);
 
-void
-addPaymentDeliveredAmount(Json::Value&, Context&,
-    std::shared_ptr<Transaction>, TxMeta::pointer);
-
 /** Inject JSON describing ledger entry
 
     Effects:
@@ -149,6 +145,9 @@ readLimitField(unsigned int& limit, Tuning::LimitRange const&, Context const&);
 boost::optional<Seed>
 getSeedFromRPC(Json::Value const& params, Json::Value& error);
 
+boost::optional<Seed>
+parseCasinocoinLibSeed(Json::Value const& params);
+
 std::pair<PublicKey, SecretKey>
 keypairForSignature(Json::Value const& params, Json::Value& error);
 
@@ -174,3 +173,4 @@ std::pair<RPC::Status, LedgerEntryType>
 } // casinocoin
 
 #endif
+

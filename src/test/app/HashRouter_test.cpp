@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/basics/chrono.h>
 #include <casinocoin/beast/unit_test.h>
@@ -32,7 +32,7 @@ class HashRouter_test : public beast::unit_test::suite
     {
         using namespace std::chrono_literals;
         TestStopwatch stopwatch;
-        HashRouter router(stopwatch, 2s);
+        HashRouter router(stopwatch, 2s, 2);
 
         uint256 const key1(1);
         uint256 const key2(2);
@@ -69,7 +69,7 @@ class HashRouter_test : public beast::unit_test::suite
     {
         using namespace std::chrono_literals;
         TestStopwatch stopwatch;
-        HashRouter router(stopwatch, 2s);
+        HashRouter router(stopwatch, 2s, 2);
 
         uint256 const key1(1);
         uint256 const key2(2);
@@ -148,7 +148,7 @@ class HashRouter_test : public beast::unit_test::suite
         // Normal HashRouter
         using namespace std::chrono_literals;
         TestStopwatch stopwatch;
-        HashRouter router(stopwatch, 2s);
+        HashRouter router(stopwatch, 2s, 2);
 
         uint256 const key1(1);
         uint256 const key2(2);
@@ -178,7 +178,7 @@ class HashRouter_test : public beast::unit_test::suite
     {
         using namespace std::chrono_literals;
         TestStopwatch stopwatch;
-        HashRouter router(stopwatch, 2s);
+        HashRouter router(stopwatch, 2s, 2);
 
         uint256 const key1(1);
         BEAST_EXPECT(router.setFlags(key1, 10));
@@ -191,7 +191,7 @@ class HashRouter_test : public beast::unit_test::suite
     {
         using namespace std::chrono_literals;
         TestStopwatch stopwatch;
-        HashRouter router(stopwatch, 1s);
+        HashRouter router(stopwatch, 1s, 2);
 
         uint256 const key1(1);
 
@@ -229,16 +229,71 @@ class HashRouter_test : public beast::unit_test::suite
         BEAST_EXPECT(peers && peers->size() == 0);
     }
 
+    void
+    testRecover()
+    {
+        using namespace std::chrono_literals;
+        TestStopwatch stopwatch;
+        HashRouter router(stopwatch, 1s, 5);
+
+        uint256 const key1(1);
+
+        BEAST_EXPECT(router.shouldRecover(key1));
+        BEAST_EXPECT(router.shouldRecover(key1));
+        BEAST_EXPECT(router.shouldRecover(key1));
+        BEAST_EXPECT(router.shouldRecover(key1));
+        BEAST_EXPECT(router.shouldRecover(key1));
+        BEAST_EXPECT(!router.shouldRecover(key1));
+        // Expire, but since the next search will
+        // be for this entry, it will get refreshed
+        // instead.
+        ++stopwatch;
+        BEAST_EXPECT(router.shouldRecover(key1));
+        // Expire, but since the next search will
+        // be for this entry, it will get refreshed
+        // instead.
+        ++stopwatch;
+        // Recover again. Recovery is independent of
+        // time as long as the entry doesn't expire.
+        BEAST_EXPECT(router.shouldRecover(key1));
+        BEAST_EXPECT(router.shouldRecover(key1));
+        BEAST_EXPECT(router.shouldRecover(key1));
+        // Expire again
+        ++stopwatch;
+        BEAST_EXPECT(router.shouldRecover(key1));
+        BEAST_EXPECT(!router.shouldRecover(key1));
+    }
+
+    void
+    testProcess()
+    {
+        using namespace std::chrono_literals;
+        TestStopwatch stopwatch;
+        HashRouter router(stopwatch, 5s, 5);
+        uint256 const key(1);
+        HashRouter::PeerShortID peer = 1;
+        int flags;
+
+        BEAST_EXPECT(router.shouldProcess(key, peer, flags, 1s));
+        BEAST_EXPECT(! router.shouldProcess(key, peer, flags, 1s));
+        ++stopwatch;
+        ++stopwatch;
+        BEAST_EXPECT(router.shouldProcess(key, peer, flags, 1s));
+    }
+
+
 public:
 
     void
-    run()
+    run() override
     {
         testNonExpiration();
         testExpiration();
         testSuppression();
         testSetFlags();
         testRelay();
+        testRecover();
+        testProcess();
     }
 };
 
@@ -246,3 +301,4 @@ BEAST_DEFINE_TESTSUITE(HashRouter, app, casinocoin);
 
 }
 }
+

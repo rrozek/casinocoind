@@ -17,10 +17,13 @@
 */
 //==============================================================================
 
-#include <casinocoin/protocol/JsonFields.h>
-#include <casinocoin/protocol/Feature.h>
-#include <test/jtx.h>
 #include <casinocoin/basics/StringUtilities.h>
+#include <casinocoin/protocol/AmountConversions.h>
+#include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/JsonFields.h>
+#include <casinocoin/protocol/Quality.h>
+#include <casinocoin/protocol/Rate.h>
+#include <test/jtx.h>
 
 namespace casinocoin {
 
@@ -39,24 +42,72 @@ public:
         BEAST_EXPECT((*env.le(alice))[ sfFlags ] == 0u);
     }
 
-    void testSetAndReset(unsigned int flag_val, std::string const& label)
+    void testMostFlags()
     {
         using namespace test::jtx;
-        Env env(*this);
         Account const alice ("alice");
+
+        // Test without DepositAuth enabled initially.
+        Env env(*this, supported_amendments() - featureDepositAuth);
         env.fund(CSC(10000), noCasinocoin(alice));
-        env.memoize("eric");
-        env(regkey(alice, "eric"));
 
-        unsigned int orig_flags = (*env.le(alice))[ sfFlags ];
+        // Give alice a regular key so she can legally set and clear
+        // her asfDisableMaster flag.
+        Account const alie {"alie", KeyType::secp256k1};
+        env(regkey (alice, alie));
+        env.close();
 
-        env.require(nflags(alice, flag_val));
-        env(fset(alice, flag_val), sig(alice));
-        env.require(flags(alice, flag_val));
-        env(fclear(alice, flag_val));
-        env.require(nflags(alice, flag_val));
-        uint32 now_flags = (*env.le(alice))[ sfFlags ];
-        BEAST_EXPECT(now_flags == orig_flags);
+        auto testFlags = [this, &alice, &alie, &env]
+            (std::initializer_list<std::uint32_t> goodFlags)
+        {
+            std::uint32_t const orig_flags = (*env.le(alice))[ sfFlags ];
+            for (std::uint32_t flag {1u};
+                 flag < std::numeric_limits<std::uint32_t>::digits; ++flag)
+            {
+                if (flag == asfNoFreeze)
+                {
+                    // The asfNoFreeze flag can't be cleared.  It is tested
+                    // elsewhere.
+                    continue;
+                }
+                else if (std::find (goodFlags.begin(), goodFlags.end(), flag) !=
+                    goodFlags.end())
+                {
+                    // Good flag
+                    env.require(nflags(alice, flag));
+                    env(fset(alice, flag), sig(alice));
+                    env.close();
+                    env.require(flags(alice, flag));
+                    env(fclear(alice, flag), sig(alie));
+                    env.close();
+                    env.require(nflags(alice, flag));
+                    std::uint32_t const now_flags = (*env.le(alice))[ sfFlags ];
+                    BEAST_EXPECT(now_flags == orig_flags);
+                }
+                else
+                {
+                    // Bad flag
+                    BEAST_EXPECT((*env.le(alice))[ sfFlags ] == orig_flags);
+                    env(fset(alice, flag), sig(alice));
+                    env.close();
+                    BEAST_EXPECT((*env.le(alice))[ sfFlags ] == orig_flags);
+                    env(fclear(alice, flag), sig(alie));
+                    env.close();
+                    BEAST_EXPECT((*env.le(alice))[ sfFlags ] == orig_flags);
+                }
+            }
+        };
+
+        // Test with featureDepositAuth disabled.
+        testFlags ({asfRequireDest, asfRequireAuth, asfDisallowCSC,
+            asfGlobalFreeze, asfDisableMaster, asfDefaultCasinocoin});
+
+        // Enable featureDepositAuth and retest.
+        env.enableFeature (featureDepositAuth);
+        env.close();
+        testFlags ({asfRequireDest, asfRequireAuth, asfDisallowCSC,
+            asfGlobalFreeze, asfDisableMaster, asfDefaultCasinocoin,
+            asfDepositAuth});
     }
 
     void testSetAndResetAccountTxnID()
@@ -66,7 +117,7 @@ public:
         Account const alice ("alice");
         env.fund(CSC(10000), noCasinocoin(alice));
 
-        unsigned int orig_flags = (*env.le(alice))[ sfFlags ];
+        std::uint32_t const orig_flags = (*env.le(alice))[ sfFlags ];
 
         // asfAccountTxnID is special and not actually set as a flag,
         // so we check the field presence instead
@@ -75,7 +126,7 @@ public:
         BEAST_EXPECT(env.le(alice)->isFieldPresent(sfAccountTxnID));
         env(fclear(alice, asfAccountTxnID));
         BEAST_EXPECT(! env.le(alice)->isFieldPresent(sfAccountTxnID));
-        uint32 now_flags = (*env.le(alice))[ sfFlags ];
+        std::uint32_t const now_flags = (*env.le(alice))[ sfFlags ];
         BEAST_EXPECT(now_flags == orig_flags);
     }
 
@@ -161,7 +212,8 @@ public:
         env(jt);
         BEAST_EXPECT(! env.le(alice)->isFieldPresent(sfMessageKey));
 
-        jt[sfMessageKey.fieldName] = strHex("NOT_REALLY_A_PUBKEY");
+        using namespace std::string_literals;
+        jt[sfMessageKey.fieldName] = strHex("NOT_REALLY_A_PUBKEY"s);
         env(jt, ter(telBAD_PUBLIC_KEY));
     }
 
@@ -203,30 +255,133 @@ public:
 
     void testTransferRate()
     {
+        struct test_results
+        {
+            double set;
+            TER code;
+            double get;
+        };
+
         using namespace test::jtx;
-        Env env(*this);
-        Account const alice ("alice");
-        env.fund(CSC(10000), alice);
-        auto jt = noop(alice);
+        auto doTests = [this] (FeatureBitset const& features,
+            std::initializer_list<test_results> testData)
+        {
+            Env env (*this, features);
 
-        uint32 xfer_rate = 2000000000;
-        jt[sfTransferRate.fieldName] = xfer_rate;
-        env(jt);
-        BEAST_EXPECT((*env.le(alice))[ sfTransferRate ] == xfer_rate);
+            Account const alice ("alice");
+            env.fund(CSC(10000), alice);
 
-        jt[sfTransferRate.fieldName] = 0u;
-        env(jt);
-        BEAST_EXPECT(! env.le(alice)->isFieldPresent(sfTransferRate));
+            for (auto const& r : testData)
+            {
+                env(rate(alice, r.set), ter(r.code));
 
-        // set a bad value (< QUALITY_ONE)
-        jt[sfTransferRate.fieldName] = 10u;
-        env(jt, ter(temBAD_TRANSFER_RATE));
+                // If the field is not present expect the default value
+                if (!(*env.le(alice))[~sfTransferRate])
+                    BEAST_EXPECT(r.get == 1.0);
+                else
+                    BEAST_EXPECT(*(*env.le(alice))[~sfTransferRate] ==
+                        r.get * QUALITY_ONE);
+            }
+        };
+
+        {
+            testcase ("Setting transfer rate (without fix1201)");
+            doTests (supported_amendments().reset(fix1201),
+                {
+                    { 1.0, tesSUCCESS,              1.0 },
+                    { 1.1, tesSUCCESS,              1.1 },
+                    { 2.0, tesSUCCESS,              2.0 },
+                    { 2.1, tesSUCCESS,              2.1 },
+                    { 0.0, tesSUCCESS,              1.0 },
+                    { 2.0, tesSUCCESS,              2.0 },
+                    { 0.9, temBAD_TRANSFER_RATE,    2.0 }});
+        }
+
+        {
+            testcase ("Setting transfer rate (with fix1201)");
+            doTests (supported_amendments(),
+                {
+                    { 1.0, tesSUCCESS,              1.0 },
+                    { 1.1, tesSUCCESS,              1.1 },
+                    { 2.0, tesSUCCESS,              2.0 },
+                    { 2.1, temBAD_TRANSFER_RATE,    2.0 },
+                    { 0.0, tesSUCCESS,              1.0 },
+                    { 2.0, tesSUCCESS,              2.0 },
+                    { 0.9, temBAD_TRANSFER_RATE,    2.0 }});
+        }
     }
 
-    void testBadInputs()
+    void testGateway()
     {
         using namespace test::jtx;
-        Env env(*this);
+        auto runTest = [](Env&& env, double tr)
+        {
+            Account const alice ("alice");
+            Account const bob ("bob");
+            Account const gw ("gateway");
+            auto const USD = gw["USD"];
+
+            env.fund(CSC(10000), gw, alice, bob);
+            env.trust(USD(3), alice, bob);
+            env(rate(gw, tr));
+            env.close();
+
+            auto const amount = USD(1);
+            Rate const rate (tr * QUALITY_ONE);
+            auto const amountWithRate =
+                toAmount<STAmount> (multiply(amount.value(), rate));
+
+            env(pay(gw, alice, USD(3)));
+            env(pay(alice, bob, USD(1)), sendmax(USD(3)));
+
+            env.require(balance(alice, USD(3) - amountWithRate));
+            env.require(balance(bob, USD(1)));
+        };
+
+        // Test gateway with allowed transfer rates
+        auto const noFix1201 = supported_amendments().reset(fix1201);
+        runTest (Env{*this, noFix1201}, 1.02);
+        runTest (Env{*this, noFix1201}, 1);
+        runTest (Env{*this, noFix1201}, 2);
+        runTest (Env{*this, noFix1201}, 2.1);
+        runTest (Env{*this, supported_amendments()}, 1.02);
+        runTest (Env{*this, supported_amendments()}, 2);
+
+        // Test gateway when amendment is set after transfer rate
+        {
+            Env env (*this, noFix1201);
+            Account const alice ("alice");
+            Account const bob ("bob");
+            Account const gw ("gateway");
+            auto const USD = gw["USD"];
+            double const tr = 2.75;
+
+            env.fund(CSC(10000), gw, alice, bob);
+            env.trust(USD(3), alice, bob);
+            env(rate(gw, tr));
+            env.close();
+            env.enableFeature(fix1201);
+            env.close();
+
+            auto const amount = USD(1);
+            Rate const rate (tr * QUALITY_ONE);
+            auto const amountWithRate =
+                toAmount<STAmount> (multiply(amount.value(), rate));
+
+            env(pay(gw, alice, USD(3)));
+            env(pay(alice, bob, amount), sendmax(USD(3)));
+
+            env.require(balance(alice, USD(3) - amountWithRate));
+            env.require(balance(bob, amount));
+        }
+    }
+
+    void testBadInputs(bool withFeatures)
+    {
+        using namespace test::jtx;
+        std::unique_ptr<Env> penv {
+            withFeatures ?  new Env(*this) : new Env(*this, FeatureBitset{})};
+        Env& env = *penv;
         Account const alice ("alice");
         env.fund(CSC(10000), alice);
 
@@ -259,13 +414,14 @@ public:
         env(jt, ter(temINVALID_FLAG));
 
         env(fset (alice, asfDisableMaster),
-            sig(alice), ter(tecNO_REGULAR_KEY));
+            sig(alice),
+            ter(withFeatures ? tecNO_ALTERNATIVE_KEY : tecNO_REGULAR_KEY));
     }
 
     void testRequireAuthWithDir()
     {
         using namespace test::jtx;
-        Env env(*this, features(featureMultiSign));
+        Env env(*this);
         Account const alice ("alice");
         Account const bob ("bob");
 
@@ -283,27 +439,19 @@ public:
         env(fset (alice, asfRequireAuth), ter(tecOWNERS));
     }
 
-    void run()
+    void run() override
     {
         testNullAccountSet();
-        for(auto const& flag_set : std::vector<std::pair<unsigned int, std::string>>({
-            {asfRequireDest,   "RequireDestTag"},
-            {asfRequireAuth,   "RequireAuth"},
-            {asfDisallowCSC,   "DisallowCSC"},
-            {asfGlobalFreeze,  "GlobalFreeze"},
-            {asfDisableMaster, "DisableMaster"},
-            {asfDefaultCasinocoin, "DefaultRipple"}
-        }))
-        {
-            testSetAndReset(flag_set.first, flag_set.second);
-        }
+        testMostFlags();
         testSetAndResetAccountTxnID();
         testSetNoFreeze();
         testDomain();
+        testGateway();
         testMessageKey();
         testWalletID();
         testEmailHash();
-        testBadInputs();
+        testBadInputs(true);
+        testBadInputs(false);
         testRequireAuthWithDir();
         testTransferRate();
     }

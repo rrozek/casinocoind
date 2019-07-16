@@ -104,6 +104,9 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 INPUT                  = \
 \
+    ../src/ripple/app/misc/TxQ.h \
+    ../src/ripple/app/tx/apply.h \
+    ../src/ripple/app/tx/applySteps.h \
     ../src/ripple/protocol/STObject.h \
     ../src/ripple/protocol/JsonFields.h \
     ../src/test/jtx/AbstractClient.h \
@@ -111,9 +114,12 @@ INPUT                  = \
     ../src/test/jtx/WSClient.h \
     ../src/ripple/consensus/Consensus.h \
     ../src/ripple/consensus/ConsensusProposal.h \
+    ../src/ripple/consensus/ConsensusTypes.h \
     ../src/ripple/consensus/DisputedTx.h \
     ../src/ripple/consensus/LedgerTiming.h \
-	../src/ripple/consensus/Validations.h \
+    ../src/ripple/consensus/LedgerTrie.h \
+    ../src/ripple/consensus/Validations.h \
+    ../src/ripple/consensus/ConsensusParms.h \
     ../src/ripple/app/consensus/CCLCxTx.h \
     ../src/ripple/app/consensus/CCLCxLedger.h \
     ../src/ripple/app/consensus/CCLConsensus.h \

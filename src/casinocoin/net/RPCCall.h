@@ -25,7 +25,7 @@
 
 #ifndef CASINOCOIN_NET_RPCCALL_H_INCLUDED
 #define CASINOCOIN_NET_RPCCALL_H_INCLUDED
-
+#include <casinocoin/basics/Log.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/json/json_value.h>
 #include <boost/asio/io_service.hpp>
@@ -74,3 +74,4 @@ rpcClient(std::vector<std::string> const& args,
 } // casinocoin
 
 #endif
+

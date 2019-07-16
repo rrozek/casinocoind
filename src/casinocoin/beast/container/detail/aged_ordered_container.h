@@ -44,18 +44,24 @@ namespace detail {
 template <class It>
 struct is_boost_reverse_iterator
     : std::false_type
-{};
+{
+    explicit is_boost_reverse_iterator() = default;
+};
 
 #if BOOST_VERSION >= 105800
 template <class It>
 struct is_boost_reverse_iterator<boost::intrusive::reverse_iterator<It>>
     : std::true_type
-{};
+{
+    explicit is_boost_reverse_iterator() = default;
+};
 #else
 template <class It>
 struct is_boost_reverse_iterator<boost::intrusive::detail::reverse_iterator<It>>
     : std::true_type
-{};
+{
+    explicit is_boost_reverse_iterator() = default;
+};
 #endif
 
 /** Associative container where each element is also indexed by time.
@@ -125,6 +131,8 @@ private:
         // need to see the container declaration.
         struct stashed
         {
+            explicit stashed() = default;
+
             using value_type = typename aged_ordered_container::value_type;
             using time_point = typename aged_ordered_container::time_point;
         };
@@ -164,9 +172,17 @@ private:
     // VFALCO TODO This should only be enabled for maps.
     class pair_value_compare
         : private empty_base_optimization <Compare>
+#ifdef _LIBCPP_VERSION
         , public std::binary_function <value_type, value_type, bool>
+#endif
     {
     public:
+#ifndef _LIBCPP_VERSION
+        using first_argument = value_type;
+        using second_argument = value_type;
+        using result_type = bool;
+#endif
+
         bool operator() (value_type const& lhs, value_type const& rhs) const
         {
             return this->member() (lhs.first, rhs.first);
@@ -194,9 +210,17 @@ private:
     // VFALCO TODO hoist to remove template argument dependencies
     class KeyValueCompare
         : private empty_base_optimization <Compare>
+#ifdef _LIBCPP_VERSION
         , public std::binary_function <Key, element, bool>
+#endif
     {
     public:
+#ifndef _LIBCPP_VERSION
+        using first_argument = Key;
+        using second_argument = element;
+        using result_type = bool;
+#endif
+
         KeyValueCompare () = default;
 
         KeyValueCompare (Compare const& compare)
@@ -1927,6 +1951,7 @@ struct is_aged_container <beast::detail::aged_ordered_container <
         IsMulti, IsMap, Key, T, Clock, Compare, Allocator>>
     : std::true_type
 {
+    explicit is_aged_container() = default;
 };
 
 // Free functions
@@ -1965,3 +1990,4 @@ std::size_t expire (detail::aged_ordered_container <
 }
 
 #endif
+

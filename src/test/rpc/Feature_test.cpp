@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <test/jtx.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/JsonFields.h>
@@ -116,12 +116,7 @@ class Feature_test : public beast::unit_test::suite
 
         using namespace test::jtx;
         Env env {*this,
-            features(featureEscrow),
-            features(featureCryptoConditions)};
-        // The amendment table has to be modified
-        // since that is what feature RPC actually checks
-        env.app().getAmendmentTable().enable(featureEscrow);
-        env.app().getAmendmentTable().enable(featureCryptoConditions);
+            FeatureBitset(featureEscrow, featureCryptoConditions)};
 
         auto jrr = env.rpc("feature") [jss::result];
         if(! BEAST_EXPECT(jrr.isMember(jss::features)))
@@ -221,10 +216,7 @@ class Feature_test : public beast::unit_test::suite
 
         using namespace test::jtx;
         Env env {*this,
-            features(featureCryptoConditions)};
-        // The amendment table has to be modified
-        // since that is what feature RPC actually checks
-        env.app().getAmendmentTable().enable(featureCryptoConditions);
+            FeatureBitset(featureCryptoConditions)};
 
         auto jrr = env.rpc("feature", "CryptoConditions") [jss::result];
         if(! BEAST_EXPECTS(jrr[jss::status] == jss::success, "status"))
@@ -258,10 +250,8 @@ class Feature_test : public beast::unit_test::suite
 
         // anything other than accept or reject is an error
         jrr = env.rpc("feature", "CryptoConditions", "maybe");
-        if(! BEAST_EXPECT(jrr.isMember("client_error")))
-            return;
-        BEAST_EXPECT(jrr["client_error"][jss::error] == "invalidParams");
-        BEAST_EXPECT(jrr["client_error"][jss::error_message] == "Invalid parameters.");
+        BEAST_EXPECT(jrr[jss::error] == "invalidParams");
+        BEAST_EXPECT(jrr[jss::error_message] == "Invalid parameters.");
     }
 
 public:

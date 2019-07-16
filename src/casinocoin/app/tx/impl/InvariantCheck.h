@@ -31,7 +31,9 @@
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/TER.h>
 #include <casinocoin/beast/utility/Journal.h>
+#include <map>
 #include <tuple>
+#include <utility>
 #include <cstdint>
 
 namespace casinocoin {
@@ -48,6 +50,7 @@ namespace casinocoin {
 class InvariantChecker_PROTOTYPE
 {
 public:
+    explicit InvariantChecker_PROTOTYPE() = default;
 
     /**
      * @brief called for each ledger entry in the current transaction.
@@ -70,6 +73,7 @@ public:
      *
      * @param tx the transaction being applied
      * @param tec the current TER result of the transaction
+     * @param fee the fee actually charged for this transaction
      * @param j journal for logging
      *
      * @return true if check passes, false if it fails
@@ -77,33 +81,45 @@ public:
     bool
     finalize(
         STTx const& tx,
-        TER tec,
+        TER const tec,
+        CSCAmount const fee,
         beast::Journal const& j);
 };
 #endif
 
 /**
- * @brief Invariant: A transaction must not create CSC and should only destroy
- * CSC, up to the transaction fee.
+ * @brief Invariant: We should never charge a transaction a negative fee or a
+ * fee that is larger than what the transaction itself specifies.
  *
- * For this check, we start with a signed 64-bit integer set to zero. As we go
- * through the ledger entries, look only at account roots, escrow payments,
- * and payment channels.  Remove from the total any previous CSC values and add
- * to the total any new CSC values. The net balance of a payment channel is
- * computed from two fields (amount and balance) and deletions are ignored
- * for paychan and escrow because the amount fields have not been adjusted for
- * those in the case of deletion.
+ * We can, in some circumstances, charge less.
+ */
+class TransactionFeeCheck
+{
+public:
+    void
+    visitEntry(
+        uint256 const&,
+        bool,
+        std::shared_ptr<SLE const> const&,
+        std::shared_ptr<SLE const> const&);
+
+    bool
+    finalize(STTx const&, TER const, CSCAmount const, beast::Journal const&);
+};
+
+/**
+ * @brief Invariant: A transaction must not create XRP and should only destroy
+ * the XRP fee.
  *
- * The final total must be less than or equal to zero and greater than or equal
- * to the negative of the tx fee.
- *
+ * We iterate through all account roots, payment channels and escrow entries
+ * that were modified and calculate the net change in XRP caused by the
+ * transactions.
  */
 class CSCNotCreated
 {
     std::int64_t drops_ = 0;
 
 public:
-
     void
     visitEntry(
         uint256 const&,
@@ -112,20 +128,21 @@ public:
         std::shared_ptr<SLE const> const&);
 
     bool
-    finalize(STTx const&, TER, beast::Journal const&);
+    finalize(STTx const&, TER const, CSCAmount const, beast::Journal const&);
 };
 
 /**
  * @brief Invariant: we cannot remove an account ledger entry
  *
- * an account root should never be the target of a delete
+ * We iterate all accounts roots that were modified, and ensure that any that
+ * were present before the transaction was applied continue to be present
+ * afterwards.
  */
 class AccountRootsNotDeleted
 {
     bool accountDeleted_ = false;
 
 public:
-
     void
     visitEntry(
         uint256 const&,
@@ -134,12 +151,15 @@ public:
         std::shared_ptr<SLE const> const&);
 
     bool
-    finalize(STTx const&, TER, beast::Journal const&);
+    finalize(STTx const&, TER const, CSCAmount const, beast::Journal const&);
 };
 
 /**
  * @brief Invariant: An account CSC balance must be in CSC and take a value
-                     between 0 and SYSTEM_CURRENCY_START drops, inclusive.
+ *                   between 0 and SYSTEM_CURRENCY_START drops, inclusive.
+ *
+ * We iterate all account roots modified by the transaction and ensure that
+ * their XRP balances are reasonable.
  */
 class CSCBalanceChecks
 {
@@ -154,7 +174,7 @@ public:
         std::shared_ptr<SLE const> const&);
 
     bool
-    finalize(STTx const&, TER, beast::Journal const&);
+    finalize(STTx const&, TER const, CSCAmount const, beast::Journal const&);
 };
 
 /**
@@ -167,7 +187,6 @@ class LedgerEntryTypesMatch
     bool invalidTypeAdded_ = false;
 
 public:
-
     void
     visitEntry(
         uint256 const&,
@@ -176,11 +195,14 @@ public:
         std::shared_ptr<SLE const> const&);
 
     bool
-    finalize(STTx const&, TER, beast::Journal const&);
+    finalize(STTx const&, TER const, CSCAmount const, beast::Journal const&);
 };
 
 /**
  * @brief Invariant: Trust lines using CSC are not allowed.
+ *
+ * We iterate all the trust lines created by this transaction and ensure
+ * that they are against a valid issuer.
  */
 class NoCSCTrustLines
 {
@@ -196,12 +218,15 @@ public:
         std::shared_ptr<SLE const> const&);
 
     bool
-    finalize(STTx const&, TER, beast::Journal const&);
+    finalize(STTx const&, TER const, CSCAmount const, beast::Journal const&);
 };
 
 /**
  * @brief Invariant: offers should be for non-negative amounts and must not
  *                   be CSC to CSC.
+ *
+ * Examine all offers modified by the transaction and ensure that there are
+ * no offers which contain negative amounts or which exchange XRP for XRP.
  */
 class NoBadOffers
 {
@@ -217,8 +242,8 @@ public:
         std::shared_ptr<SLE const> const&);
 
     bool
-    finalize(STTx const&, TER, beast::Journal const&);
-    
+    finalize(STTx const&, TER const, CSCAmount const, beast::Journal const&);
+
 };
 
 /**
@@ -230,7 +255,6 @@ class NoZeroEscrow
     bool bad_ = false;
 
 public:
-
     void
     visitEntry(
         uint256 const&,
@@ -239,13 +263,14 @@ public:
         std::shared_ptr<SLE const> const&);
 
     bool
-    finalize(STTx const&, TER, beast::Journal const&);
-    
+    finalize(STTx const&, TER const, CSCAmount const, beast::Journal const&);
+
 };
 
 // additional invariant checks can be declared above and then added to this
 // tuple
 using InvariantChecks = std::tuple<
+    TransactionFeeCheck,
     AccountRootsNotDeleted,
     LedgerEntryTypesMatch,
     CSCBalanceChecks,
@@ -273,3 +298,4 @@ getInvariantChecks()
 } //casinocoin
 
 #endif
+

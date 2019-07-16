@@ -26,18 +26,19 @@
 #ifndef CASINOCOIN_APP_MISC_NETWORKOPS_H_INCLUDED
 #define CASINOCOIN_APP_MISC_NETWORKOPS_H_INCLUDED
 
-#include <casinocoin/core/JobQueue.h>
-#include <casinocoin/protocol/STValidation.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/app/consensus/CCLCxPeerPos.h>
+#include <casinocoin/core/JobQueue.h>
+#include <casinocoin/core/Stoppable.h>
 #include <casinocoin/ledger/ReadView.h>
 #include <casinocoin/net/InfoSub.h>
+#include <casinocoin/protocol/STValidation.h>
+#include <boost/asio/io_service.hpp>
 #include <memory>
-#include <casinocoin/core/Stoppable.h>
 #include <deque>
 #include <tuple>
 
-#include "casinocoin.pb.h"
+#include <casinocoin/protocol/messages.h>
 
 namespace casinocoin {
 
@@ -47,6 +48,7 @@ namespace casinocoin {
 class Peer;
 class LedgerMaster;
 class Transaction;
+class ValidatorKeys;
 
 // This is the primary interface into the "client" portion of the program.
 // Code that wants to do normal operations on the network such as
@@ -101,7 +103,7 @@ public:
     }
 
 public:
-    virtual ~NetworkOPs () = 0;
+    ~NetworkOPs () override = default;
 
     //--------------------------------------------------------------------------
     //
@@ -109,7 +111,7 @@ public:
     //
 
     virtual OperatingMode getOperatingMode () const = 0;
-    virtual std::string strOperatingMode () const = 0;
+    virtual std::string strOperatingMode (bool admin = false) const = 0;
 
     //--------------------------------------------------------------------------
     //
@@ -156,9 +158,8 @@ public:
     //--------------------------------------------------------------------------
 
     // ledger proposal/close functions
-    virtual void processTrustedProposal (CCLCxPeerPos::pointer peerPos,
-        std::shared_ptr<protocol::TMProposeSet> set,
-            NodeID const& node) = 0;
+    virtual void processTrustedProposal (CCLCxPeerPos peerPos,
+        std::shared_ptr<protocol::TMProposeSet> set) = 0;
 
     virtual bool recvValidation (STValidation::ref val,
         std::string const& source) = 0;
@@ -172,20 +173,17 @@ public:
     virtual void setStandAlone () = 0;
     virtual void setStateTimer () = 0;
 
-    // VFALCO TODO rename to setNeedNetworkLedger
-    virtual void needNetworkLedger () = 0;
+    virtual void setNeedNetworkLedger () = 0;
     virtual void clearNeedNetworkLedger () = 0;
     virtual bool isNeedNetworkLedger () = 0;
     virtual bool isFull () = 0;
     virtual bool isAmendmentBlocked () = 0;
     virtual void setAmendmentBlocked () = 0;
     virtual void consensusViewChange () = 0;
-    virtual PublicKey const& getValidationPublicKey () const = 0;
-    virtual void setValidationKeys (
-        SecretKey const& valSecret, PublicKey const& valPublic) = 0;
 
     virtual Json::Value getConsensusInfo () = 0;
-    virtual Json::Value getServerInfo (bool human, bool admin) = 0;
+    virtual Json::Value getServerInfo (
+        bool human, bool admin, bool counters) = 0;
     virtual void clearLedgerFetch () = 0;
     virtual Json::Value getLedgerFetchInfo () = 0;
 
@@ -245,11 +243,13 @@ public:
 //------------------------------------------------------------------------------
 
 std::unique_ptr<NetworkOPs>
-make_NetworkOPs (Application& app, NetworkOPs::clock_type& clock, bool standalone,
-    std::size_t network_quorum, bool start_valid,
-    JobQueue& job_queue, LedgerMaster& ledgerMaster,
-    Stoppable& parent, beast::Journal journal);
+make_NetworkOPs (Application& app, NetworkOPs::clock_type& clock,
+    bool standalone, std::size_t minPeerCount, bool start_valid,
+    JobQueue& job_queue, LedgerMaster& ledgerMaster, Stoppable& parent,
+    ValidatorKeys const & validatorKeys, boost::asio::io_service& io_svc,
+    beast::Journal journal);
 
 } // casinocoin
 
 #endif
+

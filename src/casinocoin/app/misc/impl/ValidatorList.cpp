@@ -22,15 +22,39 @@
     2017-06-27  ajochems        Refactored for casinocoin
 */
 //==============================================================================
-
 #include <casinocoin/app/misc/ValidatorList.h>
+#include <casinocoin/basics/base64.h>
+#include <casinocoin/basics/date.h>
 #include <casinocoin/basics/Slice.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/json/json_reader.h>
-#include <beast/core/detail/base64.hpp>
+#include <casinocoin/protocol/JsonFields.h>
 #include <boost/regex.hpp>
 
+#include <mutex>
+#include <shared_mutex>
 namespace casinocoin {
+
+std::string
+to_string(ListDisposition disposition)
+{
+    switch (disposition)
+    {
+        case ListDisposition::accepted:
+            return "accepted";
+        case ListDisposition::same_sequence:
+            return "same_sequence";
+        case ListDisposition::unsupported_version:
+            return "unsupported_version";
+        case ListDisposition::untrusted:
+            return "untrusted";
+        case ListDisposition::stale:
+            return "stale";
+        case ListDisposition::invalid:
+            return "invalid";
+    }
+    return "unknown";
+}
 
 ValidatorList::ValidatorList (
     ManifestCache& validatorManifests,
@@ -42,14 +66,12 @@ ValidatorList::ValidatorList (
     , publisherManifests_ (publisherManifests)
     , timeKeeper_ (timeKeeper)
     , j_ (j)
-    , quorum_ (minimumQuorum ? *minimumQuorum : 1) // Genesis ledger quorum
+    , quorum_ (minimumQuorum.value_or(1)) // Genesis ledger quorum
     , minimumQuorum_ (minimumQuorum)
 {
 }
 
-ValidatorList::~ValidatorList()
-{
-}
+
 
 bool
 ValidatorList::load (
@@ -69,7 +91,7 @@ ValidatorList::load (
         ")?"                      // end optional comment block
     );
 
-    boost::unique_lock<boost::shared_mutex> read_lock{mutex_};
+    std::unique_lock<std::shared_timed_mutex> read_lock{mutex_};
 
     JLOG (j_.debug()) <<
         "Loading configured trusted validator list publisher keys";
@@ -82,16 +104,16 @@ ValidatorList::load (
 
         auto const ret = strUnHex (key);
 
-        if (! ret.second || ! ret.first.size ())
+        if (! ret.second || ! publicKeyType(makeSlice(ret.first)))
         {
             JLOG (j_.error()) <<
                 "Invalid validator list publisher key: " << key;
             return false;
         }
 
-        auto id = PublicKey(Slice{ ret.first.data (), ret.first.size() });
+        auto id = PublicKey(makeSlice(ret.first));
 
-        if (validatorManifests_.revoked (id))
+        if (publisherManifests_.revoked (id))
         {
             JLOG (j_.warn()) <<
                 "Configured validator list publisher key is revoked: " << key;
@@ -138,7 +160,7 @@ ValidatorList::load (
         }
 
         auto const id = parseBase58<PublicKey>(
-            TokenType::TOKEN_NODE_PUBLIC, match[1]);
+            TokenType::NodePublic, match[1]);
 
         if (!id)
         {
@@ -156,8 +178,15 @@ ValidatorList::load (
             JLOG (j_.warn()) << "Duplicate node identity: " << match[1];
             continue;
         }
-        publisherLists_[local].list.emplace_back (std::move(*id));
-        publisherLists_[local].available = true;
+        auto it = publisherLists_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(local),
+            std::forward_as_tuple());
+        // Config listed keys never expire
+        if (it.second)
+            it.first->second.expiration = TimeKeeper::time_point::max();
+        it.first->second.list.emplace_back(std::move(*id));
+        it.first->second.available = true;
         ++count;
     }
 
@@ -167,18 +196,18 @@ ValidatorList::load (
     return true;
 }
 
-
 ListDisposition
 ValidatorList::applyList (
     std::string const& manifest,
     std::string const& blob,
     std::string const& signature,
-    std::uint32_t version)
+    std::uint32_t version,
+    std::string siteUri)
 {
-    if (version != 1)
+    if (version != requiredListVersion)
         return ListDisposition::unsupported_version;
 
-    boost::unique_lock<boost::shared_mutex> lock{mutex_};
+    std::unique_lock<std::shared_timed_mutex> lock{mutex_};
 
     Json::Value list;
     PublicKey pubKey;
@@ -190,22 +219,25 @@ ValidatorList::applyList (
     Json::Value const& newList = list["validators"];
     publisherLists_[pubKey].available = true;
     publisherLists_[pubKey].sequence = list["sequence"].asUInt ();
-    publisherLists_[pubKey].expiration = list["expiration"].asUInt ();
+    publisherLists_[pubKey].expiration = TimeKeeper::time_point{
+        TimeKeeper::duration{list["expiration"].asUInt()}};
+    publisherLists_[pubKey].siteUri = std::move(siteUri);
     std::vector<PublicKey>& publisherList = publisherLists_[pubKey].list;
 
     std::vector<PublicKey> oldList = publisherList;
     publisherList.clear ();
     publisherList.reserve (newList.size ());
+    std::vector<std::string> manifests;
     for (auto const& val : newList)
     {
-        if (val.isObject () &&
+        if (val.isObject() &&
             val.isMember ("validation_public_key") &&
             val["validation_public_key"].isString ())
         {
             std::pair<Blob, bool> ret (strUnHex (
                 val["validation_public_key"].asString ()));
 
-            if (! ret.second || ! ret.first.size ())
+            if (! ret.second || ! publicKeyType(makeSlice(ret.first)))
             {
                 JLOG (j_.error()) <<
                     "Invalid node identity: " <<
@@ -216,6 +248,9 @@ ValidatorList::applyList (
                 publisherList.push_back (
                     PublicKey(Slice{ ret.first.data (), ret.first.size() }));
             }
+
+            if (val.isMember ("manifest") && val["manifest"].isString ())
+                manifests.push_back(val["manifest"].asString ());
         }
     }
 
@@ -241,7 +276,7 @@ ValidatorList::applyList (
             (iOld != oldList.end () && *iOld < *iNew))
         {
             // Decrement list count for removed keys
-            if (keyListings_[*iOld] == 1)
+            if (keyListings_[*iOld] <= 1)
                 keyListings_.erase (*iOld);
             else
                 --keyListings_[*iOld];
@@ -260,6 +295,27 @@ ValidatorList::applyList (
             "No validator keys included in valid list";
     }
 
+    for (auto const& valManifest : manifests)
+    {
+        auto m = deserializeManifest(base64_decode(valManifest));
+
+        if (! m || ! keyListings_.count (m->masterKey))
+        {
+            JLOG (j_.warn()) <<
+                "List for " << strHex(pubKey) <<
+                " contained untrusted validator manifest";
+            continue;
+        }
+
+        auto const result = validatorManifests_.applyManifest (std::move(*m));
+        if (result == ManifestDisposition::invalid)
+        {
+            JLOG (j_.warn()) <<
+                "List for " << strHex(pubKey) <<
+                " contained invalid validator manifest";
+        }
+    }
+
     return ListDisposition::accepted;
 }
 
@@ -271,7 +327,7 @@ ValidatorList::verify (
     std::string const& blob,
     std::string const& signature)
 {
-    auto m = Manifest::make_Manifest (beast::detail::base64_decode(manifest));
+    auto m = deserializeManifest(base64_decode(manifest));
 
     if (! m || ! publisherLists_.count (m->masterKey))
         return ListDisposition::untrusted;
@@ -292,7 +348,7 @@ ValidatorList::verify (
         return ListDisposition::untrusted;
 
     auto const sig = strUnHex(signature);
-    auto const data = beast::detail::base64_decode (blob);
+    auto const data = base64_decode (blob);
     if (! sig.second ||
         ! casinocoin::verify (
             publisherManifests_.getSigningKey(pubKey),
@@ -308,11 +364,14 @@ ValidatorList::verify (
         list.isMember("expiration") && list["expiration"].isInt() &&
         list.isMember("validators") && list["validators"].isArray())
     {
-        auto const sequence = list["sequence"].asUInt ();
-        auto const expiration = list["expiration"].asUInt ();
-        if (sequence <= publisherLists_[pubKey].sequence ||
-                expiration <= timeKeeper_.now().time_since_epoch().count())
+        auto const sequence = list["sequence"].asUInt();
+        auto const expiration = TimeKeeper::time_point{
+            TimeKeeper::duration{list["expiration"].asUInt()}};
+        if (sequence < publisherLists_[pubKey].sequence ||
+            expiration <= timeKeeper_.now())
             return ListDisposition::stale;
+        else if (sequence == publisherLists_[pubKey].sequence)
+            return ListDisposition::same_sequence;
     }
     else
     {
@@ -326,7 +385,7 @@ bool
 ValidatorList::listed (
     PublicKey const& identity) const
 {
-    boost::shared_lock<boost::shared_mutex> read_lock{mutex_};
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
 
     auto const pubKey = validatorManifests_.getMasterKey (identity);
     return keyListings_.find (pubKey) != keyListings_.end ();
@@ -335,7 +394,7 @@ ValidatorList::listed (
 bool
 ValidatorList::trusted (PublicKey const& identity) const
 {
-    boost::shared_lock<boost::shared_mutex> read_lock{mutex_};
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
 
     auto const pubKey = validatorManifests_.getMasterKey (identity);
     return trustedKeys_.find (pubKey) != trustedKeys_.end();
@@ -345,7 +404,7 @@ boost::optional<PublicKey>
 ValidatorList::getListedKey (
     PublicKey const& identity) const
 {
-    boost::shared_lock<boost::shared_mutex> read_lock{mutex_};
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
 
     auto const pubKey = validatorManifests_.getMasterKey (identity);
     if (keyListings_.find (pubKey) != keyListings_.end ())
@@ -356,7 +415,7 @@ ValidatorList::getListedKey (
 boost::optional<PublicKey>
 ValidatorList::getTrustedKey (PublicKey const& identity) const
 {
-    boost::shared_lock<boost::shared_mutex> read_lock{mutex_};
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
 
     auto const pubKey = validatorManifests_.getMasterKey (identity);
     if (trustedKeys_.find (pubKey) != trustedKeys_.end())
@@ -367,14 +426,14 @@ ValidatorList::getTrustedKey (PublicKey const& identity) const
 bool
 ValidatorList::trustedPublisher (PublicKey const& identity) const
 {
-    boost::shared_lock<boost::shared_mutex> read_lock{mutex_};
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
     return identity.size() && publisherLists_.count (identity);
 }
 
 PublicKey
 ValidatorList::localPublicKey () const
 {
-    boost::shared_lock<boost::shared_mutex> read_lock{mutex_};
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
     return localPubKey_;
 }
 
@@ -386,8 +445,7 @@ ValidatorList::removePublisherList (PublicKey const& publisherKey)
         return false;
 
     JLOG (j_.debug()) <<
-        "Removing validator list for revoked publisher " <<
-        toBase58(TokenType::TOKEN_NODE_PUBLIC, publisherKey);
+        "Removing validator list for publisher " << strHex(publisherKey);
 
     for (auto const& val : iList->second.list)
     {
@@ -401,29 +459,263 @@ ValidatorList::removePublisherList (PublicKey const& publisherKey)
             --iVal->second;
     }
 
+    iList->second.list.clear();
+    iList->second.available = false;
+
     return true;
+}
+
+std::size_t
+ValidatorList::count() const
+{
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
+    return publisherLists_.size();
+}
+
+boost::optional<TimeKeeper::time_point>
+ValidatorList::expires() const
+{
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
+    boost::optional<TimeKeeper::time_point> res{boost::none};
+    for (auto const& p : publisherLists_)
+    {
+        // Unfetched
+        if (p.second.expiration == TimeKeeper::time_point{})
+            return boost::none;
+
+        // Earliest
+        if (!res || p.second.expiration < *res)
+            res = p.second.expiration;
+    }
+    return res;
+}
+
+Json::Value
+ValidatorList::getJson() const
+{
+    Json::Value res(Json::objectValue);
+
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
+
+    res[jss::validation_quorum] = static_cast<Json::UInt>(quorum());
+
+    {
+        auto& x = (res[jss::validator_list] = Json::objectValue);
+
+        x[jss::count] = static_cast<Json::UInt>(count());
+
+        if (auto when = expires())
+        {
+            if (*when == TimeKeeper::time_point::max())
+            {
+                x[jss::expiration] = "never";
+                x[jss::status] = "active";
+            }
+            else
+            {
+                x[jss::expiration] = to_string(*when);
+
+                if (*when > timeKeeper_.now())
+                    x[jss::status] = "active";
+                else
+                    x[jss::status] = "expired";
+            }
+        }
+        else
+        {
+            x[jss::status] = "unknown";
+            x[jss::expiration] = "unknown";
+        }
+    }
+
+    // Local static keys
+    PublicKey local;
+    Json::Value& jLocalStaticKeys =
+        (res[jss::local_static_keys] = Json::arrayValue);
+    auto it = publisherLists_.find(local);
+    if (it != publisherLists_.end())
+    {
+        for (auto const& key : it->second.list)
+            jLocalStaticKeys.append(
+                toBase58(TokenType::NodePublic, key));
+    }
+
+    // Publisher lists
+    Json::Value& jPublisherLists =
+        (res[jss::publisher_lists] = Json::arrayValue);
+    for (auto const& p : publisherLists_)
+    {
+        if(local == p.first)
+            continue;
+        Json::Value& curr = jPublisherLists.append(Json::objectValue);
+        curr[jss::pubkey_publisher] = strHex(p.first);
+        curr[jss::available] = p.second.available;
+        curr[jss::uri] = p.second.siteUri;
+        if(p.second.expiration != TimeKeeper::time_point{})
+        {
+            curr[jss::seq] = static_cast<Json::UInt>(p.second.sequence);
+            curr[jss::expiration] = to_string(p.second.expiration);
+            curr[jss::version] = requiredListVersion;
+        }
+        Json::Value& keys = (curr[jss::list] = Json::arrayValue);
+        for (auto const& key : p.second.list)
+        {
+            keys.append(toBase58(TokenType::NodePublic, key));
+        }
+    }
+
+    // Trusted validator keys
+    Json::Value& jValidatorKeys =
+        (res[jss::trusted_validator_keys] = Json::arrayValue);
+    for (auto const& k : trustedKeys_)
+    {
+        jValidatorKeys.append(toBase58(TokenType::NodePublic, k));
+    }
+
+    // signing keys
+    Json::Value& jSigningKeys = (res[jss::signing_keys] = Json::objectValue);
+    validatorManifests_.for_each_manifest(
+        [&jSigningKeys, this](Manifest const& manifest) {
+
+            auto it = keyListings_.find(manifest.masterKey);
+            if (it != keyListings_.end())
+            {
+                jSigningKeys[toBase58(
+                    TokenType::NodePublic, manifest.masterKey)] =
+                    toBase58(TokenType::NodePublic, manifest.signingKey);
+            }
+        });
+
+    return res;
 }
 
 void
 ValidatorList::for_each_listed (
     std::function<void(PublicKey const&, bool)> func) const
 {
-    boost::shared_lock<boost::shared_mutex> read_lock{mutex_};
+    std::shared_lock<std::shared_timed_mutex> read_lock{mutex_};
 
     for (auto const& v : keyListings_)
         func (v.first, trusted(v.first));
 }
 
 std::size_t
-ValidatorList::calculateQuorum (std::size_t nTrustedKeys)
+ValidatorList::calculateQuorum (
+    std::size_t trusted, std::size_t seen)
 {
-    // Use 80% for large values of n, but have special cases for small numbers.
-    constexpr std::array<std::size_t, 10> quorum{{ 0, 1, 2, 2, 3, 3, 4, 5, 6, 7 }};
+    // Do not use achievable quorum until lists from all configured
+    // publishers are available
+    for (auto const& list : publisherLists_)
+    {
+        if (! list.second.available)
+            return std::numeric_limits<std::size_t>::max();
+    }
 
-    if (nTrustedKeys < quorum.size())
-        return quorum[nTrustedKeys];
+    // Use an 80% quorum to balance fork safety, liveness, and required UNL
+    // overlap.
+    //
+    // Theorem 8 of the Analysis of the XRP Ledger Consensus Protocol
+    // (https://arxiv.org/abs/1802.07242) says:
+    //     XRP LCP guarantees fork safety if Oi,j > nj/2 + ni - qi + ti,j for
+    //     every pair of nodes Pi, Pj.
+    //
+    // ni: size of Pi's UNL
+    // nj: size of Pj's UNL
+    // Oi,j: number of validators in both UNLs
+    // qi: validation quorum for Pi's UNL
+    // ti, tj: maximum number of allowed Byzantine faults in Pi and Pj's UNLs
+    // ti,j: min{ti, tj, Oi,j}
+    //
+    // Assume ni < nj, meaning and ti,j = ti
+    //
+    // For qi = .8*ni, we make ti <= .2*ni
+    // (We could make ti lower and tolerate less UNL overlap. However in order
+    // to prioritize safety over liveness, we need ti >= ni - qi)
+    //
+    // An 80% quorum allows two UNLs to safely have < .2*ni unique validators
+    // between them:
+    //
+    // pi = ni - Oi,j
+    // pj = nj - Oi,j
+    //
+    // Oi,j > nj/2 + ni - qi + ti,j
+    // ni - pi > (ni - pi + pj)/2 + ni - .8*ni + .2*ni
+    // pi + pj < .2*ni
+    auto quorum = static_cast<std::size_t>(std::ceil(trusted * 0.8f));
 
-    return nTrustedKeys - nTrustedKeys / 5;
+    // Use lower quorum specified via command line if the normal quorum appears
+    // unreachable based on the number of recently received validations.
+    if (minimumQuorum_ && *minimumQuorum_ < quorum && seen < quorum)
+    {
+        quorum = *minimumQuorum_;
+
+        JLOG (j_.warn())
+            << "Using unsafe quorum of "
+            << quorum
+            << " as specified in the command line";
+    }
+
+    return quorum;
 }
 
-} // casinocoin
+TrustChanges
+ValidatorList::updateTrusted(hash_set<NodeID> const& seenValidators)
+{
+    std::unique_lock<std::shared_timed_mutex> lock{mutex_};
+
+    // Remove any expired published lists
+    for (auto const& list : publisherLists_)
+    {
+        if (list.second.available &&
+            list.second.expiration <= timeKeeper_.now())
+            removePublisherList(list.first);
+    }
+
+    TrustChanges trustChanges;
+
+    auto it = trustedKeys_.cbegin();
+    while (it != trustedKeys_.cend())
+    {
+        if (! keyListings_.count(*it) ||
+            validatorManifests_.revoked(*it))
+        {
+            trustChanges.removed.insert(calcNodeID(*it));
+            it = trustedKeys_.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    for (auto const& val : keyListings_)
+    {
+        if (! validatorManifests_.revoked(val.first) &&
+                trustedKeys_.emplace(val.first).second)
+            trustChanges.added.insert(calcNodeID(val.first));
+    }
+
+    JLOG (j_.debug()) <<
+        trustedKeys_.size() << "  of " << keyListings_.size() <<
+        " listed validators eligible for inclusion in the trusted set";
+
+    quorum_ = calculateQuorum (trustedKeys_.size(), seenValidators.size());
+
+    JLOG(j_.debug()) << "Using quorum of " << quorum_ << " for new set of "
+                     << trustedKeys_.size() << " trusted validators ("
+                     << trustChanges.added.size() << " added, "
+                     << trustChanges.removed.size() << " removed)";
+
+    if (trustedKeys_.size() < quorum_)
+    {
+        JLOG (j_.warn()) <<
+            "New quorum of " << quorum_ <<
+            " exceeds the number of trusted validators (" <<
+            trustedKeys_.size() << ")";
+    }
+
+    return trustChanges;
+}
+
+} // ripple
+

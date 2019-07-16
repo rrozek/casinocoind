@@ -23,7 +23,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/nodestore/backend/MemoryFactory.cpp>
 #include <casinocoin/nodestore/backend/NuDBFactory.cpp>
@@ -32,11 +32,13 @@
 #include <casinocoin/nodestore/backend/RocksDBQuickFactory.cpp>
 
 #include <casinocoin/nodestore/impl/BatchWriter.cpp>
-#include <casinocoin/nodestore/impl/DatabaseImp.h>
+#include <casinocoin/nodestore/impl/Database.cpp>
+#include <casinocoin/nodestore/impl/DatabaseNodeImp.cpp>
 #include <casinocoin/nodestore/impl/DatabaseRotatingImp.cpp>
+#include <casinocoin/nodestore/impl/DatabaseShardImp.cpp>
 #include <casinocoin/nodestore/impl/DummyScheduler.cpp>
 #include <casinocoin/nodestore/impl/DecodedBlob.cpp>
 #include <casinocoin/nodestore/impl/EncodedBlob.cpp>
 #include <casinocoin/nodestore/impl/ManagerImp.cpp>
 #include <casinocoin/nodestore/impl/NodeObject.cpp>
-
+#include <casinocoin/nodestore/impl/Shard.cpp>

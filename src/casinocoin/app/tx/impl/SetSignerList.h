@@ -54,7 +54,7 @@ private:
     std::vector<SignerEntries::SignerEntry> signers_;
 
 public:
-    SetSignerList (ApplyContext& ctx)
+    explicit SetSignerList (ApplyContext& ctx)
         : Transactor(ctx)
     {
     }
@@ -67,7 +67,7 @@ public:
     }
 
     static
-    TER
+    NotTEC
     preflight (PreflightContext const& ctx);
 
     TER doApply () override;
@@ -75,14 +75,14 @@ public:
 
 private:
     static
-    std::tuple<TER, std::uint32_t,
+    std::tuple<NotTEC, std::uint32_t,
         std::vector<SignerEntries::SignerEntry>,
             Operation>
     determineOperation(STTx const& tx,
         ApplyFlags flags, beast::Journal j);
 
     static
-    TER validateQuorumAndSignerEntries (
+    NotTEC validateQuorumAndSignerEntries (
         std::uint32_t quorum,
             std::vector<SignerEntries::SignerEntry> const& signers,
                 AccountID const& account,
@@ -93,11 +93,17 @@ private:
 
     TER removeSignersFromLedger (Keylet const& accountKeylet,
         Keylet const& ownerDirKeylet, Keylet const& signerListKeylet);
-    void writeSignersToSLE (SLE::pointer const& ledgerEntry) const;
+    void writeSignersToSLE (
+        SLE::pointer const& ledgerEntry, std::uint32_t flags) const;
 
-    static int ownerCountDelta (std::size_t entryCount);
+    // Way of computing owner count prior to featureMultiSignReserve.
+    // This needs to stay in the code base until no signerLists remain
+    // in the ledger that were created prior to acceptance of
+    // featureMultiSignReserve...  Effectively forever.
+    static int signerCountBasedOwnerCountDelta (std::size_t entryCount);
 };
 
 } // casinocoin
 
 #endif
+

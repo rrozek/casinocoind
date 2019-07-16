@@ -27,6 +27,7 @@
 #define CASINOCOIN_PROTOCOL_STBITSTRING_H_INCLUDED
 
 #include <casinocoin/protocol/STBase.h>
+#include <casinocoin/beast/utility/Zero.h>
 
 namespace casinocoin {
 
@@ -124,7 +125,7 @@ public:
     bool
     isDefault () const override
     {
-        return value_ == zero;
+        return value_ == beast::zero;
     }
 
 private:

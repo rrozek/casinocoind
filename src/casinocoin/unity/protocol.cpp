@@ -23,12 +23,11 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 
 #include <casinocoin/protocol/impl/AccountID.cpp>
 #include <casinocoin/protocol/impl/Book.cpp>
 #include <casinocoin/protocol/impl/BuildInfo.cpp>
-#include <casinocoin/protocol/impl/ByteOrder.cpp>
 #include <casinocoin/protocol/impl/digest.cpp>
 #include <casinocoin/protocol/impl/ErrorCodes.cpp>
 #include <casinocoin/protocol/impl/Feature.cpp>

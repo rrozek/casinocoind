@@ -17,10 +17,11 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
+#include <casinocoin/server/Port.h>
 #include <test/jtx/TestSuite.h>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -41,7 +42,7 @@ port_wss_admin
 [port_rpc]
 port = 5005
 ip = 127.0.0.1
-admin = 127.0.0.1
+admin = 127.0.0.1, ::1
 protocol = https
 
 [port_peer]
@@ -141,7 +142,7 @@ protected:
         else
             test_.log << "Expected " << toRm.string ()
                       << " to be an empty existing directory." << std::endl;
-    };
+    }
 
 public:
     ConfigGuard (beast::unit_test::suite& test, path subDir,
@@ -853,7 +854,25 @@ trustthesevalidators.gov
         }
     }
 
-    void run ()
+    void testPort ()
+    {
+        detail::RippledCfgGuard const cfg(*this, "testPort", "", "");
+        auto const& conf = cfg.config();
+        if (!BEAST_EXPECT(conf.exists("port_rpc")))
+            return;
+        if (!BEAST_EXPECT(conf.exists("port_wss_admin")))
+            return;
+        ParsedPort rpc;
+        if (!unexcept([&]() { parse_Port (rpc, conf["port_rpc"], log); }))
+            return;
+        BEAST_EXPECT(rpc.admin_ip && (rpc.admin_ip .get().size() == 2));
+        ParsedPort wss;
+        if (!unexcept([&]() { parse_Port (wss, conf["port_wss_admin"], log); }))
+            return;
+        BEAST_EXPECT(wss.admin_ip && (wss.admin_ip .get().size() == 1));
+    }
+
+    void run () override
     {
         testLegacy ();
         testDbPath ();
@@ -861,9 +880,11 @@ trustthesevalidators.gov
         testValidatorsFile ();
         testSetup (false);
         testSetup (true);
+        testPort ();
     }
 };
 
 BEAST_DEFINE_TESTSUITE (Config, core, casinocoin);
 
 }  // ripple
+

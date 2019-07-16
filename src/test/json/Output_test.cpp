@@ -17,7 +17,7 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/json/json_writer.h>
 #include <test/json/TestOutputSuite.h>

@@ -20,8 +20,9 @@
 #ifndef CASINOCOIN_SHAMAP_TESTS_COMMON_H_INCLUDED
 #define CASINOCOIN_SHAMAP_TESTS_COMMON_H_INCLUDED
 
-#include <BeastConfig.h>
+ 
 #include <casinocoin/basics/chrono.h>
+#include <casinocoin/nodestore/DatabaseShard.h>
 #include <casinocoin/nodestore/DummyScheduler.h>
 #include <casinocoin/nodestore/Manager.h>
 #include <casinocoin/shamap/Family.h>
@@ -38,11 +39,13 @@ private:
     FullBelowCache fullbelow_;
     RootStoppable parent_;
     std::unique_ptr<NodeStore::Database> db_;
+    bool shardBacked_;
     beast::Journal j_;
 
 public:
     TestFamily (beast::Journal j)
-        : treecache_ ("TreeNodeCache", 65536, 60, clock_, j)
+        : treecache_ ("TreeNodeCache", 65536, std::chrono::minutes{1},
+                      clock_, j)
         , fullbelow_ ("full_below", clock_)
         , parent_ ("TestRootStoppable")
         , j_ (j)
@@ -52,6 +55,8 @@ public:
         testSection.set("Path", "SHAMap_test");
         db_ = NodeStore::Manager::instance ().make_Database (
             "test", scheduler_, 1, parent_, testSection, j);
+        shardBacked_ =
+            dynamic_cast<NodeStore::DatabaseShard*>(db_.get()) != nullptr;
     }
 
     beast::manual_clock <std::chrono::steady_clock>
@@ -102,6 +107,12 @@ public:
         return *db_;
     }
 
+    bool
+    isShardBacked() const override
+    {
+        return shardBacked_;
+    }
+
     void
     missing_node (std::uint32_t refNum) override
     {
@@ -109,9 +120,16 @@ public:
     }
 
     void
-    missing_node (uint256 const& refHash) override
+    missing_node (uint256 const& refHash, std::uint32_t refNum) override
     {
         Throw<std::runtime_error> ("missing node");
+    }
+
+    void
+    reset() override
+    {
+        fullbelow_.reset();
+        treecache_.reset();
     }
 };
 
@@ -119,3 +137,4 @@ public:
 } // casinocoin
 
 #endif
+
