@@ -1154,7 +1154,7 @@ class Validations_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Validations, consensus, ripple);
+BEAST_DEFINE_TESTSUITE(Validations, consensus, casinocoin);
 }  // csf
 }  // test
 }  // casinocoin

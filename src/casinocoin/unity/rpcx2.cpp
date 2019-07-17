@@ -24,11 +24,14 @@
 #include <casinocoin/rpc/RPCHandler.h>
 #include <casinocoin/rpc/handlers/Handlers.h>
 
+#include <casinocoin/rpc/impl/DeliveredAmount.cpp>
 #include <casinocoin/rpc/impl/Handler.cpp>
 #include <casinocoin/rpc/impl/LegacyPathFind.cpp>
 #include <casinocoin/rpc/impl/Role.cpp>
+#include <casinocoin/rpc/impl/RPCHandler.cpp>
 #include <casinocoin/rpc/impl/RPCHelpers.cpp>
 #include <casinocoin/rpc/impl/ServerHandlerImp.cpp>
+#include <casinocoin/rpc/impl/Status.cpp>
 #include <casinocoin/rpc/impl/TransactionSign.cpp>
 #include <casinocoin/rpc/handlers/PathFind.cpp>
 #include <casinocoin/rpc/handlers/PayChanClaim.cpp>
@@ -58,12 +61,3 @@
 #include <casinocoin/rpc/handlers/WalletPropose.cpp>
 #include <casinocoin/rpc/handlers/BlacklistHandler.cpp>
 
-#include <casinocoin/rpc/impl/DeliveredAmount.cpp>
-#include <casinocoin/rpc/impl/Handler.cpp>
-#include <casinocoin/rpc/impl/LegacyPathFind.cpp>
-#include <casinocoin/rpc/impl/Role.cpp>
-#include <casinocoin/rpc/impl/RPCHandler.cpp>
-#include <casinocoin/rpc/impl/RPCHelpers.cpp>
-#include <casinocoin/rpc/impl/ServerHandlerImp.cpp>
-#include <casinocoin/rpc/impl/Status.cpp>
-#include <casinocoin/rpc/impl/TransactionSign.cpp>

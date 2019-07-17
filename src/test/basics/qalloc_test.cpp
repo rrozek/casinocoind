@@ -40,7 +40,7 @@ struct qalloc_test : beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(qalloc, ripple_basics, ripple);
+BEAST_DEFINE_TESTSUITE(qalloc, casinocoin_basics, casinocoin);
 
 }  // namespace casinocoin
 

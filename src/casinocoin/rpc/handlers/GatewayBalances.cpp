@@ -164,7 +164,7 @@ Json::Value doGatewayBalances (RPC::Context& context)
                     {
                         //obligation to customer
                         auto& bal = sums[amount.getCurrency()];
-                        if (bal == zero)
+                        if (bal == beast::zero)
                         {
                             // This is needed to set the currency code correctly
                             bal = amount;

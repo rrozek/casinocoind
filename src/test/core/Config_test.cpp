@@ -886,5 +886,5 @@ trustthesevalidators.gov
 
 BEAST_DEFINE_TESTSUITE (Config, core, casinocoin);
 
-}  // ripple
+}  // casinocoin
 

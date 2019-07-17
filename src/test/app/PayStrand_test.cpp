@@ -860,7 +860,7 @@ struct PayStrandAllPairs_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(PayStrandAllPairs, app, ripple, 12);
+BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(PayStrandAllPairs, app, casinocoin, 12);
 
 struct PayStrand_test : public beast::unit_test::suite
 {
@@ -1498,7 +1498,7 @@ struct PayStrand_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(PayStrand, app, ripple);
+BEAST_DEFINE_TESTSUITE(PayStrand, app, casinocoin);
 
 }  // test
 }  // casinocoin

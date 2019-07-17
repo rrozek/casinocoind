@@ -400,5 +400,5 @@ public:
 
 BEAST_DEFINE_TESTSUITE (Ticket, tx, casinocoin);
 
-}  // ripple
+}  // casinocoin
 

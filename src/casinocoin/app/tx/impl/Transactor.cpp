@@ -250,7 +250,7 @@ TER Transactor::checkFeeToken(PreclaimContext const& ctx,
         return telINSUF_FEE_P;
     }
 
-    if (feePaid == zero)
+    if (feePaid == beast::zero)
         return tesSUCCESS;
 
     auto const id = ctx.tx.getAccountID(sfAccount);
@@ -264,7 +264,7 @@ TER Transactor::checkFeeToken(PreclaimContext const& ctx,
             " balance=" << to_string(balance) <<
             " paid=" << to_string(feePaid);
 
-        if ((balance > zero) && !ctx.view.open())
+        if ((balance > beast::zero) && !ctx.view.open())
         {
             // Closed ledger, non-zero balance, less than fee
             return tecINSUFF_FEE;
@@ -683,7 +683,7 @@ Transactor::checkWLT (PreclaimContext const& ctx, boost::optional<TokenDescripto
 TER Transactor::checkBlacklist (PreclaimContext const& ctx)
 {
     auto const accountid = ctx.tx.getAccountID(sfAccount);
-    if (accountid == zero)
+    if (accountid == beast::zero)
         return temBAD_SRC_ACCOUNT;
 
     if (ctx.app.blacklistedAccounts().listed(toBase58(accountid)))
@@ -911,7 +911,7 @@ Transactor::operator()()
         // that charges a negative fee.
         if (fee < beast::zero)
         {
-            JLOG(journal.fatal()) << "invalid fee (negative)";
+            JLOG(j_.fatal()) << "invalid fee (negative)";
             Throw<std::logic_error> ("fee charged is negative!");
         }
 

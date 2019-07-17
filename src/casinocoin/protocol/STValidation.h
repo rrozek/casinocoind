@@ -111,8 +111,9 @@ public:
         @param isFull Whether the validation is full or partial
         @param fee FeeSettings to include in the validation
         @param amendments If not empty, the amendments to include in this validation
-        @note The fee and amendment settings are only set if not boost::none.
-              Typically, the amendments and fees are set for validations of flag
+        @param configuration If not empty, the config-object to include in this validation
+        @note The fee, amendment and configuration settings are only set if not boost::none.
+              Typically, the amendments, configuration and fees are set for validations of flag
               ledgers only.
     */
 
@@ -126,7 +127,8 @@ public:
         NodeID const& nodeID,
         bool isFull,
         FeeSettings const& fees,
-        std::vector<uint256> const& amendments);
+        std::vector<uint256> const& amendments,
+        std::vector<uint256> const& configuration);
 
     STBase*
     copy(std::size_t n, void* buf) const override

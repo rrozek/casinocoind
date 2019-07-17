@@ -111,5 +111,5 @@ class SkipList_test : public beast::unit_test::suite
 BEAST_DEFINE_TESTSUITE(SkipList,ledger,casinocoin);
 
 }  // test
-}  // ripple
+}  // casinocoin
 

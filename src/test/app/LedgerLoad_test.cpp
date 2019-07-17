@@ -234,5 +234,5 @@ public:
 
 BEAST_DEFINE_TESTSUITE (LedgerLoad, app, casinocoin);
 
-}  // ripple
+}  // casinocoin
 

@@ -111,4 +111,4 @@ struct PseudoTx_test : public beast::unit_test::suite
 BEAST_DEFINE_TESTSUITE(PseudoTx, app, casinocoin);
 
 }  // test
-}  // ripple
+}  // casinocoin

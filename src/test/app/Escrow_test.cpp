@@ -288,7 +288,7 @@ struct Escrow_test : public beast::unit_test::suite
             // Advance the ledger, verifying that the cancel won't complete
             // prematurely.
             for ( ; env.now() < ts; env.close())
-                env(cancel("bob", "alice", seq), fee150000000), ter(tecNO_PERMISSION));
+                env(cancel("bob", "alice", seq), fee(150000000), ter(tecNO_PERMISSION));
 
             // Verify that a finish won't work anymore.
             env(finish("bob", "alice", seq), condition(cb1),
@@ -712,7 +712,7 @@ struct Escrow_test : public beast::unit_test::suite
             env(cancel("bob", "alice", seq),                 ter(tecNO_PERMISSION));
             env(finish("alice", "alice", seq),               ter(tecNO_PERMISSION));
             env(finish("alice", "alice", seq),
-                condition(cb2), fulfillment(fb2), fee150000000), ter(tecNO_PERMISSION));
+                condition(cb2), fulfillment(fb2), fee(150000000), ter(tecNO_PERMISSION));
             env(finish("bob", "alice", seq),                 ter(tecNO_PERMISSION));
             env(finish("bob", "alice", seq),
                 condition(cb2), fulfillment(fb2), fee(150000000), ter(tecNO_PERMISSION));
@@ -1242,7 +1242,7 @@ struct Escrow_test : public beast::unit_test::suite
 
         {
             auto const jtx = env.jt(escrow("alice", "carol", CSC(1000)),
-                finish_time(env.now() + 1s), seq(1), fee1000000));
+                finish_time(env.now() + 1s), seq(1), fee(1000000));
             auto const pf = preflight(env.app(), env.current()->rules(),
                 *jtx.stx, tapNONE, env.journal);
             BEAST_EXPECT(pf.ter == tesSUCCESS);

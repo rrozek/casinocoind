@@ -345,12 +345,12 @@ public:
 
     virtual void add (Serializer & s) const override
     {
-        add (s, withAllFields);    // just inner elements
+        add (s, SField::WhichFields::includeAll);    // just inner elements
     }
 
     void addWithoutSigningFields (Serializer & s) const
     {
-        add (s, omitSigningFields);
+        add (s, SField::WhichFields::onlySigning);
     }
 
     // VFALCO NOTE does this return an expensive copy of an object with a
@@ -359,7 +359,7 @@ public:
     Serializer getSerializer () const
     {
         Serializer s;
-        add (s, withAllFields);
+        add (s, SField::WhichFields::includeAll);
         return s;
     }
 

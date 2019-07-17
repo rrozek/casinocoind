@@ -23,7 +23,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/crypto/ECIES.h>
 #include <casinocoin/crypto/impl/ec_key.h>

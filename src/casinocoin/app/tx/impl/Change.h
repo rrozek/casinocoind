@@ -66,7 +66,7 @@ public:
 
 private:
 
-    static TER preflightConfiguration(PreflightContext const& ctx);
+    static NotTEC preflightConfiguration(PreflightContext const& ctx);
 
     TER applyAmendment ();
     TER applyFee ();

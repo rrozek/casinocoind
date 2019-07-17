@@ -97,7 +97,7 @@ Change::preclaim(PreclaimContext const &ctx)
     return tesSUCCESS;
 }
 
-TER
+NotTEC
 Change::preflightConfiguration(PreflightContext const& ctx)
 {
     if (!ctx.rules.enabled(featureConfigObject))

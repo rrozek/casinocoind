@@ -387,5 +387,5 @@ public:
 BEAST_DEFINE_TESTSUITE (PaymentSandbox, ledger, casinocoin);
 
 }  // test
-}  // ripple
+}  // casinocoin
 

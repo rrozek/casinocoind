@@ -586,7 +586,7 @@ injectClientIP (Context& context)
     if (encryptedIP.size() == 0)
         return false;
 
-    context.params[jss::tx_json][jss::ClientIP] = strHex(encryptedIP.data(), encryptedIP.size());
+    context.params[jss::tx_json][jss::ClientIP] = strHex(encryptedIP.begin(), encryptedIP.end());
     return true;
 }
 

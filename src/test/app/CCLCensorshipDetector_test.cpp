@@ -92,7 +92,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(CCLCensorshipDetector, app, ripple);
+BEAST_DEFINE_TESTSUITE(CCLCensorshipDetector, app, casinocoin);
 }  // namespace test
 }  // namespace casinocoin
 

@@ -174,7 +174,7 @@ public:
     }
 };  // namespace test
 
-BEAST_DEFINE_TESTSUITE(ValidatorKeys, app, ripple);
+BEAST_DEFINE_TESTSUITE(ValidatorKeys, app, casinocoin);
 
 }  // namespace test
 } // namespace casinocoin

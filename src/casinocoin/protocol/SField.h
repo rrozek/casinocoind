@@ -138,12 +138,13 @@ public:
     static IsSigning const notSigning = IsSigning::no;
     static IsSigning const notSigningNotHashed = IsSigning::noAndNotHashed;
 
-    enum class WhichFields : unsigned char
+    // jrojek... blah. this and above need refactor for better naming...
+    enum WhichFields : unsigned char
     {
-        onlySigning             = 0x0000,
-        includeNotSigning       = 0x0001,
-        includeNotHashed        = 0x0002,
-        includeAll              = 0xFFFF,
+        onlySigning             = 0x00,
+        includeNotSigning       = 0x01,
+        includeNotHashed        = 0x02,
+        includeAll              = 0xFF,
     };
 
     int const                fieldCode;      // (type<<16)|index

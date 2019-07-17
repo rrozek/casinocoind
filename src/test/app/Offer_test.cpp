@@ -1127,17 +1127,15 @@ public:
         // PART 1:
         // we will make two offers that can be used to bridge BTC to USD
         // through CSC
-        Json::Value offerBTCtoCSC = offer (account_to_test, BTC (250), CSC (1000));
-        env (offerBTCtoCSC,
-                 offers (account_to_test, 1));
+        env (offer (account_to_test, BTC (250), CSC (1000)));
+        env.require(offers (account_to_test, 1));
 
         // validate that the book now shows a BTC for CSC offer
         BEAST_EXPECT(isOffer(env, account_to_test, BTC(250), CSC(1000)));
 
         auto const secondLegSeq = env.seq(account_to_test);
-        Json::Value offerCSCtoUSD =offer (account_to_test, CSC(1000), USD (50));
-        env (offerCSCtoUSD,
-                 offers (account_to_test, 2));
+        env (offer (account_to_test, CSC(1000), USD (50)));
+        env.require(offers (account_to_test, 2));
 
         // validate that the book also shows a CSC for USD offer
         BEAST_EXPECT(isOffer(env, account_to_test, CSC(1000), USD(50)));

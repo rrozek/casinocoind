@@ -321,7 +321,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(ClosureCounter, core, ripple);
+BEAST_DEFINE_TESTSUITE(ClosureCounter, core, casinocoin);
 
 } // test
 } // casinocoin

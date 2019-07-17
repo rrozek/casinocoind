@@ -518,6 +518,6 @@ public:
 
 BEAST_DEFINE_TESTSUITE_PRIO (TrustAndBalance, app, casinocoin, 1);
 
-}  // ripple
+}  // casinocoin
 
 

@@ -114,7 +114,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(RangeSet, ripple_basics, ripple);
+BEAST_DEFINE_TESTSUITE(RangeSet, casinocoin_basics, casinocoin);
 
 } // casinocoin
 

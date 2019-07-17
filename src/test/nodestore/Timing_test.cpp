@@ -304,7 +304,7 @@ public:
                 try
                 {
                     backend_.store(seq_.obj(i));
-                    suite_.log << "do_insert oper() obj hash: " << strHex (seq_.obj(i)->getHash().begin (), seq_.obj(i)->getHash().size ()) << std::endl;
+                    suite_.log << "do_insert oper() obj hash: " << strHex (seq_.obj(i)->getHash().begin (), seq_.obj(i)->getHash().end ()) << std::endl;
                 }
                 catch(std::exception const& e)
                 {
@@ -371,9 +371,9 @@ public:
                     obj = seq1_.obj(dist_(gen_));
                     NodeStore::Status status = backend_.fetch(obj->getHash().data(), &result);
                     suite_.log << "do_fetch oper() status: " << status << std::endl;
-                    suite_.log << "do_fetch oper() obj hash: " << strHex (obj->getHash().begin (), obj->getHash().size ()) << std::endl;
+                    suite_.log << "do_fetch oper() obj hash: " << strHex (obj->getHash().begin (), obj->getHash().end ()) << std::endl;
                     if (result)
-                        suite_.log << "do_fetch oper() res hash: " << strHex (result->getHash().begin (), result->getHash().size ()) << std::endl;
+                        suite_.log << "do_fetch oper() res hash: " << strHex (result->getHash().begin (), result->getHash().end ()) << std::endl;
                     else
                         suite_.log << "do_fetch oper() result is null " << std::endl;
                     suite_.expect(result && isSame(result, obj));

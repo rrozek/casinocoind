@@ -1115,7 +1115,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(PerfLog, basics, ripple);
+BEAST_DEFINE_TESTSUITE(PerfLog, basics, casinocoin);
 
 } // namespace casinocoin
 

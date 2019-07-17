@@ -53,7 +53,7 @@ struct Blacklist_SignerDescriptor;
 struct DataDescriptorInterface
 {
     DataDescriptorInterface(beast::Journal const& journal);
-    DataDescriptorInterface() = default;
+    DataDescriptorInterface() = delete;
     DataDescriptorInterface(DataDescriptorInterface const& other) = default;
     DataDescriptorInterface& operator=(DataDescriptorInterface const& other) = default;
     virtual ~DataDescriptorInterface() {}
@@ -117,6 +117,7 @@ struct TokenDescriptor : public DataDescriptorInterface
         Private         = 0x0004
     };
 
+    TokenDescriptor() = delete;
     TokenDescriptor(beast::Journal const& journal);
     TokenDescriptor(TokenDescriptor const& other);
     TokenDescriptor& operator=(const TokenDescriptor& other);
@@ -138,6 +139,7 @@ struct TokenDescriptor : public DataDescriptorInterface
 
 struct KYC_SignerDescriptor : public DataDescriptorInterface
 {
+    KYC_SignerDescriptor() = delete;
     KYC_SignerDescriptor(beast::Journal const& journal);
 
     DataDescriptorInterface* clone() const override;
@@ -150,6 +152,7 @@ struct KYC_SignerDescriptor : public DataDescriptorInterface
 
 struct Message_PubKeyDescriptor : public DataDescriptorInterface
 {
+    Message_PubKeyDescriptor() = delete;
     Message_PubKeyDescriptor(beast::Journal const& journal);
 
     DataDescriptorInterface* clone() const override;
@@ -162,6 +165,7 @@ struct Message_PubKeyDescriptor : public DataDescriptorInterface
 
 struct Blacklist_SignerDescriptor : public DataDescriptorInterface
 {
+    Blacklist_SignerDescriptor() = delete;
     Blacklist_SignerDescriptor(beast::Journal const& journal);
     
     DataDescriptorInterface* clone() const override;

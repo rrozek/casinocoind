@@ -17,7 +17,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/Blacklist.h>
 #include <casinocoin/rpc/Context.h>

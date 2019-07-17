@@ -23,7 +23,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/protocol/ErrorCodes.h>

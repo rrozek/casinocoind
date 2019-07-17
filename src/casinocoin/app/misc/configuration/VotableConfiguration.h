@@ -45,12 +45,10 @@ public:
 
     /** Add local Configuration to validation
         @param lastClosedLedger
-        @param baseValidation
     */
     virtual
-    void
-    doValidation (std::shared_ptr<ReadView const> const& lastClosedLedger,
-        STObject& baseValidation) = 0;
+    std::vector <uint256>
+    doValidation (std::shared_ptr<ReadView const> const& lastClosedLedger) = 0;
 
     /** Cast Configuration conclusion to the ledger
         @param lastClosedLedger

@@ -146,7 +146,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(JobQueue, core, ripple);
+BEAST_DEFINE_TESTSUITE(JobQueue, core, casinocoin);
 
 } // test
 } // casinocoin

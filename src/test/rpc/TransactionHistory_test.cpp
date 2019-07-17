@@ -151,5 +151,5 @@ public:
 
 BEAST_DEFINE_TESTSUITE (TransactionHistory, rpc, casinocoin);
 
-}  // ripple
+}  // casinocoin
 

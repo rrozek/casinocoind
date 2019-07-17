@@ -46,6 +46,7 @@ public:
             calcNodeID(keys.first),
             true,
             STValidation::FeeSettings{},
+            std::vector<uint256>{},
             std::vector<uint256>{});
 
         BEAST_EXPECT(v->isTrusted());
@@ -335,7 +336,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(CCLValidations, app, ripple);
+BEAST_DEFINE_TESTSUITE(CCLValidations, app, casinocoin);
 
 }  // namespace test
 }  // namespace casinocoin

@@ -23,7 +23,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/resource/Fees.h>
@@ -77,12 +76,10 @@ Json::Value doDecryptMsg (RPC::Context& context)
 
     std::string decryptedMsg(decryptedMsgBlob.begin(), decryptedMsgBlob.end());
 
-    Slice pubKeySlice = keypair.first.slice();
-
     jvResult[jss::encrypted_message] = context.params[jss::encrypted_message];
     jvResult[jss::message] = Json::Value(decryptedMsg);
-    jvResult[jss::src_public_key_hex] = strHex(unHexedEncryptedMsg.first.data(), PublicKey::defaultSize());
-    jvResult[jss::dest_public_key_hex] = Json::Value(strHex(pubKeySlice.data(), pubKeySlice.size()));
+    jvResult[jss::src_public_key_hex] = strHex(unHexedEncryptedMsg.first.begin(), unHexedEncryptedMsg.first.begin() + PublicKey::defaultSize());
+    jvResult[jss::dest_public_key_hex] = Json::Value(strHex(keypair.first.begin(), keypair.first.end()));
 
     return jvResult;
 }

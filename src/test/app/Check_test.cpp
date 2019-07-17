@@ -1860,7 +1860,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE (Check, tx, ripple);
+BEAST_DEFINE_TESTSUITE (Check, tx, casinocoin);
 
 }  // casinocoin
 

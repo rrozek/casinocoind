@@ -409,7 +409,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(ValidatorRPC, app, ripple);
+BEAST_DEFINE_TESTSUITE(ValidatorRPC, app, casinocoin);
 
 }  // namespace test
 }  // namespace casinocoin

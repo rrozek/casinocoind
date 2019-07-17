@@ -28,7 +28,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/crypto/impl/ECDSAKey.h>
 #include <openssl/ec.h>

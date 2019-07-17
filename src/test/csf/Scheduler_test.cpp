@@ -81,7 +81,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Scheduler, test, ripple);
+BEAST_DEFINE_TESTSUITE(Scheduler, test, casinocoin);
 
 }  // namespace test
 } // namespace casinocoin

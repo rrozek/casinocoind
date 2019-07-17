@@ -65,7 +65,8 @@ STValidation::STValidation(
     NodeID const& nodeID,
     bool isFull,
     FeeSettings const& fees,
-    std::vector<uint256> const& amendments)
+    std::vector<uint256> const& amendments,
+    std::vector<uint256> const& configuration)
     : STObject(getFormat(), sfValidation), mNodeID(nodeID), mSeen(signTime)
 {
     // This is our own public key and it should always be valid.
@@ -96,6 +97,9 @@ STValidation::STValidation(
 
     if (!amendments.empty())
         setFieldV256(sfAmendments, STVector256(sfAmendments, amendments));
+
+    if (!configuration.empty())
+        setFieldV256(sfConfigHashes, STVector256(sfConfigHashes, configuration));
 
     setFlag(vfFullyCanonicalSig);
 

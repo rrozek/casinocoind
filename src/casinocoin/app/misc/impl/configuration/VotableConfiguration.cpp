@@ -21,7 +21,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
 #include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/configuration/VotableConfiguration.h>
 #include <casinocoin/core/DatabaseCon.h>
@@ -46,7 +45,7 @@ struct ObjectHashSet
 {
 private:
     // How many yes votes each config object hash received
-    hash_map<VotableConfiguration::ObjectHash, uint32> votes_;
+    hash_map<VotableConfiguration::ObjectHash, std::uint32_t> votes_;
 
 public:
     // number of trusted validations
@@ -65,7 +64,7 @@ public:
             ++votes_[objHash];
     }
 
-    uint32 votes (VotableConfiguration::ObjectHash const& objectHash) const
+    std::uint32_t votes (VotableConfiguration::ObjectHash const& objectHash) const
     {
         auto const& it = votes_.find (objectHash);
 
@@ -89,9 +88,8 @@ public:
         Json::Value const& configurationJson,
         beast::Journal journal);
 
-    void
-    doValidation (std::shared_ptr<ReadView const> const& lastClosedLedger,
-        STObject& baseValidation) override;
+    std::vector <uint256>
+    doValidation (std::shared_ptr<ReadView const> const& lastClosedLedger) override;
 
     void
     doVoting (std::shared_ptr<ReadView const> const& lastClosedLedger,
@@ -131,12 +129,12 @@ VotableConfigurationImpl::VotableConfigurationImpl(
     updatePosition(configurationJson);
 }
 
-void VotableConfigurationImpl::doValidation(std::shared_ptr<const ReadView> const& lastClosedLedger, STObject &baseValidation)
+std::vector <uint256> VotableConfigurationImpl::doValidation(std::shared_ptr<const ReadView> const& lastClosedLedger)
 {
     if (!lastClosedLedger->rules().enabled(featureConfigObject))
     {
         JLOG(j_.info()) << "VotableConfigurationImpl::doValidation feature is not enabled. aborting";
-        return;
+        return std::vector<uint256>();
     }
     JLOG (j_.info()) <<
         "VotableConfigurationImpl::doValidation with " << entryList_.size() << " candidates";
@@ -154,8 +152,7 @@ void VotableConfigurationImpl::doValidation(std::shared_ptr<const ReadView> cons
     if (! ourConfig.empty())
         std::sort (ourConfig.begin (), ourConfig.end ());
 
-    baseValidation.setFieldV256 (sfConfigHashes,
-       STVector256 (sfConfigHashes, ourConfig));
+    return ourConfig;
 }
 
 void VotableConfigurationImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLedger, std::vector<STValidation::pointer> const& parentValidations, const std::shared_ptr<SHAMap> &initialPosition)

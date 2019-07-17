@@ -72,9 +72,6 @@ invoke_preflight (PreflightContext const& ctx)
     case ttTICKET_CANCEL:        return CancelTicket      ::preflight(ctx);
     case ttTICKET_CREATE:        return CreateTicket      ::preflight(ctx);
     case ttTRUST_SET:            return SetTrust          ::preflight(ctx);
-    case ttPAYCHAN_CREATE:       return PayChanCreate    ::preflight(ctx);
-    case ttPAYCHAN_FUND:         return PayChanFund      ::preflight(ctx);
-    case ttPAYCHAN_CLAIM:        return PayChanClaim     ::preflight(ctx);
     case ttKYC_SET:              return SetKYC           ::preflight(ctx);
     case ttAMENDMENT:
     case ttCONFIG:

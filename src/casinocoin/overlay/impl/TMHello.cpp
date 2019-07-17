@@ -126,10 +126,6 @@ buildHello (
     h.set_testnet (false); // never used but left for backwards compatability
     h.set_peernetwork(app.config().PEER_NETWORK);
 
-    if (remote.is_v4())
-    {
-        auto addr = remote.to_v4 ();
-
     if (beast::IP::is_public (remote))
     {
         // Connection is to a public IP
@@ -351,7 +347,7 @@ parseHello (bool request, beast::http::fields const& h, beast::Journal journal)
         if (iter != h.end())
         {
             uint32_t peerNetwork;
-            if (beast::lexicalCastChecked(peerNetwork, iter->second))
+            if (beast::lexicalCastChecked(peerNetwork, iter->value().to_string()))
                 hello.set_peernetwork (peerNetwork);
         }
     }

@@ -5057,7 +5057,7 @@ static RPCCallTestData const rpcCallTestArray [] =
     })"
 },
 
-// ripple_path_find ------------------------------------------------------------
+// casinocoin_path_find ------------------------------------------------------------
 {
     "ripple_path_find: minimal.", __LINE__,
     {

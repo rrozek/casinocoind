@@ -319,7 +319,7 @@ uint256 STObject::getHash (std::uint32_t prefix) const
 {
     Serializer s;
     s.add32 (prefix);
-    add (s, SField::includeSigningFields);
+    add (s, SField::WhichFields::includeNotSigning);
     return s.getSHA512Half ();
 }
 

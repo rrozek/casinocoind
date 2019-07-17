@@ -1309,9 +1309,7 @@ class LedgerRPC_test : public beast::unit_test::suite
         for (;;)
         {
             auto metrics = env.app().getTxQ().getMetrics(*env.current());
-            if (! BEAST_EXPECT(metrics))
-                break;
-            if (metrics->txPerLedger > metrics->txCount)
+            if (metrics.txPerLedger > metrics.txCount)
                 break;
             env(noop(alice));
         }

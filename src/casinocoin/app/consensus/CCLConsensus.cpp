@@ -766,6 +766,7 @@ CCLConsensus::Adaptor::validate(CCLCxLedger const& ledger,
 
     STValidation::FeeSettings fees;
     std::vector<uint256> amendments;
+    std::vector<uint256> configuration;
 
     auto const& feeTrack = app_.getFeeTrack();
     std::uint32_t fee =
@@ -787,7 +788,7 @@ CCLConsensus::Adaptor::validate(CCLCxLedger const& ledger,
         {
             Json::Value const& jvVotableConfig = app_.config().reloadConfigurationVoteParams();
             app_.getVotableConfig().updatePosition(jvVotableConfig);
-            app_.getVotableConfig().doValidation(ledger.ledger_, *v);
+            configuration = app_.getVotableConfig().doValidation(ledger.ledger_);
         }
     }
 
@@ -801,7 +802,8 @@ CCLConsensus::Adaptor::validate(CCLCxLedger const& ledger,
         nodeID_,
         proposing /* full if proposed */,
         fees,
-        amendments);
+        amendments,
+        configuration);
 
     // suppress it if we receive it
     app_.getHashRouter().addSuppression(

@@ -466,5 +466,5 @@ public:
 
 BEAST_DEFINE_TESTSUITE (Invariants, ledger, casinocoin);
 
-}  // ripple
+}  // casinocoin
 

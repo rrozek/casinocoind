@@ -52,6 +52,7 @@ ConfigObjectEntry::bimap_string_type ConfigObjectEntry::initializeTypeMap()
 ConfigObjectEntry::ConfigObjectEntry()
     : mId(0)
     , mType(Invalid)
+    , mJournal(beast::Journal::getNullSink())
 {
 
 }
@@ -293,7 +294,7 @@ bool Message_PubKeyDescriptor::fromJson(Json::Value const& data)
 bool Message_PubKeyDescriptor::toJson(Json::Value &result) const
 {
 
-    result[jss::public_key_hex] = strHex(pubKey.data(), pubKey.size());
+    result[jss::public_key_hex] = strHex(pubKey.begin(), pubKey.end());
     return true;
 }
 
@@ -302,6 +303,7 @@ TokenDescriptor::TokenDescriptor(beast::Journal const& journal)
 {}
 
 TokenDescriptor::TokenDescriptor(TokenDescriptor const& other)
+    : DataDescriptorInterface(other.mJournal)
 {
     fullName = other.fullName;
     flags = other.flags;

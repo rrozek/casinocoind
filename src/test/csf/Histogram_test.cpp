@@ -81,7 +81,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Histogram, test, ripple);
+BEAST_DEFINE_TESTSUITE(Histogram, test, casinocoin);
 
 }  // test
 } // casinocoin

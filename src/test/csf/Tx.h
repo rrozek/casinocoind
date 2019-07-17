@@ -217,6 +217,6 @@ hash_append(Hasher& h, Tx const& tx)
 
 }  // csf
 }  // test
-}  // ripple
+}  // casinocoin
 
 #endif

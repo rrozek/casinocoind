@@ -169,7 +169,7 @@ public:
         testParameters();
     }
 };
-BEAST_DEFINE_TESTSUITE(AccountTX, app, ripple);
+BEAST_DEFINE_TESTSUITE(AccountTX, app, casinocoin);
 
 }  // namespace test
 

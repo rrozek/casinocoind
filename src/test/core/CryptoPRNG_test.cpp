@@ -58,5 +58,5 @@ public:
 
 BEAST_DEFINE_TESTSUITE (CryptoPRNG, core, casinocoin);
 
-}  // ripple
+}  // casinocoin
 

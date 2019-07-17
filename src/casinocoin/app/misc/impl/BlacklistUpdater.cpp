@@ -28,6 +28,7 @@
 #include <casinocoin/app/misc/Blacklist.h>
 #include <casinocoin/app/misc/BlacklistUpdater.h>
 #include <casinocoin/basics/Slice.h>
+#include <casinocoin/json/json_writer.h>
 #include <casinocoin/json/json_reader.h>
 #include <beast/core/detail/base64.hpp>
 #include <boost/regex.hpp>
@@ -184,6 +185,7 @@ BlacklistUpdater::onTimer (
             sites_[siteIdx].pUrl.path,
             std::to_string(*sites_[siteIdx].pUrl.port),
             ios_,
+            j_,
             [this, siteIdx](error_code const& err, detail::response_type&& resp)
             {
                 onSiteFetch (err, std::move(resp), siteIdx);

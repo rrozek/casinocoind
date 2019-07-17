@@ -433,11 +433,11 @@ void Config::loadFromString (std::string const& fileContents)
             boost::format ("Setting Peer Network to: %s") % strTemp);
         
         PEER_NETWORK_SET = true;
-        if (beast::detail::ci_equal(strTemp, "production"))
+        if (beast::detail::iequals(strTemp, "production"))
             PEER_NETWORK = 0;
-        else if (beast::detail::ci_equal(strTemp, "test"))
+        else if (beast::detail::iequals(strTemp, "test"))
             PEER_NETWORK = 1;
-        else if (beast::detail::ci_equal(strTemp, "development"))
+        else if (beast::detail::iequals(strTemp, "development"))
             PEER_NETWORK = 2;
         else
         {

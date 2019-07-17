@@ -376,4 +376,4 @@ public:
 
 BEAST_DEFINE_TESTSUITE(SociDB,core,casinocoin);
 
-}  // ripple
+}  // casinocoin

@@ -383,6 +383,7 @@ public:
         {
             ++i;
             std::vector<uint256> field;
+            std::vector<uint256> dummyConfiguration;
 
             for (auto const& amendment : votes)
             {
@@ -403,7 +404,8 @@ public:
                 calcNodeID(val.first),
                 true,
                 STValidation::FeeSettings{},
-                field);
+                field,
+                dummyConfiguration);
 
             validations.emplace_back(v);
         }
@@ -769,5 +771,5 @@ public:
 
 BEAST_DEFINE_TESTSUITE (AmendmentTable, app, casinocoin);
 
-}  // ripple
+}  // casinocoin
 

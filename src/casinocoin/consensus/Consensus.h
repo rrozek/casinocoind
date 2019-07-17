@@ -1621,7 +1621,7 @@ Consensus<Adaptor>::createDisputes(TxSet_t const& o)
 
     for (auto& id : differences)
     {
-        if ((id.second && !result_->set.find(id.first))
+        if ((id.second && !result_->txns.find(id.first))
             || (!id.second && !o.find(id.first)))
         {
             JLOG(j_.warn()) << "Not creating disputes. Local SHAMap corrupted";

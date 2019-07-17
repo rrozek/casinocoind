@@ -23,7 +23,6 @@
 */
 //==============================================================================
 
-#include <BeastConfig.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <casinocoin/protocol/ErrorCodes.h>
 #include <casinocoin/resource/Fees.h>
@@ -93,9 +92,9 @@ Json::Value doEncryptMsg (RPC::Context& context)
     }
 
     jvResult[jss::message] = context.params[jss::message];
-    jvResult[jss::encrypted_message] = Json::Value(strHex(encryptedMsgBlob.data(), encryptedMsgBlob.size()));
+    jvResult[jss::encrypted_message] = Json::Value(strHex(encryptedMsgBlob.begin(), encryptedMsgBlob.end()));
     jvResult[jss::dest_public_key_hex] = context.params[jss::dest_public_key_hex];
-    jvResult[jss::src_public_key_hex] = Json::Value(strHex(encryptedMsgBlob.data(), PublicKey::defaultSize()));
+    jvResult[jss::src_public_key_hex] = Json::Value(strHex(encryptedMsgBlob.begin(), encryptedMsgBlob.begin() + PublicKey::defaultSize()));
 
     return jvResult;
 }

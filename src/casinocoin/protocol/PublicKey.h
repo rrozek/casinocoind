@@ -69,6 +69,8 @@ protected:
     std::uint8_t buf_[33]; // should be large enough
 
 public:
+    using const_iterator = std::uint8_t const*;
+
     static std::size_t defaultSize()
     {
         return 33;
