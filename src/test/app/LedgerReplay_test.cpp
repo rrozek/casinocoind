@@ -54,7 +54,7 @@ struct LedgerReplay_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(LedgerReplay,app,ripple);
+BEAST_DEFINE_TESTSUITE(LedgerReplay,app,casinocoin);
 
 } // test
 } // casinocoin

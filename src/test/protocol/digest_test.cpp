@@ -157,6 +157,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(digest,ripple_data,casinocoin,20);
+BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(digest,casinocoin_data,casinocoin,20);
 
 } // casinocoin

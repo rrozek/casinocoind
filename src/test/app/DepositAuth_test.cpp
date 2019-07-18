@@ -696,7 +696,7 @@ struct DepositPreauth_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(DepositAuth,app,ripple);
+BEAST_DEFINE_TESTSUITE(DepositAuth,app,casinocoin);
 
 } // test
 } // casinocoin

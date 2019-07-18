@@ -206,7 +206,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(OwnerInfo,app,ripple);
+BEAST_DEFINE_TESTSUITE(OwnerInfo,app,casinocoin);
 
 } // casinocoin
 

@@ -3079,7 +3079,7 @@ public:
 //        testLocalTxRetry();
 //        testLastLedgerSeq();
 //        testZeroFeeTxn();
-//       testPreclaimFailures();
+//        testPreclaimFailures();
 //        testQueuedFailure();
 //        testMultiTxnPerAccount();
 //        testTieBreaking();

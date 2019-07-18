@@ -47,6 +47,7 @@ constexpr static ErrorInfo unorderedErrorInfos[]
     {rpcAMENDMENT_BLOCKED,     "amendmentBlocked",    "Amendment blocked, need upgrade."},
     {rpcATX_DEPRECATED,        "deprecated",          "Use the new API or specify a ledger range."},
     {rpcBAD_FEATURE,           "badFeature",          "Feature unknown or invalid."},
+    {rpcBAD_FEE,               "badFee",              "Fee value not supported by the network."},
     {rpcBAD_ISSUER,            "badIssuer",           "Issuer account malformed."},
     {rpcBAD_MARKET,            "badMarket",           "No such market."},
     {rpcBAD_SECRET,            "badSecret",           "Secret does not match account."},
@@ -123,18 +124,18 @@ template<int N>
 sortErrorInfos (ErrorInfo const (&unordered)[N]) -> ErrorInfoArray<N>
 {
     ErrorInfoArray<N> ret;
+    // The first valid code follows rpcSUCCESS immediately.
+    static_assert (rpcSUCCESS == 0, "Unexpected error_code_i layout");
 
     for (ErrorInfo const& info : unordered)
     {
         if (info.code <= rpcSUCCESS || info.code > rpcLAST)
-            throw (std::out_of_range ("Invalid error_code_i"));
+            throw (std::out_of_range (std::string("Invalid error_code_i: " + std::to_string(info.code)).c_str()));
 
-        // The first valid code follows rpcSUCCESS immediately.
-        static_assert (rpcSUCCESS == 0, "Unexpected error_code_i layout.");
         int const index {info.code - 1};
 
         if (ret.infos[index].code != rpcUNKNOWN)
-            throw (std::invalid_argument ("Duplicate error_code_i in list"));
+            throw (std::invalid_argument (std::string("Duplicate error_code_i in list: " + std::to_string(info.code)).c_str()));
 
         ret.infos[index].code    = info.code;
         ret.infos[index].token   = info.token;
@@ -147,7 +148,7 @@ sortErrorInfos (ErrorInfo const (&unordered)[N]) -> ErrorInfoArray<N>
     for (ErrorInfo const& info : ret.infos)
     {
         if (info.code != ++expect)
-            throw (std::invalid_argument ("Empty error_code_i in list"));
+            throw (std::invalid_argument (std::string("Empty error_code_i in list: " + std::to_string(info.code)).c_str()));
     }
     if (expect != rpcLAST)
         throw (std::invalid_argument ("Insufficient list entries"));

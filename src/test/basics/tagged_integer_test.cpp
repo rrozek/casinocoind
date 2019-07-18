@@ -230,7 +230,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(tagged_integer,ripple_basics,ripple);
+BEAST_DEFINE_TESTSUITE(tagged_integer,casinocoin_basics,casinocoin);
 
 } // test
 } // casinocoin
