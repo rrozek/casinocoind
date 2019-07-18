@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "db/column_family.h"
-#include "db/compaction_job.h"
+#include "db/compaction/compaction_job.h"
 #include "db/dbformat.h"
 #include "db/external_sst_file_ingestion_job.h"
 #include "db/flush_job.h"

@@ -254,7 +254,7 @@ SField const sfAffectedNodes   (access, STI_ARRAY, 8, "AffectedNodes");
 SField const sfMemos           (access, STI_ARRAY, 9, "Memos");
 
 // array of objects (uncommon)
-SField const sfMajoritSField   (access, STI_ARRAY, 16, "Majorities");
+SField const sfMajorities      (access, STI_ARRAY, 16, "Majorities");
 SField const sfConfiguration   (access, STI_ARRAY, 17, "Configuration");
 
 SField::SField(private_access_tag_t,

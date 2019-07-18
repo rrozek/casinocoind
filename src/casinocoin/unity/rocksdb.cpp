@@ -61,10 +61,10 @@
 #include <rocksdb2/db/column_family.cc>
 #include <rocksdb2/db/compacted_db_impl.cc>
 #include <rocksdb2/db/compaction.cc>
-#include <rocksdb2/db/compaction_iterator.cc>
-#include <rocksdb2/db/compaction_job.cc>
+#include <rocksdb2/db/compaction/compaction_iterator.cc>
+#include <rocksdb2/db/compaction/compaction_job.cc>
 #include <rocksdb2/db/compaction_picker.cc>
-#include <rocksdb2/db/compaction_picker_universal.cc>
+#include <rocksdb2/db/compaction/compaction_picker_universal.cc>
 #include <rocksdb2/db/convenience.cc>
 #include <rocksdb2/db/db_filesnapshot.cc>
 #include <rocksdb2/db/db_impl.cc>

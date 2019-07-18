@@ -62,6 +62,7 @@
 # endif
 #endif
 
+#define CASINOCOIN_ROCKSDB_AVAILABLE 0
 #if CASINOCOIN_ROCKSDB_AVAILABLE
 #define SNAPPY
 //#include <rocksdb2/port/port_posix.h>
