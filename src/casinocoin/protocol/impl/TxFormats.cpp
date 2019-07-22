@@ -243,9 +243,9 @@ TxFormats::TxFormats ()
     add (jss::SetConfiguration, ttCONFIG,
         {
             { sfLedgerSequence,      soeOPTIONAL },
-            { sfLedgerSequence,      soeOPTIONAL },
-            { sfLedgerSequence,      soeOPTIONAL },
-            { sfLedgerSequence,      soeOPTIONAL },
+            { sfConfigID,            soeREQUIRED },
+            { sfConfigType,          soeREQUIRED },
+            { sfConfigData,          soeREQUIRED },
         },
         commonFields);
 

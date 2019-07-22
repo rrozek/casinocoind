@@ -314,7 +314,8 @@ static boost::optional<detail::STVar> parseLeaf (
                     }
                     else
                     {
-                        error = invalid_data (json_name, fieldName);
+                        std::string err = "else " + fieldName + std::to_string(field.fieldValue) + field.getJsonName().c_str();
+                        error = invalid_data (json_name, err);
                         return ret;
                     }
                 }
@@ -342,7 +343,8 @@ static boost::optional<detail::STVar> parseLeaf (
         }
         catch (std::exception const&)
         {
-            error = invalid_data (json_name, fieldName);
+            std::string err = "catch " + fieldName + std::to_string(field.fieldValue) + field.getJsonName().c_str();
+            error = invalid_data (json_name, err);
             return ret;
         }
 

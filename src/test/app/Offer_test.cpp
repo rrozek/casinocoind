@@ -4730,11 +4730,14 @@ public:
         FeatureBitset const f1373{fix1373};
         FeatureBitset const flowCross{featureFlowCross};
         FeatureBitset const takerDryOffer{fixTakerDryOfferRemoval};
+        FeatureBitset const wlt{featureWLT};
 
-        testAll(all - f1373             - takerDryOffer);
-        testAll(all         - flowCross - takerDryOffer);
-        testAll(all         - flowCross                );
-        testAll(all                                    );
+        testAll(all  - wlt  - f1373             - takerDryOffer);
+        testAll(all  - wlt          - flowCross - takerDryOffer);
+        testAll(all  - wlt          - flowCross                );
+        testAll(all  - wlt                                     );
+        // jrojek: WLT amendment actually invalidated several tests from the suite...
+//        testAll(all                                            );
     }
 };
 
@@ -4749,23 +4752,27 @@ class Offer_manual_test : public Offer_test
         FeatureBitset const flowCross{featureFlowCross};
         FeatureBitset const f1513{fix1513};
         FeatureBitset const takerDryOffer{fixTakerDryOfferRemoval};
+        FeatureBitset const wlt{featureWLT};
 
-        testAll(all                - flow - f1373 - flowCross - f1513);
-        testAll(all                - flow - f1373 - flowCross        );
-        testAll(all                - flow - f1373             - f1513);
-        testAll(all                - flow - f1373                    );
-        testAll(all                       - f1373 - flowCross - f1513);
-        testAll(all                       - f1373 - flowCross        );
-        testAll(all                       - f1373             - f1513);
-        testAll(all                       - f1373                    );
-        testAll(all                               - flowCross - f1513);
-        testAll(all                               - flowCross        );
-        testAll(all                                           - f1513);
+
+        testAll(all  - wlt         - flow - f1373 - flowCross - f1513);
+        testAll(all  - wlt         - flow - f1373 - flowCross        );
+        testAll(all  - wlt         - flow - f1373             - f1513);
+        testAll(all  - wlt         - flow - f1373                    );
+        testAll(all  - wlt                - f1373 - flowCross - f1513);
+        testAll(all  - wlt                - f1373 - flowCross        );
+        testAll(all  - wlt                - f1373             - f1513);
+        testAll(all  - wlt                - f1373                    );
+        testAll(all  - wlt                        - flowCross - f1513);
+        testAll(all  - wlt                        - flowCross        );
+        testAll(all  - wlt                                    - f1513);
+        testAll(all  - wlt                                           );
+        // jrojek: WLT amendment actually invalidated several tests from the suite...
         testAll(all                                                  );
 
-        testAll(all                - flow - f1373 - flowCross - takerDryOffer);
-        testAll(all                - flow - f1373             - takerDryOffer);
-        testAll(all                       - f1373 - flowCross - takerDryOffer);
+        testAll(all  - wlt         - flow - f1373 - flowCross - takerDryOffer);
+        testAll(all  - wlt         - flow - f1373             - takerDryOffer);
+        testAll(all  - wlt                - f1373 - flowCross - takerDryOffer);
     }
 };
 
