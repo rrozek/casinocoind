@@ -339,6 +339,10 @@ class noCasinocoinCheckLimits_test : public beast::unit_test::suite
 public:
     void run () override
     {
+//        pass();
+//        return;
+//        // jrojek TODO
+
         for (auto admin : {true, false})
             testLimits (admin);
     }

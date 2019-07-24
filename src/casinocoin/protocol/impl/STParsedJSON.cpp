@@ -343,8 +343,7 @@ static boost::optional<detail::STVar> parseLeaf (
         }
         catch (std::exception const&)
         {
-            std::string err = "catch " + fieldName + std::to_string(field.fieldValue) + field.getJsonName().c_str();
-            error = invalid_data (json_name, err);
+            error = invalid_data (json_name, fieldName);
             return ret;
         }
 

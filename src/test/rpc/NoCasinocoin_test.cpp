@@ -258,6 +258,9 @@ public:
 
     void run () override
     {
+//        pass();
+//        return;
+//        // jrojek TODO
         testSetAndClear();
 
         auto withFeatsTests = [this](FeatureBitset features) {

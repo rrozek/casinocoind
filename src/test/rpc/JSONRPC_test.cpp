@@ -92,7 +92,7 @@ R"({
     "account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
     "secret": "masterpassphrase",
     "tx_json": {
-        "Fee": 10,
+        "Fee" : 10,
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
@@ -133,7 +133,7 @@ R"({
     "secret": "masterpassphrase",
     "tx_json": {
         "Sequence": 0,
-        "Fee": 10,
+        "Fee" : 10,
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
@@ -195,7 +195,7 @@ R"({
     "fee_mult_max": 0,
     "tx_json": {
         "Sequence": 0,
-        "Fee": 10,
+        "Fee" : 10,
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
@@ -217,7 +217,7 @@ R"({
     "fee_div_max": 1000,
     "tx_json": {
         "Sequence": 0,
-        "Fee": 10,
+        "Fee" : 10,
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
@@ -726,7 +726,7 @@ R"({
     "secret": "masterpassphrase",
     "offline": 1,
     "tx_json": {
-        "Fee": 10,
+        "Fee" : 10,
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
@@ -767,7 +767,7 @@ R"({
     "offline": 1,
     "tx_json": {
         "Sequence": 0,
-        "Fee": 10,
+        "Fee" : 10,
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
@@ -789,7 +789,7 @@ R"({
     "build_path": 1,
     "tx_json": {
         "Sequence": 0,
-        "Fee": 10,
+        "Fee" : 10,
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
@@ -862,18 +862,18 @@ R"({
 { "Single-sign a multisigned transaction.", __LINE__,
 R"({
     "command": "doesnt_matter",
-    "account": "rPcNzota6B8YBokhYtcTNqQVCngtbnWfux",
+    "account": "cPrNzota6B8YBokhYtrTNqQVCngtbnWfux",
     "secret": "a",
     "tx_json": {
-        "Account" : "rnUy2SHTrB9DubsPmkJZUXTf5FcNDGrYEA",
+        "Account" : "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount" : "1000000000",
-        "Destination" : "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-        "Fee" : "50",
+        "Destination" : "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
+        "Fee" : 50,
         "Sequence" : 0,
         "Signers" : [
             {
                 "Signer" : {
-                    "Account" : "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+                    "Account" : "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
                     "SigningPubKey" : "0330E7FC9D56BB25D6893BA3F317AE5BCF33B3291BD63DB32654A313222F7FD020",
                     "TxnSignature" : "304502210080EB23E78A841DDC5E3A4F10DE6EAF052207D6B519BF8954467ADB221B3F349002202CA458E8D4E4DE7176D27A91628545E7B295A5DFC8ADF0B5CD3E279B6FA02998"
                 }
@@ -898,7 +898,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
         "TransactionType": "Payment"
@@ -920,7 +920,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
         "TransactionType": "Payment"
@@ -943,7 +943,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cJcxi4Wxev4bnAGVNP9YCdKPdAoKfAmrsi",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
         "TransactionType": "Payment"
@@ -966,7 +966,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cJcxi4Wxev4bnAGVNP9YCdKPdAoKfAmrsi",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
         "TransactionType": "Payment"
@@ -986,7 +986,7 @@ R"({
     "tx_json": {
         "Amount": "1000000000",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
         "TransactionType": "Payment"
@@ -1006,7 +1006,7 @@ R"({
     "tx_json": {
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
         "TransactionType": "Payment"
@@ -1026,7 +1026,7 @@ R"({
     "tx_json": {
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
         "TransactionType": "Payment"
@@ -1067,7 +1067,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "SigningPubKey": "",
         "TransactionType": "Payment"
     }
@@ -1087,7 +1087,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "TransactionType": "Payment"
     }
@@ -1107,7 +1107,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "TransactionType": "Payment"
     }
@@ -1127,7 +1127,7 @@ R"({
         "Account" : "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount" : "1000000000",
         "Destination" : "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee" : "50",
+        "Fee" : 50,
         "Sequence" : 0,
         "Signers" : [
             {
@@ -1143,8 +1143,8 @@ R"({
     }
 })",
 {{
-"Secret does not match account.",
-"Secret does not match account.",
+"Already multisigned.",
+"Already multisigned.",
 "Duplicate Signers:Signer:Account entries (cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh) are not allowed.",
 "", ""}}},
 
@@ -1157,7 +1157,7 @@ R"({
         "Account" : "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount" : "1000000000",
         "Destination" : "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee" : "50",
+        "Fee" : 50,
         "Sequence" : 0,
         "Signers" : [
             {
@@ -1187,7 +1187,7 @@ R"({
         "Account" : "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount" : "1000000000",
         "Destination" : "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee" : "50",
+        "Fee" : 50,
         "Sequence" : 0,
         "Signers" : [
             {
@@ -1203,8 +1203,8 @@ R"({
     }
 })",
 {{
-"Secret does not match account.",
-"Secret does not match account.",
+"Already multisigned.",
+"Already multisigned.",
 "Transaction has bad signature.",
 "Transaction has bad signature.",
 "Invalid signature on account cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh."}}},
@@ -1218,7 +1218,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "1",
         "TransactionType": "Payment"
@@ -1239,7 +1239,7 @@ R"({
         "Account": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount": "1000000000",
         "Destination": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
     }
@@ -1253,18 +1253,18 @@ R"({
 { "TxnSignature in sign_for.", __LINE__,
 R"({
     "command": "doesnt_matter",
-    "account": "rPcNzota6B8YBokhYtcTNqQVCngtbnWfux",
+    "account": "cPrNzota6B8YBokhYtrTNqQVCngtbnWfux",
     "secret": "c",
     "tx_json": {
-        "Account" : "rnUy2SHTrB9DubsPmkJZUXTf5FcNDGrYEA",
+        "Account" : "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
         "Amount" : "1000000000",
-        "Destination" : "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-        "Fee" : "50",
+        "Destination" : "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
+        "Fee" : 50,
         "Sequence" : 0,
         "Signers" : [
             {
                 "Signer" : {
-                    "Account" : "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+                    "Account" : "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
                     "SigningPubKey" : "0330E7FC9D56BB25D6893BA3F317AE5BCF33B3291BD63DB32654A313222F7FD020",
                     "TxnSignature" : "304502210080EB23E78A841DDC5E3A4F10DE6EAF052207D6B519BF8954467ADB221B3F349002202CA458E8D4E4DE7176D27A91628545E7B295A5DFC8ADF0B5CD3E279B6FA02998"
                 }
@@ -1327,7 +1327,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers" : [
              {
@@ -1355,7 +1355,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1374,7 +1374,8 @@ R"({
 "Missing field 'secret'.",
 "Missing field 'secret'.",
 "Missing field 'account'.",
-"Transaction has bad signature.", "Invalid signature on account cPrNzota6B8YBokhYtrTNqQVCngtbnWfux."}}},
+"Invalid signature on account cPrNzota6B8YBokhYtrTNqQVCngtbnWfux.",
+"Transaction has bad signature."}}},
 
 { "Missing tx_json in submit_multisigned.", __LINE__,
 R"({
@@ -1402,7 +1403,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Signers": [
             {
                 "Signer": {
@@ -1429,7 +1430,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Signers": [
             {
                 "Signer": {
@@ -1456,7 +1457,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1484,7 +1485,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Signers": [
             {
                 "Signer": {
@@ -1510,7 +1511,7 @@ R"({
     "tx_json": {
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1538,7 +1539,7 @@ R"({
         "Account": "NotAnAccount",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1566,7 +1567,7 @@ R"({
         "Account": "cDg53Haik2475DJx8bjMDSDPj4VX7htaMd",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1648,7 +1649,7 @@ R"({
     "tx_json": {
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50000000,
+        "Fee" : 500,
         "Sequence": 0,
         "Signers": [
             {
@@ -1676,7 +1677,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "NotANumber",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1705,7 +1706,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1732,7 +1733,7 @@ R"({
     "tx_json": {
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1760,7 +1761,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "NotADestination",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1788,7 +1789,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "SigningPubKey": "",
         "TransactionType": "Payment"
@@ -1807,7 +1808,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": {
             "Account": "cPrNzota6B8YBokhYtrTNqQVCngtbnWfux",
@@ -1831,7 +1832,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
         ],
@@ -1852,7 +1853,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -1887,7 +1888,7 @@ R"({
         "Account": "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh",
         "Amount": "1000000000",
         "Destination": "cnUy2SHTcB9DubsPmkJZUXTf5FrNDGcYEA",
-        "Fee": 50,
+        "Fee" : 50,
         "Sequence": 0,
         "Signers": [
             {
@@ -2068,132 +2069,133 @@ public:
                 req[jss::tx_json][jss::Fee] == 1000000);
         }
 
-        // put 4 transactions into the open ledger
-        for (auto i = 0; i < 4; ++i)
-        {
-            env(noop(env.master));
-        }
+// jrojek: in CSC we don't escalate FEE so those tests are irrelevant
+//        // put 4 transactions into the open ledger
+//        for (auto i = 0; i < 4; ++i)
+//        {
+//            env(noop(env.master));
+//        }
 
-        {
-            // high mult, 4 txs
-            Json::Value req;
-            Json::Reader().parse(R"({
-                "fee_mult_max" : 1000,
-                "tx_json" : { }
-            })", req);
-            Json::Value result =
-                checkFee(req, Role::ADMIN, true,
-                    env.app().config(), feeTrack,
-                        env.app().getTxQ(), env.current(),
-                             env.app().journal("RPC"));
+//        {
+//            // high mult, 4 txs
+//            Json::Value req;
+//            Json::Reader().parse(R"({
+//                "fee_mult_max" : 1000,
+//                "tx_json" : { }
+//            })", req);
+//            Json::Value result =
+//                checkFee(req, Role::ADMIN, true,
+//                    env.app().config(), feeTrack,
+//                        env.app().getTxQ(), env.current(),
+//                             env.app().journal("RPC"));
 
-            BEAST_EXPECT(!RPC::contains_error(result));
-            BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
-                req[jss::tx_json][jss::Fee] == 1000000);
-        }
+//            BEAST_EXPECT(!RPC::contains_error(result));
+//            BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
+//                req[jss::tx_json][jss::Fee] == 1000000);
+//        }
 
-        {
-            // low mult, 4 tx
-            Json::Value req;
-            Json::Reader().parse(R"({
-                "fee_mult_max" : 5,
-                "tx_json" : { }
-            })", req);
-            Json::Value result =
-                checkFee(req, Role::ADMIN, true,
-                    env.app().config(), feeTrack,
-                      env.app().getTxQ(), env.current(),
-                         env.app().journal("RPC"));
+//        {
+//            // low mult, 4 tx
+//            Json::Value req;
+//            Json::Reader().parse(R"({
+//                "fee_mult_max" : 5,
+//                "tx_json" : { }
+//            })", req);
+//            Json::Value result =
+//                checkFee(req, Role::ADMIN, true,
+//                    env.app().config(), feeTrack,
+//                      env.app().getTxQ(), env.current(),
+//                         env.app().journal("RPC"));
 
-            BEAST_EXPECT(RPC::contains_error(result));
-            BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
-        }
+//            BEAST_EXPECT(RPC::contains_error(result));
+//            BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
+//        }
 
-        {
-            // different low mult, 4 tx
-            Json::Value req;
-            Json::Reader().parse(R"({
-                "fee_mult_max" : 1000,
-                "fee_div_max" : 3,
-                "tx_json" : { }
-            })", req);
-            Json::Value result =
-                checkFee(req, Role::ADMIN, true,
-                    env.app().config(), feeTrack,
-                    env.app().getTxQ(), env.current(),
-                         env.app().journal("RPC"));
+//        {
+//            // different low mult, 4 tx
+//            Json::Value req;
+//            Json::Reader().parse(R"({
+//                "fee_mult_max" : 1000,
+//                "fee_div_max" : 3,
+//                "tx_json" : { }
+//            })", req);
+//            Json::Value result =
+//                checkFee(req, Role::ADMIN, true,
+//                    env.app().config(), feeTrack,
+//                    env.app().getTxQ(), env.current(),
+//                         env.app().journal("RPC"));
 
-            BEAST_EXPECT(RPC::contains_error(result));
-            BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
-        }
+//            BEAST_EXPECT(RPC::contains_error(result));
+//            BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
+//        }
 
-        {
-            // high mult, 4 tx
-            Json::Value req;
-            Json::Reader().parse(R"({
-                "fee_mult_max" : 8000,
-                "fee_div_max" : 3,
-                "tx_json" : { }
-            })", req);
-            Json::Value result =
-                checkFee(req, Role::ADMIN, true,
-                    env.app().config(), feeTrack,
-                    env.app().getTxQ(), env.current(),
-                         env.app().journal("RPC"));
+//        {
+//            // high mult, 4 tx
+//            Json::Value req;
+//            Json::Reader().parse(R"({
+//                "fee_mult_max" : 8000,
+//                "fee_div_max" : 3,
+//                "tx_json" : { }
+//            })", req);
+//            Json::Value result =
+//                checkFee(req, Role::ADMIN, true,
+//                    env.app().config(), feeTrack,
+//                    env.app().getTxQ(), env.current(),
+//                         env.app().journal("RPC"));
 
-            BEAST_EXPECT(!RPC::contains_error(result));
-            BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
-                req[jss::tx_json][jss::Fee] == 1000000);
-        }
+//            BEAST_EXPECT(!RPC::contains_error(result));
+//            BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
+//                req[jss::tx_json][jss::Fee] == 1000000);
+//        }
 
-        {
-            // negative mult
-            Json::Value req;
-            Json::Reader().parse(R"({
-                "fee_mult_max" : -5,
-                "tx_json" : { }
-            })", req);
-            Json::Value result =
-                checkFee(req, Role::ADMIN, true,
-                    env.app().config(), feeTrack,
-                      env.app().getTxQ(), env.current(),
-                         env.app().journal("RPC"));
+//        {
+//            // negative mult
+//            Json::Value req;
+//            Json::Reader().parse(R"({
+//                "fee_mult_max" : -5,
+//                "tx_json" : { }
+//            })", req);
+//            Json::Value result =
+//                checkFee(req, Role::ADMIN, true,
+//                    env.app().config(), feeTrack,
+//                      env.app().getTxQ(), env.current(),
+//                         env.app().journal("RPC"));
 
-            BEAST_EXPECT(RPC::contains_error(result));
-        }
+//            BEAST_EXPECT(RPC::contains_error(result));
+//        }
 
-        {
-            // negative div
-            Json::Value req;
-            Json::Reader().parse(R"({
-                "fee_div_max" : -2,
-                "tx_json" : { }
-            })", req);
-            Json::Value result =
-                checkFee(req, Role::ADMIN, true,
-                    env.app().config(), feeTrack,
-                      env.app().getTxQ(), env.current(),
-                         env.app().journal("RPC"));
+//        {
+//            // negative div
+//            Json::Value req;
+//            Json::Reader().parse(R"({
+//                "fee_div_max" : -2,
+//                "tx_json" : { }
+//            })", req);
+//            Json::Value result =
+//                checkFee(req, Role::ADMIN, true,
+//                    env.app().config(), feeTrack,
+//                      env.app().getTxQ(), env.current(),
+//                         env.app().journal("RPC"));
 
-            BEAST_EXPECT(RPC::contains_error(result));
-        }
+//            BEAST_EXPECT(RPC::contains_error(result));
+//        }
 
-        {
-            // negative mult & div
-            Json::Value req;
-            Json::Reader().parse(R"({
-                "fee_mult_max" : -2,
-                "fee_div_max" : -3,
-                "tx_json" : { }
-            })", req);
-            Json::Value result =
-                checkFee(req, Role::ADMIN, true,
-                    env.app().config(), feeTrack,
-                      env.app().getTxQ(), env.current(),
-                         env.app().journal("RPC"));
+//        {
+//            // negative mult & div
+//            Json::Value req;
+//            Json::Reader().parse(R"({
+//                "fee_mult_max" : -2,
+//                "fee_div_max" : -3,
+//                "tx_json" : { }
+//            })", req);
+//            Json::Value result =
+//                checkFee(req, Role::ADMIN, true,
+//                    env.app().config(), feeTrack,
+//                      env.app().getTxQ(), env.current(),
+//                         env.app().journal("RPC"));
 
-            BEAST_EXPECT(RPC::contains_error(result));
-        }
+//            BEAST_EXPECT(RPC::contains_error(result));
+//        }
 
         env.close();
 
@@ -2268,16 +2270,7 @@ public:
         {
             // Call "sign" with higher server load and
             // enough transactions to escalate the fee
-            BEAST_EXPECT(feeTrack.getLoadFactor() == 1220);
-
-            for (;;)
-            {
-                auto metrics = env.app().getTxQ().getMetrics(*env.current());
-                if (metrics.openLedgerFeeLevel >
-                        metrics.minProcessingFeeLevel)
-                    break;
-                env(noop(env.master), fee(47));
-            }
+            BEAST_EXPECT(feeTrack.getLoadFactor() == 256);
 
             Env_ss envs(env);
 
@@ -2292,7 +2285,7 @@ public:
 
             BEAST_EXPECT(! RPC::contains_error(result));
             BEAST_EXPECT(result[jss::tx_json].isMember(jss::Fee) &&
-                result[jss::tx_json][jss::Fee] == "6806");
+                result[jss::tx_json][jss::Fee] == "1000000");
             BEAST_EXPECT(result[jss::tx_json].isMember(jss::Sequence) &&
                 result[jss::tx_json][jss::Sequence].isConvertibleTo(
                     Json::ValueType::uintValue));
@@ -2409,11 +2402,14 @@ public:
                     if (errStr != txnTest.expMsg[get<3>(testFunc)])
                     {
                         log << "during execution of method: " << get<2>(testFunc) << " test described as: " << txnTest.description << std::endl;
-                        log << "expected: " << txnTest.expMsg[get<3>(testFunc)] << std::endl;
-                        log << "actual  : " << errStr << std::endl;
+                        log << "expected   : " << txnTest.expMsg[get<3>(testFunc)] << std::endl;
+                        log << "actual     : " << errStr << std::endl;
+                        log << "alternative: " << txnTest.expMsg[get<4>(testFunc)] << std::endl;
                     }
                     // jrojek trick to check two different error messages
-                    BEAST_EXPECT(errStr == txnTest.expMsg[get<3>(testFunc)]);
+                    BEAST_EXPECT(errStr == txnTest.expMsg[get<3>(testFunc)]
+                        || (!std::string(txnTest.expMsg[get<4>(testFunc)]).empty() && errStr == txnTest.expMsg[get<4>(testFunc)]));
+
                 }
             }
         }
