@@ -1273,7 +1273,7 @@ struct Flow_test : public beast::unit_test::suite
         env.close();
 
         env(offer(bob, USD(100), EUR(100)));
-        env(offer(bob, EUR(100), CSC(0.000001)));
+        env(offer(bob, EUR(100), CSC(0.00000001)));
         env.close();
 
         env(pay(alice, carol, CSC(1)),

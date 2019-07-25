@@ -62,32 +62,32 @@ class Ticket_test : public beast::unit_test::suite
         // a few different scenarios.
         // tuple is index, field name, and label (LedgerEntryType)
         std::vector<
-            std::tuple<std::size_t, std::string, std::string>
+            std::tuple<std::size_t, std::string, Json::StaticString>
         > expected_nodes;
 
         if (is_cancel && other_target)
         {
             expected_nodes = {
-                std::make_tuple(0, sfModifiedNode.fieldName, "jss::AccountRoot"s),
+                std::make_tuple(0, sfModifiedNode.fieldName, jss::AccountRoot),
                 std::make_tuple(
-                    expiration ? 2: 1, sfModifiedNode.fieldName, "jss::AccountRoot"s),
+                    expiration ? 2: 1, sfModifiedNode.fieldName, jss::AccountRoot),
                 std::make_tuple(
-                    expiration ? 1: 2, sfDeletedNode.fieldName, "jss::Ticket"s),
-                std::make_tuple(3, sfDeletedNode.fieldName, "jss::DirectoryNode"s)
+                    expiration ? 1: 2, sfDeletedNode.fieldName, jss::Ticket),
+                std::make_tuple(3, sfDeletedNode.fieldName, jss::DirectoryNode)
             };
         }
         else
         {
             expected_nodes = {
-                std::make_tuple(0, sfModifiedNode.fieldName, "jss::AccountRoot"s),
+                std::make_tuple(0, sfModifiedNode.fieldName, jss::AccountRoot),
                 std::make_tuple(1,
                     is_cancel ?
                         sfDeletedNode.fieldName : sfCreatedNode.fieldName,
-                    "jss::Ticket"s),
+                    jss::Ticket),
                 std::make_tuple(2,
                     is_cancel ?
                         sfDeletedNode.fieldName : sfCreatedNode.fieldName,
-                 "jss::DirectoryNode"s)
+                 jss::DirectoryNode)
             };
         }
 

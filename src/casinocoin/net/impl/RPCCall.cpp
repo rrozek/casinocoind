@@ -1072,7 +1072,9 @@ private:
         if (param.empty ())
             return RPC::make_param_error ("Invalid first parameter");
 
-        if (param[0] != 'c')
+        if (param[0] != 'c'
+            || beast::detail::iequals(param, "current")
+            || beast::detail::iequals(param, "closed"))
         {
             if (param.size() == 64)
                 jvRequest[jss::ledger_hash] = param;

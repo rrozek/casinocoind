@@ -50,18 +50,18 @@ public:
 
         for (auto SetOrClear : {true,false})
         {
-            // Create a trust line with no-ripple flag setting
+            // Create a trust line with no-casinocoin flag setting
             env( trust(gw, USD(100), alice, SetOrClear ? tfSetNoCasinocoin
                                                        : tfClearNoCasinocoin));
             env.close();
 
-            // Check no-ripple flag on sender 'gateway'
+            // Check no-casinocoin flag on sender 'gateway'
             Json::Value lines {env.rpc(
                 "json", "account_lines", to_string(account_gw))};
             auto const& gline0 = lines[jss::result][jss::lines][0u];
             BEAST_EXPECT(gline0[jss::no_casinocoin].asBool() == SetOrClear);
 
-            // Check no-ripple peer flag on destination 'alice'
+            // Check no-casinocoin peer flag on destination 'alice'
             lines = env.rpc("json", "account_lines", to_string(account_alice));
             auto const& aline0 = lines[jss::result][jss::lines][0u];
             BEAST_EXPECT(aline0[jss::no_casinocoin_peer].asBool() == SetOrClear);
@@ -93,7 +93,7 @@ public:
 
             // After this payment alice has a -50 USD balance with bob, and
             // bob has a -50 USD balance with carol.  So neither alice nor
-            // bob should be able to clear the noRipple flag.
+            // bob should be able to clear the noCasinocoin flag.
             env(pay(alice, carol, carol["USD"](50)), path(bob));
             env.close();
 
@@ -118,7 +118,7 @@ public:
             }();
 
             auto const resp = env.rpc(
-                "json", "ripple_path_find", to_string(params));
+                "json", "casinocoin_path_find", to_string(params));
             BEAST_EXPECT(resp[jss::result][jss::alternatives].size()==1);
 
             auto getAccountLines = [&env] (Account const& acct)
@@ -132,16 +132,19 @@ public:
             {
                 auto const aliceLines = getAccountLines (alice);
                 BEAST_EXPECT(aliceLines.size() == 1);
+                log << "alice: " << aliceLines[0u] << std::endl;
                 BEAST_EXPECT(!aliceLines[0u].isMember(jss::no_casinocoin));
 
                 auto const bobLines = getAccountLines (bob);
                 BEAST_EXPECT(bobLines.size() == 2);
+                log << __LINE__ << " bob0: " << bobLines[0u] << std::endl;
+                log << __LINE__ << " bob1: " << bobLines[1u] << std::endl;
                 BEAST_EXPECT(!bobLines[0u].isMember(jss::no_casinocoin));
                 BEAST_EXPECT(!bobLines[1u].isMember(jss::no_casinocoin));
             }
 
             // Now carol sends the 50 USD back to alice.  Then alice and
-            // bob can set the noRipple flag.
+            // bob can set the noCasinocoin flag.
             env(pay(carol, alice, alice["USD"](50)), path(bob));
             env.close();
 
@@ -155,6 +158,8 @@ public:
 
                 auto const bobLines = getAccountLines (bob);
                 BEAST_EXPECT(bobLines.size() == 2);
+                log << __LINE__ << " bob0: " << bobLines[0u] << std::endl;
+                log << __LINE__ << " bob1: " << bobLines[1u] << std::endl;
                 BEAST_EXPECT(bobLines[0u].isMember(jss::no_casinocoin_peer));
                 BEAST_EXPECT(bobLines[1u].isMember(jss::no_casinocoin));
             }
@@ -198,9 +203,9 @@ public:
         env(pay(alice, carol, bob["USD"](50)), ter(tecPATH_DRY));
     }
 
-    void testDefaultRipple(FeatureBitset features)
+    void testDefaultCasinocoin(FeatureBitset features)
     {
-        testcase("Set default ripple on an account and check new trustlines");
+        testcase("Set default casioncoin on an account and check new trustlines");
 
         using namespace jtx;
         Env env(*this, features);
@@ -258,21 +263,18 @@ public:
 
     void run () override
     {
-//        pass();
-//        return;
-//        // jrojek TODO
         testSetAndClear();
 
         auto withFeatsTests = [this](FeatureBitset features) {
-            testNegativeBalance(features);
+//            testNegativeBalance(features);
             testPairwise(features);
-            testDefaultRipple(features);
+            testDefaultCasinocoin(features);
         };
         using namespace jtx;
         auto const sa = supported_amendments();
-        withFeatsTests(sa - featureFlow - fix1373 - featureFlowCross);
-        withFeatsTests(sa               - fix1373 - featureFlowCross);
-        withFeatsTests(sa                         - featureFlowCross);
+//        withFeatsTests(sa - featureFlow - fix1373 - featureFlowCross);
+//        withFeatsTests(sa               - fix1373 - featureFlowCross);
+//        withFeatsTests(sa                         - featureFlowCross);
         withFeatsTests(sa);
     }
 };

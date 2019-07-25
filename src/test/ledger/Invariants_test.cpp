@@ -116,11 +116,17 @@ class Invariants_test : public beast::unit_test::suite
                     boost::starts_with(sink.strm_.str(), "Invariant failed:") ||
                     boost::starts_with(sink.strm_.str(),
                         "Transaction caused an exception"));
-                //uncomment if you want to log the invariant failure message
-                //log << "   --> " << sink.strm_.str() << std::endl;
+
                 for (auto const& m : expect_logs)
                 {
-                    BEAST_EXPECT(sink.strm_.str().find(m) != std::string::npos);
+                    bool condition = sink.strm_.str().find(m) != std::string::npos;
+                    BEAST_EXPECT(condition);
+                    if (!condition)
+                    {
+                        //uncomment if you want to log the invariant failure message
+                        log << "   --> " << sink.strm_.str() << std::endl;
+                        log << "exp -> " << m << std::endl;
+                    }
                 }
             }
             else
@@ -193,7 +199,7 @@ class Invariants_test : public beast::unit_test::suite
             " - LE types don't match";
         doInvariantCheck (enabled,
             {{ "ledger entry type mismatch" },
-             { "CSC net change of -1000000000 doesn't match fee 0" }},
+             { "CSC net change of -100000000000 doesn't match fee 0" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // replace an entry in the table with an SLE of a different type
@@ -266,7 +272,7 @@ class Invariants_test : public beast::unit_test::suite
 
         doInvariantCheck (enabled,
             {{ "incorrect account CSC balance" },
-             {  "CSC net change was positive: 99999999000000001" }},
+             {  "CSC net change was positive: 3999999900000000001" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // balance exceeds genesis amount
@@ -280,7 +286,7 @@ class Invariants_test : public beast::unit_test::suite
 
         doInvariantCheck (enabled,
             {{ "incorrect account CSC balance" },
-             { "CSC net change of -1000000001 doesn't match fee 0" }},
+             { "CSC net change of -100000000001 doesn't match fee 0" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
                 // balance is negative
@@ -395,24 +401,26 @@ class Invariants_test : public beast::unit_test::suite
         testcase << "checks " << (enabled ? "enabled" : "disabled") <<
             " - no zero escrow";
 
-        doInvariantCheck (enabled,
-            {{ "Cannot return non-native STAmount as CSCAmount" }},
-            [](Account const& A1, Account const& A2, ApplyContext& ac)
-            {
-                // escrow with nonnative amount
-                auto const sle = ac.view().peek (keylet::account(A1.id()));
-                if(! sle)
-                    return false;
-                auto sleNew = std::make_shared<SLE> (
-                    keylet::escrow(A1, (*sle)[sfSequence] + 2));
-                STAmount nonNative (A2["USD"](51));
-                sleNew->setFieldAmount (sfAmount, nonNative);
-                ac.view().insert (sleNew);
-                return true;
-            });
+        // jrojek TODO: ENABLE THIS TEST BUT ADJUST IT
+        //              after TokenEscrow amendment that will actually be possible
+//        doInvariantCheck (enabled,
+//            {{ "Cannot return non-native STAmount as CSCAmount" }},
+//            [](Account const& A1, Account const& A2, ApplyContext& ac)
+//            {
+//                // escrow with nonnative amount
+//                auto const sle = ac.view().peek (keylet::account(A1.id()));
+//                if(! sle)
+//                    return false;
+//                auto sleNew = std::make_shared<SLE> (
+//                    keylet::escrow(A1, (*sle)[sfSequence] + 2));
+//                STAmount nonNative (A2["USD"](51));
+//                sleNew->setFieldAmount (sfAmount, nonNative);
+//                ac.view().insert (sleNew);
+//                return true;
+//            });
 
         doInvariantCheck (enabled,
-            {{ "CSC net change of -1000000 doesn't match fee 0"},
+            {{ "CSC net change of -100000000 doesn't match fee 0"},
              {  "escrow specifies invalid amount" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
@@ -428,7 +436,7 @@ class Invariants_test : public beast::unit_test::suite
             });
 
         doInvariantCheck (enabled,
-            {{ "CSC net change was positive: 100000000000000001" },
+            {{ "CSC net change was positive: 4000000000000000001" },
              {  "escrow specifies invalid amount" }},
             [](Account const& A1, Account const&, ApplyContext& ac)
             {
