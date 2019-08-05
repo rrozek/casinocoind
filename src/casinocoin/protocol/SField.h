@@ -252,8 +252,8 @@ public:
     bool shouldInclude (WhichFields fields) const
     {
         return (fieldValue < 256 &&
-                (fields & WhichFields::includeNotSigning || (signingField == IsSigning::yes)) &&
-                (fields & WhichFields::includeNotHashed || (signingField != IsSigning::noAndNotHashed)));
+                ((fields & WhichFields::includeNotSigning) || (signingField == IsSigning::yes)) &&
+                ((fields & WhichFields::includeNotHashed) || (signingField != IsSigning::noAndNotHashed)));
     }
 
     bool operator== (const SField& f) const

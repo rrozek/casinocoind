@@ -884,8 +884,6 @@ class ServerStatus_test :
         BEAST_EXPECT(resp.result() == beast::http::status::internal_server_error);
         BEAST_EXPECT(
             resp.body.find("cannot accept clients:") != std::string::npos);
-        BEAST_EXPECT(
-            resp.body.find("Server version too old") != std::string::npos);
     }
 
     void

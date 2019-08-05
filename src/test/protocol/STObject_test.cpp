@@ -297,16 +297,20 @@ public:
 
         STObject object1 (elements, sfTestObject);
         STObject object2 (object1);
+        log << __LINE__ << std::endl;
 
         unexpected (object1.getSerializer () != object2.getSerializer (),
             "STObject error 1");
 
+        log << __LINE__ << std::endl;
         unexpected (object1.isFieldPresent (sfTestH256) ||
             !object1.isFieldPresent (sfTestVL), "STObject error");
 
         object1.makeFieldPresent (sfTestH256);
+        log << __LINE__ << std::endl;
 
         unexpected (!object1.isFieldPresent (sfTestH256), "STObject Error 2");
+        log << __LINE__ << std::endl;
 
         unexpected (object1.getFieldH256 (sfTestH256) != uint256 (),
             "STObject error 3");
@@ -324,24 +328,31 @@ public:
         }
 
         object1.makeFieldAbsent (sfTestH256);
+        log << __LINE__ << std::endl;
 
         unexpected (object1.isFieldPresent (sfTestH256), "STObject error 5");
+        log << __LINE__ << std::endl;
 
         unexpected (object1.getFlags () != 0, "STObject error 6");
 
+        log << __LINE__ << std::endl;
         unexpected (object1.getSerializer () != object2.getSerializer (),
             "STObject error 7");
 
         STObject copy (object1);
+        log << __LINE__ << std::endl;
 
         unexpected (object1.isFieldPresent (sfTestH256), "STObject error 8");
+        log << __LINE__ << std::endl;
 
         unexpected (copy.isFieldPresent (sfTestH256), "STObject error 9");
+        log << __LINE__ << std::endl;
 
         unexpected (object1.getSerializer () != copy.getSerializer (),
             "STObject error 10");
 
         copy.setFieldU32 (sfTestU32, 1);
+        log << __LINE__ << std::endl;
 
         unexpected (object1.getSerializer () == copy.getSerializer (),
             "STObject error 11");
@@ -364,24 +375,35 @@ public:
         }
 
         {
+            log << __LINE__ << std::endl;
             std::vector<uint256> uints;
+            log << __LINE__ << std::endl;
             uints.reserve(5);
+            log << __LINE__ << std::endl;
             for (int i = 0; i < uints.capacity(); ++i)
             {
                 uints.emplace_back(i);
+                log << __LINE__ << " " << uints[i] << std::endl;
             }
-            object1.setFieldV256(sfTestV256, STVector256(uints));
+            STVector256 stUintsVector(uints);
+            object1.setFieldV256(sfTestV256, stUintsVector);
 
             Serializer s;
             object1.add(s);
             SerialIter it(s.slice());
 
+            log << __LINE__ << " " << object1 << std::endl;
             STObject object3(elements, it, sfTestObject);
+            log << __LINE__ << " " << object3 << std::endl;
 
+            log << __LINE__ << std::endl;
             auto const& uints1 = object1.getFieldV256(sfTestV256);
+            log << __LINE__ << " " << uints1 << std::endl;
             auto const& uints3 = object3.getFieldV256(sfTestV256);
+            log << __LINE__ << " " << uints3 << std::endl;
 
             BEAST_EXPECT(uints1 == uints3);
+            log << __LINE__ << std::endl;
         }
 
         {
@@ -401,6 +423,7 @@ public:
 
             auto const& uints1 = object1.getFieldV128(sfTestV128);
             auto const& uints3 = object3.getFieldV128(sfTestV128);
+            log << __LINE__ << std::endl;
 
             BEAST_EXPECT(uints1 == uints3);
         }
