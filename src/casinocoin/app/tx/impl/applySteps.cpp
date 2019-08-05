@@ -94,13 +94,25 @@ invoke_preclaim(PreclaimContext const& ctx)
         if (result != tesSUCCESS)
             return { result, baseFee };
 
-        result = T::checkFee(ctx, baseFee);
-        if (result != tesSUCCESS)
-            return { result, baseFee };
+        {
+            boost::optional<TokenDescriptor> theToken;
+            result = T::checkWLT(ctx, theToken);
+            if (result != tesSUCCESS)
+                return { result, baseFee };
 
-        result = T::checkWLT(ctx);
-        if (result != tesSUCCESS)
-            return { result, baseFee };
+            if (theToken)
+            {
+                result = T::checkFeeToken(ctx, *theToken);
+                if (result != tesSUCCESS)
+                    return { result, baseFee };
+            }
+            else
+            {
+                result = T::checkFee(ctx, baseFee);
+                if (result != tesSUCCESS)
+                    return { result, baseFee };
+            }
+        }
 
         result = T::checkSign(ctx);
         if (result != tesSUCCESS)

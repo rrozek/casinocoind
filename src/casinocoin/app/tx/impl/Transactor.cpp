@@ -31,6 +31,7 @@
 #include <casinocoin/app/tx/impl/SignerEntries.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/ledger/View.h>
@@ -215,6 +216,66 @@ Transactor::checkFee (PreclaimContext const& ctx, std::uint64_t baseFee)
     return tesSUCCESS;
 }
 
+TER Transactor::checkFeeToken(PreclaimContext const& ctx,
+                              TokenDescriptor const& theToken)
+{
+    if (!ctx.view.rules().enabled(featureWLT))
+    {
+        return tesSUCCESS;
+    }
+
+    auto const feePaid = calculateFeePaid(ctx.tx);
+    if (!isLegalAmount (feePaid) || feePaid < beast::zero)
+        return temBAD_FEE;
+
+    auto const feeRequired = mulDiv(ctx.app.config().TRANSACTION_FEE_BASE,
+                               ctx.view.fees().base, ctx.view.fees().units);
+    if (!feeRequired.first)
+    {
+        JLOG(ctx.j.debug()) << "Overflow in default fee calculation";
+        return temBAD_FEE;
+    }
+
+    auto const feeToken = mulDiv (feeRequired.second, theToken.extraFeeFactor, 100/*percent*/);
+    if (!feeToken.first)
+        Throw<std::overflow_error>("Overflow in token fee calculation");
+    CSCAmount requiredTokenFee(feeRequired.second + feeToken.second);
+
+
+    // Only check fee is sufficient when the ledger is open.
+    if (ctx.view.open() && feePaid < requiredTokenFee)
+    {
+        JLOG(ctx.j.debug()) << "Insufficient fee paid: " <<
+            to_string(feePaid) << "/" << to_string(requiredTokenFee);
+        return telINSUF_FEE_P;
+    }
+
+    if (feePaid == zero)
+        return tesSUCCESS;
+
+    auto const id = ctx.tx.getAccountID(sfAccount);
+    auto const sle = ctx.view.read(
+        keylet::account(id));
+    auto const balance = (*sle)[sfBalance].csc();
+
+    if (balance < feePaid)
+    {
+        JLOG(ctx.j.trace()) << "Insufficient balance:" <<
+            " balance=" << to_string(balance) <<
+            " paid=" << to_string(feePaid);
+
+        if ((balance > zero) && !ctx.view.open())
+        {
+            // Closed ledger, non-zero balance, less than fee
+            return tecINSUFF_FEE;
+        }
+
+        return terINSUF_FEE_B;
+    }
+
+    return tesSUCCESS;
+}
+
 TER Transactor::payFee ()
 {
     auto const feePaid = calculateFeePaid(ctx_.tx);
@@ -349,111 +410,42 @@ Transactor::checkSign (PreclaimContext const& ctx)
 }
 
 TER
-Transactor::checkWLT (PreclaimContext const& ctx)
+Transactor::checkWLT (PreclaimContext const& ctx, boost::optional<TokenDescriptor>& theToken)
 {
     // Narrow allowed tokens only if WLT amendment is enabled
-    if (ctx.view.rules().enabled(featureWLT))
-    {
-        if (ctx.tx.isNative())
-        {
-            return tesSUCCESS;
-        }
-        if (ctx.tx.getTxnType() == ttCONFIG)
-        {
-            JLOG(ctx.j.info()) << "checkWLT() SetConfiguration tx can operate on non-WLT for obvious reason.";
-            return tesSUCCESS;
-        }
-
-        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
-        auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
-                                            ledgerConfiguration.entries.end(),
-                                            [](ConfigObjectEntry const& obj)
-            {
-                return obj.getType() == ConfigObjectEntry::Token;
-            });
-        if (tokenConfigIter == ledgerConfiguration.entries.end())
-        {
-            JLOG(ctx.j.info()) << "No WLT entries found. tx forbidden.";
-            return tefNOT_WLT;
-        }
-
-        std::function<TER(STObject const&)> recursiveAmountCheckLambda;
-        recursiveAmountCheckLambda = [&](STObject const& obj) -> TER
-        {
-            TER terWLTCompliant = tesSUCCESS;
-            for (auto iter = obj.begin(); iter != obj.end(); ++iter)
-            {
-                if ((*iter).getSType() == STI_AMOUNT)
-                {
-                    terWLTCompliant = isWLTCompliant(static_cast<STAmount const&>((*iter)), *tokenConfigIter, ctx.j);
-                }
-                else if ((*iter).getSType() == STI_OBJECT)
-                {
-                    terWLTCompliant = recursiveAmountCheckLambda(static_cast<STObject const&>((*iter)));
-                }
-                else if ((*iter).getSType() == STI_ARRAY)
-                {
-                    for( auto const& stObj : static_cast<STArray const&>((*iter)))
-                    {
-                        terWLTCompliant = recursiveAmountCheckLambda(stObj);
-                        if (terWLTCompliant != tesSUCCESS)
-                        {
-                            return terWLTCompliant;
-                        }
-                    }
-                }
-                if (terWLTCompliant != tesSUCCESS)
-                {
-                    return terWLTCompliant;
-                }
-            }
-            return tesSUCCESS;
-        };
-
-
-        return recursiveAmountCheckLambda(ctx.tx);
-    }
-
-    return tesSUCCESS;
-}
-
-TER
-Transactor::isWLTCompliant(STAmount const& amount, ConfigObjectEntry const& tokenConfig, beast::Journal const& j)
-{
-    if (isCSC(amount))
+    if (!ctx.view.rules().enabled(featureWLT))
     {
         return tesSUCCESS;
     }
-    if (tokenConfig.getType() != ConfigObjectEntry::Token)
+
+    if (ctx.tx.isNative())
     {
-        JLOG(j.warn()) << "isWLTCompliant() non-Token config object passed";
-        return tefFAILURE;
+        return tesSUCCESS;
     }
 
-    auto const& definedTokens = tokenConfig.getData();
-    for (auto const entry : definedTokens)
+    if (ctx.tx.getTxnType() == ttCONFIG)
     {
-        const TokenDescriptor* token = static_cast<const TokenDescriptor*>(entry);
-        try
-        {
-            if (token->totalSupply.issue() == amount.issue()
-                    && token->totalSupply >= amount)
-            {
-                JLOG(j.debug()) << "isWLTCompliant() found matching entry, return OK";
-                return tesSUCCESS;
-            }
-        }
-        catch( std::runtime_error const& err)
-        {
-            JLOG(j.warn()) << "isWLTCompliant() caught exception. what: " << err.what();
-            return tefNOT_WLT;
-        }
+        JLOG(ctx.j.info()) << "checkWLT() SetConfiguration tx can operate on non-WLT for obvious reason.";
+        return tesSUCCESS;
     }
 
-    JLOG(j.info()) << "isWLTCompliant() not compliant"
-                    << " token: " << to_string(amount.issue().currency)
-                    << " issuer: " << toBase58(amount.issue().account);
-    return tefNOT_WLT;
+    LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+    auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                        ledgerConfiguration.entries.end(),
+                                        [](ConfigObjectEntry const& obj)
+    {
+            return obj.getType() == ConfigObjectEntry::Token;
+    });
+
+    if (tokenConfigIter == ledgerConfiguration.entries.end())
+    {
+        JLOG(ctx.j.info()) << "No WLT entries found. tx forbidden.";
+        return tefNOT_WLT;
+    }
+
+    auto result = ctx.tx.isAllowedWLT(*tokenConfigIter);
+    theToken = result.second;
+    return result.first;
 }
 
 TER

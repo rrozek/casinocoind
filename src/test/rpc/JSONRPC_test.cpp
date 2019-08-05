@@ -1855,7 +1855,7 @@ public:
             Json::Value result =
                 checkFee (req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), ledger);
+                        env.app().getTxQ(), ledger, env.app().journal("RPCHandler"));
 
             BEAST_EXPECT(! RPC::contains_error (result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -1870,7 +1870,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), ledger);
+                        env.app().getTxQ(), ledger, env.app().journal("RPCHandler"));
 
             BEAST_EXPECT(!RPC::contains_error(result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -1884,7 +1884,7 @@ public:
             Json::Value result =
                 checkFee (req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), ledger);
+                        env.app().getTxQ(), ledger, env.app().journal("RPCHandler"));
 
             BEAST_EXPECT(RPC::contains_error (result));
             BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
@@ -1900,7 +1900,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), ledger);
+                        env.app().getTxQ(), ledger, env.app().journal("RPCHandler"));
 
             BEAST_EXPECT(RPC::contains_error(result));
             BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
@@ -1914,7 +1914,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), ledger);
+                        env.app().getTxQ(), ledger, env.app().journal("RPCHandler"));
 
             BEAST_EXPECT(RPC::contains_error(result));
             BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
@@ -1928,7 +1928,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), ledger);
+                        env.app().getTxQ(), ledger, env.app().journal("RPCHandler"));
 
             BEAST_EXPECT(RPC::contains_error(result));
             BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
@@ -1960,7 +1960,7 @@ public:
             Json::Value result =
                 checkFee (req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), env.current());
+                        env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(! RPC::contains_error (result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -1978,7 +1978,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), env.current());
+                        env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(!RPC::contains_error(result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -1996,7 +1996,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), env.current());
+                        env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(!RPC::contains_error(result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -2015,7 +2015,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), env.current());
+                        env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(!RPC::contains_error(result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -2033,7 +2033,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), env.current());
+                        env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(!RPC::contains_error(result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -2051,7 +2051,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                      env.app().getTxQ(), env.current());
+                      env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(!RPC::contains_error(result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -2071,7 +2071,7 @@ public:
 //            Json::Value result =
 //                checkFee(req, Role::ADMIN, true,
 //                    env.app().config(), feeTrack,
-//                      env.app().getTxQ(), env.current());
+//                      env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
 //            BEAST_EXPECT(RPC::contains_error(result));
 //            BEAST_EXPECT(!req[jss::tx_json].isMember(jss::Fee));
@@ -2089,7 +2089,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                        env.app().getTxQ(), env.current());
+                        env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(!RPC::contains_error(result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -2109,7 +2109,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                    env.app().getTxQ(), env.current());
+                    env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(!RPC::contains_error(result));
             BEAST_EXPECT(req[jss::tx_json].isMember(jss::Fee) &&
@@ -2127,7 +2127,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                      env.app().getTxQ(), env.current());
+                      env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(RPC::contains_error(result));
         }
@@ -2143,7 +2143,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                      env.app().getTxQ(), env.current());
+                      env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(RPC::contains_error(result));
         }
@@ -2160,7 +2160,7 @@ public:
             Json::Value result =
                 checkFee(req, Role::ADMIN, true,
                     env.app().config(), feeTrack,
-                      env.app().getTxQ(), env.current());
+                      env.app().getTxQ(), env.current(), env.app().journal("RPC"));
 
             BEAST_EXPECT(RPC::contains_error(result));
         }
