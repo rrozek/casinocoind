@@ -254,7 +254,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Manager,resource,ripple);
+BEAST_DEFINE_TESTSUITE(Manager,resource,casinocoin);
 
 }
 }

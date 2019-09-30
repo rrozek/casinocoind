@@ -132,7 +132,7 @@ public:
                     auto const& ff = jv[jss::meta]["AffectedNodes"]
                         [1u]["ModifiedNode"]["FinalFields"];
                     return ff[jss::Account] == Account("bob").human() &&
-                        ff["Balance"] == "10001000000";
+                        ff["Balance"] == "1000100000000";
                 }));
 
             BEAST_EXPECT(wsc->findMsg(5s,
@@ -141,7 +141,7 @@ public:
                     auto const& ff = jv[jss::meta]["AffectedNodes"]
                         [1u]["ModifiedNode"]["FinalFields"];
                     return ff[jss::Account] == Account("bob").human() &&
-                        ff["Balance"] == "10002000000";
+                        ff["Balance"] == "1000200000000";
                 }));
         }
 
@@ -223,7 +223,7 @@ public:
                 ["AffectedNodes"][1u]["ModifiedNode"]["FinalFields"];
             BEAST_EXPECT(ff[jss::Account] ==
                 Account("bob").human());
-            BEAST_EXPECT(ff["Balance"] == "10001000000");
+            BEAST_EXPECT(ff["Balance"] == "1000100000000");
         }
     }
 
@@ -399,7 +399,7 @@ public:
                 ["AffectedNodes"][1u]["ModifiedNode"]["FinalFields"];
             BEAST_EXPECT(ff[jss::Account] ==
                 Account("bob").human());
-            BEAST_EXPECT(ff["Balance"] == "10001000000");
+            BEAST_EXPECT(ff["Balance"] == "1000100000000");
         }
     }
 
@@ -434,7 +434,7 @@ public:
             Json::Value jv;
             jv[jss::secret] = toBase58(generateSeed("alice"));
             jv[jss::tx_json] = fset("alice", 0);
-            jv[jss::tx_json][jss::Fee] = 10;
+            jv[jss::tx_json][jss::Fee] = 1000000;
             jv = wsc->invoke("submit", jv);
             if (wsc->version() == 2)
             {
@@ -483,7 +483,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(RobustTransaction,app,ripple);
+BEAST_DEFINE_TESTSUITE(RobustTransaction,app,casinocoin);
 
 } // test
 } // casinocoin

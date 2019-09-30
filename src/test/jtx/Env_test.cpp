@@ -90,17 +90,17 @@ public:
 
         try
         {
-            CSC(0.0000001);
+            CSC(0.000000001);
             fail("missing exception");
         }
         catch(std::domain_error const&)
         {
             pass();
         }
-        CSC(-0.000001);
+        CSC(-0.00000001);
         try
         {
-            CSC(-0.0000009);
+            CSC(-0.000000009);
             fail("missing exception");
         }
         catch(std::domain_error const&)
@@ -110,21 +110,21 @@ public:
 
         BEAST_EXPECT(to_string(CSC(5)) == "5 CSC");
         BEAST_EXPECT(to_string(CSC(.80)) == "0.8 CSC");
-        BEAST_EXPECT(to_string(CSC(.005)) == "5000 drops");
+        BEAST_EXPECT(to_string(CSC(.005)) == "500000 drops");
         BEAST_EXPECT(to_string(CSC(0.1)) == "0.1 CSC");
         BEAST_EXPECT(to_string(CSC(10000)) == "10000 CSC");
         BEAST_EXPECT(to_string(drops(10)) == "10 drops");
-        BEAST_EXPECT(to_string(drops(123400000)) == "123.4 CSC");
+        BEAST_EXPECT(to_string(drops(12340000000)) == "123.4 CSC");
         BEAST_EXPECT(to_string(CSC(-5)) == "-5 CSC");
         BEAST_EXPECT(to_string(CSC(-.99)) == "-0.99 CSC");
-        BEAST_EXPECT(to_string(CSC(-.005)) == "-5000 drops");
+        BEAST_EXPECT(to_string(CSC(-.005)) == "-500000 drops");
         BEAST_EXPECT(to_string(CSC(-0.1)) == "-0.1 CSC");
         BEAST_EXPECT(to_string(drops(-10)) == "-10 drops");
-        BEAST_EXPECT(to_string(drops(-123400000)) == "-123.4 CSC");
+        BEAST_EXPECT(to_string(drops(-12340000000)) == "-123.4 CSC");
 
-        BEAST_EXPECT(CSC(1) == drops(1000000));
-        BEAST_EXPECT(CSC(1) == STAmount(1000000));
-        BEAST_EXPECT(STAmount(1000000) == CSC(1));
+        BEAST_EXPECT(CSC(1) == drops(100000000));
+        BEAST_EXPECT(CSC(1) == STAmount(100000000));
+        BEAST_EXPECT(STAmount(100000000) == CSC(1));
 
         auto const gw = Account("gw");
         auto const USD = gw["USD"];
@@ -153,7 +153,7 @@ public:
         // unfunded
         {
             Env env(*this);
-            env(pay("alice", "bob", CSC(1000)), seq(1), fee(10), sig("alice"), ter(terNO_ACCOUNT));
+            env(pay("alice", "bob", CSC(1000)), seq(1), fee(1000000), sig("alice"), ter(terNO_ACCOUNT));
         }
 
         // fund
@@ -213,7 +213,7 @@ public:
             env.require(balance("alice", n));
             env(noop("alice"), fee(1),                  ter(telINSUF_FEE_P));
             env(noop("alice"), seq(none),               ter(temMALFORMED));
-            env(noop("alice"), seq(none), fee(10),      ter(temMALFORMED));
+            env(noop("alice"), seq(none), fee(1000000),      ter(temMALFORMED));
             env(noop("alice"), fee(none),               ter(temMALFORMED));
             env(noop("alice"), sig(none),               ter(temMALFORMED));
             env(noop("alice"), fee(autofill));
@@ -651,7 +651,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Env,app,ripple);
+BEAST_DEFINE_TESTSUITE(Env,app,casinocoin);
 
 } // test
 } // casinocoin

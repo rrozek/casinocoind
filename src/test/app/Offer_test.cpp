@@ -1050,8 +1050,8 @@ public:
             env.fund (CSC (10000), partner);
             env (trust (partner, USD (100)));
             env (trust (partner, BTC (500)));
-            env (pay (gw, partner, USD(100)));
-            env (pay (gw, partner, BTC(500)));
+            env (pay (gw, partner, USD(50)));
+            env (pay (gw, partner, BTC(250)));
         }
         auto const& account_to_test = use_partner ? partner : gw;
 
@@ -1061,14 +1061,16 @@ public:
         // PART 1:
         // we will make two offers that can be used to bridge BTC to USD
         // through CSC
-        env (offer (account_to_test, BTC (250), CSC (1000)),
+        Json::Value offerBTCtoCSC = offer (account_to_test, BTC (250), CSC (1000));
+        env (offerBTCtoCSC,
                  offers (account_to_test, 1));
 
         // validate that the book now shows a BTC for CSC offer
         BEAST_EXPECT(isOffer(env, account_to_test, BTC(250), CSC(1000)));
 
         auto const secondLegSeq = env.seq(account_to_test);
-        env (offer (account_to_test, CSC(1000), USD (50)),
+        Json::Value offerCSCtoUSD =offer (account_to_test, CSC(1000), USD (50));
+        env (offerCSCtoUSD,
                  offers (account_to_test, 2));
 
         // validate that the book also shows a CSC for USD offer
@@ -1076,12 +1078,12 @@ public:
 
         // now make an offer that will cross and auto-bridge, meaning
         // the outstanding offers will be taken leaving us with none
-        env (offer (account_to_test, USD (50), BTC (250)));
+        Json::Value offerUSDtoBTC =offer (account_to_test, USD (50), BTC (250));
+        env (offerUSDtoBTC);
 
         auto jrr = getBookOffers(env, USD, BTC);
         BEAST_EXPECT(jrr[jss::offers].isArray());
         BEAST_EXPECT(jrr[jss::offers].size() == 0);
-
         jrr = getBookOffers(env, BTC, CSC);
         BEAST_EXPECT(jrr[jss::offers].isArray());
         BEAST_EXPECT(jrr[jss::offers].size() == 0);
@@ -1819,7 +1821,7 @@ public:
         BEAST_EXPECT(jrr[jss::node][sfBalance.fieldName][jss::value] == "100");
         jrr = ledgerEntryRoot (env, alice);
         BEAST_EXPECT(
-            jrr[jss::node][sfBalance.fieldName] == CSC (350).value ().getText ()
+            jrr[jss::node][sfBalance.fieldName] == CSC (25).value ().getText ()
         );
 
         jrr = ledgerEntryState (env, bob, gw1, "USD");
@@ -1905,7 +1907,7 @@ public:
         BEAST_EXPECT(jrr[jss::node][sfBalance.fieldName][jss::value] == "-100");
         jrr = ledgerEntryRoot (env, alice);
         BEAST_EXPECT(
-            jrr[jss::node][sfBalance.fieldName] == CSC (250).value ().getText ()
+            jrr[jss::node][sfBalance.fieldName] == CSC (15).value ().getText ()
         );
 
         jrr = ledgerEntryState (env, bob, gw, "USD");
@@ -1953,7 +1955,7 @@ public:
         BEAST_EXPECT(jrr[jss::node][sfBalance.fieldName][jss::value] == "-200");
         jrr = ledgerEntryRoot (env, alice);
         BEAST_EXPECT(
-            jrr[jss::node][sfBalance.fieldName] == CSC (250).value ().getText ()
+            jrr[jss::node][sfBalance.fieldName] == CSC (15).value ().getText ()
         );
 
         jrr = ledgerEntryState (env, bob, gw, "USD");
@@ -2109,14 +2111,14 @@ public:
 {"ann",             reserve (env, 0) + 0*f,       1,   noPreTrust,     1000,      tecUNFUNDED_OFFER,             f, USD(      0),      0,     0}, // Account is at the reserve, and will dip below once fees are subtracted.
 {"bev",             reserve (env, 0) + 1*f,       1,   noPreTrust,     1000,      tecUNFUNDED_OFFER,             f, USD(      0),      0,     0}, // Account has just enough for the reserve and the fee.
 {"cam",             reserve (env, 0) + 2*f,       0,   noPreTrust,     1000, tecINSUF_RESERVE_OFFER,             f, USD(      0),      0,     0}, // Account has enough for the reserve, the fee and the offer, and a bit more, but not enough for the reserve after the offer is placed.
-{"deb",             reserve (env, 0) + 2*f,       1,   noPreTrust,     1000,             tesSUCCESS,           2*f, USD(0.00001),      0,     1}, // Account has enough to buy a little USD then the offer runs dry.
+{"deb",             reserve (env, 0) + 2*f,       1,   noPreTrust,     1000,             tesSUCCESS,           2*f, USD(   0.01),      0,     1}, // Account has enough to buy a little USD then the offer runs dry.
 {"eve",             reserve (env, 1) + 0*f,       0,   noPreTrust,     1000,             tesSUCCESS,             f, USD(      0),      1,     1}, // No offer to cross
 {"flo",             reserve (env, 1) + 0*f,       1,   noPreTrust,     1000,             tesSUCCESS, CSC(   1) + f, USD(      1),      0,     1},
-{"gay",             reserve (env, 1) + 1*f,    1000,   noPreTrust,     1000,             tesSUCCESS, CSC(  50) + f, USD(     50),      0,     1},
-{"hye", CSC(1000)                    + 1*f,    1000,   noPreTrust,     1000,             tesSUCCESS, CSC( 800) + f, USD(    800),      0,     1},
+{"gay",             reserve (env, 1) + 1*f,    1000,   noPreTrust,     1000,             tesSUCCESS, CSC(   5) + f, USD(      5),      0,     1},
+{"hye", CSC(1000)                    + 1*f,    1000,   noPreTrust,     1000,             tesSUCCESS, CSC( 990) + f, USD(    990),      0,     1},
 {"ivy", CSC(   1) + reserve (env, 1) + 1*f,       1,   noPreTrust,     1000,             tesSUCCESS, CSC(   1) + f, USD(      1),      0,     1},
 {"joy", CSC(   1) + reserve (env, 2) + 1*f,       1,   noPreTrust,     1000,             tesSUCCESS, CSC(   1) + f, USD(      1),      1,     2},
-{"kim", CSC( 900) + reserve (env, 2) + 1*f,     999,   noPreTrust,     1000,             tesSUCCESS, CSC( 999) + f, USD(    999),      0,     1},
+{"kim", CSC( 900) + reserve (env, 2) + 1*f,     999,   noPreTrust,     1000,             tesSUCCESS, CSC( 910) + f, USD(    910),      0,     1},
 {"liz", CSC( 998) + reserve (env, 0) + 1*f,     999,   noPreTrust,     1000,             tesSUCCESS, CSC( 998) + f, USD(    998),      0,     1},
 {"meg", CSC( 998) + reserve (env, 1) + 1*f,     999,   noPreTrust,     1000,             tesSUCCESS, CSC( 999) + f, USD(    999),      0,     1},
 {"nia", CSC( 998) + reserve (env, 2) + 1*f,     999,   noPreTrust,     1000,             tesSUCCESS, CSC( 999) + f, USD(    999),      1,     2},
@@ -2129,7 +2131,7 @@ public:
 {"abe",             reserve (env, 0) + 0*f,       1,   gwPreTrust,     1000,      tecUNFUNDED_OFFER,             f, USD(      0),      0,     0},
 {"bud",             reserve (env, 0) + 1*f,       1,   gwPreTrust,     1000,      tecUNFUNDED_OFFER,             f, USD(      0),      0,     0},
 {"che",             reserve (env, 0) + 2*f,       0,   gwPreTrust,     1000, tecINSUF_RESERVE_OFFER,             f, USD(      0),      0,     0},
-{"dan",             reserve (env, 0) + 2*f,       1,   gwPreTrust,     1000,             tesSUCCESS,           2*f, USD(0.00001),      0,     0},
+{"dan",             reserve (env, 0) + 2*f,       1,   gwPreTrust,     1000,             tesSUCCESS,           2*f, USD(   0.01),      0,     0},
 {"eli", CSC(  20) + reserve (env, 0) + 1*f,    1000,   gwPreTrust,     1000,             tesSUCCESS, CSC(20) + 1*f, USD(     20),      0,     0},
 {"fyn",             reserve (env, 1) + 0*f,       0,   gwPreTrust,     1000,             tesSUCCESS,             f, USD(      0),      1,     1},
 {"gar",             reserve (env, 1) + 0*f,       1,   gwPreTrust,     1000,             tesSUCCESS, CSC(   1) + f, USD(      1),      1,     1},
@@ -2140,7 +2142,7 @@ public:
 {"pat",             reserve (env, 1) + 2*f,       0, acctPreTrust,     1000,      tecUNFUNDED_OFFER,           2*f, USD(      0),      0,     1},
 {"quy",             reserve (env, 1) + 2*f,       1, acctPreTrust,     1000,      tecUNFUNDED_OFFER,           2*f, USD(      0),      0,     1},
 {"ron",             reserve (env, 1) + 3*f,       0, acctPreTrust,     1000, tecINSUF_RESERVE_OFFER,           2*f, USD(      0),      0,     1},
-{"syd",             reserve (env, 1) + 3*f,       1, acctPreTrust,     1000,             tesSUCCESS,           3*f, USD(0.00001),      0,     1},
+{"syd",             reserve (env, 1) + 3*f,       1, acctPreTrust,     1000,             tesSUCCESS,           3*f, USD(   0.01),      0,     1},
 {"ted", CSC(  20) + reserve (env, 1) + 2*f,    1000, acctPreTrust,     1000,             tesSUCCESS, CSC(20) + 2*f, USD(     20),      0,     1},
 {"uli",             reserve (env, 2) + 0*f,       0, acctPreTrust,     1000, tecINSUF_RESERVE_OFFER,           2*f, USD(      0),      0,     1},
 {"vic",             reserve (env, 2) + 0*f,       1, acctPreTrust,     1000,             tesSUCCESS, CSC( 1) + 2*f, USD(      1),      0,     1},
@@ -2367,7 +2369,7 @@ public:
         verifyDefaultTrustline (env, bob, usdOffer);
 
         // Make two more offers that leave one of the offers non-dry.
-        env (offer (alice, USD(999), eurOffer));
+        env (offer (alice, USD(999), EUR(999)));
         env (offer (bob, eurOffer, usdOffer));
 
         env.close();
@@ -2381,10 +2383,13 @@ public:
         {
             auto bobsOffers = offersOnAccount (env, bob);
             BEAST_EXPECT (bobsOffers.size() == 1);
-            auto const& bobsOffer = *(bobsOffers.front());
+            if (bobsOffers.size() != 0)
+            {
+                auto const& bobsOffer = *(bobsOffers.front());
 
-            BEAST_EXPECT (bobsOffer[sfTakerGets] == USD (1));
-            BEAST_EXPECT (bobsOffer[sfTakerPays] == EUR (1));
+                BEAST_EXPECT (bobsOffer[sfTakerGets] == USD (1));
+                BEAST_EXPECT (bobsOffer[sfTakerPays] == EUR (1));
+            }
         }
 
         // alice makes one more offer that cleans out bob's offer.
@@ -2604,14 +2609,14 @@ public:
         {
 // acct pays CSC
 //acct                           fundCsc  fundUSD   gwGets   gwPays  acctGets  acctPays                      tec         spentCsc  finalUSD  offers  owners  takerGets  takerPays
-{"ann", CSC(10) + reserve (env, 0) + 1*f, USD( 0), CSC(10), USD( 5),  USD(10),  CSC(10), tecINSUF_RESERVE_OFFER, CSC( 0) + (1*f),  USD( 0),      0,     0},
+{"ann", CSC( 1) + reserve (env, 0) + 1*f, USD( 0), CSC(10), USD( 5),  USD(10),  CSC(10), tecINSUF_RESERVE_OFFER, CSC( 0) + (1*f),  USD( 0),      0,     0},
 {"bev", CSC(10) + reserve (env, 1) + 1*f, USD( 0), CSC(10), USD( 5),  USD(10),  CSC(10),             tesSUCCESS, CSC( 0) + (1*f),  USD( 0),      1,     1,     CSC(10),  USD(10)},
 {"cam", CSC(10) + reserve (env, 0) + 1*f, USD( 0), CSC(10), USD(10),  USD(10),  CSC(10),             tesSUCCESS, CSC(10) + (1*f),  USD(10),      0,     1},
 {"deb", CSC(10) + reserve (env, 0) + 1*f, USD( 0), CSC(10), USD(20),  USD(10),  CSC(10),             tesSUCCESS, CSC(10) + (1*f),  USD(20),      0,     1},
 {"eve", CSC(10) + reserve (env, 0) + 1*f, USD( 0), CSC(10), USD(20),  USD( 5),  CSC( 5),             tesSUCCESS, CSC( 5) + (1*f),  USD(10),      0,     1},
 {"flo", CSC(10) + reserve (env, 0) + 1*f, USD( 0), CSC(10), USD(20),  USD(20),  CSC(20),             tesSUCCESS, CSC(10) + (1*f),  USD(20),      0,     1},
-{"gay", CSC(20) + reserve (env, 1) + 1*f, USD( 0), CSC(10), USD(20),  USD(20),  CSC(20),             tesSUCCESS, CSC(10) + (1*f),  USD(20),      0,     1},
-{"hye", CSC(20) + reserve (env, 2) + 1*f, USD( 0), CSC(10), USD(20),  USD(20),  CSC(20),             tesSUCCESS, CSC(10) + (1*f),  USD(20),      1,     2,     CSC(10),  USD(10)},
+{"gay", CSC(10) + reserve (env, 1) + 1*f, USD( 0), CSC(10), USD(20),  USD(20),  CSC(20),             tesSUCCESS, CSC(10) + (1*f),  USD(20),      0,     1},
+{"hye", CSC(10) + reserve (env, 2) + 1*f, USD( 0), CSC(10), USD(20),  USD(20),  CSC(20),             tesSUCCESS, CSC(10) + (1*f),  USD(20),      1,     2,     CSC(10),  USD(10)},
 // acct pays USD
 {"meg",           reserve (env, 1) + 2*f, USD(10), USD(10), CSC( 5),  CSC(10),  USD(10), tecINSUF_RESERVE_OFFER, CSC(  0) + (2*f),  USD(10),      0,     1},
 {"nia",           reserve (env, 2) + 2*f, USD(10), USD(10), CSC( 5),  CSC(10),  USD(10),             tesSUCCESS, CSC(  0) + (2*f),  USD(10),      1,     2,     USD(10),  CSC(10)},
@@ -2624,6 +2629,7 @@ public:
         auto const zeroUsd = USD(0);
         for (auto const& t : tests)
         {
+            log << "testcase accountname: " << t.account << std::endl;
             // Make sure gateway has no current offers.
             env.require (offers (gw, 0));
 
@@ -3307,7 +3313,7 @@ public:
 
         // alice's offer should have been removed, since she's down to her
         // CSC reserve.
-        env.require (balance (alice, CSC(250)));
+        env.require (balance (alice, CSC(15)));
         env.require (owners (alice, 1));
         env.require (lines (alice, 1));
 
@@ -3319,8 +3325,8 @@ public:
         {
             auto const& offer = *offerPtr;
             BEAST_EXPECT(offer[sfLedgerEntryType] == ltOFFER);
-            BEAST_EXPECT(offer[sfTakerGets] == USD ( 25));
-            BEAST_EXPECT(offer[sfTakerPays] == CSC (250));
+            BEAST_EXPECT(offer[sfTakerGets] == USD ( 1.5));
+            BEAST_EXPECT(offer[sfTakerPays] == CSC (15));
         }
     }
 
@@ -3799,12 +3805,12 @@ public:
         TestData const tests[]
         {
 //         btcStart    --------------------- actor[0] ---------------------    -------------------- actor[1] -------------------
-{ 0, 0, 1, BTC(20), { {"ann", 0, drops(3899999999960), BTC(20.0), USD(3000)}, {"abe", 0, drops(4099999999970), BTC( 0), USD(750)} } }, // no BTC xfer fee
-{ 0, 1, 0, BTC(20), { {"bev", 0, drops(4099999999960), BTC( 7.5), USD(2000)}, {"bob", 0, drops(3899999999970), BTC(10), USD(  0)} } }, // no USD xfer fee
-{ 0, 0, 0, BTC(20), { {"cam", 0, drops(3999999999950), BTC(20.0), USD(2000)}                                                      } }, // no xfer fee
-// { 0, 0, 1, BTC( 5), { {"deb", 0, drops(3899999999960), BTC( 5.0), USD(3000)}, {"dan", 0, drops(4099999999970), BTC( 0), USD(750)} } }, // no BTC xfer fee
-{ 0, 1, 0, BTC( 5), { {"eve", 1, drops(4039999999960), BTC( 0.0), USD(2000)}, {"eli", 1, drops(3959999999970), BTC( 4), USD(  0)} } }, // no USD xfer fee
-// { 0, 0, 0, BTC( 5), { {"flo", 0, drops(3999999999950), BTC( 5.0), USD(2000)}                                                      } }  // no xfer fee
+{ 0, 0, 1, BTC(20), { {"ann", 0, drops(389999996000000), BTC(20.0), USD(3000)}, {"abe", 0, drops(409999997000000), BTC( 0), USD(750)} } }, // no BTC xfer fee
+{ 0, 1, 0, BTC(20), { {"bev", 0, drops(409999996000000), BTC( 7.5), USD(2000)}, {"bob", 0, drops(389999997000000), BTC(10), USD(  0)} } }, // no USD xfer fee
+{ 0, 0, 0, BTC(20), { {"cam", 0, drops(399999995000000), BTC(20.0), USD(2000)}                                                      } }, // no xfer fee
+// { 0, 0, 1, BTC( 5), { {"deb", 0, drops(389999996000000), BTC( 5.0), USD(3000)}, {"dan", 0, drops(4099999999970), BTC( 0), USD(750)} } }, // no BTC xfer fee
+{ 0, 1, 0, BTC( 5), { {"eve", 1, drops(403999996000000), BTC( 0.0), USD(2000)}, {"eli", 1, drops(395999997000000), BTC( 4), USD(  0)} } }, // no USD xfer fee
+// { 0, 0, 0, BTC( 5), { {"flo", 0, drops(399999995000000), BTC( 5.0), USD(2000)}                                                      } }  // no xfer fee
         };
 
         for (auto const& t : tests)
@@ -3812,6 +3818,7 @@ public:
             Account const& self = t.actors[t.self].acct;
             Account const& leg0 = t.actors[t.leg0].acct;
             Account const& leg1 = t.actors[t.leg1].acct;
+            log << "test of self: " << self.name() << " leg0: " << leg0.name() << " leg1: " << leg1.name() << std::endl;
 
             for (auto const& actor : t.actors)
             {
@@ -3847,6 +3854,7 @@ public:
             // Verify results.
             for (auto const& actor : t.actors)
             {
+                log << "checking results of actor: " << actor.acct.name() << std::endl;
                 // Sometimes Taker crossing gets lazy about deleting offers.
                 // Treat an empty offer as though it is deleted.
                 auto actorOffers = offersOnAccount (env, actor.acct);
@@ -3857,7 +3865,6 @@ public:
                             return (*offer)[sfTakerGets].signum() == 0;
                         }));
                 BEAST_EXPECT (offerCount == actor.offers);
-
                 env.require (balance (actor.acct, actor.csc));
                 env.require (balance (actor.acct, actor.btc));
                 env.require (balance (actor.acct, actor.usd));
@@ -3951,15 +3958,15 @@ public:
         TestData const takerTests[]
         {
 //         btcStart    ------------------- actor[0] --------------------    ------------------- actor[1] --------------------
-{ 0, 0, 1, BTC( 5), { {"deb", 0, drops(3899999999960), BTC(5), USD(3000)}, {"dan", 0, drops(4099999999970), BTC(0), USD( 750)} } }, // no BTC xfer fee
-{ 0, 0, 0, BTC( 5), { {"flo", 0, drops(3999999999950), BTC(5), USD(2000)}                                                      } }  // no xfer fee
+{ 0, 0, 1, BTC( 5), { {"deb", 0, drops(389999996000000), BTC(5), USD(3000)}, {"dan", 0, drops(409999997000000), BTC(0), USD( 750)} } }, // no BTC xfer fee
+{ 0, 0, 0, BTC( 5), { {"flo", 0, drops(399999995000000), BTC(5), USD(2000)}                                                      } }  // no xfer fee
         };
 
         TestData const flowTests[]
         {
 //         btcStart    ------------------- actor[0] --------------------    ------------------- actor[1] --------------------
-{ 0, 0, 1, BTC( 5), { {"gay", 1, drops(3949999999960), BTC(5), USD(2500)}, {"gar", 1, drops(4049999999970), BTC(0), USD(1375)} } }, // no BTC xfer fee
-{ 0, 0, 0, BTC( 5), { {"hye", 2, drops(3999999999950), BTC(5), USD(2000)}                                                      } }  // no xfer fee
+{ 0, 0, 1, BTC( 5), { {"gay", 1, drops(394999996000000), BTC(5), USD(2500)}, {"gar", 1, drops(404999997000000), BTC(0), USD(1375)} } }, // no BTC xfer fee
+{ 0, 0, 0, BTC( 5), { {"hye", 2, drops(399999995000000), BTC(5), USD(2000)}                                                      } }  // no xfer fee
         };
 
         // Pick the right tests.
@@ -3972,6 +3979,7 @@ public:
             Account const& self = t.actors[t.self].acct;
             Account const& leg0 = t.actors[t.leg0].acct;
             Account const& leg1 = t.actors[t.leg1].acct;
+            log << "test of self: " << self.name() << " leg0: " << leg0.name() << " leg1: " << leg1.name() << std::endl;
 
             for (auto const& actor : t.actors)
             {
@@ -4007,6 +4015,7 @@ public:
             // Verify results.
             for (auto const& actor : t.actors)
             {
+                log << "checking results of actor: " << actor.acct.name() << std::endl;
                 // Sometimes Taker offer crossing gets lazy about deleting
                 // offers.  Treat an empty offer as though it is deleted.
                 auto actorOffers = offersOnAccount (env, actor.acct);
@@ -4307,13 +4316,14 @@ public:
 //        testAll({                                      });
 //        testAll({                      featureFlowCross});
 //        testAll({featureFlow                           });
+
         testAll({featureFlow,          featureFlowCross});
         testAll({featureFlow, fix1373                  });
         testAll({featureFlow, fix1373, featureFlowCross});
     }
 };
 
-BEAST_DEFINE_TESTSUITE (Offer, tx, ripple);
+BEAST_DEFINE_TESTSUITE (Offer, tx, casinocoin);
 
 }  // test
 }  // ripple

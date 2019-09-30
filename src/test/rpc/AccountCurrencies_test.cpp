@@ -191,7 +191,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(AccountCurrencies,app,ripple);
+BEAST_DEFINE_TESTSUITE(AccountCurrencies,app,casinocoin);
 
 } // casinocoin
 

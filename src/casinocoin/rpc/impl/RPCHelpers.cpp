@@ -577,8 +577,16 @@ Blob injectClientIPHelper (Context& context, std::string const& srcAccountString
 bool
 injectClientIP (Context& context)
 {
-    // jrojek TODO: temporary don't add client ip
+    // jrojek TODO: temporary don't add client ip and remove it if it existed!!
+    if (context.params[jss::tx_json].isMember(jss::ClientIP))
+    {
+        context.params[jss::tx_json].removeMember(jss::ClientIP);
+        {
+            JLOG(context.j.debug()) << "removed pre-added ip";
+        }
+    }
     return true;
+    // non executing code for now
     if (context.params[jss::tx_json].isMember(jss::ClientIP))
     {
         JLOG(context.j.debug()) << "ip already there" << context.params[jss::tx_json][jss::ClientIP].asString();
@@ -594,8 +602,16 @@ injectClientIP (Context& context)
 
 bool injectClientIP (Context& context, STTx* stpTrans)
 {
-    // jrojek TODO: temporary don't add client ip
+    // jrojek TODO: temporary don't add client ip and remove it if it existed!!
+    if (stpTrans->isFieldPresent(sfClientIP))
+    {
+        stpTrans->makeFieldAbsent(sfClientIP);
+        {
+            JLOG(context.j.debug()) << "removed pre-added ip";
+        }
+    }
     return true;
+    // non executing code for now
     if (stpTrans->isFieldPresent(sfClientIP))
     {
         JLOG(context.j.debug()) << "ip already there" << strHex(makeSlice(stpTrans->getFieldVL(sfClientIP)));

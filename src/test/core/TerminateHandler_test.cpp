@@ -147,7 +147,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(TerminateHandler,core,ripple);
+BEAST_DEFINE_TESTSUITE(TerminateHandler,core,casinocoin);
 
 } // test
 } // casinocoin

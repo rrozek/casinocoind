@@ -262,6 +262,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(hardened_hash,basics,ripple);
+BEAST_DEFINE_TESTSUITE(hardened_hash,basics,casinocoin);
 
 } // casinocoin

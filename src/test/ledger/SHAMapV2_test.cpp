@@ -75,7 +75,7 @@ class SHAMapV2_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(SHAMapV2,ledger,ripple);
+BEAST_DEFINE_TESTSUITE(SHAMapV2,ledger,casinocoin);
 
 }  // test
 }  // ripple

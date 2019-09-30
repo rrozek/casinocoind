@@ -598,11 +598,11 @@ class View_test
             auto const carolsCSC = accountHolds (*env.closed(), carol,
                 cscCurrency(), cscAccount(), fhZERO_IF_FROZEN, env.journal);
             // carol's CSC balance:              10000
-            // base reserve:                      -200
-            // 1 trust line times its reserve: 1 * -50
+            // base reserve:                       -10
+            // 1 trust line times its reserve:  1 * -5
             //                                 -------
-            // carol's available balance:         9750
-            BEAST_EXPECT(carolsCSC == CSC(9750));
+            // carol's available balance:         9985
+            BEAST_EXPECT(carolsCSC == CSC(9985));
 
             // carol should be able to spend *more* than her CSC balance on
             // a fee by eating into her reserve.
@@ -934,9 +934,9 @@ class DirIsEmpty_test
     }
 };
 
-BEAST_DEFINE_TESTSUITE(View,ledger,ripple);
-BEAST_DEFINE_TESTSUITE(GetAmendments,ledger,ripple);
-BEAST_DEFINE_TESTSUITE(DirIsEmpty, ledger,ripple);
+BEAST_DEFINE_TESTSUITE(View,ledger,casinocoin);
+BEAST_DEFINE_TESTSUITE(GetAmendments,ledger,casinocoin);
+BEAST_DEFINE_TESTSUITE(DirIsEmpty, ledger,casinocoin);
 
 }  // test
 }  // ripple
