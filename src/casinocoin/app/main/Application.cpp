@@ -47,6 +47,8 @@
 #include <casinocoin/app/misc/SHAMapStore.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/app/misc/ValidatorSite.h>
+#include <casinocoin/app/misc/configuration/VotableConfiguration.h>
+#include <casinocoin/app/misc/BlacklistUpdater.h>
 #include <casinocoin/app/paths/PathRequests.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/ResolverAsio.h>
@@ -330,12 +332,15 @@ public:
     std::unique_ptr <ManifestCache> publisherManifests_;
     std::unique_ptr <ValidatorList> validators_;
     std::unique_ptr <ValidatorSite> validatorSites_;
+    std::unique_ptr <Blacklist> blacklistedAccounts_;
+    std::unique_ptr <BlacklistUpdater> blacklistUpdater_;
     std::unique_ptr <ServerHandler> serverHandler_;
     std::unique_ptr <AmendmentTable> m_amendmentTable;
     std::unique_ptr <LoadFeeTrack> mFeeTrack;
     std::unique_ptr <HashRouter> mHashRouter;
     std::unique_ptr <Validations> mValidations;
     std::unique_ptr <LoadManager> m_loadManager;
+    std::unique_ptr <VotableConfiguration> m_votableConfig;
     std::unique_ptr <TxQ> txQ_;
     DeadlineTimer m_sweepTimer;
     DeadlineTimer m_entropyTimer;
@@ -468,6 +473,12 @@ public:
 
         , validatorSites_ (std::make_unique<ValidatorSite> (
             get_io_service (), *validators_, logs_->journal("ValidatorSite")))
+        
+        , blacklistedAccounts_ (std::make_unique<Blacklist> (
+            *timeKeeper_, logs_->journal("Blacklist")))
+
+        , blacklistUpdater_ (std::make_unique<BlacklistUpdater> (
+            get_io_service (), *blacklistedAccounts_, logs_->journal("BlacklistUpdater")))
 
         , serverHandler_ (make_ServerHandler (*this, *m_networkOPs, get_io_service (),
             *m_jobQueue, *m_networkOPs, *m_resourceManager, *m_collectorManager))
@@ -676,6 +687,11 @@ public:
         return *mHashRouter;
     }
 
+    VotableConfiguration& getVotableConfig() override
+    {
+        return *m_votableConfig;
+    }
+
     Validations& getValidations () override
     {
         return *mValidations;
@@ -760,6 +776,12 @@ public:
         assert (mWalletDB.get() != nullptr);
         return *mWalletDB;
     }
+
+    Blacklist&
+    blacklistedAccounts () override { return *blacklistedAccounts_; }
+
+    BlacklistUpdater&
+    blacklistUpdater () override { return *blacklistUpdater_; }
 
     bool serverOkay (std::string& reason) override;
 
@@ -861,7 +883,11 @@ public:
 
         mValidations->flush ();
 
+        // stop validator site refresh
         validatorSites_->stop ();
+
+        // stop blacklist site refresh
+        blacklistUpdater_->stop ();
 
         // TODO Store manifests in manifests.sqlite instead of wallet.db
         validatorManifests_->save (getWalletDB (), "ValidatorManifests",
@@ -1033,12 +1059,22 @@ bool ApplicationImp::setup()
         enabledAmendments.append (detail::preEnabledAmendments ());
 
         m_amendmentTable = make_AmendmentTable (
-            days{2},
+            std::chrono::hours(2),
             MAJORITY_FRACTION,
             supportedAmendments,
             enabledAmendments,
             config_->section (SECTION_VETO_AMENDMENTS),
             logs_->journal("Amendments"));
+    }
+
+    // Load votable configuration for the server
+    {
+        auto const& votableJson = config_->reloadConfigurationVoteParams();
+        m_votableConfig = make_VotableConfig(
+                    *this,
+                    MAJORITY_FRACTION,
+                    votableJson,
+                    logs_->journal("VotableConfig"));
     }
 
     Pathfinder::initPathTable();
@@ -1153,6 +1189,14 @@ bool ApplicationImp::setup()
         return false;
     }
 
+    if (!blacklistUpdater_->load (        
+        config().section (SECTION_BLACKLIST_SITES).values ()))
+    {
+        JLOG(m_journal.fatal()) <<
+            "Invalid entry in [" << SECTION_BLACKLIST_SITES << "]";
+        return false;
+    }
+
     m_nodeStore->tune (config_->getSize (siNodeCacheSize), config_->getSize (siNodeCacheAge));
     m_ledgerMaster->tune (config_->getSize (siLedgerSize), config_->getSize (siLedgerAge));
     family().treecache().setTargetSize (config_->getSize (siTreeCacheSize));
@@ -1174,7 +1218,11 @@ bool ApplicationImp::setup()
         *config_);
     add (*m_overlay); // add to PropertyStream
 
+    // start validator sites refresh
     validatorSites_->start ();
+
+    // start blacklist sites refresh
+    blacklistUpdater_->start ();
 
     // start first consensus round
     JLOG(m_journal.info()) << "Start first Consensus round";
@@ -1251,7 +1299,6 @@ bool ApplicationImp::setup()
             JLOG(m_journal.fatal()) << "Result: " << jvResult << std::endl;
         }
     }
-
     return true;
 }
 

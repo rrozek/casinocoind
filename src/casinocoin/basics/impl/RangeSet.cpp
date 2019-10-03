@@ -221,6 +221,25 @@ std::string RangeSet::toString () const
     return ret;
 }
 
+std::string RangeSet::toSingleRangeString () const
+{
+    std::string ret;
+    if (mRanges.size() == 1)
+    {
+        ret += beast::lexicalCastThrow <std::string> (mRanges.begin()->first) + "-"
+                   + beast::lexicalCastThrow <std::string> (mRanges.begin()->second);
+    } 
+    else if (mRanges.size() > 1)
+    {
+        ret += beast::lexicalCastThrow <std::string> (mRanges.begin()->first) + "-"
+                   + beast::lexicalCastThrow <std::string> (mRanges.rbegin()->second);
+    }
+    if (ret.empty ())
+        return "empty";
+
+    return ret;
+}
+
 void RangeSet::simplify ()
 {
     iterator it = mRanges.begin ();

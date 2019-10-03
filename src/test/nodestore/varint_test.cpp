@@ -67,7 +67,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(varint,NodeStore,ripple);
+BEAST_DEFINE_TESTSUITE(varint,NodeStore,casinocoin);
 
 } // test
 } // NodeStore

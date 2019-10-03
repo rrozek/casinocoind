@@ -247,10 +247,11 @@ public:
         fieldMeta = c;
     }
 
-    bool shouldInclude (bool withSigningField) const
+    bool shouldInclude (bool withSigningField, bool withNotHashedField = true) const
     {
         return (fieldValue < 256 &&
-                    (withSigningField || (signingField == IsSigning::yes)));
+                (withSigningField || (signingField == IsSigning::yes)) &&
+                (withNotHashedField || (signingField != IsSigning::noAndNotHashed)));
     }
 
     bool operator== (const SField& f) const
@@ -389,6 +390,8 @@ extern SF_U32 const sfCancelAfter;
 extern SF_U32 const sfFinishAfter;
 extern SF_U32 const sfSignerListID;
 extern SF_U32 const sfSettleDelay;
+extern SF_U32 const sfConfigID;
+extern SF_U32 const sfConfigType;
 
 // 64-bit integers
 extern SF_U64 const sfIndexNext;
@@ -466,6 +469,7 @@ extern SF_Blob const sfClientIP;
 extern SF_Blob const sfFulfillment;
 extern SF_Blob const sfCondition;
 extern SF_Blob const sfMasterSignature;
+extern SF_Blob const sfConfigData;
 
 // account
 extern SF_Account const sfAccount;
@@ -482,6 +486,7 @@ extern SField const sfPaths;
 extern SF_Vec256 const sfIndexes;
 extern SF_Vec256 const sfHashes;
 extern SF_Vec256 const sfAmendments;
+extern SF_Vec256 const sfConfigHashes;
 
 // vector of 128-bit
 extern SF_Vec128 const sfKYCVerifications;
@@ -501,6 +506,7 @@ extern SField const sfSignerEntry;
 extern SField const sfSigner;
 extern SField const sfMajority;
 extern SField const sfKYC;
+extern SField const sfConfigEntry;
 
 // array of objects
 // ARRAY/1 is reserved for end of array
@@ -513,6 +519,7 @@ extern SField const sfSufficient;
 extern SField const sfAffectedNodes;
 extern SField const sfMemos;
 extern SField const sfMajorities;
+extern SField const sfConfiguration;
 
 //------------------------------------------------------------------------------
 

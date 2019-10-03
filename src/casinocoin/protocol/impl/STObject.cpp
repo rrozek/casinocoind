@@ -300,7 +300,7 @@ uint256 STObject::getHash (std::uint32_t prefix) const
 {
     Serializer s;
     s.add32 (prefix);
-    add (s, true);
+    add (s, true, false);
 
     return s.getSHA512Half ();
 }
@@ -309,7 +309,7 @@ uint256 STObject::getSigningHash (std::uint32_t prefix) const
 {
     Serializer s;
     s.add32 (prefix);
-    add (s, false);
+    add (s, false, false);
     return s.getSHA512Half ();
 }
 
@@ -572,6 +572,33 @@ const STArray& STObject::getFieldArray (SField const& field) const
     return getFieldByConstRef <STArray> (field, empty);
 }
 
+bool STObject::isNative() const
+{
+    for (detail::STVar const& elem : v_)
+    {
+        STBase const& base = elem.get();
+        if (base.getSType() == STI_AMOUNT)
+        {
+            if (!isCSC(static_cast<STAmount const&>(base)))
+                return false;
+        }
+        else if (base.getSType() == STI_OBJECT)
+        {
+            if (!(static_cast<STObject const&>(base).isNative()))
+                return false;
+        }
+        else if (base.getSType() == STI_ARRAY)
+        {
+            for( auto const& stObj : static_cast<STArray const&>(base))
+            {
+                if (!stObj.isNative())
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
 void
 STObject::set (std::unique_ptr<STBase> v)
 {
@@ -722,14 +749,14 @@ bool STObject::operator== (const STObject& obj) const
     return true;
 }
 
-void STObject::add (Serializer& s, bool withSigningFields) const
+void STObject::add (Serializer& s, bool withSigningFields, bool withNotHashedField) const
 {
     std::map<int, STBase const*> fields;
     for (auto const& e : v_)
     {
         // pick out the fields and sort them
         if ((e->getSType() != STI_NOTPRESENT) &&
-            e->getFName().shouldInclude (withSigningFields))
+            e->getFName().shouldInclude (withSigningFields, withNotHashedField))
         {
             fields.insert (std::make_pair (
                 e->getFName().fieldCode, &e.get()));

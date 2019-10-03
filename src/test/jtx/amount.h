@@ -25,6 +25,7 @@
 #include <test/jtx/tags.h>
 #include <casinocoin/protocol/Issue.h>
 #include <casinocoin/protocol/STAmount.h>
+#include <casinocoin/protocol/SystemParameters.h>
 #include <casinocoin/basics/contract.h>
 #include <cstdint>
 #include <ostream>
@@ -63,7 +64,7 @@ struct None
 template <class T>
 struct dropsPerCSC
 {
-    static T const value = 1000000;
+    static T const value = SYSTEM_CURRENCY_PARTS;
 };
 
 /** Represents an CSC or IOU quantity

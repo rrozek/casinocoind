@@ -66,6 +66,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(TMHello,overlay,ripple);
+BEAST_DEFINE_TESTSUITE(TMHello,overlay,casinocoin);
 
 }

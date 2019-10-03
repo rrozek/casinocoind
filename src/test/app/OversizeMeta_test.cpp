@@ -60,7 +60,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL(PlumpBook,tx,ripple);
+BEAST_DEFINE_TESTSUITE_MANUAL(PlumpBook,tx,casinocoin);
 
 //------------------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(ThinBook, tx, ripple);
+BEAST_DEFINE_TESTSUITE(ThinBook, tx, casinocoin);
 
 //------------------------------------------------------------------------------
 
@@ -116,7 +116,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL(OversizeMeta,tx,ripple);
+BEAST_DEFINE_TESTSUITE_MANUAL(OversizeMeta,tx,casinocoin);
 
 //------------------------------------------------------------------------------
 
@@ -181,7 +181,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL(FindOversizeCross,tx,ripple);
+BEAST_DEFINE_TESTSUITE_MANUAL(FindOversizeCross,tx,casinocoin);
 
 } // test
 } // casinocoin

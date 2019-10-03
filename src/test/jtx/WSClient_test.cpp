@@ -46,7 +46,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(WSClient,test,ripple);
+BEAST_DEFINE_TESTSUITE(WSClient,test,casinocoin);
 
 } // test
 } // casinocoin

@@ -374,7 +374,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Server,http,ripple);
+BEAST_DEFINE_TESTSUITE(Server,http,casinocoin);
 
 } // test
 } // casinocoin

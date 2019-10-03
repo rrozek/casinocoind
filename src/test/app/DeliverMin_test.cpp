@@ -56,7 +56,7 @@ public:
             env(pay("alice", "bob", USD(10)), paths(CSC),
                 delivermin(USD(7)), txflags(tfPartialPayment),
                 sendmax(CSC(5)),                                   ter(tecPATH_PARTIAL));
-            env.require(balance("alice", CSC(9999.99999)));
+            env.require(balance("alice", CSC(9999.99)));
             env.require(balance("bob", CSC(10000)));
         }
 
@@ -119,7 +119,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(DeliverMin,app,ripple);
+BEAST_DEFINE_TESTSUITE(DeliverMin,app,casinocoin);
 
 } // test
 } // casinocoin

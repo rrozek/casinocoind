@@ -22,6 +22,7 @@
 #include <casinocoin/nodestore/DummyScheduler.h>
 #include <casinocoin/nodestore/Manager.h>
 #include <casinocoin/basics/BasicConfig.h>
+#include <casinocoin/basics/base_uint.h>
 #include <casinocoin/unity/rocksdb.h>
 #include <casinocoin/beast/utility/temp_dir.h>
 #include <casinocoin/beast/xor_shift_engine.h>
@@ -147,7 +148,7 @@ public:
 
     std::size_t const default_repeat = 3;
 #ifndef NDEBUG
-    std::size_t const default_items = 10000;
+    std::size_t const default_items = 10;
 #else
     std::size_t const default_items = 100000; // release
 #endif
@@ -275,6 +276,7 @@ public:
         beast::Journal journal;
         DummyScheduler scheduler;
         auto backend = make_Backend (config, scheduler, journal);
+        log << "do_insert " << backend.get() << std::endl;
         BEAST_EXPECT(backend != nullptr);
 
         class Body
@@ -299,9 +301,11 @@ public:
                 try
                 {
                     backend_.store(seq_.obj(i));
+                    suite_.log << "do_insert oper() obj hash: " << strHex (seq_.obj(i)->getHash().begin (), seq_.obj(i)->getHash().size ()) << std::endl;
                 }
                 catch(std::exception const& e)
                 {
+                    suite_.log << "do_insert oper() caught exception " << e.what() << std::endl;
                     suite_.fail(e.what());
                 }
             }
@@ -312,8 +316,9 @@ public:
             parallel_for<Body>(params.items,
                 params.threads, std::ref(*this), std::ref(*backend));
         }
-        catch (std::exception const&)
+        catch (std::exception const& e)
         {
+            log << "do_insert caught exception " << e.what() << std::endl;
         #if NODESTORE_TIMING_DO_VERIFY
             backend->verify();
         #endif
@@ -329,6 +334,7 @@ public:
         beast::Journal journal;
         DummyScheduler scheduler;
         auto backend = make_Backend (config, scheduler, journal);
+        log << "do_fetch " << backend.get() << std::endl;
         BEAST_EXPECT(backend != nullptr);
 
         class Body
@@ -359,11 +365,18 @@ public:
                     std::shared_ptr<NodeObject> obj;
                     std::shared_ptr<NodeObject> result;
                     obj = seq1_.obj(dist_(gen_));
-                    backend_.fetch(obj->getHash().data(), &result);
+                    NodeStore::Status status = backend_.fetch(obj->getHash().data(), &result);
+                    suite_.log << "do_fetch oper() status: " << status << std::endl;
+                    suite_.log << "do_fetch oper() obj hash: " << strHex (obj->getHash().begin (), obj->getHash().size ()) << std::endl;
+                    if (result)
+                        suite_.log << "do_fetch oper() res hash: " << strHex (result->getHash().begin (), result->getHash().size ()) << std::endl;
+                    else
+                        suite_.log << "do_fetch oper() result is null " << std::endl;
                     suite_.expect(result && isSame(result, obj));
                 }
                 catch(std::exception const& e)
                 {
+                    suite_.log << "do_fetch oper() caught exception " << e.what() << std::endl;
                     suite_.fail(e.what());
                 }
             }
@@ -373,8 +386,9 @@ public:
             parallel_for_id<Body>(params.items, params.threads,
                 std::ref(*this), std::ref(params), std::ref(*backend));
         }
-        catch (std::exception const&)
+        catch (std::exception const& e)
         {
+            log << "do_fetch caught exception " << e.what() << std::endl;
         #if NODESTORE_TIMING_DO_VERIFY
             backend->verify();
         #endif
@@ -390,6 +404,7 @@ public:
         beast::Journal journal;
         DummyScheduler scheduler;
         auto backend = make_Backend (config, scheduler, journal);
+        log << "do_missing " << backend.get() << std::endl;
         BEAST_EXPECT(backend != nullptr);
 
         class Body
@@ -426,6 +441,7 @@ public:
                 }
                 catch(std::exception const& e)
                 {
+                    suite_.log << "do_missing oper() caught exception " << e.what() << std::endl;
                     suite_.fail(e.what());
                 }
             }
@@ -436,8 +452,9 @@ public:
             parallel_for_id<Body>(params.items, params.threads,
                 std::ref(*this), std::ref(params), std::ref(*backend));
         }
-        catch (std::exception const&)
+        catch (std::exception const& e)
         {
+            log << "do_missing caught exception " << e.what() << std::endl;
         #if NODESTORE_TIMING_DO_VERIFY
             backend->verify();
         #endif
@@ -453,6 +470,7 @@ public:
         beast::Journal journal;
         DummyScheduler scheduler;
         auto backend = make_Backend (config, scheduler, journal);
+        log << "do_mixed " << backend.get() << std::endl;
         BEAST_EXPECT(backend != nullptr);
 
         class Body
@@ -504,6 +522,7 @@ public:
                 }
                 catch(std::exception const& e)
                 {
+                    suite_.log << "do_mixed oper() caught exception " << e.what() << std::endl;
                     suite_.fail(e.what());
                 }
             }
@@ -514,8 +533,9 @@ public:
             parallel_for_id<Body>(params.items, params.threads,
                 std::ref(*this), std::ref(params), std::ref(*backend));
         }
-        catch (std::exception const&)
+        catch (std::exception const& e)
         {
+            log << "do_mixed caught exception " << e.what() << std::endl;
         #if NODESTORE_TIMING_DO_VERIFY
             backend->verify();
         #endif
@@ -535,6 +555,7 @@ public:
         beast::Journal journal;
         DummyScheduler scheduler;
         auto backend = make_Backend (config, scheduler, journal);
+        log << "do_work " << backend.get() << std::endl;
         backend->setDeletePath();
         BEAST_EXPECT(backend != nullptr);
 
@@ -614,6 +635,7 @@ public:
                 }
                 catch(std::exception const& e)
                 {
+                    suite_.log << "do_work oper() caught exception " << e.what() << std::endl;
                     suite_.fail(e.what());
                 }
             }
@@ -624,8 +646,9 @@ public:
             parallel_for_id<Body>(params.items, params.threads,
                 std::ref(*this), std::ref(params), std::ref(*backend));
         }
-        catch (std::exception const&)
+        catch (std::exception const& e)
         {
+            log << "do_work caught exception " << e.what() << std::endl;
         #if NODESTORE_TIMING_DO_VERIFY
             backend->verify();
         #endif
@@ -703,7 +726,7 @@ public:
 
         */
         std::string default_args =
-            "type=nudb"
+            "type=NuDB"
         #if CASINOCOIN_ROCKSDB_AVAILABLE
             ";type=rocksdb,open_files=2000,filter_bits=12,cache_mb=256,"
                 "file_size_mb=8,file_size_mult=2"
@@ -740,7 +763,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL(Timing,NodeStore,ripple);
+BEAST_DEFINE_TESTSUITE_MANUAL(Timing,NodeStore,casinocoin);
 
 }
 }

@@ -102,6 +102,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(BuildInfo,ripple_data,ripple);
+BEAST_DEFINE_TESTSUITE(BuildInfo,casinocoin_data,casinocoin);
 
 } // casinocoin

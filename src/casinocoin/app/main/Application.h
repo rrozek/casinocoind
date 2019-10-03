@@ -43,6 +43,7 @@ namespace Resource { class Manager; }
 namespace NodeStore { class Database; }
 
 // VFALCO TODO Fix forward declares required for header dependency loops
+class VotableConfiguration;
 class AmendmentTable;
 class CachedSLEs;
 class CollectorManager;
@@ -77,6 +78,9 @@ class Cluster;
 
 class DatabaseCon;
 class SHAMapStore;
+
+class Blacklist;
+class BlacklistUpdater;
 
 using NodeCache     = TaggedCache <SHAMapHash, Blob>;
 
@@ -124,6 +128,7 @@ public:
     virtual NodeCache&              getTempNodeCache () = 0;
     virtual CachedSLEs&             cachedSLEs() = 0;
     virtual AmendmentTable&         getAmendmentTable() = 0;
+    virtual VotableConfiguration&   getVotableConfig() = 0;
     virtual HashRouter&             getHashRouter () = 0;
     virtual LoadFeeTrack&           getFeeTrack () = 0;
     virtual LoadManager&            getLoadManager () = 0;
@@ -158,6 +163,9 @@ public:
     virtual OpenLedger const&       openLedger() const = 0;
     virtual DatabaseCon& getTxnDB () = 0;
     virtual DatabaseCon& getLedgerDB () = 0;
+
+    virtual Blacklist&              blacklistedAccounts () = 0;
+    virtual BlacklistUpdater&       blacklistUpdater () = 0;
 
     virtual std::chrono::milliseconds getIOLatency () = 0;
 

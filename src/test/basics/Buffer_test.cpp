@@ -268,7 +268,7 @@ struct Buffer_test : beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Buffer, ripple_basics, ripple);
+BEAST_DEFINE_TESTSUITE(Buffer, casinocoin_basics, casinocoin);
 
 }  // namespace test
 }  // namespace casinocoin

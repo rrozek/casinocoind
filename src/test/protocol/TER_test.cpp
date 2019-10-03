@@ -57,6 +57,6 @@ struct TER_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(TER,protocol,ripple);
+BEAST_DEFINE_TESTSUITE(TER,protocol,casinocoin);
 
 }
