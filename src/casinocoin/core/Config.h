@@ -199,6 +199,7 @@ public:
     std::unordered_set<uint256, beast::uhash<>> features;
 
     std::vector<std::string> KYCTrustedAccounts;
+    std::vector<std::string> WhitelistAccounts;
 
 public:
     Config() = default;
