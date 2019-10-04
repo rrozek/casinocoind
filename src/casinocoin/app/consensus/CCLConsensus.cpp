@@ -39,6 +39,7 @@
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/TxQ.h>
 #include <casinocoin/app/misc/ValidatorList.h>
+#include <casinocoin/app/misc/configuration/VotableConfiguration.h>
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/make_lock.h>
 #include <casinocoin/beast/core/LexicalCast.h>
@@ -337,29 +338,39 @@ CCLConsensus::onClose(
     // Add pseudo-transactions to the set
     if ((app_.config().standalone() || (proposing && !wrongLCL)))
     {
-        auto const validations =
-                app_.getValidations().getValidations(prevLedger->info().parentHash);
-
-        std::size_t const count = std::count_if(
-                    validations.begin(), validations.end(), [](auto const& v) {
-            return v.second->isTrusted();
-        });
-
         if ((prevLedger->info().seq % 256) == 0)
         {
+            auto const validations =
+                    app_.getValidations().getValidations(prevLedger->info().parentHash);
+
+            std::size_t const count = std::count_if(
+                        validations.begin(), validations.end(), [](auto const& v) {
+                return v.second->isTrusted();
+            });
+
             // previous ledger was flag ledger, add pseudo-transactions
             if (count >= app_.validators().quorum())
             {
                 feeVote_->doVoting(prevLedger, validations, initialSet);
-                app_.getAmendmentTable().doVoting(
-                            prevLedger, validations, initialSet);
-
+                app_.getAmendmentTable().doVoting(prevLedger, validations, initialSet);
+                if (prevLedger->rules().enabled(featureConfigObject))
+                {
+                    app_.getVotableConfig().doVoting(prevLedger, validations, initialSet);
+                }
             }
         }
         if (prevLedger->rules().enabled(featureCRN))
         {
             if ((prevLedger->info().seq % CRNPerformance::getReportingPeriod()) == 0)
             {
+                auto const validations =
+                       app_.getValidations().getValidations(prevLedger->info().parentHash);
+
+                std::size_t const count = std::count_if(
+                        validations.begin(), validations.end(), [](auto const& v) {
+                    return v.second->isTrusted();
+                });
+
                 if (count >= app_.validators().quorum())
                 {
                     app_.getCRNRound().doVoting(prevLedger, validations, initialSet);
@@ -879,6 +890,13 @@ CCLConsensus::validate(CCLCxLedger const& ledger, bool proposing)
         feeVote_->updatePosition(setup_FeeVote(app_.config().section ("voting")));
         feeVote_->doValidation(ledger.ledger_, *v);
         app_.getAmendmentTable().doValidation(ledger.ledger_, *v);
+
+        if (ledger.ledger_->rules().enabled(featureConfigObject))
+        {
+            Json::Value const& jvVotableConfig = app_.config().reloadConfigurationVoteParams();
+            app_.getVotableConfig().updatePosition(jvVotableConfig);
+            app_.getVotableConfig().doValidation(ledger.ledger_, *v);
+        }
     }
 
     if (app_.getLedgerMaster().getValidatedRules().enabled(featureCRN))

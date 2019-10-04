@@ -28,6 +28,7 @@
 
 #include <casinocoin/beast/core/SemanticVersion.h>
 #include <casinocoin/ledger/TxMeta.h>
+#include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/rpc/impl/Tuning.h>
 #include <casinocoin/rpc/Status.h>
@@ -41,6 +42,8 @@ namespace casinocoin {
 
 class ReadView;
 class Transaction;
+class LedgerMaster;
+class STTx;
 
 namespace RPC {
 
@@ -72,6 +75,18 @@ getAccountObjects (ReadView const& ledger, AccountID const& account,
     LedgerEntryType const type, uint256 dirIndex, uint256 const& entryIndex,
     std::uint32_t const limit, Json::Value& jvResult);
 
+/** Extracts Account Ledger Entry
+    at given /ledgerSeq/
+    @param ledgerMaster
+    @param strIdent: public key, account ID, or regular seed.
+    @param ledgerSeq: LedgerIndex to be queried. last validated ledger if == 0
+    @param bStrict: Only allow account id or public key.
+
+    @return Account SLE or null if not found
+*/
+std::shared_ptr<const casinocoin::SLE>
+getAccountSLE ( LedgerMaster& ledgerMaster, std::string const& strIdent, LedgerIndex ledgerSeq = 0, bool bStrict = false);
+
 /** Look up a ledger from a request and fill a Json::Result with either
     an error, or data representing a ledger.
 
@@ -92,6 +107,16 @@ lookupLedger (std::shared_ptr<ReadView const>&, Context&, Json::Value& result);
 hash_set <AccountID>
 parseAccountIds(Json::Value const& jvArray);
 
+boost::optional<TokenDescriptor>
+getWLT(Json::Value const& jvRequest,
+       std::shared_ptr<ReadView const> const& ledger,
+       beast::Journal const& j);
+
+bool
+isWLT(Json::Value const& jvRequest,
+      std::shared_ptr<ReadView const> const& ledger,
+      beast::Journal const& j);
+
 void
 addPaymentDeliveredAmount(Json::Value&, Context&,
     std::shared_ptr<Transaction>, TxMeta::pointer);
@@ -107,6 +132,12 @@ addPaymentDeliveredAmount(Json::Value&, Context&,
 void
 injectSLE(Json::Value& jv, SLE const& sle);
 
+bool
+injectClientIP (Context& context);
+
+bool
+injectClientIP (Context& context, STTx* stpTrans);
+
 /** Retrieve the limit value from a Context, or set a default -
     then restrict the limit by max and min if not an ADMIN request.
 
@@ -120,6 +151,7 @@ getSeedFromRPC(Json::Value const& params, Json::Value& error);
 
 std::pair<PublicKey, SecretKey>
 keypairForSignature(Json::Value const& params, Json::Value& error);
+
 
 extern beast::SemanticVersion const firstVersion;
 extern beast::SemanticVersion const goodVersion;

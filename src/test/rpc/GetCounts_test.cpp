@@ -112,7 +112,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(GetCounts,rpc,ripple);
+BEAST_DEFINE_TESTSUITE(GetCounts,rpc,casinocoin);
 
 } // casinocoin
 

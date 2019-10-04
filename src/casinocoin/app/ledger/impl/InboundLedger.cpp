@@ -370,6 +370,8 @@ void InboundLedger::onTimer (bool wasProgress, ScopedLockType&)
         {
             JLOG (m_journal.warn()) <<
                 getTimeouts() << " timeouts for ledger " << mSeq;
+            // there are no nodes that have the ledger so consider it lost
+            app_.getLedgerMaster().addLostLedgerToRangeSet(mSeq);
         }
         else
         {

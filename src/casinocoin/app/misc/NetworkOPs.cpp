@@ -1010,7 +1010,7 @@ void NetworkOPsImp::apply (std::unique_lock<std::mutex>& batchLock)
             if (isTemMalformed (e.result))
                 app_.getHashRouter().setFlags (e.transaction->getID(), SF_BAD);
 
-    #ifdef BEAST_DEBUG
+//    #ifdef BEAST_DEBUG
             if (e.result != tesSUCCESS)
             {
                 std::string token, human;
@@ -1021,7 +1021,7 @@ void NetworkOPsImp::apply (std::unique_lock<std::mutex>& batchLock)
                             << token << ": " << human;
                 }
             }
-    #endif
+//    #endif
 
             bool addLocal = e.local;
 

@@ -251,8 +251,8 @@ public:
     bool shouldInclude (bool withSigningField, bool withNotHashedField = true) const
     {
         return (fieldValue < 256 &&
-            (withSigningField || (signingField == IsSigning::yes)) &&
-            (withNotHashedField || (signingField != IsSigning::noAndNotHashed)));
+                (withSigningField || (signingField == IsSigning::yes)) &&
+                (withNotHashedField || (signingField != IsSigning::noAndNotHashed)));
     }
 
     bool operator== (const SField& f) const
@@ -398,6 +398,8 @@ extern SF_U32 const sfCancelAfter;
 extern SF_U32 const sfFinishAfter;
 extern SF_U32 const sfSignerListID;
 extern SF_U32 const sfSettleDelay;
+extern SF_U32 const sfConfigID;
+extern SF_U32 const sfConfigType;
 extern SF_U32 const sfCRN_LatencyAvg;
 extern SF_U32 const sfTransitions;
 extern SF_U32 const sfDuration;
@@ -479,6 +481,7 @@ extern SF_Blob const sfClientIP;
 extern SF_Blob const sfFulfillment;
 extern SF_Blob const sfCondition;
 extern SF_Blob const sfMasterSignature;
+extern SF_Blob const sfConfigData;
 extern SF_Blob const sfCRN_IPAddress;
 extern SF_Blob const sfCRN_DomainName;
 extern SF_Blob const sfCRN_PublicKey;
@@ -498,6 +501,7 @@ extern SField const sfPaths;
 extern SF_Vec256 const sfIndexes;
 extern SF_Vec256 const sfHashes;
 extern SF_Vec256 const sfAmendments;
+extern SF_Vec256 const sfConfigHashes;
 extern SF_Vec256 const sfCRNTxHistory;
 
 // vector of 128-bit
@@ -519,6 +523,7 @@ extern SField const sfSigner;
 extern SField const sfMajority;
 // stands for Know Your Customer
 extern SField const sfKYC;
+extern SField const sfConfigEntry;
 // stands for Community Relay Node
 extern SField const sfCRN;
 extern SField const sfCRNStatus;
@@ -534,6 +539,7 @@ extern SField const sfSufficient;
 extern SField const sfAffectedNodes;
 extern SField const sfMemos;
 extern SField const sfMajorities;
+extern SField const sfConfiguration;
 extern SField const sfCRNs;
 extern SField const sfCRNPerformance;
 

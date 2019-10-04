@@ -53,6 +53,7 @@ enum TER
     telINSUF_FEE_P,
     telNO_DST_PARTIAL,
     telCAN_NOT_QUEUE,
+    telBAD_FEE,
 
     // -299 .. -200: M Malformed (bad signature)
     // Causes:
@@ -128,6 +129,8 @@ enum TER
     tefNOT_MULTI_SIGNING,
     tefBAD_AUTH_MASTER,
     tefINVARIANT_FAILED,
+    tefNOT_WLT,
+    tefBLACKLISTED,
 
     // -99 .. -1: R Retry
     //   sequence too high, no funds for txn fee, originating -account

@@ -64,6 +64,7 @@ invoke_preflight (PreflightContext const& ctx)
     case ttKYC_SET:         return SetKYC           ::preflight(ctx);
     case ttCRN_ROUND:
     case ttAMENDMENT:
+    case ttCONFIG:
     case ttFEE:             return Change           ::preflight(ctx);
     case ttPAYCHAN_CREATE:  return PayChanCreate    ::preflight(ctx);
     case ttPAYCHAN_FUND:    return PayChanFund      ::preflight(ctx);
@@ -91,17 +92,34 @@ invoke_preclaim(PreclaimContext const& ctx)
     if (id != zero)
     {
         TER result = T::checkSeq(ctx);
-
         if (result != tesSUCCESS)
             return { result, baseFee };
 
-        result = T::checkFee(ctx, baseFee);
+        {
+            boost::optional<TokenDescriptor> theToken;
+            result = T::checkWLT(ctx, theToken);
+            if (result != tesSUCCESS)
+                return { result, baseFee };
 
-        if (result != tesSUCCESS)
-            return { result, baseFee };
+            if (theToken)
+            {
+                result = T::checkFeeToken(ctx, *theToken);
+                if (result != tesSUCCESS)
+                    return { result, baseFee };
+            }
+            else
+            {
+                result = T::checkFee(ctx, baseFee);
+                if (result != tesSUCCESS)
+                    return { result, baseFee };
+            }
+        }
 
         result = T::checkSign(ctx);
-
+        if (result != tesSUCCESS)
+            return { result, baseFee };
+        
+        result = T::checkBlacklist(ctx);
         if (result != tesSUCCESS)
             return { result, baseFee };
 
@@ -131,6 +149,7 @@ invoke_preclaim (PreclaimContext const& ctx)
     case ttKYC_SET:         return invoke_preclaim<SetKYC>(ctx);
     case ttCRN_ROUND:
     case ttAMENDMENT:
+    case ttCONFIG:
     case ttFEE:             return invoke_preclaim<Change>(ctx);
     case ttPAYCHAN_CREATE:  return invoke_preclaim<PayChanCreate>(ctx);
     case ttPAYCHAN_FUND:    return invoke_preclaim<PayChanFund>(ctx);
@@ -162,6 +181,7 @@ invoke_calculateBaseFee(PreclaimContext const& ctx)
     case ttKYC_SET:         return SetKYC::calculateBaseFee(ctx);
     case ttCRN_ROUND:
     case ttAMENDMENT:
+    case ttCONFIG:
     case ttFEE:             return Change::calculateBaseFee(ctx);
     case ttPAYCHAN_CREATE:  return PayChanCreate::calculateBaseFee(ctx);
     case ttPAYCHAN_FUND:    return PayChanFund::calculateBaseFee(ctx);
@@ -208,6 +228,7 @@ invoke_calculateConsequences(STTx const& tx)
     case ttPAYCHAN_FUND:    return invoke_calculateConsequences<PayChanFund>(tx);
     case ttPAYCHAN_CLAIM:   return invoke_calculateConsequences<PayChanClaim>(tx);
     case ttAMENDMENT:
+    case ttCONFIG:
     case ttFEE:
         // fall through to default
     default:
@@ -238,6 +259,7 @@ invoke_apply (ApplyContext& ctx)
     case ttKYC_SET:         { SetKYC        p(ctx); return p(); }
     case ttCRN_ROUND:
     case ttAMENDMENT:
+    case ttCONFIG:
     case ttFEE:             { Change        p(ctx); return p(); }
     case ttPAYCHAN_CREATE:  { PayChanCreate p(ctx); return p(); }
     case ttPAYCHAN_FUND:    { PayChanFund   p(ctx); return p(); }

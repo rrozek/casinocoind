@@ -198,7 +198,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Database,NodeStore,ripple);
+BEAST_DEFINE_TESTSUITE(Database,NodeStore,casinocoin);
 
 }
 }

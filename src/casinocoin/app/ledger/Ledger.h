@@ -166,6 +166,12 @@ public:
         return rules_;
     }
 
+    LedgerConfig const&
+    ledgerConfig() const override
+    {
+        return ledgerConfig_;
+    }
+
     bool
     exists (Keylet const& k) const override;
 
@@ -331,6 +337,9 @@ private:
     std::shared_ptr<SLE>
     peek (Keylet const& k) const;
 
+    void updateFeesFromLedger();
+    void updateLedgerConfigFromLedger();
+
     bool mImmutable;
 
     std::shared_ptr<SHAMap> txMap_;
@@ -342,6 +351,7 @@ private:
     Fees fees_;
     Rules rules_;
     LedgerInfo info_;
+    LedgerConfig ledgerConfig_;
 };
 
 /** A ledger wrapped in a CachedView. */

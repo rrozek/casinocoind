@@ -20,7 +20,7 @@ without a central operator.
 # casinocoind - Casinocoin server
 `casinocoind` is the reference server implementation of the Casinocoin
 protocol. To learn more about how to build and run a `casinocoind`
-server, visit https://casinocoin.org/docs/
+server, visit https://casinocoin.org/build/
 
 ### License
 `casinocoind` is open source and permissively licensed under the
@@ -42,11 +42,11 @@ git-subtree. See the corresponding README for more details.
 ## For more information:
 
 * [Casinocoin Website](http://www.casinocoin.org)
-* [Casinocoin Developer Center](http://dev.casinocoin.org)
+* [Casinocoin Developer Center](https://casinocoin.org/build/)
 
 - - -
 
-Copyright © 2017, Casinocoin Foundation. All rights reserved.
+Copyright © 2017, 2018 Casinocoin Foundation. All rights reserved.
 
 Portions of this document, including but not limited to the Casinocoin logo,
 images and image templates are the property of the Casinocoin Foundation

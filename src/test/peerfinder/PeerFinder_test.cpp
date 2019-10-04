@@ -157,7 +157,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Logic,PeerFinder,ripple);
+BEAST_DEFINE_TESTSUITE(Logic,PeerFinder,casinocoin);
 
 }
 }

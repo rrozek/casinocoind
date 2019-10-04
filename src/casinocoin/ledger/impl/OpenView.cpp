@@ -153,6 +153,11 @@ OpenView::rules() const
     return rules_;
 }
 
+const LedgerConfig &OpenView::ledgerConfig() const
+{
+    return base_->ledgerConfig();
+}
+
 bool
 OpenView::exists (Keylet const& k) const
 {

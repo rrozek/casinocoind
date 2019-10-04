@@ -64,7 +64,7 @@ enum LedgerEntryType
         This is special Ledger entry storing CRN Round conclusion results.
         Node list, eligibility, fee share.
     */
-    ltCRN_ROUND         = 'C',
+    ltCRN_ROUND         = 'R',
 
     /** Directory node.
 
@@ -96,6 +96,9 @@ enum LedgerEntryType
     // Simple unidirection csc channel
     ltPAYCHAN           = 'x',
 
+    // CSC Ledger dependent configuration object
+    ltCONFIGURATION     = 'C',
+
     // No longer used or supported. Left here to prevent accidental
     // reassignment of the ledger type.
     ltNICKNAME          = 'n',
@@ -109,7 +112,7 @@ enum LedgerEntryType
 enum LedgerNameSpace
 {
     spaceAccount        = 'a',
-    spaceCRN            = 'C',
+    spaceCRN            = 'R',
     spaceDirNode        = 'd',
     spaceGenerator      = 'g',
     spaceCasinocoin     = 'c',
@@ -124,6 +127,7 @@ enum LedgerNameSpace
     spaceTicket         = 'T',
     spaceSignerList     = 'S',
     spaceCSCUChannel    = 'x',
+    spaceConfiguration  = 'C',
 
     // No longer used or supported. Left here to reserve the space and
     // avoid accidental reuse of the space.

@@ -164,7 +164,7 @@ class TrustAndBalance_test : public beast::unit_test::suite
     void
     testDirectRipple (std::initializer_list<uint256> fs)
     {
-        testcase ("Direct Payment, Ripple");
+        testcase ("Direct Payment, casinocoin");
         using namespace test::jtx;
 
         Env env {*this, features(fs)};
@@ -513,7 +513,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE (TrustAndBalance, app, ripple);
+BEAST_DEFINE_TESTSUITE (TrustAndBalance, app, casinocoin);
 
 }  // ripple
 

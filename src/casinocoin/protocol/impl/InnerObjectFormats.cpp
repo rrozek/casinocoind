@@ -47,12 +47,23 @@ InnerObjectFormats::InnerObjectFormats ()
         << SOElement (sfKYCVerifications,     SOE_OPTIONAL)
         ;
 
+    add (sfConfigEntry.getJsonName ().c_str (), sfConfigEntry.getCode ())
+        << SOElement (sfConfigID,             SOE_REQUIRED)
+        << SOElement (sfConfigType,           SOE_REQUIRED)
+        << SOElement (sfConfigData,           SOE_REQUIRED)
+        ;
+
     add (sfCRNStatus.getJsonName ().c_str(), sfCRNStatus.getCode ())
         << SOElement (sfStatusMode,           SOE_OPTIONAL)
         << SOElement (sfTransitions,          SOE_OPTIONAL)
         << SOElement (sfDuration,             SOE_OPTIONAL)
         ;
 
+    add (sfCRNStatus.getJsonName ().c_str(), sfCRNStatus.getCode ())
+        << SOElement (sfStatusMode,           SOE_OPTIONAL)
+        << SOElement (sfTransitions,          SOE_OPTIONAL)
+        << SOElement (sfDuration,             SOE_OPTIONAL)
+        ;
 }
 
 void InnerObjectFormats::addCommonFields (Item& item)

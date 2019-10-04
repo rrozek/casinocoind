@@ -29,6 +29,7 @@
 #include <casinocoin/protocol/STAccount.h>
 #include <casinocoin/protocol/STArray.h>
 #include <casinocoin/protocol/STBlob.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/basics/Log.h>
 
 namespace casinocoin {
@@ -309,7 +310,7 @@ uint256 STObject::getSigningHash (std::uint32_t prefix) const
 {
     Serializer s;
     s.add32 (prefix);
-    add (s, false);
+    add (s, false, false);
     return s.getSHA512Half ();
 }
 
@@ -570,6 +571,65 @@ const STArray& STObject::getFieldArray (SField const& field) const
 {
     static STArray const empty{};
     return getFieldByConstRef <STArray> (field, empty);
+}
+
+bool STObject::isNative() const
+{
+    for (detail::STVar const& elem : v_)
+    {
+        STBase const& base = elem.get();
+        if (base.getSType() == STI_AMOUNT)
+        {
+            if (!isCSC(static_cast<STAmount const&>(base)))
+                return false;
+        }
+        else if (base.getSType() == STI_OBJECT)
+        {
+            if (!(static_cast<STObject const&>(base).isNative()))
+                return false;
+        }
+        else if (base.getSType() == STI_ARRAY)
+        {
+            for( auto const& stObj : static_cast<STArray const&>(base))
+            {
+                if (!stObj.isNative())
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
+std::pair<TER, boost::optional<TokenDescriptor>>
+STObject::isAllowedWLT(ConfigObjectEntry const& tokenConfig) const
+{
+    std::pair<TER, boost::optional<TokenDescriptor>> result;
+    for (detail::STVar const& elem : v_)
+    {
+        STBase const& base = elem.get();
+        if (base.getSType() == STI_AMOUNT)
+        {
+            result = isWLTCompliant(static_cast<STAmount const&>(base), tokenConfig);
+            if (result.first != tesSUCCESS)
+                return result;
+        }
+        else if (base.getSType() == STI_OBJECT)
+        {
+            result = static_cast<STObject const&>(base).isAllowedWLT(tokenConfig);
+            if (result.first != tesSUCCESS)
+                return result;
+        }
+        else if (base.getSType() == STI_ARRAY)
+        {
+            for( auto const& stObj : static_cast<STArray const&>(base))
+            {
+                result = stObj.isAllowedWLT(tokenConfig);
+                if (result.first != tesSUCCESS)
+                    return result;
+            }
+        }
+    }
+    return result;
 }
 
 void

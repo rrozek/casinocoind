@@ -25,13 +25,18 @@
 
 #include <BeastConfig.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
+#include <casinocoin/app/main/Application.h>
 #include <casinocoin/app/misc/Transaction.h>
 #include <casinocoin/ledger/View.h>
 #include <casinocoin/net/RPCErr.h>
 #include <casinocoin/protocol/AccountID.h>
+#include <casinocoin/protocol/STTx.h>
+#include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/rpc/Context.h>
 #include <casinocoin/rpc/impl/RPCHelpers.h>
 #include <boost/algorithm/string/case_conv.hpp>
+#include <casinocoin/crypto/ECIES.h>
 #include <casinocoin/basics/Log.h>
 
 namespace casinocoin {
@@ -163,6 +168,25 @@ getAccountObjects(ReadView const& ledger, AccountID const& account,
             return true;
         }
     }
+}
+
+std::shared_ptr<const casinocoin::SLE>
+getAccountSLE ( LedgerMaster& ledgerMaster, std::string const& strIdent, LedgerIndex ledgerSeq, bool bStrict)
+{
+    AccountID uAccount;
+    if (accountFromString(uAccount, strIdent, bStrict))
+        return std::shared_ptr<const casinocoin::SLE>();
+
+    auto const accountKeylet = keylet::account (uAccount);
+
+    std::shared_ptr<Ledger const> queriedLedger;
+    if (ledgerSeq == 0)
+        queriedLedger = ledgerMaster.getValidatedLedger();
+    else
+        queriedLedger = ledgerMaster.getLedgerBySeq(ledgerSeq);
+    if (queriedLedger)
+        return queriedLedger->read(accountKeylet);
+    return std::shared_ptr<const casinocoin::SLE>();
 }
 
 namespace {
@@ -403,6 +427,54 @@ parseAccountIds(Json::Value const& jvArray)
     return result;
 }
 
+boost::optional<TokenDescriptor>
+getWLT(Json::Value const& jvRequest,
+       std::shared_ptr<ReadView const> const& ledger,
+       beast::Journal const& j)
+{
+    boost::optional<TokenDescriptor> theToken;
+    if (!ledger->rules().enabled(featureWLT))
+        return theToken;
+
+    LedgerConfig const& ledgerConfiguration = ledger->ledgerConfig();
+    auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                        ledgerConfiguration.entries.end(),
+                                        [](ConfigObjectEntry const& obj)
+        {
+            return obj.getType() == ConfigObjectEntry::Token;
+        });
+    if (tokenConfigIter == ledgerConfiguration.entries.end())
+    {
+        JLOG(j.info()) << "No WLT entries found. tx forbidden.";
+        return theToken;
+    }
+
+    for (auto iter = jvRequest.begin(); iter != jvRequest.end(); ++iter)
+    {
+        STAmount amountCandidate;
+        if (amountFromJsonNoThrow(amountCandidate, *iter))
+        {
+            if (isCSC(amountCandidate))
+                continue;
+
+            theToken = getWLT(amountCandidate, *tokenConfigIter, j);
+            if (theToken)
+                return theToken;
+        }
+    }
+    return theToken;
+}
+
+bool
+isWLT(Json::Value const& jvRequest,
+      std::shared_ptr<ReadView const> const& ledger,
+      beast::Journal const& j)
+{
+    if (getWLT(jvRequest, ledger, j))
+        return true;
+    return false;
+}
+
 void
 addPaymentDeliveredAmount(Json::Value& meta, RPC::Context& context,
     std::shared_ptr<Transaction> transaction, TxMeta::pointer transactionMeta)
@@ -435,33 +507,7 @@ addPaymentDeliveredAmount(Json::Value& meta, RPC::Context& context,
         return;
     }
 
-    // Ledger 4594095 is the first ledger in which the DeliveredAmount field
-    // was present when a partial payment was made and its absence indicates
-    // that the amount delivered is listed in the Amount field.
-    if (transaction->getLedger () >= 4594095)
-    {
-        meta[jss::delivered_amount] =
-            serializedTx->getFieldAmount (sfAmount).getJson (1);
-        return;
-    }
-
-    // If the ledger closed long after the DeliveredAmount code was deployed
-    // then its absence indicates that the amount delivered is listed in the
-    // Amount field. DeliveredAmount went live January 24, 2014.
-    using namespace std::chrono_literals;
-    auto ct =
-        context.ledgerMaster.getCloseTimeBySeq (transaction->getLedger ());
-    if (ct && (*ct > NetClock::time_point{446000000s}))
-    {
-        // 446000000 is in Feb 2014, well after DeliveredAmount went live
-        meta[jss::delivered_amount] =
-            serializedTx->getFieldAmount (sfAmount).getJson (1);
-        return;
-    }
-
-    // Otherwise we report "unavailable" which cannot be parsed into a
-    // sensible amount.
-    meta[jss::delivered_amount] = Json::Value ("unavailable");
+    meta[jss::delivered_amount] = serializedTx->getFieldAmount (sfAmount).getJson (1);
 }
 
 void
@@ -488,6 +534,118 @@ injectSLE(Json::Value& jv, SLE const& sle)
     {
         jv[jss::Invalid] = true;
     }
+}
+
+Blob injectClientIPHelper (Context& context, std::string const& srcAccountString)
+{
+    Blob encryptedIP;
+
+    // only check it if KYC feature and KYCIPTracking feature are enabled
+    LedgerMaster& ledgerMaster = context.app.getLedgerMaster();
+    if (ledgerMaster.getValidatedRules().enabled (featureKYC)
+            && ledgerMaster.getValidatedRules().enabled (featureKYCIPTracking)
+            && ledgerMaster.getValidatedRules().enabled(featureConfigObject))
+    {
+        // only add if account is KYC-validated and config object has some pubkeys stored
+        std::shared_ptr<Ledger const> validatedLedger = ledgerMaster.getValidatedLedger();
+        if (validatedLedger)
+        {
+            LedgerConfig const& ledgerConfiguration = ledgerMaster.getValidatedLedger()->ledgerConfig();
+            auto pubKeyConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                                 ledgerConfiguration.entries.end(),
+                                                 [](ConfigObjectEntry const& obj)
+            {
+                    return obj.getType() == ConfigObjectEntry::Message_PubKey;
+        });
+            if (pubKeyConfigIter != ledgerConfiguration.entries.end())
+            {
+                std::shared_ptr<const casinocoin::SLE> sleSender =
+                        getAccountSLE(ledgerMaster, srcAccountString);
+                if (sleSender && (sleSender->isFlag(lsfKYCValidated)))
+                {
+                    auto const& definedMsgPubKeys = (*pubKeyConfigIter).getData();
+                    if (definedMsgPubKeys.size() > 0)
+                    {
+                        const Message_PubKeyDescriptor* pubKeyEntry = static_cast<const Message_PubKeyDescriptor*>(definedMsgPubKeys[0]);
+                        JLOG(context.j.debug()) << "pubkey used for ip encryption: " << pubKeyEntry->pubKey.data() << " read from config ledger object";
+
+                        std::string clientIP = context.clientAddress.address().to_string();
+                        Serializer s(clientIP.data(), clientIP.size());
+                        try
+                        {
+                            encryptedIP = encryptECIES(pubKeyEntry->pubKey, s.peekData());
+                        }
+                        catch (std::runtime_error const& error)
+                        {
+                            JLOG(context.j.info()) << "ip encryption thrown " << error.what();
+                            encryptedIP.clear();
+                        }
+                        return encryptedIP;
+                    }
+                    else
+                    {
+                        JLOG(context.j.info()) << "No PubKeys in entries found. Fall through without IP enrich";
+                    }
+                }
+            }
+            else
+            {
+                JLOG(context.j.info()) << "No PubKey entries found. Fall through without IP enrich";
+            }
+        }
+    }
+    return encryptedIP;
+}
+
+bool
+injectClientIP (Context& context)
+{
+    // jrojek TODO: temporary don't add client ip and remove it if it existed!!
+    if (context.params[jss::tx_json].isMember(jss::ClientIP))
+    {
+        context.params[jss::tx_json].removeMember(jss::ClientIP);
+        {
+            JLOG(context.j.debug()) << "removed pre-added ip";
+        }
+    }
+    return true;
+    // non executing code for now
+    if (context.params[jss::tx_json].isMember(jss::ClientIP))
+    {
+        JLOG(context.j.debug()) << "ip already there" << context.params[jss::tx_json][jss::ClientIP].asString();
+        return true;
+    }
+    Blob encryptedIP = injectClientIPHelper(context, context.params[jss::tx_json][jss::Account].asString());
+    if (encryptedIP.size() == 0)
+        return false;
+
+    context.params[jss::tx_json][jss::ClientIP] = strHex(encryptedIP.data(), encryptedIP.size());
+    return true;
+}
+
+bool injectClientIP (Context& context, STTx* stpTrans)
+{
+    // jrojek TODO: temporary don't add client ip and remove it if it existed!!
+    if (stpTrans->isFieldPresent(sfClientIP))
+    {
+        stpTrans->makeFieldAbsent(sfClientIP);
+        {
+            JLOG(context.j.debug()) << "removed pre-added ip";
+        }
+    }
+    return true;
+    // non executing code for now
+    if (stpTrans->isFieldPresent(sfClientIP))
+    {
+        JLOG(context.j.debug()) << "ip already there" << strHex(makeSlice(stpTrans->getFieldVL(sfClientIP)));
+        return true;
+    }
+    Blob encryptedIP = injectClientIPHelper(context, toBase58(stpTrans->getAccountID(sfAccount)));
+    if (encryptedIP.size() == 0)
+        return false;
+
+    stpTrans->setFieldVL(sfClientIP, encryptedIP);
+    return true;
 }
 
 boost::optional<Json::Value>

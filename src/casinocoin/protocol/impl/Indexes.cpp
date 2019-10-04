@@ -61,6 +61,13 @@ getLedgerFeeIndex ()
     return sha512Half(std::uint16_t(spaceFee));
 }
 
+// get the index of the node that holds ledger dependent configuration
+uint256
+getLedgerConfigurationIndex ()
+{
+    return sha512Half(std::uint16_t(spaceConfiguration));
+}
+
 // get the index of the node that holds CRN payout conclusion round schedule
 uint256
 getLedgerCRN_RoundIndex ()
@@ -241,6 +248,12 @@ Keylet fees_t::operator()() const
 {
     return { ltFEE_SETTINGS,
         getLedgerFeeIndex() };
+}
+
+Keylet configuration_t::operator()() const
+{
+    return { ltCONFIGURATION,
+        getLedgerConfigurationIndex() };
 }
 
 Keylet crnRound_t::operator()() const

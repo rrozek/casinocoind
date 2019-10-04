@@ -73,23 +73,26 @@ TxFormats::TxFormats ()
         << SOElement (sfDeliverMin,          SOE_OPTIONAL)
         ;
 
-    add ("EscrowCreate", ttESCROW_CREATE) <<
-        SOElement (sfDestination,       SOE_REQUIRED) <<
-        SOElement (sfAmount,            SOE_REQUIRED) <<
-        SOElement (sfCondition,         SOE_OPTIONAL) <<
-        SOElement (sfCancelAfter,       SOE_OPTIONAL) <<
-        SOElement (sfFinishAfter,       SOE_OPTIONAL) <<
-        SOElement (sfDestinationTag,    SOE_OPTIONAL);
+    add ("EscrowCreate", ttESCROW_CREATE)
+        << SOElement (sfDestination,       SOE_REQUIRED)
+        << SOElement (sfAmount,            SOE_REQUIRED)
+        << SOElement (sfCondition,         SOE_OPTIONAL)
+        << SOElement (sfCancelAfter,       SOE_OPTIONAL)
+        << SOElement (sfFinishAfter,       SOE_OPTIONAL)
+        << SOElement (sfDestinationTag,    SOE_OPTIONAL)
+        ;
 
-    add ("EscrowFinish", ttESCROW_FINISH) <<
-        SOElement (sfOwner,               SOE_REQUIRED) <<
-        SOElement (sfOfferSequence,       SOE_REQUIRED) <<
-        SOElement (sfFulfillment,         SOE_OPTIONAL) <<
-        SOElement (sfCondition,           SOE_OPTIONAL);
+    add ("EscrowFinish", ttESCROW_FINISH)
+        << SOElement (sfOwner,               SOE_REQUIRED)
+        << SOElement (sfOfferSequence,       SOE_REQUIRED)
+        << SOElement (sfFulfillment,         SOE_OPTIONAL)
+        << SOElement (sfCondition,           SOE_OPTIONAL)
+        ;
 
-    add ("EscrowCancel", ttESCROW_CANCEL) <<
-        SOElement (sfOwner,               SOE_REQUIRED) <<
-        SOElement (sfOfferSequence,       SOE_REQUIRED);
+    add ("EscrowCancel", ttESCROW_CANCEL)
+        << SOElement (sfOwner,               SOE_REQUIRED)
+        << SOElement (sfOfferSequence,       SOE_REQUIRED)
+        ;
 
     add ("EnableAmendment", ttAMENDMENT)
         << SOElement (sfLedgerSequence,      SOE_REQUIRED)
@@ -120,31 +123,41 @@ TxFormats::TxFormats ()
         << SOElement (sfSignerEntries,       SOE_OPTIONAL)
         ;
 
-    add ("PaymentChannelCreate", ttPAYCHAN_CREATE) <<
-            SOElement (sfDestination,       SOE_REQUIRED) <<
-            SOElement (sfAmount,            SOE_REQUIRED) <<
-            SOElement (sfSettleDelay,       SOE_REQUIRED) <<
-            SOElement (sfPublicKey,         SOE_REQUIRED) <<
-            SOElement (sfCancelAfter,       SOE_OPTIONAL) <<
-            SOElement (sfDestinationTag,    SOE_OPTIONAL);
+    add ("PaymentChannelCreate", ttPAYCHAN_CREATE)
+        << SOElement (sfDestination,       SOE_REQUIRED)
+        << SOElement (sfAmount,            SOE_REQUIRED)
+        << SOElement (sfSettleDelay,       SOE_REQUIRED)
+        << SOElement (sfPublicKey,         SOE_REQUIRED)
+        << SOElement (sfCancelAfter,       SOE_OPTIONAL)
+        << SOElement (sfDestinationTag,    SOE_OPTIONAL)
+        ;
 
-    add ("PaymentChannelFund", ttPAYCHAN_FUND) <<
-            SOElement (sfPayChannel,        SOE_REQUIRED) <<
-            SOElement (sfAmount,            SOE_REQUIRED) <<
-            SOElement (sfExpiration,        SOE_OPTIONAL);
+    add ("PaymentChannelFund", ttPAYCHAN_FUND)
+        << SOElement (sfPayChannel,        SOE_REQUIRED)
+        << SOElement (sfAmount,            SOE_REQUIRED)
+        << SOElement (sfExpiration,        SOE_OPTIONAL)
+        ;
 
-    add ("PaymentChannelClaim", ttPAYCHAN_CLAIM) <<
-            SOElement (sfPayChannel,        SOE_REQUIRED) <<
-            SOElement (sfAmount,            SOE_OPTIONAL) <<
-            SOElement (sfBalance,           SOE_OPTIONAL) <<
-            SOElement (sfSignature,         SOE_OPTIONAL) <<
-            SOElement (sfPublicKey,         SOE_OPTIONAL);
+    add ("PaymentChannelClaim", ttPAYCHAN_CLAIM)
+        << SOElement (sfPayChannel,        SOE_REQUIRED)
+        << SOElement (sfAmount,            SOE_OPTIONAL)
+        << SOElement (sfBalance,           SOE_OPTIONAL)
+        << SOElement (sfSignature,         SOE_OPTIONAL)
+        << SOElement (sfPublicKey,         SOE_OPTIONAL)
+        ;
 
     add ("KYCSet", ttKYC_SET)
         << SOElement (sfDestination,        SOE_REQUIRED)
         << SOElement (sfKYCVerifications,   SOE_OPTIONAL)
         << SOElement (sfSetFlag,            SOE_OPTIONAL)
         << SOElement (sfClearFlag,          SOE_OPTIONAL)
+        ;
+
+    add ("SetConfiguration", ttCONFIG)
+        << SOElement (sfLedgerSequence,      SOE_OPTIONAL)
+        << SOElement (sfConfigID,            SOE_REQUIRED)
+        << SOElement (sfConfigType,          SOE_REQUIRED)
+        << SOElement (sfConfigData,          SOE_REQUIRED)
         ;
 
     add ("CRNFeeDistribution", ttCRN_FEE_DISTRIB)

@@ -150,10 +150,9 @@ public:
             testSetValue ("4444", csc);
             testSetValue ("55555", csc);
             testSetValue ("666666", csc);
-
-            // 1 CSC up to 100 billion, in powers of 10 (in drops)
-            testSetValue ("1000000", csc);
-            testSetValue ("10000000", csc);
+            testSetValue ("7777777", csc);
+            testSetValue ("88888888", csc);
+            // 1 CSC up to 10 billion, in powers of 10 (in drops)
             testSetValue ("100000000", csc);
             testSetValue ("1000000000", csc);
             testSetValue ("10000000000", csc);
@@ -164,11 +163,13 @@ public:
             testSetValue ("1000000000000000", csc);
             testSetValue ("10000000000000000", csc);
             testSetValue ("100000000000000000", csc);
+            testSetValue ("1000000000000000000", csc);
+            testSetValue ("4000000000000000000", csc);
 
             // Invalid native values:
             testSetValue ("1.1", csc, false);
-            testSetValue ("100000000000000001", csc, false);
-            testSetValue ("1000000000000000000", csc, false);
+            testSetValue ("4000000000000000001", csc, false);
+            testSetValue ("40000000000000000000", csc, false);
         }
 
         {
@@ -620,6 +621,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(STAmount,ripple_data,ripple);
+BEAST_DEFINE_TESTSUITE(STAmount,casinocoin_data,casinocoin);
 
 } // casinocoin

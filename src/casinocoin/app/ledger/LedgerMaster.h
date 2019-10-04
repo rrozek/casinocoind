@@ -133,6 +133,8 @@ public:
 
     std::string getCompleteLedgers ();
 
+    void addLostLedgerToRangeSet (std::uint32_t seq);
+
     /** Apply held transactions to the open ledger
         This is normally called as we close the ledger.
         The open ledger remains open to handle new transactions

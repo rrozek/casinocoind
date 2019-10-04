@@ -56,7 +56,7 @@ struct mulDiv_test : beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(mulDiv, ripple_basics, ripple);
+BEAST_DEFINE_TESTSUITE(mulDiv, casinocoin_basics, casinocoin);
 
 }  // namespace test
 }  // namespace casinocoin

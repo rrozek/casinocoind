@@ -69,6 +69,11 @@ protected:
     std::uint8_t buf_[33]; // should be large enough
 
 public:
+    static std::size_t defaultSize()
+    {
+        return 33;
+    }
+
     PublicKey() = default;
     PublicKey (PublicKey const& other);
     PublicKey& operator= (PublicKey const& other);

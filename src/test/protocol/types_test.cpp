@@ -29,7 +29,7 @@ struct types_test : public beast::unit_test::suite
     testAccountID()
     {
         auto const s =
-            "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh";
+            "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh";
         if (BEAST_EXPECT(parseBase58<AccountID>(s)))
             BEAST_EXPECT(toBase58(
                 *parseBase58<AccountID>(s)) == s);
@@ -42,6 +42,6 @@ struct types_test : public beast::unit_test::suite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(types,protocol,ripple);
+BEAST_DEFINE_TESTSUITE(types,protocol,casinocoin);
 
 }

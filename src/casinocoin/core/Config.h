@@ -32,8 +32,9 @@
 #include <casinocoin/basics/base_uint.h>
 #include <casinocoin/protocol/SystemParameters.h> // VFALCO Breaks levelization
 #include <casinocoin/beast/net/IPEndpoint.h>
-#include <beast/core/detail/ci_char_traits.hpp>
+#include <casinocoin/json/json_value.h>
 #include <casinocoin/beast/utility/Journal.h>
+#include <beast/core/detail/ci_char_traits.hpp>
 #include <boost/asio/ip/tcp.hpp> // VFALCO FIX: This include should not be here
 #include <boost/filesystem.hpp> // VFALCO FIX: This include should not be here
 #include <boost/lexical_cast.hpp>
@@ -89,6 +90,7 @@ public:
     static char const* const databaseDirName;
     static char const* const validatorsFileName;
     static char const* const votingFileName;
+    static char const* const votableConfigFileName;
     static char const* const crnFileName;
 
     /** Returns the full path and filename of the debug log file. */
@@ -96,6 +98,9 @@ public:
 
     /** Returns the full path and filename of the entropy seed file. */
     boost::filesystem::path getEntropyFile () const;
+
+    /** Returns the string for a given network id **/
+    std::string getPeerNetworkString(uint32_t network);
 
 private:
     boost::filesystem::path CONFIG_FILE;
@@ -146,7 +151,7 @@ public:
     std::string                 START_LEDGER;
 
     // Network parameters
-    int const                   TRANSACTION_FEE_BASE = 1000000;   // The number of fee units a reference transaction costs
+    int const                   TRANSACTION_FEE_BASE = 1000;   // The number of fee units a reference transaction costs
 
     // Note: The following parameters do not relate to the UNL or trust at all
     std::size_t                 NETWORK_QUORUM = 0;         // Minimum number of nodes to consider the network present
@@ -183,11 +188,17 @@ public:
     // Thread pool configuration
     std::size_t                 WORKERS = 0;
 
+    // Network the server connects to. production = 0, test = 1, development = 2
+    // default is production if not specified in the config
+    std::uint32_t               PEER_NETWORK = 0;
+    bool                        PEER_NETWORK_SET = false;
+
     // CRN Defaults
     std::uint64_t const         CRN_RESERVE = 100000000000000;    // 1,000,000 CSC
     std::uint32_t const         CRN_MAX_LATENCY = 500;      // maximum allowed latency for a CRN
     std::uint32_t const         CRN_MAX_CRAWL_DEPTH = 5;
     double const                CRN_MIN_FULL_STATE_RATIO = 0.8;
+    
     // These override the command line client settings
     boost::optional<boost::asio::ip::address_v4> rpc_ip;
     boost::optional<std::uint16_t> rpc_port;
@@ -208,6 +219,7 @@ public:
         bool bSilent, bool bStandalone);
 
     bool reloadFeeVoteParams();
+    Json::Value reloadConfigurationVoteParams();
     /**
      *  Load the config from the contents of the string.
      *

@@ -352,15 +352,15 @@ EscrowFinish::preflight (PreflightContext const& ctx)
 std::uint64_t
 EscrowFinish::calculateBaseFee (PreclaimContext const& ctx)
 {
-    std::uint64_t extraFee = 0;
+    std::uint64_t extraFeeFactor = 0;
 
     if (auto const fb = ctx.tx[~sfFulfillment])
     {
-        extraFee += ctx.view.fees().units *
+        extraFeeFactor += ctx.view.fees().units *
             (32 + static_cast<std::uint64_t> (fb->size() / 16));
     }
 
-    return Transactor::calculateBaseFee (ctx) + extraFee;
+    return Transactor::calculateBaseFee (ctx) + extraFeeFactor;
 }
 
 TER

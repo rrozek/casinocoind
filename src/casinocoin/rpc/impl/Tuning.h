@@ -56,7 +56,8 @@ static LimitRange const bookOffers = {0, 300, 400};
 /** Limits for the no_casinocoin_check command. */
 static LimitRange const noCasinocoinCheck = {10, 300, 400};
 
-static int const defaultAutoFillFeeMultiplier = 10;
+// jrojek 18.06.2019 Token extraFeeFactor can increase necessary fee significantly
+static int const defaultAutoFillFeeMultiplier = 1000;
 static int const defaultAutoFillFeeDivisor = 1;
 static int const maxPathfindsInProgress = 2;
 static int const maxPathfindJobCount = 50;

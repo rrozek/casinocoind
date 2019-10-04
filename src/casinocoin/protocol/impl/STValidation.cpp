@@ -169,6 +169,7 @@ SOTemplate const& STValidation::getFormat ()
             format.push_back (SOElement (sfSignature,           SOE_OPTIONAL));
             format.push_back (SOElement (sfCRNs,                SOE_OPTIONAL));
             format.push_back (SOElement (sfCRN_FeeDistributed,  SOE_OPTIONAL));
+            format.push_back (SOElement (sfConfigHashes,        SOE_OPTIONAL));
         }
     };
 

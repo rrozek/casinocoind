@@ -823,7 +823,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(ValidatorList, app, ripple);
+BEAST_DEFINE_TESTSUITE(ValidatorList, app, casinocoin);
 
 } // test
 } // casinocoin

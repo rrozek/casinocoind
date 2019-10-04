@@ -200,6 +200,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(JsonWriter, ripple_basics, ripple);
+BEAST_DEFINE_TESTSUITE(JsonWriter, casinocoin_basics, casinocoin);
 
 } // Json

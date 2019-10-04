@@ -127,7 +127,21 @@ public:
 
     static
     TER
+    checkFeeToken (PreclaimContext const& ctx,
+                   TokenDescriptor const& theToken);
+
+    static
+    TER
     checkSign (PreclaimContext const& ctx);
+
+    static
+    TER
+    checkWLT (PreclaimContext const& ctx,
+              boost::optional<TokenDescriptor>& theToken);
+
+    static
+    TER
+    checkBlacklist (PreclaimContext const& ctx);
 
     // Returns the fee in fee units, not scaled for load.
     static
@@ -158,7 +172,6 @@ public:
         // after checkSeq/Fee/Sign.
         return tesSUCCESS;
     }
-    /////////////////////////////////////////////////////
 
 protected:
     TER

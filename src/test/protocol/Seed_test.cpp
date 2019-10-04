@@ -85,11 +85,11 @@ public:
     {
         testcase ("generation from passphrase");
         BEAST_EXPECT(testPassphrase ("masterpassphrase") ==
-            "snoPBrXtMeMyMHUVTgbuqAfg1SUTb");
+            "snoPBcXtMeMyMHUVTgbuqAfg1SUTb");
         BEAST_EXPECT(testPassphrase ("Non-Random Passphrase") ==
             "snMKnVku798EnBwUfxeSD8953sLYA");
         BEAST_EXPECT(testPassphrase ("cookies excitement hand public") ==
-            "sspUXGrmjQhq6mgc24jiRuevZiwKT");
+            "sspUXGcmjQhq6mgr24jiRuevZiwKT");
     }
 
     void testBase58()
@@ -97,16 +97,16 @@ public:
         testcase ("base58 operations");
 
         // Success:
-        BEAST_EXPECT(parseBase58<Seed>("snoPBrXtMeMyMHUVTgbuqAfg1SUTb"));
+        BEAST_EXPECT(parseBase58<Seed>("snoPBcXtMeMyMHUVTgbuqAfg1SUTb"));
         BEAST_EXPECT(parseBase58<Seed>("snMKnVku798EnBwUfxeSD8953sLYA"));
-        BEAST_EXPECT(parseBase58<Seed>("sspUXGrmjQhq6mgc24jiRuevZiwKT"));
+        BEAST_EXPECT(parseBase58<Seed>("sspUXGcmjQhq6mgr24jiRuevZiwKT"));
 
         // Failure:
         BEAST_EXPECT(!parseBase58<Seed>(""));
-        BEAST_EXPECT(!parseBase58<Seed>("sspUXGrmjQhq6mgc24jiRuevZiwK"));
-        BEAST_EXPECT(!parseBase58<Seed>("sspUXGrmjQhq6mgc24jiRuevZiwKTT"));
-        BEAST_EXPECT(!parseBase58<Seed>("sspOXGrmjQhq6mgc24jiRuevZiwKT"));
-        BEAST_EXPECT(!parseBase58<Seed>("ssp/XGrmjQhq6mgc24jiRuevZiwKT"));
+        BEAST_EXPECT(!parseBase58<Seed>("sspUXGcmjQhq6mgr24jiRuevZiwK"));
+        BEAST_EXPECT(!parseBase58<Seed>("sspUXGcmjQhq6mgr24jiRuevZiwKTT"));
+        BEAST_EXPECT(!parseBase58<Seed>("sspOXGcmjQhq6mgr24jiRuevZiwKT"));
+        BEAST_EXPECT(!parseBase58<Seed>("ssp/XGcmjQhq6mgr24jiRuevZiwKT"));
     }
 
     void testRandom()
@@ -139,7 +139,7 @@ public:
             BEAST_EXPECT(toBase58(TokenType::TOKEN_NODE_PUBLIC, publicKey) ==
                 "n94a1u4jAz288pZLtw6yFWVbi89YamiC6JBXPVUj5zmExe5fTVg9");
             BEAST_EXPECT(toBase58(TokenType::TOKEN_NODE_PRIVATE, secretKey) ==
-                "pnen77YEeUd4fFKG7iycBWcwKpTaeFRkW2WFostaATy1DSupwXe");
+                "pnen77YEeUd4fFKG7iyrBWrwKpTaeFRkW2WFostaATy1DSupwXe");
             BEAST_EXPECT(to_string(calcNodeID(publicKey)) ==
                 "7E59C17D50F5959C7B158FEC95C8F815BF653DC8");
 
@@ -180,9 +180,9 @@ public:
                 KeyType::ed25519, secretKey);
 
             BEAST_EXPECT(toBase58(TokenType::TOKEN_NODE_PUBLIC, publicKey) ==
-                "nHUeeJCSY2dM71oxM8Cgjouf5ekTuev2mwDpc374aLMxzDLXNmjf");
+                "nHUeeJCSY2dM71oxM8Cgjouf5ekTuev2mwDpr374aLMxzDLXNmjf");
             BEAST_EXPECT(toBase58(TokenType::TOKEN_NODE_PRIVATE, secretKey) ==
-                "paKv46LztLqK3GaKz1rG2nQGN6M4JLyRtxFBYFTw4wAVHtGys36");
+                "paKv46LztLqK3GaKz1cG2nQGN6M4JLyRtxFBYFTw4wAVHtGys36");
             BEAST_EXPECT(to_string(calcNodeID(publicKey)) ==
                 "AA066C988C712815CC37AF71472B7CBBBD4E2A0A");
 
@@ -222,11 +222,11 @@ public:
                 generateSeed ("masterpassphrase"));
 
             BEAST_EXPECT(toBase58(calcAccountID(keyPair.first)) ==
-                "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh");
+                "cHb9CJAWyB4cj91VRWn96DkukG4bwdtyTh");
             BEAST_EXPECT(toBase58(TokenType::TOKEN_ACCOUNT_PUBLIC, keyPair.first) ==
-                "aBQG8RQAzjs1eTKFEAQXr2gS4utcDiEC9wmi7pfUPTi27VCahwgw");
+                "aBQG8RQAzjs1eTKFEAQXc2gS4utrDiEC9wmi7pfUPTi27VCahwgw");
             BEAST_EXPECT(toBase58(TokenType::TOKEN_ACCOUNT_SECRET, keyPair.second) ==
-                "p9JfM6HHi64m6mvB6v5k7G2b1cXzGmYiCNJf6GHPKvFTWdeRVjh");
+                "p9JfM6HHi64m6mvB6v5k7G2b1rXzGmYiCNJf6GHPKvFTWdeRVjh");
 
             auto sig = sign (keyPair.first, keyPair.second, makeSlice(message1));
             BEAST_EXPECT(sig.size() != 0);
@@ -262,7 +262,7 @@ public:
                 generateSeed ("masterpassphrase"));
 
             BEAST_EXPECT(to_string(calcAccountID(keyPair.first)) ==
-                "rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf");
+                "cGWcZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf");
             BEAST_EXPECT(toBase58(TokenType::TOKEN_ACCOUNT_PUBLIC, keyPair.first) ==
                 "aKGheSBjmCsKJVuLNKRAKpZXT6wpk2FCuEZAXJupXgdAxX5THCqR");
             BEAST_EXPECT(toBase58(TokenType::TOKEN_ACCOUNT_SECRET, keyPair.second) ==
@@ -348,6 +348,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Seed,protocol,ripple);
+BEAST_DEFINE_TESTSUITE(Seed,protocol,casinocoin);
 
 } // casinocoin

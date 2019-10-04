@@ -59,6 +59,6 @@ struct Output_test : casinocoin::test::TestOutputSuite
     }
 };
 
-BEAST_DEFINE_TESTSUITE(Output, ripple_basics, ripple);
+BEAST_DEFINE_TESTSUITE(Output, casinocoin_basics, casinocoin);
 
 } // Json

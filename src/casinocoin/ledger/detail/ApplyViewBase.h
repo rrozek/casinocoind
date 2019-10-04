@@ -65,6 +65,9 @@ public:
     Rules const&
     rules() const override;
 
+    LedgerConfig const&
+    ledgerConfig() const override;
+
     bool
     exists (Keylet const& k) const override;
 

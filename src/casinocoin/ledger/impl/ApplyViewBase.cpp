@@ -64,6 +64,11 @@ ApplyViewBase::rules() const
     return base_->rules();
 }
 
+const LedgerConfig &ApplyViewBase::ledgerConfig() const
+{
+    return base_->ledgerConfig();
+}
+
 bool
 ApplyViewBase::exists (Keylet const& k) const
 {

@@ -33,57 +33,57 @@ R"json(
 {
   "Balance": {
     "currency": "USD",
-    "issuer": "rrrrrrrrrrrrrrrrrrrrBZbvji",
+    "issuer": "ccccccccccccccccccccBZbvji",
     "value": "-1000"
   },
   "Flags": 131072,
   "HighLimit": {
     "currency": "USD",
-    "issuer": "rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK",
+    "issuer": "cPMh7Pi9rt699iZUTWaytJUoHrJ7rgyziK",
     "value": "1000"
   },
   "HighNode": "0000000000000000",
   "LedgerEntryType": "CasinocoinState",
   "LowLimit": {
     "currency": "USD",
-    "issuer": "r32rQHyesiTtdWFU7UJVtff4nCR5SHCbJW",
+    "issuer": "c32cQHyesiTtdWFU7UJVtff4nCR5SHCbJW",
     "value": "0"
   },
   "LowNode": "0000000000000000",
   "index":
-    "D89BC239086183EB9458C396E643795C1134963E6550E682A190A5F021766D43"
+    "7F4D3E5278B904307FB44E8885DC1F17B1126B40E74BFBCDC8843035C91B7020"
 })json"
 ,
 R"json(
 {
   "Balance": {
     "currency": "USD",
-    "issuer": "rrrrrrrrrrrrrrrrrrrrBZbvji",
+    "issuer": "ccccccccccccccccccccBZbvji",
     "value": "-1000"
   },
   "Flags": 131072,
   "HighLimit": {
     "currency": "USD",
-    "issuer": "rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK",
+    "issuer": "cPMh7Pi9rt699iZUTWaytJUoHrJ7rgyziK",
     "value": "1000"
   },
   "HighNode": "0000000000000000",
   "LedgerEntryType": "CasinocoinState",
   "LowLimit": {
     "currency": "USD",
-    "issuer": "r9cZvwKU3zzuZK9JFovGg1JC5n7QiqNL8L",
+    "issuer": "c9rZvwKU3zzuZK9JFovGg1JC5n7QiqNL8L",
     "value": "0"
   },
   "LowNode": "0000000000000000",
   "index":
-    "D13183BCFFC9AAC9F96AEBB5F66E4A652AD1F5D10273AEB615478302BEBFD4A4"
+    "FADB0B4E62DE1EFBE033D2953171F881774FBD2D594D71FD7CE41A206F076814"
 })json"
 ,
 R"json(
 {
-  "Account": "rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK",
+  "Account": "cPMh7Pi9rt699iZUTWaytJUoHrJ7rgyziK",
   "BookDirectory":
-  "50AD0A9E54D2B381288D535EB724E4275FFBF41580D28A925D038D7EA4C68000",
+  "50AD0A9E54D2B381288D535EB724E4275FFBF41580D28A925F038D7EA4C68000",
   "BookNode": "0000000000000000",
   "Flags": 65536,
   "LedgerEntryType": "Offer",
@@ -91,19 +91,19 @@ R"json(
   "Sequence": 4,
   "TakerGets": {
     "currency": "USD",
-    "issuer": "rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK",
+    "issuer": "cPMh7Pi9rt699iZUTWaytJUoHrJ7rgyziK",
     "value": "1"
   },
-  "TakerPays": "100000000",
+  "TakerPays": "10000000000",
   "index":
     "A984D036A0E562433A8377CA57D1A1E056E58C0D04818F8DFD3A1AA3F217DD82"
 })json"
 ,
 R"json(
 {
-  "Account": "rPMh7Pi9ct699iZUTWaytJUoHcJ7cgyziK",
+  "Account": "cPMh7Pi9rt699iZUTWaytJUoHrJ7rgyziK",
   "BookDirectory":
-  "B025997A323F5C3E03DDF1334471F5984ABDE31C59D463525D038D7EA4C68000",
+  "B025997A323F5C3E03DDF1334471F5984ABDE31C59D463525F038D7EA4C68000",
   "BookNode": "0000000000000000",
   "Flags": 65536,
   "LedgerEntryType": "Offer",
@@ -111,10 +111,10 @@ R"json(
   "Sequence": 5,
   "TakerGets": {
     "currency": "USD",
-    "issuer" : "r32rQHyesiTtdWFU7UJVtff4nCR5SHCbJW",
+    "issuer" : "c32cQHyesiTtdWFU7UJVtff4nCR5SHCbJW",
     "value" : "1"
   },
-  "TakerPays" : "100000000",
+  "TakerPays" : "10000000000",
   "index" :
     "CAFE32332D752387B01083B60CC63069BA4A969C9730836929F841450F6A718E"
 }
@@ -140,7 +140,7 @@ public:
         // test error on  malformed account string.
         {
             Json::Value params;
-            params[jss::account] = "n94JNrQYkDrpt62bbSR7nVEhdyAvcJXRAsjEkFYyqRkh9SUTYEqV";
+            params[jss::account] = "n94JNcQYkDcpt62bbSR7nVEhdyAvrJXRAsjEkFYyqRkh9SUTYEqV";
             auto resp = env.rpc("json", "account_objects", to_string(params));
             BEAST_EXPECT( resp[jss::result][jss::error_message] == "Disallowed seed.");
         }
@@ -280,6 +280,11 @@ public:
                 aobj.removeMember("PreviousTxnID");
                 aobj.removeMember("PreviousTxnLgrSeq");
 
+                if (aobj != bobj[i])
+                {
+                    log << __LINE__ << " aObj: " << aobj << std::endl;
+                    log << __LINE__ << " bObj[" << i << "]: " << bobj[i] << std::endl;
+                }
                 BEAST_EXPECT( aobj == bobj[i]);
             }
         }
@@ -298,6 +303,11 @@ public:
                 aobj.removeMember("PreviousTxnID");
                 aobj.removeMember("PreviousTxnLgrSeq");
 
+                if (aobj != bobj[i])
+                {
+                    log << __LINE__ << " aObj: " << aobj << std::endl;
+                    log << __LINE__ << " bObj[" << i << "]: " << bobj[i] << std::endl;
+                }
                 BEAST_EXPECT( aobj == bobj[i]);
             }
         }
@@ -316,6 +326,12 @@ public:
 
                 aobj.removeMember("PreviousTxnID");
                 aobj.removeMember("PreviousTxnLgrSeq");
+
+                if (aobj != bobj[i])
+                {
+                    log << __LINE__ << " aObj: " << aobj << std::endl;
+                    log << __LINE__ << " bObj[" << i << "]: " << bobj[i] << std::endl;
+                }
                 BEAST_EXPECT( aobj == bobj[i]);
 
                 auto resume_marker = resp[jss::result][jss::marker];
@@ -331,7 +347,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(AccountObjects,app,ripple);
+BEAST_DEFINE_TESTSUITE(AccountObjects,app,casinocoin);
 
 }
 }

@@ -31,12 +31,14 @@
 #include <casinocoin/app/tx/impl/SignerEntries.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
+#include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/core/Config.h>
 #include <casinocoin/json/to_string.h>
 #include <casinocoin/ledger/View.h>
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/Indexes.h>
 #include <casinocoin/protocol/types.h>
+#include <casinocoin/app/misc/Blacklist.h>
 
 namespace casinocoin {
 
@@ -214,6 +216,66 @@ Transactor::checkFee (PreclaimContext const& ctx, std::uint64_t baseFee)
     return tesSUCCESS;
 }
 
+TER Transactor::checkFeeToken(PreclaimContext const& ctx,
+                              TokenDescriptor const& theToken)
+{
+    if (!ctx.view.rules().enabled(featureWLT))
+    {
+        return tesSUCCESS;
+    }
+
+    auto const feePaid = calculateFeePaid(ctx.tx);
+    if (!isLegalAmount (feePaid) || feePaid < beast::zero)
+        return temBAD_FEE;
+
+    auto const feeRequired = mulDiv(ctx.app.config().TRANSACTION_FEE_BASE,
+                               ctx.view.fees().base, ctx.view.fees().units);
+    if (!feeRequired.first)
+    {
+        JLOG(ctx.j.debug()) << "Overflow in default fee calculation";
+        return temBAD_FEE;
+    }
+
+    auto const feeToken = mulDiv (feeRequired.second, theToken.extraFeeFactor, 100/*percent*/);
+    if (!feeToken.first)
+        Throw<std::overflow_error>("Overflow in token fee calculation");
+    CSCAmount requiredTokenFee(feeRequired.second + feeToken.second);
+
+
+    // Only check fee is sufficient when the ledger is open.
+    if (ctx.view.open() && feePaid < requiredTokenFee)
+    {
+        JLOG(ctx.j.debug()) << "Insufficient fee paid: " <<
+            to_string(feePaid) << "/" << to_string(requiredTokenFee);
+        return telINSUF_FEE_P;
+    }
+
+    if (feePaid == zero)
+        return tesSUCCESS;
+
+    auto const id = ctx.tx.getAccountID(sfAccount);
+    auto const sle = ctx.view.read(
+        keylet::account(id));
+    auto const balance = (*sle)[sfBalance].csc();
+
+    if (balance < feePaid)
+    {
+        JLOG(ctx.j.trace()) << "Insufficient balance:" <<
+            " balance=" << to_string(balance) <<
+            " paid=" << to_string(feePaid);
+
+        if ((balance > zero) && !ctx.view.open())
+        {
+            // Closed ledger, non-zero balance, less than fee
+            return tecINSUFF_FEE;
+        }
+
+        return terINSUF_FEE_B;
+    }
+
+    return tesSUCCESS;
+}
+
 TER Transactor::payFee ()
 {
     auto const feePaid = calculateFeePaid(ctx_.tx);
@@ -345,6 +407,45 @@ Transactor::checkSign (PreclaimContext const& ctx)
     }
 
     return checkSingleSign (ctx);
+}
+
+TER
+Transactor::checkWLT (PreclaimContext const& ctx, boost::optional<TokenDescriptor>& theToken)
+{
+    // Narrow allowed tokens only if WLT amendment is enabled
+    if (!ctx.view.rules().enabled(featureWLT))
+    {
+        return tesSUCCESS;
+    }
+
+    if (ctx.tx.isNative())
+    {
+        return tesSUCCESS;
+    }
+
+    if (ctx.tx.getTxnType() == ttCONFIG)
+    {
+        JLOG(ctx.j.info()) << "checkWLT() SetConfiguration tx can operate on non-WLT for obvious reason.";
+        return tesSUCCESS;
+    }
+
+    LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+    auto tokenConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                        ledgerConfiguration.entries.end(),
+                                        [](ConfigObjectEntry const& obj)
+    {
+            return obj.getType() == ConfigObjectEntry::Token;
+    });
+
+    if (tokenConfigIter == ledgerConfiguration.entries.end())
+    {
+        JLOG(ctx.j.info()) << "No WLT entries found. tx forbidden.";
+        return tefNOT_WLT;
+    }
+
+    auto result = ctx.tx.isAllowedWLT(*tokenConfigIter);
+    theToken = result.second;
+    return result.first;
 }
 
 TER
@@ -554,6 +655,75 @@ TER Transactor::checkMultiSign (PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
+TER Transactor::checkBlacklist (PreclaimContext const& ctx)
+{
+    auto const accountid = ctx.tx.getAccountID(sfAccount);
+    if (accountid == zero)
+        return temBAD_SRC_ACCOUNT;
+
+    if (ctx.app.blacklistedAccounts().listed(toBase58(accountid)))
+    {
+        // account is blacklisted, get full blacklisted account info
+        JLOG(ctx.j.debug()) <<  "Account " << toBase58(accountid) << " is blacklisted!";
+        BlacklistItem listedAccount = ctx.app.blacklistedAccounts().getAccount(toBase58(accountid));
+        auto unHexedPubKey = strUnHex(listedAccount.publicKeySigner);
+        if (!unHexedPubKey.second)
+            return temMALFORMED;
+        PublicKey signerPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
+
+        std::string accountIDSigner = toBase58(calcAccountID(signerPublicKey));
+        JLOG(ctx.j.debug()) <<  "Account Blacklist Signer: " << accountIDSigner;
+
+        // get allowed signers from Config
+        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+        auto blacklistConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                                ledgerConfiguration.entries.end(),
+                                                [](ConfigObjectEntry const& obj)
+            {
+                return obj.getType() == ConfigObjectEntry::Blacklist_Signer;
+            });
+        if (blacklistConfigIter == ledgerConfiguration.entries.end())
+        {
+            JLOG(ctx.j.info()) << "Account " << toBase58(accountid) << " is blacklisted but no autorised blacklist signer entries found in ConfigObject." << 
+                                  "TX is forbidden to prevent miss configuration.";
+            return tefBLACKLISTED;
+        }
+
+        // loop over defined allowed signers and check if blacklisted account is signed by an allowed signer
+        auto const& definedBlacklistSigners = (*blacklistConfigIter).getData();
+        bool signerValid = false;
+        for (auto signer : definedBlacklistSigners)
+        {
+            const Blacklist_SignerDescriptor* blacklistEntry = static_cast<const Blacklist_SignerDescriptor*>(signer);
+            JLOG(ctx.j.debug()) <<  "Defined Blacklist Signer: " << toBase58(blacklistEntry->blacklistSigner);
+            // check if allowed signer is the same as blacklisted signer account
+            if(toBase58(blacklistEntry->blacklistSigner).compare(accountIDSigner) == 0)
+            {
+                signerValid = true;
+                break;
+            }
+
+        }
+
+        if(signerValid)
+        {
+            JLOG(ctx.j.info()) <<  "!!! Transaction not allowed !!! Account " << toBase58(accountid) << " is blacklisted!";
+            return tefBLACKLISTED;
+        }
+        else
+        {
+            JLOG(ctx.j.info()) <<  "Account " << toBase58(accountid) << " is blacklisted but Signer is not on the defined signers list!";
+            return tesSUCCESS;
+        }
+        
+    }
+    else
+    {
+        // account is not blacklisted
+        return tesSUCCESS;
+    }
+}
+
 //------------------------------------------------------------------------------
 
 static
@@ -612,7 +782,7 @@ Transactor::operator()()
 
     JLOG(j_.debug()) << "Transactor for id: " << txID;
 
-#ifdef BEAST_DEBUG
+//#ifdef BEAST_DEBUG
     {
         Serializer ser;
         ctx_.tx.add (ser);
@@ -628,7 +798,7 @@ Transactor::operator()()
             assert (false);
         }
     }
-#endif
+//#endif
 
     auto terResult = ctx_.preclaimResult;
     if (terResult == tesSUCCESS)

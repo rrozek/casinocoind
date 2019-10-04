@@ -510,7 +510,7 @@ STAmount::getText () const
     if (mIsNegative)
         ret.append (1, '-');
 
-    bool const scientific ((mOffset != 0) && ((mOffset < -25) || (mOffset > -5)));
+    bool const scientific ((mOffset != 0) && (mOffset < -25));
 
     if (mIsNative || scientific)
     {

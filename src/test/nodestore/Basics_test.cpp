@@ -87,7 +87,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(NodeStoreBasic,ripple_core,ripple);
+BEAST_DEFINE_TESTSUITE(NodeStoreBasic,casinocoin_core,casinocoin);
 
 }
 }
