@@ -198,6 +198,12 @@ ApplyViewBase::rawDestroyCSC(
     items_.destroyCSC(fee);
 }
 
+void
+ApplyViewBase::rawRedistributeCSC(const CSCAmount &dropsRedistributed)
+{
+    items_.redistributeCSC(dropsRedistributed);
+}
+
 //---
 
 CashDiff cashFlowDiff (

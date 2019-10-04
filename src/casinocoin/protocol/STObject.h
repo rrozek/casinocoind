@@ -282,8 +282,9 @@ public:
 
     static char const* getCountedObjectName () { return "STObject"; }
 
-    STObject(STObject&&);
-    STObject(STObject const&) = default;
+    STObject () = default;
+    STObject (STObject&&);
+    STObject (STObject const&) = default;
     STObject (const SOTemplate & type, SField const& name);
     STObject (const SOTemplate & type, SerialIter & sit, SField const& name);
     STObject (SerialIter& sit, SField const& name);
@@ -444,6 +445,7 @@ public:
     STPathSet const& getFieldPathSet (SField const& field) const;
     const STVector256& getFieldV256 (SField const& field) const;
     const STVector128& getFieldV128 (SField const& field) const;
+    const STObject& getFieldObject (SField const& field) const;
     const STArray& getFieldArray (SField const& field) const;
 
     /** Return the value of a field.

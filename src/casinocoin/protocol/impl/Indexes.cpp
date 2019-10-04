@@ -61,6 +61,13 @@ getLedgerFeeIndex ()
     return sha512Half(std::uint16_t(spaceFee));
 }
 
+// get the index of the node that holds CRN payout conclusion round schedule
+uint256
+getLedgerCRN_RoundIndex ()
+{
+    return sha512Half(std::uint16_t(spaceCRN));
+}
+
 uint256
 getAccountRootIndex (AccountID const& account)
 {
@@ -234,6 +241,12 @@ Keylet fees_t::operator()() const
 {
     return { ltFEE_SETTINGS,
         getLedgerFeeIndex() };
+}
+
+Keylet crnRound_t::operator()() const
+{
+    return { ltCRN_ROUND,
+        getLedgerCRN_RoundIndex() };
 }
 
 Keylet book_t::operator()(Book const& b) const

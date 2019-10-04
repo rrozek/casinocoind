@@ -89,6 +89,7 @@ public:
     static char const* const databaseDirName;
     static char const* const validatorsFileName;
     static char const* const votingFileName;
+    static char const* const crnFileName;
 
     /** Returns the full path and filename of the debug log file. */
     boost::filesystem::path getDebugLogFile () const;
@@ -182,6 +183,11 @@ public:
     // Thread pool configuration
     std::size_t                 WORKERS = 0;
 
+    // CRN Defaults
+    std::uint64_t const         CRN_RESERVE = 100000000000000;    // 1,000,000 CSC
+    std::uint32_t const         CRN_MAX_LATENCY = 500;      // maximum allowed latency for a CRN
+    std::uint32_t const         CRN_MAX_CRAWL_DEPTH = 5;
+    double const                CRN_MIN_FULL_STATE_RATIO = 0.8;
     // These override the command line client settings
     boost::optional<boost::asio::ip::address_v4> rpc_ip;
     boost::optional<std::uint16_t> rpc_port;

@@ -58,6 +58,7 @@ private:
 
     items_t items_;
     CSCAmount dropsDestroyed_ = 0;
+    CSCAmount dropsRedistributed_ = 0;
 
 public:
     ApplyStateTable() = default;
@@ -127,10 +128,18 @@ public:
     void
     destroyCSC (CSCAmount const& fee);
 
+    void
+    redistributeCSC (CSCAmount const& dropsRedistributed);
+
     // For debugging
     CSCAmount const& dropsDestroyed () const
     {
         return dropsDestroyed_;
+    }
+
+    CSCAmount const& dropsRedistributed () const
+    {
+        return dropsRedistributed_;
     }
 
 private:

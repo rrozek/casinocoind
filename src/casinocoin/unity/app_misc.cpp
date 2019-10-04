@@ -20,6 +20,8 @@
 //==============================================================================
 /*
     2017-06-30  ajochems        Refactored for casinocoin
+    2018-05-17  ajochems        Added CRNList
+    2018-06-26  ajochems        Added CRNListUpdater
 */
 //==============================================================================
 
@@ -40,3 +42,9 @@
 #include <casinocoin/app/misc/impl/TxQ.cpp>
 #include <casinocoin/app/misc/impl/ValidatorList.cpp>
 #include <casinocoin/app/misc/impl/ValidatorSite.cpp>
+#include <casinocoin/app/misc/impl/CRNList.cpp>
+#include <casinocoin/app/misc/impl/CRNPerformance.cpp>
+#include <casinocoin/app/misc/impl/CRN.cpp>
+#include <casinocoin/app/misc/impl/CRNReports.cpp>
+#include <casinocoin/app/misc/impl/CRNRound.cpp>
+#include <casinocoin/app/misc/impl/CRNListUpdater.cpp>

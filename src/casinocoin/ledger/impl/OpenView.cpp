@@ -268,6 +268,12 @@ OpenView::rawDestroyCSC(
     //        What about child views?
 }
 
+void OpenView::rawRedistributeCSC(const CSCAmount &dropsRedistributed)
+{
+    items_.redistributeCSC(dropsRedistributed);
+    // jrojek. possibly above comment from VFALCO applies also here
+}
+
 //---
 
 void

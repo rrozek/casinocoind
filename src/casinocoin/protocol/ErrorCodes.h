@@ -77,6 +77,7 @@ enum error_code_i
     rpcSRC_UNCLAIMED,
     rpcTXN_NOT_FOUND,
     rpcWRONG_SEED,
+    rpcNO_CRNROUND,
 
     // Malformed command
     rpcINVALID_PARAMS,

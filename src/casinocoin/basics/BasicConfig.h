@@ -134,6 +134,8 @@ public:
         append (std::vector<std::string>{ line });
     }
 
+    void clear();
+
     /** Returns `true` if a key with the given name exists. */
     bool
     exists (std::string const& name) const;

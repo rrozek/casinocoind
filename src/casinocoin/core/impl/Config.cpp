@@ -143,6 +143,7 @@ char const* const Config::configFileName = "casinocoind.cfg";
 char const* const Config::databaseDirName = "db";
 char const* const Config::validatorsFileName = "validators.txt";
 char const* const Config::votingFileName = "voting.cfg";
+char const* const Config::crnFileName = "relaynodes.txt";
 
 static
 std::string
@@ -178,7 +179,10 @@ bool Config::reloadFeeVoteParams()
             SECTION_VOTING);
 
         if (entries)
+        {
+            section (SECTION_VOTING).clear();
             section (SECTION_VOTING).append (*entries);
+        }
         return true;
     }
     return false;
@@ -589,10 +593,32 @@ void Config::loadFromString (std::string const& fileContents)
         }
     }
 
+    // Load Features
     {
         auto const part = section("features");
         for(auto const& s : part.values())
             features.insert(feature(s));
+    }
+
+    // Load Community Relay Nodes 
+    boost::filesystem::path crnFile;
+    std::string crnData;   
+    if (loadSectionFromExternalPath (SECTION_CRN_FILE, crnFile, crnData, crnFileName))
+    {
+        auto crnIniFile = parseIniFile (crnData, true);
+        // load defined crn nodes
+        auto crnEntries = getIniFileSection (
+            crnIniFile,
+            SECTION_CRNS);
+        if (crnEntries)
+            section (SECTION_CRNS).append (*crnEntries);
+
+        // load defined crn list sites
+        auto crnSiteEntries = getIniFileSection(
+            crnIniFile,
+            SECTION_CRN_LIST_SITES);
+        if (crnSiteEntries)
+            section (SECTION_CRN_LIST_SITES).append (*crnSiteEntries);
     }
 }
 

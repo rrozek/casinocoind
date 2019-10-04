@@ -51,6 +51,13 @@ public:
     */
     using id_t = std::uint32_t;
 
+    enum class Sanity
+    {
+        insane
+        ,unknown
+        ,sane
+    };
+
     virtual ~Peer() = default;
 
     //
@@ -86,6 +93,14 @@ public:
     virtual
     bool
     isHighLatency() const = 0;
+
+    virtual
+    uint32_t
+    latency() const = 0;
+
+    virtual
+    Sanity
+    sanity() const = 0;
 
     virtual
     int

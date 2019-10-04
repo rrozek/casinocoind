@@ -71,6 +71,13 @@ Section::append (std::vector <std::string> const& lines)
     }
 }
 
+void Section::clear()
+{
+     cont().clear();
+     lines_.clear();
+     values_.clear();
+}
+
 bool
 Section::exists (std::string const& name) const
 {

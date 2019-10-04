@@ -34,6 +34,7 @@
 #include <casinocoin/protocol/Feature.h>
 #include <casinocoin/protocol/JsonFields.h>
 #include <boost/optional.hpp>
+#include <boost/optional/optional_io.hpp>
 
 namespace casinocoin {
 
@@ -99,7 +100,6 @@ Transaction::pointer Transaction::transactionFromSQL (
     std::string reason;
     auto tr = std::make_shared<Transaction> (
         txn, reason, app);
-
     tr->setStatus (sqlTransactionStatus (status));
     tr->setLedger (inLedger);
     return tr;
@@ -113,13 +113,14 @@ Transaction::pointer Transaction::transactionFromSQLValidated(
 {
     auto ret = transactionFromSQL(ledgerSeq, status, rawTxn, app);
 
-    if (checkValidity(app.getHashRouter(),
-            *ret->getSTransaction(), app.
-                getLedgerMaster().getValidatedRules(),
-                    app.config()).first !=
-                        Validity::Valid)
+    // Check tx validity
+    std::pair<Validity, std::string> checkResult = 
+        checkValidity(app.getHashRouter(),
+                     *ret->getSTransaction(), app.
+                     getLedgerMaster().getValidatedRules(),
+                     app.config());
+    if (checkResult.first != Validity::Valid)
         return {};
-
     return ret;
 }
 

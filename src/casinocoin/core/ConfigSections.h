@@ -79,7 +79,11 @@ struct ConfigSection
 #define SECTION_KYC_SIGNERS             "kyc_trusted_accounts"
 #define SECTION_VOTING                  "voting"
 #define SECTION_VOTING_FILE             "voting_file"
-
+#define SECTION_CRN_FILE                "relaynodes_file"
+#define SECTION_CRNS                    "relaynodes"
+#define SECTION_CRN_CONFIG              "relaynode_config"
+#define SECTION_CRN_LIST_SITES          "relaynode_list_sites"
+//#define SECTION_RELAYNODE_KEY_REVOCATION "relaynode_key_revocation" // jrojek TODO in future
 } // casinocoin
 
 #endif

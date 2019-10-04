@@ -146,6 +146,18 @@ TxFormats::TxFormats ()
         << SOElement (sfSetFlag,            SOE_OPTIONAL)
         << SOElement (sfClearFlag,          SOE_OPTIONAL)
         ;
+
+    add ("CRNFeeDistribution", ttCRN_FEE_DISTRIB)
+        << SOElement (sfDestination,         SOE_REQUIRED)
+        << SOElement (sfAmount,              SOE_REQUIRED)
+        << SOElement (sfDestinationTag,      SOE_OPTIONAL)
+        ;
+
+    add ("SetCRNRound", ttCRN_ROUND)
+        << SOElement (sfLedgerSequence,      SOE_OPTIONAL)
+        << SOElement (sfCRNs,                SOE_REQUIRED)
+        << SOElement (sfCRN_FeeDistributed,  SOE_REQUIRED)
+        ;
 }
 
 void TxFormats::addCommonFields (Item& item)

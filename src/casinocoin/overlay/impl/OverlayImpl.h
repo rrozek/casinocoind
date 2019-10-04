@@ -128,6 +128,7 @@ private:
     //--------------------------------------------------------------------------
 
 public:
+
     OverlayImpl (Application& app, Setup const& setup, Stoppable& parent,
         ServerHandler& serverHandler, Resource::Manager& resourceManager,
         Resolver& resolver, boost::asio::io_service& io_service,
@@ -170,6 +171,9 @@ public:
     PeerSequence
     getActivePeers() override;
 
+    PeerSequence
+    getSanePeers() override;
+
     void
     check () override;
 
@@ -186,11 +190,18 @@ public:
     send (protocol::TMValidation& m) override;
 
     void
+    send (protocol::TMPerformanceReport& m) override;
+
+    void
     relay (protocol::TMProposeSet& m,
         uint256 const& uid) override;
 
     void
     relay (protocol::TMValidation& m,
+        uint256 const& uid) override;
+
+    void
+    relay (protocol::TMPerformanceReport& m,
         uint256 const& uid) override;
 
     //--------------------------------------------------------------------------

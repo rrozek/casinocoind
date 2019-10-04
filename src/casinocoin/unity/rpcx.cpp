@@ -101,3 +101,4 @@
 #include <casinocoin/rpc/impl/RPCHelpers.cpp>
 #include <casinocoin/rpc/impl/ServerHandlerImp.cpp>
 #include <casinocoin/rpc/impl/TransactionSign.cpp>
+#include <casinocoin/rpc/handlers/CRN.cpp>

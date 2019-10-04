@@ -220,6 +220,10 @@ public:
     rawDestroyCSC(
         CSCAmount const& fee) override;
 
+    void
+    rawRedistributeCSC(
+        CSCAmount const& dropsRedistributed) override;
+
     // TxsRawView
 
     void

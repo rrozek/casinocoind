@@ -63,6 +63,11 @@ enum TxType
 
     ttAMENDMENT         = 100,
     ttFEE               = 101,
+    //                  = 102, FREE
+    // jrojek tx commited to redistribute fees among eligible CRNs
+    ttCRN_FEE_DISTRIB   = 103,
+    // jrojek pseudo-tx commited to store CRN Fee distribuiton conclusion
+    ttCRN_ROUND         = 104
 };
 
 /** Manages the list of known transaction formats.

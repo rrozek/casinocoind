@@ -560,6 +560,12 @@ const STVector128& STObject::getFieldV128 (SField const& field) const
     return getFieldByConstRef <STVector128> (field, empty);
 }
 
+const STObject& STObject::getFieldObject (SField const& field) const
+{
+    static STObject const empty{};
+    return getFieldByConstRef <STObject> (field, empty);
+}
+
 const STArray& STObject::getFieldArray (SField const& field) const
 {
     static STArray const empty{};

@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-26  ajochems        Refactored for casinocoin
+    2018-05-21  ajochems        Added Community Relay Nodes (CRN)
 */
 //==============================================================================
 
@@ -73,10 +74,17 @@ class TxQ;
 class Validations;
 class ValidatorList;
 class ValidatorSite;
+
 class Cluster;
 
 class DatabaseCon;
 class SHAMapStore;
+
+class CRN;
+class CRNReports;
+class CRNList;
+class CRNListUpdater;
+class CRNRound;
 
 using NodeCache     = TaggedCache <SHAMapHash, Blob>;
 
@@ -109,6 +117,8 @@ public:
     virtual void signalStop () = 0;
     virtual bool checkSigs() const = 0;
     virtual void checkSigs(bool) = 0;
+    virtual bool isCRN() = 0;
+    virtual bool isValidator() = 0;
 
     //
     // ---
@@ -131,10 +141,13 @@ public:
     virtual TxQ&                    getTxQ() = 0;
     virtual ValidatorList&          validators () = 0;
     virtual ValidatorSite&          validatorSites () = 0;
+    virtual CRNList&                relaynodes () = 0;
+    virtual CRNListUpdater&         crnListUpdater () = 0;
     virtual ManifestCache&          validatorManifests () = 0;
     virtual ManifestCache&          publisherManifests () = 0;
     virtual Cluster&                cluster () = 0;
     virtual Validations&            getValidations () = 0;
+    virtual CRNReports&             getCRNReports () = 0;
     virtual NodeStore::Database&    getNodeStore () = 0;
     virtual InboundLedgers&         getInboundLedgers () = 0;
     virtual InboundTransactions&    getInboundTransactions () = 0;
@@ -144,6 +157,8 @@ public:
     virtual NetworkOPs&             getOPs () = 0;
     virtual OrderBookDB&            getOrderBookDB () = 0;
     virtual TransactionMaster&      getMasterTransaction () = 0;
+    virtual CRN&                    getCRN() = 0;
+    virtual CRNRound&               getCRNRound() = 0;
 
     virtual
     std::pair<PublicKey, SecretKey> const&

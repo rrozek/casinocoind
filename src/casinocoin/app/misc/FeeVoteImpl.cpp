@@ -33,67 +33,6 @@
 
 namespace casinocoin {
 
-namespace detail {
-
-template <typename Integer>
-class VotableInteger
-{
-private:
-    using map_type = std::map <Integer, int>;
-    Integer mCurrent;   // The current setting
-    Integer mTarget;    // The setting we want
-    map_type mVoteMap;
-
-public:
-    VotableInteger (Integer current, Integer target)
-        : mCurrent (current)
-        , mTarget (target)
-    {
-        // Add our vote
-        ++mVoteMap[mTarget];
-    }
-
-    void
-    addVote(Integer vote)
-    {
-        ++mVoteMap[vote];
-    }
-
-    void
-    noVote()
-    {
-        addVote (mCurrent);
-    }
-
-    Integer
-    getVotes() const;
-};
-
-template <class Integer>
-Integer
-VotableInteger <Integer>::getVotes() const
-{
-    Integer ourVote = mCurrent;
-    int weight = 0;
-    for (auto const& e : mVoteMap)
-    {
-        // Take most voted value between current and target, inclusive
-        if ((e.first <= std::max (mTarget, mCurrent)) &&
-                (e.first >= std::min (mTarget, mCurrent)) &&
-                (e.second > weight))
-        {
-            ourVote = e.first;
-            weight = e.second;
-        }
-    }
-
-    return ourVote;
-}
-
-}
-
-//------------------------------------------------------------------------------
-
 class FeeVoteImpl : public FeeVote
 {
 private:

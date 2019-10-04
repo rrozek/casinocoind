@@ -37,6 +37,9 @@
 #include <casinocoin/app/ledger/OrderBookDB.h>
 #include <casinocoin/app/ledger/TransactionMaster.h>
 #include <casinocoin/app/main/LoadManager.h>
+#include <casinocoin/app/misc/CRN.h>
+#include <casinocoin/app/misc/CRNReports.h>
+#include <casinocoin/app/misc/CRNList.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/Transaction.h>
@@ -46,6 +49,7 @@
 #include <casinocoin/app/tx/apply.h>
 #include <casinocoin/basics/mulDiv.h>
 #include <casinocoin/basics/UptimeTimer.h>
+#include <casinocoin/core/Config.h>
 #include <casinocoin/core/ConfigSections.h>
 #include <casinocoin/core/DeadlineTimer.h>
 #include <casinocoin/core/JobCounter.h>
@@ -109,59 +113,6 @@ class NetworkOPsImp final
 
     static std::array<char const*, 5> const states_;
 
-    /**
-     * State accounting records two attributes for each possible server state:
-     * 1) Amount of time spent in each state (in microseconds). This value is
-     *    updated upon each state transition.
-     * 2) Number of transitions to each state.
-     *
-     * This data can be polled through server_info and represented by
-     * monitoring systems similarly to how bandwidth, CPU, and other
-     * counter-based metrics are managed.
-     *
-     * State accounting is more accurate than periodic sampling of server
-     * state. With periodic sampling, it is very likely that state transitions
-     * are missed, and accuracy of time spent in each state is very rough.
-     */
-    class StateAccounting
-    {
-        struct Counters
-        {
-            std::uint32_t transitions = 0;
-            std::chrono::microseconds dur = std::chrono::microseconds (0);
-        };
-
-        OperatingMode mode_ = omDISCONNECTED;
-        std::array<Counters, 5> counters_;
-        mutable std::mutex mutex_;
-        std::chrono::system_clock::time_point start_ =
-            std::chrono::system_clock::now();
-        static std::array<Json::StaticString const, 5> const states_;
-        static Json::StaticString const transitions_;
-        static Json::StaticString const dur_;
-
-    public:
-        explicit StateAccounting ()
-        {
-            counters_[omDISCONNECTED].transitions = 1;
-        }
-
-        /**
-         * Record state transition. Update duration spent in previous
-         * state.
-         *
-         * @param om New state.
-         */
-        void mode (OperatingMode om);
-
-        /**
-         * Output state counters in JSON format.
-         *
-         * @return JSON object.
-         */
-        Json::Value json() const;
-    };
-
     //! Server fees published on `server` subscription
     struct ServerFeeSummary
     {
@@ -193,7 +144,7 @@ public:
         Application& app, clock_type& clock, bool standalone,
             std::size_t network_quorum, bool start_valid, JobQueue& job_queue,
                 LedgerMaster& ledgerMaster, Stoppable& parent,
-                    beast::Journal journal)
+                    beast::Journal journal )
         : NetworkOPs (parent)
         , app_ (app)
         , m_clock (clock)
@@ -231,6 +182,9 @@ public:
         return mMode;
     }
     std::string strOperatingMode () const override;
+
+    protocol::NodeStatus getNodeStatus() const override;
+    protocol::NodeStatus getNodeStatus(OperatingMode mode) const override;
 
     //
     // Transaction operations.
@@ -305,6 +259,9 @@ public:
     bool recvValidation (
         STValidation::ref val, std::string const& source) override;
 
+    bool recvPerformanceReport (
+        STPerformanceReport::ref report, std::string const& source) override;
+
     std::shared_ptr<SHAMap> getTXMap (uint256 const& hash);
     bool hasTXSet (
         const std::shared_ptr<Peer>& peer, uint256 const& set,
@@ -371,8 +328,10 @@ public:
     {
         mConsensus->setValidationKeys (valSecret, valPublic);
     }
+
     Json::Value getConsensusInfo () override;
     Json::Value getServerInfo (bool human, bool admin) override;
+    std::array<StateAccounting::Counters, 5> getServerAccountingInfo() override;
     void clearLedgerFetch () override;
     Json::Value getLedgerFetchInfo () override;
     std::uint32_t acceptLedger (
@@ -433,6 +392,8 @@ public:
         std::shared_ptr<STTx const> const& stTxn, TER terResult) override;
     void pubValidation (
         STValidation::ref val) override;
+    void pubPerformanceReport (
+        STPerformanceReport::ref report) override;
 
     //--------------------------------------------------------------------------
     //
@@ -479,6 +440,9 @@ public:
     bool subPeerStatus (InfoSub::ref ispListener) override;
     bool unsubPeerStatus (std::uint64_t uListener) override;
     void pubPeerStatus (std::function<Json::Value(void)> const&) override;
+
+    bool subPerformanceReports (InfoSub::ref ispListener) override;
+    bool unsubPerformanceReports (std::uint64_t uListener) override;
 
     InfoSub::pointer findRpcSub (std::string const& strUrl) override;
     InfoSub::pointer addRpcSub (
@@ -567,6 +531,7 @@ private:
     SubMapType mSubRTTransactions;    // All proposed and accepted transactions.
     SubMapType mSubValidations;       // Received validations.
     SubMapType mSubPeerStatus;        // peer status changes
+    SubMapType mSubPerformanceReports;// reveiced performance reports
 
     ServerFeeSummary mLastFeeSummary;
 
@@ -779,6 +744,34 @@ std::string NetworkOPsImp::strOperatingMode () const
     }
 
     return states_[mMode];
+}
+
+protocol::NodeStatus NetworkOPsImp::getNodeStatus() const
+{
+    return getNodeStatus(mMode);
+}
+protocol::NodeStatus NetworkOPsImp::getNodeStatus(OperatingMode mode) const
+{
+    protocol::NodeStatus overlayStatus = protocol::NodeStatus::nsCONNECTING;
+    switch (mode)
+    {
+    case omDISCONNECTED:
+        overlayStatus = protocol::NodeStatus::nsCONNECTING;
+        break;
+    case omCONNECTED:
+        overlayStatus = protocol::NodeStatus::nsCONNECTED;
+        break;
+    case omSYNCING:
+        overlayStatus = protocol::NodeStatus::nsMONITORING;
+        break;
+    case omTRACKING:
+        overlayStatus = protocol::NodeStatus::nsMONITORING;
+        break;
+    case omFULL:
+        overlayStatus = protocol::NodeStatus::nsVALIDATING;
+        break;
+    }
+    return overlayStatus;
 }
 
 void NetworkOPsImp::submitTransaction (std::shared_ptr<STTx const> const& iTrans)
@@ -1250,7 +1243,7 @@ void NetworkOPsImp::tryStartConsensus ()
 {
     uint256 networkClosed;
     bool ledgerChange = checkLastClosedLedger (
-        app_.overlay ().getActivePeers (), networkClosed);
+        app_.overlay ().getSanePeers (), networkClosed);
 
     if (networkClosed.isZero ())
         return;
@@ -1474,8 +1467,11 @@ void NetworkOPsImp::switchLastClosedLedger (
 
     m_ledgerMaster.switchLCL (newLCL);
 
+
     protocol::TMStatusChange s;
+
     s.set_newevent (protocol::neSWITCHED_LEDGER);
+    s.set_newstatus (getNodeStatus());
     s.set_ledgerseq (newLCL->info().seq);
     s.set_networktime (app_.timeKeeper().now().time_since_epoch().count());
     s.set_ledgerhashprevious (
@@ -1485,8 +1481,10 @@ void NetworkOPsImp::switchLastClosedLedger (
         newLCL->info().hash.begin (),
         newLCL->info().hash.size ());
 
+    JLOG(m_journal.info()) << "switchLastClosedLedger: send status change to peer. newstatus: " << getNodeStatus();
     app_.overlay ().foreach (send_always (
         std::make_shared<Message> (s, protocol::mtSTATUS_CHANGE)));
+
 }
 
 bool NetworkOPsImp::beginConsensus (uint256 const& networkClosed)
@@ -1790,6 +1788,38 @@ void NetworkOPsImp::pubValidation (STValidation::ref val)
     }
 }
 
+void NetworkOPsImp::pubPerformanceReport(STPerformanceReport::ref report)
+{
+    ScopedLockType sl (mSubLock);
+
+    if (!mSubPerformanceReports.empty ())
+    {
+        Json::Value jvObj (Json::objectValue);
+
+        jvObj [jss::type]             = "performance_reportReceived";
+        jvObj [jss::signature]        = strHex (report->getSignature ());
+        jvObj [jss::crn_activated]    = report->getActivated();
+        jvObj [jss::crn_public_key]   = toBase58(TokenType::TOKEN_NODE_PUBLIC, report->getSignerPublic());
+        jvObj [jss::crn_domain_name]  = report->getDomainName();
+        jvObj [jss::crn_latency]      = report->getFieldU32(sfCRN_LatencyAvg);
+        jvObj [jss::crn_first_ledger] = report->getFieldU32(sfFirstLedgerSequence);
+        jvObj [jss::crn_last_ledger]  = report->getFieldU32(sfLastLedgerSequence);
+        jvObj [jss::crn_ws_port]      = report->getWSPort();
+        for (auto i = mSubPerformanceReports.begin (); i != mSubPerformanceReports.end (); )
+        {
+            if (auto p = i->second.lock())
+            {
+                p->send (jvObj, true);
+                ++i;
+            }
+            else
+            {
+                i = mSubPerformanceReports.erase (i);
+            }
+        }
+    }
+}
+
 void NetworkOPsImp::pubPeerStatus (
     std::function<Json::Value(void)> const& func)
 {
@@ -1840,6 +1870,18 @@ void NetworkOPsImp::setMode (OperatingMode om)
     mMode = om;
 
     accounting_.mode (om);
+
+    // notify peers about state change
+    protocol::TMStatusChange s;
+
+    s.set_newevent (protocol::neCHANGED_STATUS);
+    s.set_newstatus (getNodeStatus());
+    s.set_networktime (app_.timeKeeper().now().time_since_epoch().count());
+
+    JLOG(m_journal.info()) << "setMode: send NodeStatus change to peers. newstatus: " << getNodeStatus();
+    app_.overlay ().foreach (send_always (
+        std::make_shared<Message> (s, protocol::mtSTATUS_CHANGE)));
+
 
     JLOG(m_journal.info()) << "STATE->" << strOperatingMode ();
     pubServer ();
@@ -2113,6 +2155,15 @@ bool NetworkOPsImp::recvValidation (
     return app_.getValidations ().addValidation (val, source);
 }
 
+bool NetworkOPsImp::recvPerformanceReport (
+    STPerformanceReport::ref report, std::string const& source)
+{
+    JLOG(m_journal.debug()) << "recvPerformanceReport " << to_string(report->getSignTime())
+                          << " from " << source;
+    pubPerformanceReport (report);
+    return app_.getCRNReports().addReport(report, source);
+}
+
 Json::Value NetworkOPsImp::getConsensusInfo ()
 {
     return mConsensus->getJson (true);
@@ -2141,6 +2192,7 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
 
     if (admin)
     {
+        // Validator Public Key
         if (getValidationPublicKey().size ())
         {
             info[jss::pubkey_validator] = toBase58 (
@@ -2150,6 +2202,20 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
         else
         {
             info[jss::pubkey_validator] = "none";
+        }
+
+        // CRN Public Key
+        if (app_.isCRN())
+        {
+            info[jss::crn_public_key] = toBase58 (
+                TokenType::TOKEN_NODE_PUBLIC,
+                app_.getCRN().id().publicKey());
+            info[jss::crn_domain_name] = app_.getCRN().id().domain();
+            info[jss::crn_activated] = app_.getCRN().id().activated();
+        }
+        else
+        {
+            info[jss::crn_public_key] = "none";
         }
     }
 
@@ -2283,7 +2349,6 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
     if (lpClosed)
     {
         std::uint64_t baseFee = lpClosed->fees().base;
-        std::uint64_t baseRef = lpClosed->fees().units;
         Json::Value l (Json::objectValue);
         l[jss::seq] = Json::UInt (lpClosed->info().seq);
         l[jss::hash] = to_string (lpClosed->info().hash);
@@ -2298,8 +2363,8 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
         else
         {
             l[jss::base_fee_csc] = static_cast<double> (baseFee) / SYSTEM_CURRENCY_PARTS;
-            l[jss::reserve_base_csc] = static_cast<double> (mulDiv (lpClosed->fees().accountReserve(0).drops(), baseFee, baseRef).second / SYSTEM_CURRENCY_PARTS);
-            l[jss::reserve_inc_csc] = static_cast<double> (mulDiv (lpClosed->fees().increment, baseFee, baseRef).second / SYSTEM_CURRENCY_PARTS);
+            l[jss::reserve_base_csc] = static_cast<double> (lpClosed->fees().accountReserve(0).drops() / SYSTEM_CURRENCY_PARTS);
+            l[jss::reserve_inc_csc] = static_cast<double> (lpClosed->fees().increment / SYSTEM_CURRENCY_PARTS);
 
             auto const nowOffset = app_.timeKeeper().nowOffset();
             if (std::abs (nowOffset.count()) >= 60)
@@ -2337,6 +2402,11 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
     info[jss::uptime] = UptimeTimer::getInstance ().getElapsedSeconds ();
 
     return info;
+}
+
+std::array<NetworkOPs::StateAccounting::Counters, 5> NetworkOPsImp::getServerAccountingInfo()
+{
+    return accounting_.snapshot();
 }
 
 void NetworkOPsImp::clearLedgerFetch ()
@@ -2897,6 +2967,20 @@ bool NetworkOPsImp::unsubPeerStatus (std::uint64_t uSeq)
     return mSubPeerStatus.erase (uSeq);
 }
 
+// <-- bool: true=added, false=already there
+bool NetworkOPsImp::subPerformanceReports (InfoSub::ref isrListener)
+{
+    ScopedLockType sl (mSubLock);
+    return mSubPerformanceReports.emplace (isrListener->getSeq (), isrListener).second;
+}
+
+// <-- bool: true=erased, false=was not there
+bool NetworkOPsImp::unsubPerformanceReports (std::uint64_t uSeq)
+{
+    ScopedLockType sl (mSubLock);
+    return mSubPerformanceReports.erase (uSeq);
+}
+
 InfoSub::pointer NetworkOPsImp::findRpcSub (std::string const& strUrl)
 {
     ScopedLockType sl (mSubLock);
@@ -3279,7 +3363,12 @@ NetworkOPs::~NetworkOPs ()
 //------------------------------------------------------------------------------
 
 
-void NetworkOPsImp::StateAccounting::mode (OperatingMode om)
+NetworkOPs::StateAccounting::StateAccounting()
+{
+    counters_[omDISCONNECTED].transitions = 1;
+}
+
+void NetworkOPs::StateAccounting::mode (OperatingMode om)
 {
     auto now = std::chrono::system_clock::now();
 
@@ -3292,18 +3381,9 @@ void NetworkOPsImp::StateAccounting::mode (OperatingMode om)
     start_ = now;
 }
 
-Json::Value NetworkOPsImp::StateAccounting::json() const
+Json::Value NetworkOPs::StateAccounting::json() const
 {
-    std::unique_lock<std::mutex> lock (mutex_);
-
-    auto counters = counters_;
-    auto const start = start_;
-    auto const mode = mode_;
-
-    lock.unlock();
-
-    counters[mode].dur += std::chrono::duration_cast<
-        std::chrono::microseconds>(std::chrono::system_clock::now() - start);
+    auto counters = snapshot();
 
     Json::Value ret = Json::objectValue;
 
@@ -3317,6 +3397,22 @@ Json::Value NetworkOPsImp::StateAccounting::json() const
     }
 
     return ret;
+}
+
+std::array<NetworkOPs::StateAccounting::Counters, 5> NetworkOPs::StateAccounting::snapshot() const
+{
+    std::unique_lock<std::mutex> lock (mutex_);
+
+    auto counters = counters_;
+    auto const start = start_;
+    auto const mode = mode_;
+
+    lock.unlock();
+
+    counters[mode].dur += std::chrono::duration_cast<
+        std::chrono::microseconds>(std::chrono::system_clock::now() - start);
+
+    return counters;
 }
 
 //------------------------------------------------------------------------------

@@ -62,6 +62,7 @@ invoke_preflight (PreflightContext const& ctx)
     case ttTICKET_CREATE:   return CreateTicket     ::preflight(ctx);
     case ttTRUST_SET:       return SetTrust         ::preflight(ctx);
     case ttKYC_SET:         return SetKYC           ::preflight(ctx);
+    case ttCRN_ROUND:
     case ttAMENDMENT:
     case ttFEE:             return Change           ::preflight(ctx);
     case ttPAYCHAN_CREATE:  return PayChanCreate    ::preflight(ctx);
@@ -128,6 +129,7 @@ invoke_preclaim (PreclaimContext const& ctx)
     case ttTICKET_CREATE:   return invoke_preclaim<CreateTicket>(ctx);
     case ttTRUST_SET:       return invoke_preclaim<SetTrust>(ctx);
     case ttKYC_SET:         return invoke_preclaim<SetKYC>(ctx);
+    case ttCRN_ROUND:
     case ttAMENDMENT:
     case ttFEE:             return invoke_preclaim<Change>(ctx);
     case ttPAYCHAN_CREATE:  return invoke_preclaim<PayChanCreate>(ctx);
@@ -157,7 +159,8 @@ invoke_calculateBaseFee(PreclaimContext const& ctx)
     case ttTICKET_CANCEL:   return CancelTicket::calculateBaseFee(ctx);
     case ttTICKET_CREATE:   return CreateTicket::calculateBaseFee(ctx);
     case ttTRUST_SET:       return SetTrust::calculateBaseFee(ctx);
-    case ttKYC_SET  :       return SetKYC::calculateBaseFee(ctx);
+    case ttKYC_SET:         return SetKYC::calculateBaseFee(ctx);
+    case ttCRN_ROUND:
     case ttAMENDMENT:
     case ttFEE:             return Change::calculateBaseFee(ctx);
     case ttPAYCHAN_CREATE:  return PayChanCreate::calculateBaseFee(ctx);
@@ -200,7 +203,7 @@ invoke_calculateConsequences(STTx const& tx)
     case ttTICKET_CANCEL:   return invoke_calculateConsequences<CancelTicket>(tx);
     case ttTICKET_CREATE:   return invoke_calculateConsequences<CreateTicket>(tx);
     case ttTRUST_SET:       return invoke_calculateConsequences<SetTrust>(tx);
-    case ttKYC_SET  :       return invoke_calculateConsequences<SetKYC>(tx);
+    case ttKYC_SET:         return invoke_calculateConsequences<SetKYC>(tx);
     case ttPAYCHAN_CREATE:  return invoke_calculateConsequences<PayChanCreate>(tx);
     case ttPAYCHAN_FUND:    return invoke_calculateConsequences<PayChanFund>(tx);
     case ttPAYCHAN_CLAIM:   return invoke_calculateConsequences<PayChanClaim>(tx);
@@ -233,6 +236,7 @@ invoke_apply (ApplyContext& ctx)
     case ttTICKET_CREATE:   { CreateTicket  p(ctx); return p(); }
     case ttTRUST_SET:       { SetTrust      p(ctx); return p(); }
     case ttKYC_SET:         { SetKYC        p(ctx); return p(); }
+    case ttCRN_ROUND:
     case ttAMENDMENT:
     case ttFEE:             { Change        p(ctx); return p(); }
     case ttPAYCHAN_CREATE:  { PayChanCreate p(ctx); return p(); }
