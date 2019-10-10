@@ -497,17 +497,19 @@ Transactor::checkSingleSign (PreclaimContext const& ctx)
     }
     else
     {
+        JLOG(ctx.j.trace()) << "checkSingleSign: Check if account is blacklisted";
         // check if source accountid is blacklisted and signing accountid is whitelisted
         if (ctx.app.blacklistedAccounts().listed(toBase58(id)))
         {
+            JLOG(ctx.j.trace()) << "checkSingleSign: Check if signer account is whitelisted";
             bool bIsTrusted = false;
             for ( const std::string& entry : ctx.app.config().WhitelistAccounts )
             {
-                JLOG(ctx.j.debug()) << "Whitelist account: " << entry << " read from config";
+                JLOG(ctx.j.trace()) << "checkSingleSign: Whitelist account: " << entry << " read from config";
                 auto trustedAccountID = parseBase58<AccountID>(entry);
                 if (!trustedAccountID)
                 {
-                    JLOG(ctx.j.info()) << "Whitelist account: " << entry << " seems to be invalid";
+                    JLOG(ctx.j.trace()) << "Whitelist account: " << entry << " seems to be invalid";
                     continue;
                 }
                 if (pkAccount == trustedAccountID)
@@ -518,12 +520,11 @@ Transactor::checkSingleSign (PreclaimContext const& ctx)
             }
             if(bIsTrusted)
             {
-                JLOG(ctx.j.info()) << "!!! temporarily allowed to use blacklisted account due to whitelisted account ";
+                JLOG(ctx.j.info()) << "!!! temporarily allowed to use blacklisted account due to whitelisted signing account ";
                 return tesSUCCESS;
             }
         }
-        JLOG(ctx.j.trace()) <<
-            "checkSingleSign: Not authorized to use account.";
+        JLOG(ctx.j.trace()) << "checkSingleSign: Not authorized to use account.";
         return tefBAD_AUTH_MASTER;
     }
 
