@@ -137,6 +137,10 @@ public:
     TER
     checkBlacklist (PreclaimContext const& ctx);
 
+    static
+    TER 
+    checkWhitelist (PreclaimContext const& ctx);
+
     // Returns the fee in fee units, not scaled for load.
     static
     std::uint64_t

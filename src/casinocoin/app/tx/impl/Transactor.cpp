@@ -497,8 +497,34 @@ Transactor::checkSingleSign (PreclaimContext const& ctx)
     }
     else
     {
-        JLOG(ctx.j.trace()) <<
-            "checkSingleSign: Not authorized to use account.";
+        JLOG(ctx.j.trace()) << "checkSingleSign: Check if account is blacklisted";
+        // check if source accountid is blacklisted and signing accountid is whitelisted
+        if (ctx.app.blacklistedAccounts().listed(toBase58(id)))
+        {
+            JLOG(ctx.j.trace()) << "checkSingleSign: Check if signer account is whitelisted";
+            bool bIsTrusted = false;
+            for ( const std::string& entry : ctx.app.config().WhitelistAccounts )
+            {
+                JLOG(ctx.j.trace()) << "checkSingleSign: Whitelist account: " << entry << " read from config";
+                auto trustedAccountID = parseBase58<AccountID>(entry);
+                if (!trustedAccountID)
+                {
+                    JLOG(ctx.j.trace()) << "Whitelist account: " << entry << " seems to be invalid";
+                    continue;
+                }
+                if (pkAccount == trustedAccountID)
+                {
+                    bIsTrusted = true;
+                    break;
+                }
+            }
+            if(bIsTrusted)
+            {
+                JLOG(ctx.j.info()) << "!!! temporarily allowed to use blacklisted account due to whitelisted signing account ";
+                return tesSUCCESS;
+            }
+        }
+        JLOG(ctx.j.trace()) << "checkSingleSign: Not authorized to use account.";
         return tefBAD_AUTH_MASTER;
     }
 
@@ -729,6 +755,40 @@ TER Transactor::checkBlacklist (PreclaimContext const& ctx)
     {
         // account is not blacklisted
         return tesSUCCESS;
+    }
+}
+
+TER Transactor::checkWhitelist (PreclaimContext const& ctx)
+{
+    // check for specific account id
+    auto const spk = ctx.tx.getSigningPubKey();
+    auto const pkAccount = calcAccountID (PublicKey (makeSlice (spk)));
+    bool bIsTrusted = false;
+    for ( const std::string& entry : ctx.app.config().WhitelistAccounts )
+    {
+        JLOG(ctx.j.debug()) << "Whitelist account: " << entry << " read from config";
+        auto trustedAccountID = parseBase58<AccountID>(entry);
+        if (!trustedAccountID)
+        {
+            JLOG(ctx.j.info()) << "Whitelist account: " << entry << " seems to be invalid";
+            continue;
+        }
+        if (pkAccount == trustedAccountID)
+        {
+            bIsTrusted = true;
+            break;
+        }
+    }
+    if(bIsTrusted)
+    {
+        JLOG(ctx.j.info()) << "!!! temporarily allowed to use blacklisted account with whitlisted account";
+        // signer account is whitelisted
+        return tesSUCCESS;
+    }
+    else
+    {
+        JLOG(ctx.j.info()) <<  "!!! Transactions for blacklisted accounts are not allowed !!!";
+        return tefEXCEPTION;
     }
 }
 
