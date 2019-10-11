@@ -26,6 +26,7 @@
 #ifndef CASINOCOIN_PROTOCOL_STTX_H_INCLUDED
 #define CASINOCOIN_PROTOCOL_STTX_H_INCLUDED
 
+#include <casinocoin/core/Config.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/protocol/STObject.h>
@@ -161,7 +162,7 @@ private:
     TxType tx_type_;
 };
 
-bool passesLocalChecks (STObject const& st, std::string&);
+bool passesLocalChecks (STObject const& st, std::string&,  const Config& config);
 
 /** Sterilize a transaction.
 

@@ -77,7 +77,7 @@ struct PseudoTx_test : public beast::unit_test::suite
         {
             std::string reason;
             BEAST_EXPECT(isPseudoTx(stx));
-            BEAST_EXPECT(!passesLocalChecks(stx, reason));
+            BEAST_EXPECT(!passesLocalChecks(stx, reason, env.app().config()));
             BEAST_EXPECT(reason == "Cannot submit pseudo transactions.");
             env.app().openLedger().modify(
                 [&](OpenView& view, beast::Journal j) {
@@ -92,11 +92,13 @@ struct PseudoTx_test : public beast::unit_test::suite
     void
     testAllowed()
     {
+        using namespace jtx;
+        Env env(*this);
         for (auto const& stx : getRealTxs())
         {
             std::string reason;
             BEAST_EXPECT(!isPseudoTx(stx));
-            BEAST_EXPECT(passesLocalChecks(stx, reason));
+            BEAST_EXPECT(passesLocalChecks(stx, reason, env.app().config()));
         }
     }
 

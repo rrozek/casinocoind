@@ -511,7 +511,7 @@ transactionPreProcessImpl (
     }
 
     std::string reason;
-    if (!passesLocalChecks (*stpTrans, reason))
+    if (!passesLocalChecks (*stpTrans, reason, app.config()))
         return RPC::make_error (rpcINVALID_PARAMS, reason);
 
     // If multisign then return multiSignature, else set TxnSignature field.
@@ -1136,7 +1136,7 @@ Json::Value transactionSubmitMultiSigned (
                 "Exception while serializing transaction: " + reason);
         }
         std::string reason;
-        if (!passesLocalChecks (*stpTrans, reason))
+        if (!passesLocalChecks (*stpTrans, reason, app.config()))
             return RPC::make_error (rpcINVALID_PARAMS, reason);
     }
 

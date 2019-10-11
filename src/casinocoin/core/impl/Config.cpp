@@ -468,6 +468,18 @@ void Config::loadFromString (std::string const& fileContents)
         }
     }
 
+    if (getSingleSection (secConfig, SECTION_MAX_MEMO_SIZE, strTemp, j_))
+    {
+        //MAX_MEMO_SIZE = std::stoi(strTemp);
+        if (MAX_MEMO_SIZE > std::stoi(strTemp))
+            MAX_MEMO_SIZE = std::stoi(strTemp);
+        else if (std::stoi(strTemp) < 100)
+            MAX_MEMO_SIZE = 100;
+    }
+    
+    //JLOG (j_.info()) << boost::str (
+      //      boost::format ("Memo size: %d") % MAX_MEMO_SIZE);
+    
     if (getSingleSection (secConfig, SECTION_ELB_SUPPORT, strTemp, j_))
         ELB_SUPPORT         = beast::lexicalCastThrow <bool> (strTemp);
 
