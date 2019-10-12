@@ -34,6 +34,7 @@
 #include <casinocoin/protocol/STArray.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/types.h>
+#include <casinocoin/core/Config.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/StringUtilities.h>
@@ -394,7 +395,7 @@ std::pair<bool, std::string> STTx::checkMultiSign () const
 
 static
 bool
-isMemoOkay (STObject const& st, std::string& reason)
+isMemoOkay (STObject const& st, std::string& reason, const Config& config)
 {
     if (!st.isFieldPresent (sfMemos))
         return true;
@@ -405,11 +406,15 @@ isMemoOkay (STObject const& st, std::string& reason)
     // to avoid allocate/copy/free's
     Serializer s (2048);
     memos.add (s);
+    //Config config;
 
     // FIXME move the memo limit into a config tunable
-    if (s.getDataLength () > 1024)
+    //JLOG(debugLog().info()) << "Memo size: " << config.MAX_MEMO_SIZE;
+    //std::cout << "Memo size" << config.MAX_MEMO_SIZE;
+
+    if (s.getDataLength () > config.MAX_MEMO_SIZE)
     {
-        reason = "The memo exceeds the maximum allowed size.";
+        reason = "Max Memo size exceded, max memo = "+std::to_string(config.MAX_MEMO_SIZE);
         return false;
     }
 
@@ -499,9 +504,9 @@ isAccountFieldOkay (STObject const& st)
     return true;
 }
 
-bool passesLocalChecks (STObject const& st, std::string& reason)
+bool passesLocalChecks (STObject const& st, std::string& reason, const Config& config)
 {
-    if (!isMemoOkay (st, reason))
+    if (!isMemoOkay (st, reason, config))
         return false;
 
     if (!isAccountFieldOkay (st))
