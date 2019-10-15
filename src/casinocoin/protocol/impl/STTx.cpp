@@ -406,11 +406,8 @@ isMemoOkay (STObject const& st, std::string& reason, const Config& config)
     // to avoid allocate/copy/free's
     Serializer s (2048);
     memos.add (s);
-    //Config config;
 
-    // FIXME move the memo limit into a config tunable
-    //JLOG(debugLog().info()) << "Memo size: " << config.MAX_MEMO_SIZE;
-    //std::cout << "Memo size" << config.MAX_MEMO_SIZE;
+    std::cout << "#### Max Memo Size: " << config.MAX_MEMO_SIZE << "-->> Actual Memo Size: " << s.getDataLength() << std::endl;
 
     if (s.getDataLength () > config.MAX_MEMO_SIZE)
     {
