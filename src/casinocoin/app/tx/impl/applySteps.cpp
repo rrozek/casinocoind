@@ -114,6 +114,10 @@ invoke_preclaim(PreclaimContext const& ctx)
                 return { wlResult, baseFee };
         }
 
+        result = T::checkMemoSize(ctx);
+        if (result != tesSUCCESS)
+            return { result, baseFee };
+
     }
 
     return{ T::preclaim(ctx), baseFee };

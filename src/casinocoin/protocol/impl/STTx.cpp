@@ -407,8 +407,6 @@ isMemoOkay (STObject const& st, std::string& reason, const Config& config)
     Serializer s (2048);
     memos.add (s);
 
-    std::cout << "#### Max Memo Size: " << config.MAX_MEMO_SIZE << "-->> Actual Memo Size: " << s.getDataLength() << std::endl;
-
     if (s.getDataLength () > config.MAX_MEMO_SIZE)
     {
         reason = "Max Memo size exceded, max memo = "+std::to_string(config.MAX_MEMO_SIZE);

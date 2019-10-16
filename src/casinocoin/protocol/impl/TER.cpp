@@ -99,6 +99,7 @@ transResults()
         { tefINVARIANT_FAILED,       { "tefINVARIANT_FAILED",      "Fee claim violated invariants for the transaction."                            } },
         { tefNOT_WLT,                { "tefNOT_WLT",               "Involved token is not on the allowed token list."                              } },
         { tefBLACKLISTED,            { "tefBLACKLISTED",           "Account is blacklisted and not allowed to create transactions."                } },
+        { tefMAX_MEMO_SIZE,          { "tefMAX_MEMO_SIZE",         "Maximum allowed memo size is exceeded for the transacion."                     } },
 
         { telLOCAL_ERROR,            { "telLOCAL_ERROR",           "Local failure."                                                                } },
         { telBAD_DOMAIN,             { "telBAD_DOMAIN",            "Domain too long."                                                              } },

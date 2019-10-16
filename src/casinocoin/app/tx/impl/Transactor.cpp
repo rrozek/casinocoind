@@ -792,6 +792,24 @@ TER Transactor::checkWhitelist (PreclaimContext const& ctx)
     }
 }
 
+TER Transactor::checkMemoSize (PreclaimContext const& ctx)
+{
+    // get the tx memos
+    auto const& memos = ctx.tx.getFieldArray (sfMemos);
+    // The number 2048 is a preallocation hint, not a hard limit
+    // to avoid allocate/copy/free's
+    Serializer s (2048);
+    memos.add (s);
+
+    if (s.getDataLength () > ctx.app.config().MAX_MEMO_SIZE)
+    {
+        JLOG(ctx.j.info()) <<  "Memo size " + std::to_string(s.getDataLength()) + " exceded, max memo size "+std::to_string(ctx.app.config().MAX_MEMO_SIZE);
+        return tefMAX_MEMO_SIZE;
+    } else {
+        return tesSUCCESS;
+    }
+}
+
 //------------------------------------------------------------------------------
 
 static
