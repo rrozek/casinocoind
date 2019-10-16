@@ -79,7 +79,7 @@ checkValidity(HashRouter& router,
 
     // Do the local checks
     std::string reason;
-    if (!passesLocalChecks(tx, reason))
+    if (!passesLocalChecks(tx, reason, config))
     {
         router.setFlags(id, SF_LOCALBAD);
         return {Validity::SigGoodOnly, reason};

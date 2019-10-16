@@ -468,6 +468,14 @@ void Config::loadFromString (std::string const& fileContents)
         }
     }
 
+    if (getSingleSection (secConfig, SECTION_MAX_MEMO_SIZE, strTemp, j_))
+    {
+        if ( std::stoi(strTemp) > MAX_MEMO_SIZE)
+            MAX_MEMO_SIZE = std::stoi(strTemp);
+        else if (std::stoi(strTemp) < 100)
+            MAX_MEMO_SIZE = 100;
+    }
+    
     if (getSingleSection (secConfig, SECTION_ELB_SUPPORT, strTemp, j_))
         ELB_SUPPORT         = beast::lexicalCastThrow <bool> (strTemp);
 
@@ -555,6 +563,9 @@ void Config::loadFromString (std::string const& fileContents)
 
     if (auto s = getIniFileSection (secConfig, SECTION_KYC_SIGNERS))
         KYCTrustedAccounts = *s;
+
+    if (auto w = getIniFileSection (secConfig, SECTION_WHITELIST_ACCOUNTS))
+        WhitelistAccounts = *w;
 
     // Do not load trusted validator configuration for standalone mode
     if (! RUN_STANDALONE)

@@ -4,24 +4,23 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceRoot}",
-                "/usr/include/c++/4.2.1",
+                "${workspaceRoot}/src/*",
+                "${workspaceRoot}/src/beast/include/*",
                 "/usr/local/include",
-                "/usr/include",
-                "/usr/local/Cellar/boost/1.64.0_1/include",
-                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/usr/include"
+                "/Users/ajochems/work/c++/deps/boost_1_65_1",
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include",
+                "${workspaceRoot}/build/proto/*"
             ],
             "defines": [],
             "browse": {
                 "path": [
-                    "/usr/include/c++/4.2.1",
                     "/usr/local/include",
-                    "/usr/include",
                     "${workspaceRoot}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
             },
-            "intelliSenseMode": "clang-x64",
+            "intelliSenseMode": "${default}",
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
                 "/Library/Frameworks"

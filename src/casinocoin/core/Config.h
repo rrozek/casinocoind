@@ -184,6 +184,10 @@ public:
     std::string                 SSL_VERIFY_FILE;
     std::string                 SSL_VERIFY_DIR;
 
+    // Max memo size configuration
+    std::uint32_t               MAX_MEMO_SIZE = 1024;
+    //int                         MEMO_SIZE = 0;
+
     // Thread pool configuration
     std::size_t                 WORKERS = 0;
 
@@ -199,6 +203,7 @@ public:
     std::unordered_set<uint256, beast::uhash<>> features;
 
     std::vector<std::string> KYCTrustedAccounts;
+    std::vector<std::string> WhitelistAccounts;
 
 public:
     Config() = default;
