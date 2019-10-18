@@ -20,6 +20,7 @@
 //==============================================================================
 /*
     2017-06-27  ajochems        Refactored for casinocoin
+    2018-05-10  ajochems        Added CRN fields
 */
 //==============================================================================
 
@@ -135,6 +136,29 @@ JSS ( contactEmail );              // in/out: Configuration
 JSS ( converge_time );              // out: NetworkOPs
 JSS ( converge_time_s );            // out: NetworkOPs
 JSS ( count );                      // in: AccountTx*
+JSS ( crn_key );                    // out: CRNCreate
+JSS ( crn_private_key );            // out: CRNCreate
+JSS ( crn_public_key );             // out: CRNCreate, NetworkOPs
+JSS ( crn_seed );                   // out: CRNCreate
+JSS ( crn_account_id );             // out: CRNCreate, CRNAccountTx
+JSS ( crn_key_type );               // out: CRNCreate
+JSS ( crn_public_key_hex );         // out: CRNCreate
+JSS ( crn_domain_name );            // in/out: CRN, NetworkOPs
+JSS ( crn_domain_signature );       // out: CRN
+JSS ( crn_valid );                  // out: CRN
+JSS ( crn_id );                     // out: Peers/CRN
+JSS ( crn );                        // out: Peers/CRN
+JSS ( crn_activated );              // out: CRN
+JSS ( crn_fee_distributed );        // out: CRNInfo
+JSS ( crns );                       // out: CRNInfo
+JSS ( crn_fee_txs );                // out: CRNInfo
+JSS ( crn_first_ledger );           // out: CRNInfo
+JSS ( crn_last_ledger );            // out: CRNInfo
+JSS ( crn_update_sites );           // out: CRNInfo
+JSS ( crn_nodes );                  // out: CRNInfo
+JSS ( crn_rounds );                 // out: CRNInfo
+JSS ( crn_latency );                // out: CRNInfo
+JSS ( crn_ws_port );                // out: Peers/CRN
 JSS ( currency );                   // in: paths/PathRequest, STAmount
                                     // out: paths/Node, STPathSet, STAmount
 JSS ( current );                    // out: OwnerInfo
@@ -162,6 +186,7 @@ JSS ( dir_root );                   // out: DirectoryEntryIterator
 JSS ( directory );                  // in: LedgerEntry
 JSS ( drops );                      // out: TxQ
 JSS ( duration_us );                // out: NetworkOPs
+JSS ( duration_sec );               // out: Peers
 JSS ( enabled );                    // out: AmendmentTable
 JSS ( encrypted_message );          // out: EncryptMsgHandler
 JSS ( engine_result );              // out: NetworkOPs, TransactionSign, Submit
@@ -175,6 +200,7 @@ JSS ( escrow );                     // in: LedgerEntry
 JSS ( expand );                     // in: handler/Ledger
 JSS ( expected_ledger_size );       // out: TxQ
 JSS ( expiration );                 // out: AccountOffers, AccountChannels
+JSS ( extraFeeFactor );                   // in/out: ConfigObject, Tokens
 JSS ( fail_hard );                  // in: Sign, Submit
 JSS ( failed );                     // out: InboundLedger
 JSS ( feature );                    // in: Feature
@@ -232,6 +258,8 @@ JSS ( key_type );                   // in/out: WalletPropose, TransactionSign
 JSS ( latency );                    // out: PeerImp
 JSS ( last );                       // out: RPCVersion
 JSS ( last_close );                 // out: NetworkOPs
+JSS ( last_refresh_time );          // out: CRN Update Sites, Remote Update Sites
+JSS ( last_refresh_status );        // out: CRN Update Sites, Remote Update Sites
 JSS ( ledger );                     // in: NetworkOPs, LedgerCleaner,
                                     //     RPCHelpers
                                     // out: NetworkOPs, PeerImp
@@ -354,6 +382,7 @@ JSS ( random );                     // out: Random
 JSS ( raw_meta );                   // out: AcceptedLedgerTx
 JSS ( receive_currencies );         // out: AccountCurrencies
 JSS ( reference_level );            // out: TxQ
+JSS ( refresh_interval_min );       // CRN Update Sites, Remote Update Sites
 JSS ( regular_seed );               // in/out: LedgerEntry
 JSS ( remote );                     // out: Logic.h
 JSS ( request );                    // RPC
@@ -375,6 +404,8 @@ JSS ( secret );                     // in: TransactionSign, WalletSeed,
                                     //     channel_authorize
 JSS ( seed );                       // in: WalletAccounts, out: WalletSeed
 JSS ( seed_hex );                   // in: WalletPropose, TransactionSign
+JSS ( self_duration_sec );          // out: Peers
+JSS ( self_transitions );           // out: Peers
 JSS ( send_currencies );            // out: AccountCurrencies
 JSS ( send_max );                   // in: PathRequest, CasinocoinPathFind
 JSS ( seq );                        // in: LedgerEntry;
@@ -451,6 +482,7 @@ JSS ( type_hex );                   // out: STPathSet
 JSS ( unl );                        // out: UnlList
 JSS ( unlimited);                   // out: Connection.h
 JSS ( uptime );                     // out: GetCounts
+JSS ( uri );
 JSS ( url );                        // in/out: Subscribe, Unsubscribe
 JSS ( url_password );               // in: Subscribe
 JSS ( url_username );               // in: Subscribe
@@ -473,10 +505,6 @@ JSS ( vote );                       // in: Feature
 JSS ( warning );                    // rpc:
 JSS ( website );                    // out: Configuration
 JSS ( write_load );                 // out: GetCounts
-
-JSS ( last_refresh_time );          // out: Remote Update Sites
-JSS ( last_refresh_status );        // out: Remote Update Sites
-JSS ( refresh_interval_min );       // out: Remote Update Sites
 
 #undef JSS
 

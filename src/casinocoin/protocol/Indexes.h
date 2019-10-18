@@ -60,6 +60,10 @@ getLedgerFeeIndex ();
 uint256
 getLedgerConfigurationIndex ();
 
+// get the index of the node that holds the Community Relay Node
+uint256
+getLedgerCRN_RoundIndex ();
+
 uint256
 getAccountRootIndex (AccountID const& account);
 
@@ -231,6 +235,12 @@ struct signers_t
 };
 static signers_t const signers {};
 
+/** Community Relay Nodes Round */
+struct crnRound_t
+{
+    Keylet operator()() const;
+};
+static crnRound_t const crnRound {};
 //------------------------------------------------------------------------------
 
 /** Any ledger entry */

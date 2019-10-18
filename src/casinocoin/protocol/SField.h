@@ -87,6 +87,7 @@ enum SerializedTypeID
     STI_LEDGERENTRY = 10002,
     STI_VALIDATION  = 10003,
     STI_METADATA    = 10004,
+    STI_PERFORMANCE_REPORT = 10005,
 };
 
 // constexpr
@@ -337,17 +338,22 @@ extern SField const sfLedgerEntry;
 extern SField const sfTransaction;
 extern SField const sfValidation;
 extern SField const sfMetadata;
+extern SField const sfPerformanceReport;
 
 // 8-bit integers
 extern SF_U8 const sfCloseResolution;
 extern SF_U8 const sfMethod;
 extern SF_U8 const sfTransactionResult;
 extern SF_U8 const sfTickSize;
+extern SF_U8 const sfCRNEligibility;
+extern SF_U8 const sfStatusMode;
+extern SF_U8 const sfCRNActivated;
 
 // 16-bit integers
 extern SF_U16 const sfLedgerEntryType;
 extern SF_U16 const sfTransactionType;
 extern SF_U16 const sfSignerWeight;
+extern SF_U16 const sfPort;
 
 // 32-bit integers (common)
 extern SF_U32 const sfFlags;
@@ -364,6 +370,8 @@ extern SF_U32 const sfWalletSize;
 extern SF_U32 const sfOwnerCount;
 extern SF_U32 const sfDestinationTag;
 extern SF_U32 const sfKYCTime;
+extern SF_U32 const sfTimestamp;
+extern SF_U32 const sfTime;
 
 // 32-bit integers (uncommon)
 extern SF_U32 const sfHighQualityIn;
@@ -376,7 +384,7 @@ extern SF_U32 const sfStampEscrow;
 extern SF_U32 const sfBondAmount;
 extern SF_U32 const sfLoadFee;
 extern SF_U32 const sfOfferSequence;
-extern SF_U32 const sfFirstLedgerSequence;  // Deprecated: do not use
+extern SF_U32 const sfFirstLedgerSequence;  // CRN performance report
 extern SF_U32 const sfLastLedgerSequence;
 extern SF_U32 const sfTransactionIndex;
 extern SF_U32 const sfOperationLimit;
@@ -392,6 +400,9 @@ extern SF_U32 const sfSignerListID;
 extern SF_U32 const sfSettleDelay;
 extern SF_U32 const sfConfigID;
 extern SF_U32 const sfConfigType;
+extern SF_U32 const sfCRN_LatencyAvg;
+extern SF_U32 const sfTransitions;
+extern SF_U32 const sfDuration;
 
 // 64-bit integers
 extern SF_U64 const sfIndexNext;
@@ -448,6 +459,7 @@ extern SF_Amount const sfDeliverMin;
 extern SF_Amount const sfMinimumOffer;
 extern SF_Amount const sfCasinocoinEscrow;
 extern SF_Amount const sfDeliveredAmount;
+extern SF_Amount const sfCRN_FeeDistributed;
 
 // variable length (common)
 extern SF_Blob const sfPublicKey;
@@ -470,6 +482,9 @@ extern SF_Blob const sfFulfillment;
 extern SF_Blob const sfCondition;
 extern SF_Blob const sfMasterSignature;
 extern SF_Blob const sfConfigData;
+extern SF_Blob const sfCRN_IPAddress;
+extern SF_Blob const sfCRN_DomainName;
+extern SF_Blob const sfCRN_PublicKey;
 
 // account
 extern SF_Account const sfAccount;
@@ -487,6 +502,7 @@ extern SF_Vec256 const sfIndexes;
 extern SF_Vec256 const sfHashes;
 extern SF_Vec256 const sfAmendments;
 extern SF_Vec256 const sfConfigHashes;
+extern SF_Vec256 const sfCRNTxHistory;
 
 // vector of 128-bit
 extern SF_Vec128 const sfKYCVerifications;
@@ -505,8 +521,12 @@ extern SField const sfMemo;
 extern SField const sfSignerEntry;
 extern SField const sfSigner;
 extern SField const sfMajority;
+// stands for Know Your Customer
 extern SField const sfKYC;
 extern SField const sfConfigEntry;
+// stands for Community Relay Node
+extern SField const sfCRN;
+extern SField const sfCRNStatus;
 
 // array of objects
 // ARRAY/1 is reserved for end of array
@@ -520,6 +540,8 @@ extern SField const sfAffectedNodes;
 extern SField const sfMemos;
 extern SField const sfMajorities;
 extern SField const sfConfiguration;
+extern SField const sfCRNs;
+extern SField const sfCRNPerformance;
 
 //------------------------------------------------------------------------------
 

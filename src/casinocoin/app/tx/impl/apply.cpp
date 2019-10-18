@@ -45,6 +45,10 @@ checkValidity(HashRouter& router,
     STTx const& tx, Rules const& rules,
         Config const& config)
 {
+    // If its a CRN Round transaction we return it is valid
+    if(tx.getTxnType() == ttCRN_ROUND)
+        return {Validity::Valid, ""};
+
     auto const allowMultiSign =
         rules.enabled(featureMultiSign);
 

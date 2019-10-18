@@ -24,6 +24,9 @@
 
 #include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/protocol/Serializer.h>
+
+#include <casinocoin/ledger/ReadView.h>
+
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/json/json_writer.h>
 #include <stdexcept>
@@ -306,6 +309,7 @@ TokenDescriptor::TokenDescriptor(TokenDescriptor const& other)
     contactEmail = other.contactEmail;
     iconURL = other.iconURL;
     apiEndpoint = other.apiEndpoint;
+    extraFeeFactor = other.extraFeeFactor;
 
     Serializer s;
     other.totalSupply.add(s);
@@ -321,11 +325,13 @@ TokenDescriptor& TokenDescriptor::operator=(TokenDescriptor const& other)
     contactEmail = other.contactEmail;
     iconURL = other.iconURL;
     apiEndpoint = other.apiEndpoint;
+    extraFeeFactor = other.extraFeeFactor;
 
     Serializer s;
     other.totalSupply.add(s);
     SerialIter sit(s.slice());
     totalSupply = STAmount(sit, sfGeneric);
+
     return *this;
 }
 
@@ -345,6 +351,10 @@ bool TokenDescriptor::fromJson(Json::Value const& data)
     contactEmail = data[jss::contactEmail].asString();
     iconURL = data[jss::iconURL].asString();
     apiEndpoint = data[jss::apiEndpoint].asString();
+    if (data.isMember(jss::extraFeeFactor))
+        extraFeeFactor = data[jss::extraFeeFactor].asInt();
+    else
+        extraFeeFactor = 0u;
 
     Json::Value combinedAmountObj(Json::objectValue);
     combinedAmountObj[jss::value] = data[jss::totalSupply];
@@ -352,6 +362,7 @@ bool TokenDescriptor::fromJson(Json::Value const& data)
     combinedAmountObj[jss::issuer] = data[jss::issuer];
 
     JLOG(mJournal.debug()) << "TokenDescriptor::fromJson combinedAmountObj" << combinedAmountObj;
+
     return amountFromJsonNoThrow(totalSupply, combinedAmountObj);
 }
 
@@ -359,7 +370,7 @@ bool TokenDescriptor::toJson(Json::Value &result) const
 {
     if (totalSupply.isDefault())
     {
-        JLOG(mJournal.info()) << "TokenDescriptor::toJson STAmount is not defined";
+        JLOG(mJournal.info()) << "TokenDescriptor::toJson totalSupply is not defined";
         return false;
     }
     Json::Value combinedAmountObj(Json::objectValue);
@@ -367,6 +378,8 @@ bool TokenDescriptor::toJson(Json::Value &result) const
     result[jss::totalSupply] = combinedAmountObj[jss::value];
     result[jss::token] = combinedAmountObj[jss::currency];
     result[jss::issuer] = combinedAmountObj[jss::issuer];
+
+    result[jss::extraFeeFactor] = extraFeeFactor;
 
     result[jss::fullName] = fullName;
     result[jss::flags] = flags;
@@ -408,5 +421,66 @@ bool Blacklist_SignerDescriptor::toJson(Json::Value &result) const
 DataDescriptorInterface::DataDescriptorInterface(beast::Journal const& journal)
     : mJournal(journal)
 {}
+
+/////////////////////////////////////////////////////////////////
+//////////////////////////// Helpers ////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+std::pair<TER, boost::optional<TokenDescriptor>>
+isWLTCompliant(const STAmount &amount,
+               ConfigObjectEntry const& tokenConfig,
+               boost::optional<beast::Journal> j)
+{
+    boost::optional<TokenDescriptor> theToken;
+    if (isCSC(amount))
+    {
+        return {tesSUCCESS, theToken};
+    }
+    if (tokenConfig.getType() != ConfigObjectEntry::Token)
+    {
+        if (j) { JLOG((*j).warn()) << "isWLTCompliant() non-Token config object passed"; }
+        return {tefFAILURE, theToken};
+    }
+
+    theToken = getWLT(amount, tokenConfig, j);
+    if (theToken)
+        return {tesSUCCESS, theToken};
+
+    return {tefNOT_WLT, theToken};
+}
+
+boost::optional<TokenDescriptor>
+getWLT(const STAmount &amount,
+       ConfigObjectEntry const& tokenConfig,
+       boost::optional<beast::Journal> j)
+{
+    boost::optional<TokenDescriptor> theToken;
+
+    auto const& definedTokens = tokenConfig.getData();
+    for (auto const entry : definedTokens)
+    {
+        const TokenDescriptor* token = static_cast<const TokenDescriptor*>(entry);
+        try
+        {
+            if (token->totalSupply.issue() == amount.issue()
+                    && token->totalSupply >= amount)
+            {
+                if (j) { JLOG((*j).debug()) << "getWLT() found matching entry, return OK"; }
+                theToken = *token;
+                return theToken;
+            }
+        }
+        catch( std::runtime_error const& err)
+        {
+            if (j) { JLOG((*j).warn()) << "getWLT() caught exception. what: " << err.what(); }
+            return theToken;
+        }
+    }
+
+    if (j) { JLOG((*j).info()) << "getWLT() not compliant"
+                        << " token: " << to_string(amount.issue().currency)
+                        << " issuer: " << toBase58(amount.issue().account); }
+    return theToken;
+}
 
 } // casinocoin

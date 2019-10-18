@@ -50,6 +50,7 @@ add(    jtVALIDATION_ut, "untrustedValidation",     maxLimit, false, 2000,  5000
 add(    jtTRANSACTION_l, "localTransaction",        maxLimit, false, 100,   500);
 add(    jtLEDGER_REQ,    "ledgerRequest",           2,        false, 0,     0);
 add(    jtPROPOSAL_ut,   "untrustedProposal",       maxLimit, false, 500,   1250);
+add(    jtPERFORMANCE_REPORT, "performanceReport",  maxLimit, false, 250,   1000);
 add(    jtLEDGER_DATA,   "ledgerData",              2,        false, 0,     0);
 add(    jtCLIENT,        "clientCommand",           maxLimit, false, 2000,  5000);
 add(    jtRPC,           "RPC",                     maxLimit, false, 0,     0);
@@ -60,7 +61,7 @@ add(    jtADVANCE,       "advanceLedger",           maxLimit, false, 0,     0);
 add(    jtPUBLEDGER,     "publishNewLedger",        maxLimit, false, 3000,  4500);
 add(    jtTXN_DATA,      "fetchTxnData",            1,        false, 0,     0);
 add(    jtWAL,           "writeAhead",              maxLimit, false, 1000,  2500);
-add(    jtVALIDATION_t,  "trustedValidation",       maxLimit, false, 500,  1500);
+add(    jtVALIDATION_t,  "trustedValidation",       maxLimit, false, 500,   1500);
 add(    jtWRITE,         "writeObjects",            maxLimit, false, 1750,  2500);
 add(    jtACCEPT,        "acceptLedger",            maxLimit, false, 0,     0);
 add(    jtPROPOSAL_t,    "trustedProposal",         maxLimit, false, 100,   500);

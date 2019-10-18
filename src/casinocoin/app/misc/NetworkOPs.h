@@ -28,6 +28,7 @@
 
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/protocol/STValidation.h>
+#include <casinocoin/protocol/STPerformanceReport.h>
 #include <casinocoin/app/ledger/Ledger.h>
 #include <casinocoin/app/consensus/CCLCxPeerPos.h>
 #include <casinocoin/ledger/ReadView.h>
@@ -100,6 +101,64 @@ public:
         return noMeansDont ? FailHard::yes : FailHard::no;
     }
 
+    /**
+     * State accounting records two attributes for each possible server state:
+     * 1) Amount of time spent in each state (in microseconds). This value is
+     *    updated upon each state transition.
+     * 2) Number of transitions to each state.
+     *
+     * This data can be polled through server_info and represented by
+     * monitoring systems similarly to how bandwidth, CPU, and other
+     * counter-based metrics are managed.
+     *
+     * State accounting is more accurate than periodic sampling of server
+     * state. With periodic sampling, it is very likely that state transitions
+     * are missed, and accuracy of time spent in each state is very rough.
+     */
+    class StateAccounting
+    {
+    public:
+        struct Counters
+        {
+            std::uint32_t transitions = 0;
+            std::chrono::microseconds dur = std::chrono::microseconds (0);
+        };
+
+        explicit StateAccounting ();
+
+        /**
+         * Record state transition. Update duration spent in previous
+         * state.
+         *
+         * @param om New state.
+         */
+        void mode (OperatingMode om);
+
+        /**
+         * Output state counters in JSON format.
+         *
+         * @return JSON object.
+         */
+        Json::Value json() const;
+
+        /**
+         * Returns current state of counters + duration in current state
+         *
+         * @return array of Counters.
+         */
+        std::array<Counters, 5> snapshot() const;
+
+    private:
+        OperatingMode mode_ = omDISCONNECTED;
+        std::array<Counters, 5> counters_;
+        mutable std::mutex mutex_;
+        std::chrono::system_clock::time_point start_ =
+            std::chrono::system_clock::now();
+        static std::array<Json::StaticString const, 5> const states_;
+        static Json::StaticString const transitions_;
+        static Json::StaticString const dur_;
+    };
+
 public:
     virtual ~NetworkOPs () = 0;
 
@@ -110,6 +169,8 @@ public:
 
     virtual OperatingMode getOperatingMode () const = 0;
     virtual std::string strOperatingMode () const = 0;
+    virtual protocol::NodeStatus getNodeStatus() const = 0;
+    virtual protocol::NodeStatus getNodeStatus(OperatingMode mode) const = 0;
 
     //--------------------------------------------------------------------------
     //
@@ -183,12 +244,14 @@ public:
     virtual PublicKey const& getValidationPublicKey () const = 0;
     virtual void setValidationKeys (
         SecretKey const& valSecret, PublicKey const& valPublic) = 0;
-
     virtual Json::Value getConsensusInfo () = 0;
     virtual Json::Value getServerInfo (bool human, bool admin) = 0;
+    virtual std::array<StateAccounting::Counters, 5> getServerAccountingInfo () = 0;
     virtual void clearLedgerFetch () = 0;
     virtual Json::Value getLedgerFetchInfo () = 0;
 
+    virtual bool recvPerformanceReport (STPerformanceReport::ref val,
+        std::string const& source) = 0;
     /** Accepts the current transaction tree, return the new ledger's sequence
 
         This API is only used via RPC with the server in STANDALONE mode and
@@ -240,6 +303,7 @@ public:
         std::shared_ptr<ReadView const> const& lpCurrent,
         std::shared_ptr<STTx const> const& stTxn, TER terResult) = 0;
     virtual void pubValidation (STValidation::ref val) = 0;
+    virtual void pubPerformanceReport (STPerformanceReport::ref report) = 0;
 };
 
 //------------------------------------------------------------------------------

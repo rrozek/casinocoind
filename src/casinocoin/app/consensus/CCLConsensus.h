@@ -379,6 +379,10 @@ private:
     SecretKey valSecret_;
     LedgerHash acquiringLedger_;
 
+    PublicKey crnPublic_;
+    std::string crnDomain_;
+    std::string crnSignature_;
+
     // The timestamp of the last validation we used, in network time. This is
     // only used for our own validations.
     NetClock::time_point lastValidationTime_;

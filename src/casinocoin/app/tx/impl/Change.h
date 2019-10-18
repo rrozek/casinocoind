@@ -70,6 +70,7 @@ private:
     TER applyAmendment ();
     TER applyFee ();
     TER applyConfiguration();
+    TER applyCRN_Round ();
 };
 
 }

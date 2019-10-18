@@ -39,6 +39,7 @@
 #include <casinocoin/protocol/Protocol.h>
 #include <casinocoin/protocol/STTx.h>
 #include <casinocoin/protocol/STValidation.h>
+#include <casinocoin/protocol/STPerformanceReport.h>
 #include <casinocoin/beast/core/ByteOrder.h>
 #include <casinocoin/beast/net/IPAddressConversion.h>
 #include <beast/core/placeholders.hpp>
@@ -52,6 +53,9 @@
 #include <queue>
 
 namespace casinocoin {
+
+class CRN;
+
 
 class PeerImp
     : public Peer
@@ -83,13 +87,6 @@ public:
 
         /** Running the Ripple protocol actively */
         ,active
-    };
-
-    enum class Sanity
-    {
-        insane
-        ,unknown
-        ,sane
     };
 
     using ptr = std::shared_ptr <PeerImp>;
@@ -129,7 +126,7 @@ private:
     OverlayImpl& overlay_;
     bool m_inbound;
     State state_;          // Current state
-    std::atomic<Sanity> sanity_;
+    std::atomic<Peer::Sanity> sanity_;
     clock_type::time_point insaneTime_;
     bool detaching_ = false;
     // Node public key of peer.
@@ -331,6 +328,12 @@ public:
     bool
     isHighLatency() const override;
 
+    uint32_t
+    latency() const override;
+
+    Peer::Sanity
+    sanity() const override;
+
     void
     fail(std::string const& reason);
 
@@ -430,6 +433,7 @@ public:
     void onMessage (std::shared_ptr <protocol::TMStatusChange> const& m);
     void onMessage (std::shared_ptr <protocol::TMHaveTransactionSet> const& m);
     void onMessage (std::shared_ptr <protocol::TMValidation> const& m);
+    void onMessage (std::shared_ptr <protocol::TMPerformanceReport> const& m);
     void onMessage (std::shared_ptr <protocol::TMGetObjectByHash> const& m);
 
 private:
@@ -463,6 +467,10 @@ private:
     void
     checkValidation (STValidation::pointer val,
         bool isTrusted, std::shared_ptr<protocol::TMValidation> const& packet);
+
+    void
+    checkReport (STPerformanceReport::pointer report,
+        std::shared_ptr<protocol::TMPerformanceReport> const& packet);
 
     void
     getLedger (std::shared_ptr<protocol::TMGetLedger> const&packet);
@@ -537,5 +545,5 @@ PeerImp::sendEndpoints (FwdIt first, FwdIt last)
 }
 
 }
-
 #endif
+

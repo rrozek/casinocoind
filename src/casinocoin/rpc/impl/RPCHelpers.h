@@ -29,7 +29,6 @@
 #include <casinocoin/beast/core/SemanticVersion.h>
 #include <casinocoin/ledger/TxMeta.h>
 #include <casinocoin/protocol/Protocol.h>
-#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/protocol/SecretKey.h>
 #include <casinocoin/rpc/impl/Tuning.h>
 #include <casinocoin/rpc/Status.h>
@@ -107,6 +106,16 @@ lookupLedger (std::shared_ptr<ReadView const>&, Context&, Json::Value& result);
 
 hash_set <AccountID>
 parseAccountIds(Json::Value const& jvArray);
+
+boost::optional<TokenDescriptor>
+getWLT(Json::Value const& jvRequest,
+       std::shared_ptr<ReadView const> const& ledger,
+       beast::Journal const& j);
+
+bool
+isWLT(Json::Value const& jvRequest,
+      std::shared_ptr<ReadView const> const& ledger,
+      beast::Journal const& j);
 
 void
 addPaymentDeliveredAmount(Json::Value&, Context&,

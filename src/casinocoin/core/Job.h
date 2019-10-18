@@ -48,6 +48,7 @@ enum JobType
     jtTRANSACTION_l, // A local transaction
     jtLEDGER_REQ,    // Peer request ledger/txnset data
     jtPROPOSAL_ut,   // A proposal from an untrusted source
+    jtPERFORMANCE_REPORT,   // performance report of a node
     jtLEDGER_DATA,   // Received data for a ledger we're acquiring
     jtCLIENT,        // A websocket command from the client
     jtRPC,           // A websocket command from the client

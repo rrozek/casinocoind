@@ -30,7 +30,6 @@
 #include <casinocoin/app/misc/Validations.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/protocol/Protocol.h>
-#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/json/json_value.h>
 
 #include <boost/assign/list_of.hpp>

@@ -132,7 +132,7 @@ private:
         else
             sle0_ = *iter0_;
     }
-    
+
     void inc1()
     {
         ++iter1_;
@@ -141,7 +141,7 @@ private:
         else
             sle1_ = iter1_->second.second;
     }
-    
+
     void skip()
     {
         while (iter1_ != end1_ &&
@@ -164,6 +164,8 @@ void
 RawStateTable::apply (RawView& to) const
 {
     to.rawDestroyCSC(dropsDestroyed_);
+    to.rawRedistributeCSC(dropsRedistributed_);
+
     for (auto const& elem : items_)
     {
         auto const& item = elem.second;
@@ -342,6 +344,12 @@ void
 RawStateTable::destroyCSC(CSCAmount const& fee)
 {
     dropsDestroyed_ += fee;
+}
+
+void
+RawStateTable::redistributeCSC(CSCAmount const& dropsRedistributed)
+{
+    dropsRedistributed_ += dropsRedistributed;
 }
 
 std::unique_ptr<ReadView::sles_type::iter_base>
