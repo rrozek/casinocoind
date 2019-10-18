@@ -131,6 +131,7 @@ enum TER
     tefINVARIANT_FAILED,
     tefNOT_WLT,
     tefBLACKLISTED,
+    tefMAX_MEMO_SIZE,
 
     // -99 .. -1: R Retry
     //   sequence too high, no funds for txn fee, originating -account

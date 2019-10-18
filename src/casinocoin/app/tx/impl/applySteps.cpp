@@ -121,6 +121,14 @@ invoke_preclaim(PreclaimContext const& ctx)
         
         result = T::checkBlacklist(ctx);
         if (result != tesSUCCESS)
+        {
+            TER wlResult = T::checkWhitelist(ctx);
+            if (wlResult != tesSUCCESS)
+                return { wlResult, baseFee };
+        }
+
+        result = T::checkMemoSize(ctx);
+        if (result != tesSUCCESS)
             return { result, baseFee };
 
     }

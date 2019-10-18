@@ -40,7 +40,7 @@ char const* const versionString =
     //  and follow the format described at http://semver.org/
     //
     "4.0.5"
-
+    
 #if defined(DEBUG) || defined(SANITIZER)
        "+"
 #ifdef DEBUG

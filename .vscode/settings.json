@@ -28,6 +28,10 @@
         "inffas8664.c": "cpp",
         "puff.c": "cpp",
         "gun.c": "cpp",
-        "infback.c": "cpp"
+        "infback.c": "cpp",
+        "__locale": "cpp",
+        "locale": "cpp",
+        "thread": "cpp",
+        "ios": "cpp"
     }
 }

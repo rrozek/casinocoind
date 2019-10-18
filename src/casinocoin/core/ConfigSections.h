@@ -48,6 +48,7 @@ struct ConfigSection
 #define SECTION_FEE_OWNER_RESERVE       "fee_owner_reserve"
 #define SECTION_FETCH_DEPTH             "fetch_depth"
 #define SECTION_LEDGER_HISTORY          "ledger_history"
+#define SECTION_MAX_MEMO_SIZE           "max_memo_size"
 #define SECTION_INSIGHT                 "insight"
 #define SECTION_IPS                     "ips"
 #define SECTION_IPS_FIXED               "ips_fixed"
@@ -86,6 +87,7 @@ struct ConfigSection
 #define SECTION_CRNS                    "relaynodes"
 #define SECTION_CRN_CONFIG              "relaynode_config"
 #define SECTION_CRN_LIST_SITES          "relaynode_list_sites"
+#define SECTION_WHITELIST_ACCOUNTS      "whitelist_accounts"
 
 } // casinocoin
 
