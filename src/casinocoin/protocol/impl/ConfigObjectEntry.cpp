@@ -533,15 +533,13 @@ getWLT(const STAmount &amount,
 bool isCRNRoundsActivated(std::shared_ptr<ReadView const> const& ledger,
                           boost::optional<beast::Journal> j)
 {
-    boost::optional<CRN_SettingsDescriptor> crnSettings;
     LedgerConfig const& ledgerConfiguration = ledger->ledgerConfig();
     auto crnSettingsConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
                                               ledgerConfiguration.entries.end(),
                                               [](ConfigObjectEntry const& obj)
-        {
-            if (obj.getType() == ConfigObjectEntry::CRN_Settings)
-                return true;
-        });
+    {
+            return obj.getType() == ConfigObjectEntry::CRN_Settings;
+    });
     if (crnSettingsConfigIter == ledgerConfiguration.entries.end())
     {
         if (j) { JLOG(j->info()) << "No CRN Settings object defined in the Ledger Config."; };
@@ -550,21 +548,18 @@ bool isCRNRoundsActivated(std::shared_ptr<ReadView const> const& ledger,
     else
     {
         if (j) { JLOG(j->info()) << "CRN Settings object exists"; }
-        return true;
+        auto const& definedSettings = crnSettingsConfigIter->getData();
+        const CRN_SettingsDescriptor* settings = static_cast<const CRN_SettingsDescriptor*>(definedSettings.front());
+        try
+        {
+            return settings->activated;
+        }
+        catch( std::runtime_error const& err)
+        {
+            if (j) { JLOG((*j).warn()) << "isCRNRoundsActivated() caught exception. 'activated' not defined, CRNRounds disabled by default"; }
+            return false;
+        }
     }
-    // auto const& crnSettings = crnSettingsConfig.getData();
-    // auto crnSettingsConfigIter = std::find_if(crnSettings.entries.begin(),
-    //                                           crnSettings.entries.end(),
-    //                                           [](ConfigObjectEntry const& obj)
-    // {
-    //     return obj.getType() == ConfigObjectEntry::CRN_Settings;
-    // });
-
-    //if (crnSettingsConfig == crnSettings.entries.end())
-    //{
-        // NO CRN Settings entry found in config
-    //    return false;
-    // }
 }
 
 } // casinocoin
