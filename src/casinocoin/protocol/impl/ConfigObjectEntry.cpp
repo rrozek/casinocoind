@@ -46,6 +46,7 @@ ConfigObjectEntry::bimap_string_type ConfigObjectEntry::initializeTypeMap()
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Message_PubKey", ConfigObjectEntry::Message_PubKey));
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Token", ConfigObjectEntry::Token));
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Blacklist_Signer", ConfigObjectEntry::Blacklist_Signer));
+    aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("CRN_Settings", ConfigObjectEntry::CRN_Settings));
     return aMap;
 }
 
