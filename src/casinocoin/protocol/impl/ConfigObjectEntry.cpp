@@ -136,6 +136,9 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
         case Blacklist_Signer:
             pItem = new Blacklist_SignerDescriptor(mJournal);
             break;
+        case CRN_Settings:
+            pItem = new CRN_SettingsDescriptor(mJournal);
+            break;
         case Invalid:
             return false;
         }
@@ -418,6 +421,49 @@ bool Blacklist_SignerDescriptor::toJson(Json::Value &result) const
     return true;
 }
 
+CRN_SettingsDescriptor::CRN_SettingsDescriptor(beast::Journal const& journal)
+    : DataDescriptorInterface(journal)
+{}
+
+DataDescriptorInterface* CRN_SettingsDescriptor::clone() const
+{
+    return new CRN_SettingsDescriptor(*this);
+}
+
+bool CRN_SettingsDescriptor::fromJson(Json::Value const& data)
+{
+    if (!data.isObject())
+        return false;
+
+    if (!data.isMember(jss::account))
+        return false;
+    
+    if (!data.isMember(jss::activated))
+        return false;
+
+    if (!to_issuer(foundationFeeAccountID, data[jss::account].asString()))
+        return false;
+
+    if (data.isMember(jss::foundationFeeFactor))
+        foundationFeeFactor = data[jss::foundationFeeFactor].asInt();
+    else
+        foundationFeeFactor = 0u;
+    
+    if (data.isMember(jss::activated))
+        activated = data[jss::activated].asBool();
+    else
+        activated = false;
+    return true;
+}
+
+bool CRN_SettingsDescriptor::toJson(Json::Value &result) const
+{
+    result[jss::account] = toBase58(foundationFeeAccountID);
+    result[jss::foundationFeeFactor] = foundationFeeFactor;
+    result[jss::activated] = activated;
+    return true;
+}
+
 DataDescriptorInterface::DataDescriptorInterface(beast::Journal const& journal)
     : mJournal(journal)
 {}
@@ -481,6 +527,43 @@ getWLT(const STAmount &amount,
                         << " token: " << to_string(amount.issue().currency)
                         << " issuer: " << toBase58(amount.issue().account); }
     return theToken;
+}
+
+bool isCRNRoundsActivated(std::shared_ptr<ReadView const> const& ledger,
+                          boost::optional<beast::Journal> j)
+{
+    boost::optional<CRN_SettingsDescriptor> crnSettings;
+    LedgerConfig const& ledgerConfiguration = ledger->ledgerConfig();
+    auto crnSettingsConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                              ledgerConfiguration.entries.end(),
+                                              [](ConfigObjectEntry const& obj)
+        {
+            if (obj.getType() == ConfigObjectEntry::CRN_Settings)
+                return true;
+        });
+    if (crnSettingsConfigIter == ledgerConfiguration.entries.end())
+    {
+        if (j) { JLOG(j->info()) << "No CRN Settings object defined in the Ledger Config."; };
+        return false;
+    }
+    else
+    {
+        if (j) { JLOG(j->info()) << "CRN Settings object exists"; }
+        return true;
+    }
+    // auto const& crnSettings = crnSettingsConfig.getData();
+    // auto crnSettingsConfigIter = std::find_if(crnSettings.entries.begin(),
+    //                                           crnSettings.entries.end(),
+    //                                           [](ConfigObjectEntry const& obj)
+    // {
+    //     return obj.getType() == ConfigObjectEntry::CRN_Settings;
+    // });
+
+    //if (crnSettingsConfig == crnSettings.entries.end())
+    //{
+        // NO CRN Settings entry found in config
+    //    return false;
+    // }
 }
 
 } // casinocoin

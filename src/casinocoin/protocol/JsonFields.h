@@ -82,6 +82,7 @@ JSS ( accounts );                   // in: LedgerEntry, Subscribe,
                                     // out: WalletAccounts
 JSS ( accounts_proposed );          // in: Subscribe, Unsubscribe
 JSS ( action );
+JSS ( activated );                  // in/out: ConfigObject, CRN_Settings
 JSS ( acquiring );                  // out: LedgerRequest
 JSS ( address );                    // out: PeerImp
 JSS ( affected );                   // out: AcceptedLedgerTx
@@ -200,7 +201,7 @@ JSS ( escrow );                     // in: LedgerEntry
 JSS ( expand );                     // in: handler/Ledger
 JSS ( expected_ledger_size );       // out: TxQ
 JSS ( expiration );                 // out: AccountOffers, AccountChannels
-JSS ( extraFeeFactor );                   // in/out: ConfigObject, Tokens
+JSS ( extraFeeFactor );             // in/out: ConfigObject, Tokens
 JSS ( fail_hard );                  // in: Sign, Submit
 JSS ( failed );                     // out: InboundLedger
 JSS ( feature );                    // in: Feature
@@ -217,6 +218,7 @@ JSS ( fix_txns );                   // in: LedgerCleaner
 JSS ( flags );                      // out: paths/Node, AccountOffers,
                                     //      NetworkOPs
 JSS ( forward );                    // in: AccountTx
+JSS ( foundationFeeFactor );        // in/out: ConfigObject, CRN_Settings
 JSS ( freeze );                     // out: AccountLines
 JSS ( freeze_peer );                // out: AccountLines
 JSS ( frozen_balances );            // out: GatewayBalances
