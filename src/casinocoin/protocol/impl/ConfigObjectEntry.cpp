@@ -451,18 +451,16 @@ bool CRN_SettingsDescriptor::fromJson(Json::Value const& data)
     if (!data.isObject())
         return false;
 
-    if (!data.isMember(jss::public_key))
+    if (!data.isMember(jss::public_key_hex))
         return false;
     
     if (!data.isMember(jss::activated))
         return false;
 
-    boost::optional<PublicKey> publicKey = parseBase58<PublicKey>(TokenType::TOKEN_NODE_PUBLIC, data[jss::public_key].asString());
-
-    if (!publicKey)
+    auto unHexedPubKey = strUnHex(data[jss::public_key_hex].asString());
+    if (!unHexedPubKey.second)
         return false;
-    else
-        foundationFeesPublicKey = *publicKey;
+    foundationFeesPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
 
     if (data.isMember(jss::foundationFeeFactor))
         foundationFeeFactor = data[jss::foundationFeeFactor].asInt();
@@ -478,7 +476,7 @@ bool CRN_SettingsDescriptor::fromJson(Json::Value const& data)
 
 bool CRN_SettingsDescriptor::toJson(Json::Value &result) const
 {
-    result[jss::public_key] = toBase58(TOKEN_ACCOUNT_PUBLIC, foundationFeesPublicKey);
+    result[jss::public_key_hex] = strHex(foundationFeesPublicKey.data(), foundationFeesPublicKey.size());
     result[jss::foundationFeeFactor] = foundationFeeFactor;
     result[jss::activated] = activated;
     return true;
