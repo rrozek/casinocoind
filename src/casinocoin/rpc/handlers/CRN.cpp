@@ -36,6 +36,7 @@
 #include <casinocoin/app/misc/CRNRound.h>
 #include <casinocoin/app/misc/CRNList.h>
 #include <casinocoin/app/misc/CRNListUpdater.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 
 namespace casinocoin {
 
@@ -122,6 +123,10 @@ Json::Value doCRNInfo (RPC::Context& context)
     auto const valLedger = context.ledgerMaster.getValidatedLedger();
     if (valLedger)
     {
+        // check if CRNRounds are activated on the ledger config
+        bool activated = isCRNRoundsActivated(valLedger, context.j);
+        JLOG(context.j.info()) << "CRN ConfigInfo Activated: " << activated;
+        // read the last crn round from ledger
         auto const crnRound = valLedger->read(keylet::crnRound());
         // create json output
         Json::Value jvReply = Json::objectValue;

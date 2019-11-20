@@ -177,14 +177,16 @@ struct Blacklist_SignerDescriptor : public DataDescriptorInterface
 struct CRN_SettingsDescriptor : public DataDescriptorInterface
 {
     CRN_SettingsDescriptor(beast::Journal const& journal);
-    
+    CRN_SettingsDescriptor(CRN_SettingsDescriptor const& other);
+    CRN_SettingsDescriptor& operator=(const CRN_SettingsDescriptor& other);
+
     DataDescriptorInterface* clone() const override;
 
     bool fromJson(Json::Value const& data) override;
     bool toJson(Json::Value& result) const override;
 
     uint32_t foundationFeeFactor = 0u; /* percentage of fees for the foundation */
-    AccountID foundationFeeAccountID;
+    PublicKey foundationFeesPublicKey;
     bool activated;
 };
 
@@ -210,6 +212,10 @@ getWLT(STAmount const& amount,
 //------------------------------------------------------------------------------
 bool 
 isCRNRoundsActivated(std::shared_ptr<ReadView const> const& ledger,
+                     boost::optional<beast::Journal> j = boost::optional<beast::Journal>());
+
+boost::optional<CRN_SettingsDescriptor>
+getCRNSettings(std::shared_ptr<ReadView const> const& ledger,
                      boost::optional<beast::Journal> j = boost::optional<beast::Journal>());
 
 } // casinocoin

@@ -426,6 +426,21 @@ CRN_SettingsDescriptor::CRN_SettingsDescriptor(beast::Journal const& journal)
     : DataDescriptorInterface(journal)
 {}
 
+CRN_SettingsDescriptor::CRN_SettingsDescriptor(CRN_SettingsDescriptor const& other)
+{
+    foundationFeesPublicKey = other.foundationFeesPublicKey;
+    foundationFeeFactor = other.foundationFeeFactor;
+    activated = other.activated;
+}
+
+CRN_SettingsDescriptor& CRN_SettingsDescriptor::operator=(CRN_SettingsDescriptor const& other)
+{
+    foundationFeesPublicKey = other.foundationFeesPublicKey;
+    foundationFeeFactor = other.foundationFeeFactor;
+    activated = other.activated;
+    return *this;
+}
+
 DataDescriptorInterface* CRN_SettingsDescriptor::clone() const
 {
     return new CRN_SettingsDescriptor(*this);
@@ -436,14 +451,18 @@ bool CRN_SettingsDescriptor::fromJson(Json::Value const& data)
     if (!data.isObject())
         return false;
 
-    if (!data.isMember(jss::account))
+    if (!data.isMember(jss::public_key))
         return false;
     
     if (!data.isMember(jss::activated))
         return false;
 
-    if (!to_issuer(foundationFeeAccountID, data[jss::account].asString()))
+    boost::optional<PublicKey> publicKey = parseBase58<PublicKey>(TokenType::TOKEN_NODE_PUBLIC, data[jss::public_key].asString());
+
+    if (!publicKey)
         return false;
+    else
+        foundationFeesPublicKey = *publicKey;
 
     if (data.isMember(jss::foundationFeeFactor))
         foundationFeeFactor = data[jss::foundationFeeFactor].asInt();
@@ -459,7 +478,7 @@ bool CRN_SettingsDescriptor::fromJson(Json::Value const& data)
 
 bool CRN_SettingsDescriptor::toJson(Json::Value &result) const
 {
-    result[jss::account] = toBase58(foundationFeeAccountID);
+    result[jss::public_key] = toBase58(TOKEN_ACCOUNT_PUBLIC, foundationFeesPublicKey);
     result[jss::foundationFeeFactor] = foundationFeeFactor;
     result[jss::activated] = activated;
     return true;
@@ -560,6 +579,28 @@ bool isCRNRoundsActivated(std::shared_ptr<ReadView const> const& ledger,
             return false;
         }
     }
+}
+
+boost::optional<CRN_SettingsDescriptor>
+getCRNSettings(std::shared_ptr<ReadView const> const& ledger,
+                     boost::optional<beast::Journal> j)
+{
+    boost::optional<CRN_SettingsDescriptor> settings;
+    LedgerConfig const& ledgerConfiguration = ledger->ledgerConfig();
+    auto crnSettingsConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                              ledgerConfiguration.entries.end(),
+                                              [](ConfigObjectEntry const& obj)
+    {
+            return obj.getType() == ConfigObjectEntry::CRN_Settings;
+    });
+    if (crnSettingsConfigIter != ledgerConfiguration.entries.end())
+    {
+        auto const& definedSettings = crnSettingsConfigIter->getData();
+        const CRN_SettingsDescriptor* settingsObject = static_cast<const CRN_SettingsDescriptor*>(definedSettings.front());
+        settings = *settingsObject;
+        // settings = static_cast<const CRN_SettingsDescriptor*>(definedSettings.front());
+    }
+    return settings;
 }
 
 } // casinocoin

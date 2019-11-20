@@ -32,6 +32,7 @@
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/app/misc/FeeVote.h>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
@@ -80,7 +81,7 @@ public:
         }
     }
 
-    void setVotingFinished()
+    void setVotingFinished(boost::optional<CRN_SettingsDescriptor> crnSettings)
     {
         votingFinished_ = true;
 
@@ -93,8 +94,14 @@ public:
         if (eligibleList.size() == 0)
             return;
 
-        feeRemainFromShare_ = CSCAmount(feeDistributionVote_.drops() % eligibleList.size());
-        uint64_t sharePerNode = feeDistributionVote_.drops() / eligibleList.size();
+        // we first get the foundation percentage of fees from the total
+        uint64_t foundationFeeDrops = feeDistributionVote_.drops() / 100 * crnSettings->foundationFeeFactor;
+        // add the foundation to the paymentMap
+        paymentMap_.insert(std::pair<PublicKey, CSCAmount>(crnSettings->foundationFeesPublicKey, CSCAmount(foundationFeeDrops)));
+        // distribute the rest of the fees to the CRN's
+        uint64_t remainingFees = feeDistributionVote_.drops() - foundationFeeDrops;
+        feeRemainFromShare_ = CSCAmount(remainingFees % eligibleList.size());
+        uint64_t sharePerNode = remainingFees / eligibleList.size();
         for ( auto const& eligibleNode : eligibleList)
             paymentMap_.insert(std::pair<PublicKey, CSCAmount>(eligibleNode, CSCAmount(sharePerNode)));
     }
@@ -194,6 +201,11 @@ void CRNRoundImpl::doValidation(std::shared_ptr<const ReadView> const& lastClose
         JLOG(j_.info()) << "CRNRoundImpl::doValidation CRN feature is not enabled. aborting";
         return;
     }
+    if (!isCRNRoundsActivated( lastClosedLedger, j_ ))
+    {
+        JLOG(j_.info()) << "CRNRoundImpl::doValidation CRN Rounds are de-activated. aborting";
+        return;
+    }
     JLOG (j_.info()) <<
         "CRNRoundImpl::doValidation with " << eligibilityMap_.size() << " candidates";
 
@@ -225,6 +237,19 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
         JLOG(j_.info()) << "CRNRoundImpl::doVoting CRN feature is not enabled. aborting";
         return;
     }
+    if (!isCRNRoundsActivated( lastClosedLedger, j_ ))
+    {
+        JLOG(j_.info()) << "CRNRoundImpl::doVoting CRN Rounds are de-activated. aborting";
+        return;
+    }
+    // get the CRN Settings
+    boost::optional<CRN_SettingsDescriptor> crnSettings = getCRNSettings(lastClosedLedger, j_);
+    if(crnSettings)
+    {
+     JLOG(j_.info()) << "CRNRoundImpl::doVoting. CRNSettings Foundation Account: " << toBase58(calcAccountID(crnSettings->foundationFeesPublicKey))
+                     << " - Foundation Percentage: " << crnSettings->foundationFeeFactor;
+    }
+
     JLOG(j_.info()) << "CRNRoundImpl::doVoting. validations: " << parentValidations.size()
                     << " voting range: 0 - " << CSCAmount(SYSTEM_CURRENCY_START - static_cast<uint64_t>(lastClosedLedger->info().drops.drops())).drops();
 
@@ -272,7 +297,7 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
     }
     crnVote->mThreshold = std::max(1, (crnVote->mTrustedValidations * majorityFraction_) / 256);
     crnVote->setFeeDistributionVote(CSCAmount(feeToDistribute.getVotes()));
-    crnVote->setVotingFinished();
+    crnVote->setVotingFinished(crnSettings);
 
     JLOG (j_.info()) <<
         "Received " << crnVote->mTrustedValidations <<
@@ -339,6 +364,11 @@ void CRNRoundImpl::updatePosition(std::list<STPerformanceReport::pointer> const&
     if (!app_.getLedgerMaster().getValidatedRules().enabled(featureCRN))
     {
         JLOG(j_.info()) << "CRNRoundImpl::updatePosition CRN feature is not enabled. aborting";
+        return;
+    }
+    if (!isCRNRoundsActivated( app_.getLedgerMaster().getClosedLedger(), j_ ))
+    {
+        JLOG(j_.info()) << "CRNRoundImpl::updatePosition CRN Rounds are de-activated. aborting";
         return;
     }
     eligibilityMap_.clear();
