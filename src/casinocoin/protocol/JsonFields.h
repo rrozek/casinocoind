@@ -219,6 +219,7 @@ JSS ( flags );                      // out: paths/Node, AccountOffers,
                                     //      NetworkOPs
 JSS ( forward );                    // in: AccountTx
 JSS ( foundationFeeFactor );        // in/out: ConfigObject, CRN_Settings
+JSS ( foundationPublicKey );        // in/out: ConfigObject, CRN_Settings
 JSS ( freeze );                     // out: AccountLines
 JSS ( freeze_peer );                // out: AccountLines
 JSS ( frozen_balances );            // out: GatewayBalances

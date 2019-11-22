@@ -451,13 +451,13 @@ bool CRN_SettingsDescriptor::fromJson(Json::Value const& data)
     if (!data.isObject())
         return false;
 
-    if (!data.isMember(jss::public_key_hex))
+    if (!data.isMember(jss::foundationPublicKey))
         return false;
     
     if (!data.isMember(jss::activated))
         return false;
 
-    auto unHexedPubKey = strUnHex(data[jss::public_key_hex].asString());
+    auto unHexedPubKey = strUnHex(data[jss::foundationPublicKey].asString());
     if (!unHexedPubKey.second)
         return false;
     foundationFeesPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
@@ -476,7 +476,7 @@ bool CRN_SettingsDescriptor::fromJson(Json::Value const& data)
 
 bool CRN_SettingsDescriptor::toJson(Json::Value &result) const
 {
-    result[jss::public_key_hex] = strHex(foundationFeesPublicKey.data(), foundationFeesPublicKey.size());
+    result[jss::foundationPublicKey] = strHex(foundationFeesPublicKey.data(), foundationFeesPublicKey.size());
     result[jss::foundationFeeFactor] = foundationFeeFactor;
     result[jss::activated] = activated;
     return true;
