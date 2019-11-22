@@ -237,6 +237,7 @@ invoke_calculateConsequences(STTx const& tx)
     case ttPAYCHAN_CLAIM:   return invoke_calculateConsequences<PayChanClaim>(tx);
     case ttAMENDMENT:
     case ttCONFIG:
+    case ttCRN_ROUND:
     case ttFEE:
         // fall through to default
     default:

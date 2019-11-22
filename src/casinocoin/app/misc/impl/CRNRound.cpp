@@ -91,6 +91,7 @@ public:
             if (isEligible(yesVote.first))
                 eligibleList.push_back(yesVote.first);
         }
+        // if there are no CRN nodes eligible we do not distribute fees back .... as only the foundation would get some in that case ;)
         if (eligibleList.size() == 0)
             return;
 

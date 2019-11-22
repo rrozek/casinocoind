@@ -109,7 +109,8 @@ Change::preclaim(PreclaimContext const &ctx)
 
     if (ctx.tx.getTxnType() != ttAMENDMENT
         && ctx.tx.getTxnType() != ttFEE
-        && ctx.tx.getTxnType() != ttCONFIG)
+        && ctx.tx.getTxnType() != ttCONFIG
+        && ctx.tx.getTxnType() != ttCRN_ROUND)
         return temUNKNOWN;
 
     return tesSUCCESS;
