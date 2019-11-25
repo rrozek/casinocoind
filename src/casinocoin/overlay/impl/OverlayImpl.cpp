@@ -29,6 +29,7 @@
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/ValidatorList.h>
 #include <casinocoin/core/DatabaseCon.h>
+#include <casinocoin/core/DeadlineTimer.h>
 #include <casinocoin/basics/contract.h>
 #include <casinocoin/basics/Log.h>
 #include <casinocoin/basics/make_SSLContext.h>
@@ -768,7 +769,7 @@ OverlayImpl::selectPeers (PeerSet& set, std::size_t limit,
 
 /** The number of active peers on the network
     Active peers are only those peers that have completed the handshake
-    and are running the Ripple protocol.
+    and are running the Casinocoin protocol.
 */
 std::size_t
 OverlayImpl::size()
@@ -793,9 +794,7 @@ OverlayImpl::crawl()
     for_each ([&](std::shared_ptr<PeerImp>&& sp)
     {
         auto& pv = av.append(Json::Value(Json::objectValue));
-        pv[jss::public_key] = beast::detail::base64_encode(
-            sp->getNodePublic().data(),
-                sp->getNodePublic().size());
+        pv[jss::public_key] = toBase58(TOKEN_NODE_PUBLIC, sp->getNodePublic());
         pv[jss::type] = sp->slot()->inbound() ?
             "in" : "out";
         pv[jss::uptime] =
@@ -834,6 +833,8 @@ bool
 OverlayImpl::processRequest (http_request_type const& req,
     Handoff& handoff)
 {
+    JLOG(journal_.info()) << "OverlayImpl::processRequest url: " << req.url;
+
     if (req.url != "/crawl")
         return false;
 
@@ -860,6 +861,20 @@ OverlayImpl::getActivePeers()
         ret.emplace_back(std::move(sp));
     });
 
+    return ret;
+}
+
+Overlay::PeerSequence
+OverlayImpl::getSanePeers()
+{
+    Overlay::PeerSequence ret;
+    ret.reserve(size());
+
+    for_each ([&ret](std::shared_ptr<PeerImp>&& sp)
+    {
+        if(sp->sanity() == Peer::Sanity::sane)
+            ret.emplace_back(std::move(sp));
+    });
     return ret;
 }
 
@@ -923,6 +938,24 @@ OverlayImpl::send (protocol::TMValidation& m)
     app_.getOPs().pubValidation (val);
 }
 
+void OverlayImpl::send(protocol::TMPerformanceReport &m)
+{
+//    if (setup_.expire)
+//        m.set_hops(0);
+    auto const sm = std::make_shared<Message>(
+        m, protocol::mtPERFORMANCE_REPORT);
+    for_each([&](std::shared_ptr<PeerImp>&& p)
+    {
+        if (! m.has_hops() || p->hopsAware())
+            p->send(sm);
+    });
+
+    SerialIter sit (m.report().data(), m.report().size());
+    auto report = std::make_shared <
+        STPerformanceReport> (std::ref (sit), false);
+    app_.getOPs().pubPerformanceReport (report);
+}
+
 void
 OverlayImpl::relay (protocol::TMProposeSet& m,
     uint256 const& uid)
@@ -954,6 +987,26 @@ OverlayImpl::relay (protocol::TMValidation& m,
         return;
     auto const sm = std::make_shared<Message>(
         m, protocol::mtVALIDATION);
+    for_each([&](std::shared_ptr<PeerImp>&& p)
+    {
+        if (toSkip->find(p->id()) != toSkip->end())
+            return;
+        if (! m.has_hops() || p->hopsAware())
+            p->send(sm);
+    });
+}
+
+void
+OverlayImpl::relay(protocol::TMPerformanceReport &m,
+    const uint256 &uid)
+{
+//    if (m.has_hops() && m.hops() >= someBigValueIfRequired)
+//        return;
+    auto const toSkip = app_.getHashRouter().shouldRelay(uid);
+    if (! toSkip)
+        return;
+    auto const sm = std::make_shared<Message>(
+        m, protocol::mtPERFORMANCE_REPORT);
     for_each([&](std::shared_ptr<PeerImp>&& p)
     {
         if (toSkip->find(p->id()) != toSkip->end())

@@ -37,6 +37,8 @@ void
 ApplyStateTable::apply (RawView& to) const
 {
     to.rawDestroyCSC(dropsDestroyed_);
+    to.rawRedistributeCSC(dropsRedistributed_);
+
     for (auto const& item : items_)
     {
         auto const& sle =
@@ -529,6 +531,11 @@ void
 ApplyStateTable::destroyCSC(CSCAmount const& fee)
 {
     dropsDestroyed_ += fee;
+}
+
+void ApplyStateTable::redistributeCSC(const CSCAmount &dropsRedistributed)
+{
+    dropsRedistributed_ += dropsRedistributed;
 }
 
 //------------------------------------------------------------------------------

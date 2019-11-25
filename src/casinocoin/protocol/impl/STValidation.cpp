@@ -155,19 +155,21 @@ SOTemplate const& STValidation::getFormat ()
 
         FormatHolder ()
         {
-            format.push_back (SOElement (sfFlags,           SOE_REQUIRED));
-            format.push_back (SOElement (sfLedgerHash,      SOE_REQUIRED));
-            format.push_back (SOElement (sfLedgerSequence,  SOE_OPTIONAL));
-            format.push_back (SOElement (sfCloseTime,       SOE_OPTIONAL));
-            format.push_back (SOElement (sfLoadFee,         SOE_OPTIONAL));
-            format.push_back (SOElement (sfAmendments,      SOE_OPTIONAL));
-            format.push_back (SOElement (sfBaseFee,         SOE_OPTIONAL));
-            format.push_back (SOElement (sfReserveBase,     SOE_OPTIONAL));
-            format.push_back (SOElement (sfReserveIncrement, SOE_OPTIONAL));
-            format.push_back (SOElement (sfSigningTime,     SOE_REQUIRED));
-            format.push_back (SOElement (sfSigningPubKey,   SOE_REQUIRED));
-            format.push_back (SOElement (sfSignature,       SOE_OPTIONAL));
-            format.push_back (SOElement (sfConfigHashes,    SOE_OPTIONAL));
+            format.push_back (SOElement (sfFlags,               SOE_REQUIRED));
+            format.push_back (SOElement (sfLedgerHash,          SOE_REQUIRED));
+            format.push_back (SOElement (sfSigningTime,         SOE_REQUIRED));
+            format.push_back (SOElement (sfSigningPubKey,       SOE_REQUIRED));
+            format.push_back (SOElement (sfLedgerSequence,      SOE_OPTIONAL));
+            format.push_back (SOElement (sfCloseTime,           SOE_OPTIONAL));
+            format.push_back (SOElement (sfLoadFee,             SOE_OPTIONAL));
+            format.push_back (SOElement (sfAmendments,          SOE_OPTIONAL));
+            format.push_back (SOElement (sfBaseFee,             SOE_OPTIONAL));
+            format.push_back (SOElement (sfReserveBase,         SOE_OPTIONAL));
+            format.push_back (SOElement (sfReserveIncrement,    SOE_OPTIONAL));
+            format.push_back (SOElement (sfSignature,           SOE_OPTIONAL));
+            format.push_back (SOElement (sfCRNs,                SOE_OPTIONAL));
+            format.push_back (SOElement (sfCRN_FeeDistributed,  SOE_OPTIONAL));
+            format.push_back (SOElement (sfConfigHashes,        SOE_OPTIONAL));
         }
     };
 

@@ -31,6 +31,7 @@
 #include <casinocoin/protocol/JsonFields.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/Feature.h>
+#include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/protocol/STAccount.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
 #include <boost/format.hpp>

@@ -1,0 +1,28 @@
+#
+# Default relaynodes.txt
+#
+# A list of Community Relay Nodes (CRN) to accept and/or a site where to get the latest updated list
+#
+#
+# [relaynodes]
+#
+#   List of the CRN public keys of nodes to always accept as relaynode.
+#
+#   Examples:
+#    n9KorY8QtTdRx7TVDpwnG9NvyxsDwHUKUEeDLY3AkiGncVaSXZi5 test-crn1.casinocoin.org
+#    n9MqiExBcoG19UXwoLjBJnhsxEhAZMuWwJDRdkyDz1EkEkwzQTNt test-crn2.casinocoin.org
+#
+# [relaynode_list_sites]
+#
+#   List of URIs serving lists of recommended relay nodes.
+#
+#   Examples:
+#    https://api.casinocoin.org/relaynodes
+#
+
+# Public keys of the relaynodes that this casinocoind instance trusts.
+[relaynodes]
+n9KorY8QtTdRx7TVDpwnG9NvyxsDwHUKUEeDLY3AkiGncVaSXZi5 test-crn1.casinocoin.org
+n9MayptsPYZFbE6p9DZaERvuCME3KymnMrJDyoDng8dM6Mp8e7mn wst01.casinocoin.org
+n9JomPZ3WuZE7wVZtWXxKVjqUbioLbp3nYe4XVew6HbZ9RPJ8bqG wst02.casinocoin.org
+n9KoxGsGGtPyyhnX1GsE5QKhFZxS3U3vNM5VyktJjn92XwVeChWS wst03.casinocoin.org

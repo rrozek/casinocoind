@@ -83,6 +83,7 @@ SField const sfValidation  = make::one(&sfValidation,  STI_VALIDATION,  257, "Va
 SField const sfMetadata    = make::one(&sfMetadata,    STI_METADATA,    257, "Metadata");
 SField const sfHash        = make::one(&sfHash,        STI_HASH256,     257, "hash");
 SField const sfIndex       = make::one(&sfIndex,       STI_HASH256,     258, "index");
+SField const sfPerformanceReport  = make::one(&sfPerformanceReport,  STI_PERFORMANCE_REPORT,  257, "PerformanceReport");
 
 // 8-bit integers
 SF_U8 const sfCloseResolution   = make::one<SF_U8::type>(&sfCloseResolution,   STI_UINT8, 1, "CloseResolution");
@@ -91,11 +92,15 @@ SF_U8 const sfTransactionResult = make::one<SF_U8::type>(&sfTransactionResult, S
 
 // 8-bit integers (uncommon)
 SF_U8 const sfTickSize          = make::one<SF_U8::type>(&sfTickSize,          STI_UINT8, 16, "TickSize");
+SF_U8 const sfCRNEligibility    = make::one<SF_U8::type>(&sfCRNEligibility,    STI_UINT8, 17, "CRNEligible");
+SF_U8 const sfStatusMode        = make::one<SF_U8::type>(&sfStatusMode,        STI_UINT8, 18, "Mode");
+SF_U8 const sfCRNActivated      = make::one<SF_U8::type>(&sfCRNActivated,      STI_UINT8, 19, "CRNActivated");
 
 // 16-bit integers
-SF_U16 const sfLedgerEntryType = make::one<SF_U16::type>(&sfLedgerEntryType, STI_UINT16, 1, "LedgerEntryType", SField::sMD_Never);
-SF_U16 const sfTransactionType = make::one<SF_U16::type>(&sfTransactionType, STI_UINT16, 2, "TransactionType");
-SF_U16 const sfSignerWeight    = make::one<SF_U16::type>(&sfSignerWeight,    STI_UINT16, 3, "SignerWeight");
+SF_U16 const sfLedgerEntryType      = make::one<SF_U16::type>(&sfLedgerEntryType,   STI_UINT16, 1, "LedgerEntryType", SField::sMD_Never);
+SF_U16 const sfTransactionType      = make::one<SF_U16::type>(&sfTransactionType,   STI_UINT16, 2, "TransactionType");
+SF_U16 const sfSignerWeight         = make::one<SF_U16::type>(&sfSignerWeight,      STI_UINT16, 3, "SignerWeight");
+SF_U16 const sfPort                 = make::one<SF_U16::type>(&sfPort,              STI_UINT16, 4, "Port");
 
 // 32-bit integers (common)
 SF_U32 const sfFlags             = make::one<SF_U32::type>(&sfFlags,             STI_UINT32,  2, "Flags");
@@ -140,6 +145,11 @@ SF_U32 const sfSignerListID        = make::one<SF_U32::type>(&sfSignerListID,   
 SF_U32 const sfSettleDelay         = make::one<SF_U32::type>(&sfSettleDelay,         STI_UINT32, 39, "SettleDelay");
 SF_U32 const sfConfigID            = make::one<SF_U32::type>(&sfConfigID,            STI_UINT32, 40, "ConfigID");
 SF_U32 const sfConfigType          = make::one<SF_U32::type>(&sfConfigType,          STI_UINT32, 41, "ConfigType");
+SF_U32 const sfCRN_LatencyAvg      = make::one<SF_U32::type>(&sfCRN_LatencyAvg,      STI_UINT32, 42, "CRN_LatencyAvg");
+SF_U32 const sfTimestamp           = make::one<SF_U32::type>(&sfTimestamp,           STI_UINT32, 43, "Timestamp");
+SF_U32 const sfTime                = make::one<SF_U32::type>(&sfTime,                STI_UINT32, 44, "Time");
+SF_U32 const sfTransitions         = make::one<SF_U32::type>(&sfTransitions,         STI_UINT32, 45, "Transitions");
+SF_U32 const sfDuration            = make::one<SF_U32::type>(&sfDuration,            STI_UINT32, 46, "Duration");
 
 // 64-bit integers
 SF_U64 const sfIndexNext     = make::one<SF_U64::type>(&sfIndexNext,     STI_UINT64, 1, "IndexNext");
@@ -193,9 +203,10 @@ SF_Amount const sfSendMax     = make::one<SF_Amount::type>(&sfSendMax,     STI_A
 SF_Amount const sfDeliverMin  = make::one<SF_Amount::type>(&sfDeliverMin,  STI_AMOUNT, 10, "DeliverMin");
 
 // currency amount (uncommon)
-SF_Amount const sfMinimumOffer      = make::one<SF_Amount::type>(&sfMinimumOffer,       STI_AMOUNT, 16, "MinimumOffer");
-SF_Amount const sfCasinocoinEscrow  = make::one<SF_Amount::type>(&sfCasinocoinEscrow,   STI_AMOUNT, 17, "CasinocoinEscrow");
-SF_Amount const sfDeliveredAmount   = make::one<SF_Amount::type>(&sfDeliveredAmount,    STI_AMOUNT, 18, "DeliveredAmount");
+SF_Amount const sfMinimumOffer          = make::one<SF_Amount::type>(&sfMinimumOffer,       STI_AMOUNT, 16, "MinimumOffer");
+SF_Amount const sfCasinocoinEscrow      = make::one<SF_Amount::type>(&sfCasinocoinEscrow,   STI_AMOUNT, 17, "CasinocoinEscrow");
+SF_Amount const sfDeliveredAmount       = make::one<SF_Amount::type>(&sfDeliveredAmount,    STI_AMOUNT, 18, "DeliveredAmount");
+SF_Amount const sfCRN_FeeDistributed    = make::one<SF_Amount::type>(&sfCRN_FeeDistributed, STI_AMOUNT, 19, "CRN_FeeDistributed");
 
 // variable length (common)
 SF_Blob const sfPublicKey       = make::one<SF_Blob::type>(&sfPublicKey,     STI_VL,  1, "PublicKey");
@@ -218,6 +229,9 @@ SF_Blob const sfFulfillment     = make::one<SF_Blob::type>(&sfFulfillment,     S
 SF_Blob const sfCondition       = make::one<SF_Blob::type>(&sfCondition,       STI_VL, 17, "Condition");
 SF_Blob const sfMasterSignature = make::one<SF_Blob::type>(&sfMasterSignature, STI_VL, 18, "MasterSignature", SField::sMD_Default, SField::notSigning);
 SF_Blob const sfConfigData      = make::one<SF_Blob::type>(&sfConfigData,      STI_VL, 19, "ConfigData");
+SF_Blob const sfCRN_IPAddress   = make::one<SF_Blob::type>(&sfCRN_IPAddress,   STI_VL, 20, "CRN_IP", SField::sMD_Default, SField::notSigningNotHashed);
+SF_Blob const sfCRN_DomainName  = make::one<SF_Blob::type>(&sfCRN_DomainName,  STI_VL, 21, "CRN_Domain");
+SF_Blob const sfCRN_PublicKey   = make::one<SF_Blob::type>(&sfCRN_PublicKey,   STI_VL, 22, "CRN_PublicKey");
 
 
 // account
@@ -236,6 +250,7 @@ SF_Vec256 const sfIndexes           = make::one<SF_Vec256::type>(&sfIndexes,    
 SF_Vec256 const sfHashes            = make::one<SF_Vec256::type>(&sfHashes,         STI_VECTOR256, 2, "Hashes");
 SF_Vec256 const sfAmendments        = make::one<SF_Vec256::type>(&sfAmendments,     STI_VECTOR256, 3, "Amendments");
 SF_Vec256 const sfConfigHashes      = make::one<SF_Vec256::type>(&sfConfigHashes,   STI_VECTOR256, 4, "ConfigHashes");
+SF_Vec256 const sfCRNTxHistory      = make::one<SF_Vec256::type>(&sfCRNTxHistory,   STI_VECTOR256, 5, "CRNTxHistory");
 
 SF_Vec128 const sfKYCVerifications = make::one<SF_Vec128::type>(&sfKYCVerifications, STI_VECTOR128, 1, "Verifications");
 
@@ -258,6 +273,8 @@ SField const sfSigner              = make::one(&sfSigner,              STI_OBJEC
 SField const sfMajority            = make::one(&sfMajority,            STI_OBJECT, 18, "Majority");
 SField const sfKYC                 = make::one(&sfKYC,                 STI_OBJECT, 19, "KYC");
 SField const sfConfigEntry         = make::one(&sfConfigEntry,         STI_OBJECT, 20, "ConfigEntry");
+SField const sfCRN                 = make::one(&sfCRN,                 STI_OBJECT, 21, "CRN");
+SField const sfCRNStatus           = make::one(&sfCRNStatus,           STI_OBJECT, 22, "Status");
 
 // array of objects
 // ARRAY/1 is reserved for end of array
@@ -271,8 +288,10 @@ SField const sfAffectedNodes   = make::one(&sfAffectedNodes,   STI_ARRAY, 8, "Af
 SField const sfMemos           = make::one(&sfMemos,           STI_ARRAY, 9, "Memos");
 
 // array of objects (uncommon)
-SField const sfMajorities      = make::one(&sfMajorities,      STI_ARRAY, 16, "Majorities");
-SField const sfConfiguration   = make::one(&sfConfiguration,   STI_ARRAY, 17, "Configuration");
+SField const sfMajorities           = make::one(&sfMajorities,          STI_ARRAY, 16, "Majorities");
+SField const sfConfiguration        = make::one(&sfConfiguration,       STI_ARRAY, 17, "Configuration");
+SField const sfCRNs                 = make::one(&sfCRNs,                STI_ARRAY, 18, "CRNs");
+SField const sfCRNPerformance       = make::one(&sfCRNPerformance,      STI_ARRAY, 19, "Performance");
 
 SField::SField (SerializedTypeID tid, int fv, const char* fn,
                 int meta, IsSigning signing)

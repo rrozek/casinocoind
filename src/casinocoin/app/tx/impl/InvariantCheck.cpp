@@ -48,6 +48,10 @@ CSCNotCreated::visitEntry(
         case ltESCROW:
             drops_ -= (*before)[sfAmount].csc().drops();
             break;
+            // jrojek: inverted logic, because we store here the amount of drops distributed
+        case ltCRN_ROUND:
+            drops_ += (*before)[sfCRN_FeeDistributed].csc().drops();
+            break;
         default:
             break;
         }
@@ -67,6 +71,10 @@ CSCNotCreated::visitEntry(
         case ltESCROW:
             if (! isDelete)
                 drops_ += (*after)[sfAmount].csc().drops();
+            break;
+            // jrojek: inverted logic, because we store here the amount of drops distributed
+        case ltCRN_ROUND:
+            drops_ -= (*after)[sfCRN_FeeDistributed].csc().drops();
             break;
         default:
             break;
@@ -265,6 +273,7 @@ LedgerEntryTypesMatch::visitEntry(
         case ltAMENDMENTS:
         case ltCONFIGURATION:
         case ltFEE_SETTINGS:
+        case ltCRN_ROUND:
         case ltESCROW:
         case ltPAYCHAN:
             break;

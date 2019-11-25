@@ -31,6 +31,9 @@
 #include <casinocoin/app/ledger/LocalTxs.h>
 #include <casinocoin/app/ledger/OpenLedger.h>
 #include <casinocoin/app/misc/AmendmentTable.h>
+#include <casinocoin/app/misc/CRNRound.h>
+#include <casinocoin/app/misc/CRNReports.h>
+#include <casinocoin/app/misc/CRN.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
@@ -318,29 +321,60 @@ CCLConsensus::onClose(
             false);
     }
 
-    // Add pseudo-transactions to the set
-    if ((app_.config().standalone() || (proposing && !wrongLCL)) &&
-        ((prevLedger->info().seq % 256) == 0))
+    // CRN report their performance in selected periods
+    if (prevLedger->rules().enabled(featureCRN))
     {
-        // previous ledger was flag ledger, add pseudo-transactions
-        auto const validations =
-            app_.getValidations().getValidations(prevLedger->info().parentHash);
+        if (app_.isCRN() && ((prevLedger->info().seq + CRNPerformance::getReportingStartOffset()) % CRNPerformance::getReportingPeriod()) < CRNPerformance::getReportingStartOffset())
+        {
+            auto report = app_.getCRN().prepareReport(prevLedger->info().seq, app_);
+            if (report)
+            {
+                app_.getCRNReports().addReport(report, "local");
+                app_.getCRN().broadcast(report, app_);
+            }
+        }
+    }
 
-        std::size_t const count = std::count_if(
-            validations.begin(), validations.end(), [](auto const& v) {
+    // Add pseudo-transactions to the set
+    if ((app_.config().standalone() || (proposing && !wrongLCL)))
+    {
+        if ((prevLedger->info().seq % 256) == 0)
+        {
+            auto const validations =
+                    app_.getValidations().getValidations(prevLedger->info().parentHash);
+
+            std::size_t const count = std::count_if(
+                        validations.begin(), validations.end(), [](auto const& v) {
                 return v.second->isTrusted();
             });
 
-        if (count >= app_.validators().quorum())
-        {
-            feeVote_->doVoting(prevLedger, validations, initialSet);
-            app_.getAmendmentTable().doVoting(
-                prevLedger, validations, initialSet);
-
-            if (ledger.ledger_->rules().enabled(featureConfigObject))
+            // previous ledger was flag ledger, add pseudo-transactions
+            if (count >= app_.validators().quorum())
             {
-                app_.getVotableConfig().doVoting(
-                    prevLedger, validations, initialSet);
+                feeVote_->doVoting(prevLedger, validations, initialSet);
+                app_.getAmendmentTable().doVoting(prevLedger, validations, initialSet);
+                if (prevLedger->rules().enabled(featureConfigObject))
+                {
+                    app_.getVotableConfig().doVoting(prevLedger, validations, initialSet);
+                }
+            }
+        }
+        if (prevLedger->rules().enabled(featureCRN))
+        {
+            if ((prevLedger->info().seq % CRNPerformance::getReportingPeriod()) == 0)
+            {
+                auto const validations =
+                       app_.getValidations().getValidations(prevLedger->info().parentHash);
+
+                std::size_t const count = std::count_if(
+                        validations.begin(), validations.end(), [](auto const& v) {
+                    return v.second->isTrusted();
+                });
+
+                if (count >= app_.validators().quorum())
+                {
+                    app_.getCRNRound().doVoting(prevLedger, validations, initialSet);
+                }
             }
         }
     }
@@ -460,6 +494,7 @@ CCLConsensus::doAccept(
     }
     else
         JLOG(j_.info()) << "CNF buildLCL " << newLCLHash;
+
 
     // See if we can accept a ledger as fully-validated
     ledgerMaster_.consensusBuilt(sharedLCL.ledger_, getJson(true));
@@ -625,9 +660,12 @@ CCLConsensus::notify(
     }
     s.set_firstseq(uMin);
     s.set_lastseq(uMax);
+
+    s.set_newstatus (app_.getOPs().getNodeStatus());
+
+    JLOG(j_.info()) << "notify: send status change to peer. newstatus: " << app_.getOPs().getNodeStatus();
     app_.overlay().foreach (
         send_always(std::make_shared<Message>(s, protocol::mtSTATUS_CHANGE)));
-    JLOG(j_.trace()) << "send status change to peer";
 }
 
 /** Apply a set of transactions to a ledger.
@@ -858,6 +896,17 @@ CCLConsensus::validate(CCLCxLedger const& ledger, bool proposing)
             Json::Value const& jvVotableConfig = app_.config().reloadConfigurationVoteParams();
             app_.getVotableConfig().updatePosition(jvVotableConfig);
             app_.getVotableConfig().doValidation(ledger.ledger_, *v);
+        }
+    }
+
+    if (app_.getLedgerMaster().getValidatedRules().enabled(featureCRN))
+    {
+        if (((ledger.seq() + 1) % CRNPerformance::getReportingPeriod()) == 0)
+        {
+            std::list<STPerformanceReport::pointer> reports = app_.getCRNReports().getCurrentReports();
+
+            app_.getCRNRound().updatePosition(reports);
+            app_.getCRNRound().doValidation(ledger.ledger_, *v);
         }
     }
 

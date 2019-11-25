@@ -127,11 +127,17 @@ public:
 
     static
     TER
+    checkFeeToken (PreclaimContext const& ctx,
+                   TokenDescriptor const& theToken);
+
+    static
+    TER
     checkSign (PreclaimContext const& ctx);
 
     static
     TER
-    checkWLT (PreclaimContext const& ctx);
+    checkWLT (PreclaimContext const& ctx,
+              boost::optional<TokenDescriptor>& theToken);
 
     static
     TER
@@ -174,13 +180,6 @@ public:
         // after checkSeq/Fee/Sign.
         return tesSUCCESS;
     }
-
-    static
-    TER
-    isWLTCompliant(STAmount const& amount,
-                   ConfigObjectEntry const& tokenConfig,
-                   beast::Journal const& j);
-    /////////////////////////////////////////////////////
 
 protected:
     TER

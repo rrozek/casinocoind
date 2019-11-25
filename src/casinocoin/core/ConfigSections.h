@@ -83,6 +83,10 @@ struct ConfigSection
 #define SECTION_NETWORK                 "network"
 #define SECTION_CONFIGURATION_JSON      "configuration_json"
 #define SECTION_BLACKLIST_SITES         "blacklist_sites"
+#define SECTION_CRN_FILE                "relaynodes_file"
+#define SECTION_CRNS                    "relaynodes"
+#define SECTION_CRN_CONFIG              "relaynode_config"
+#define SECTION_CRN_LIST_SITES          "relaynode_list_sites"
 #define SECTION_WHITELIST_ACCOUNTS      "whitelist_accounts"
 
 } // casinocoin

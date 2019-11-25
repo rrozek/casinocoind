@@ -43,5 +43,6 @@ HashPrefix const HashPrefix::validation                  ('V', 'A', 'L');
 HashPrefix const HashPrefix::proposal                    ('P', 'R', 'P');
 HashPrefix const HashPrefix::manifest                    ('M', 'A', 'N');
 HashPrefix const HashPrefix::paymentChannelClaim         ('C', 'L', 'M');
+HashPrefix const HashPrefix::performanceReport           ('N', 'P', 'R');
 
 } // casinocoin

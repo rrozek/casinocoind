@@ -117,6 +117,24 @@ SetKYC::preflight (PreflightContext const& ctx)
         }
     }
 
+    if (uSetFlag == kycfValidated)
+    {
+        if (ctx.tx.isFieldPresent(sfKYCVerifications))
+        {
+            const STVector128& kycVerifications = ctx.tx.getFieldV128(sfKYCVerifications);
+            if (kycVerifications.size() == 0)
+            {
+                JLOG(j.info()) << "Cannot set KYC verified flag with empty Verifications array";
+                return temMALFORMED;
+            }
+        }
+        else
+        {
+            JLOG(j.info()) << "Cannot set KYC verified flag without Verifications array";
+            return temMALFORMED;
+        }
+    }
+
     return preflight2(ctx);
 }
 

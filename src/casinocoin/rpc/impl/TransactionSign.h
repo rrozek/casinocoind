@@ -74,7 +74,8 @@ Json::Value checkFee (
     Config const& config,
     LoadFeeTrack const& feeTrack,
     TxQ const& txQ,
-    std::shared_ptr<OpenView const> const& ledger);
+    std::shared_ptr<OpenView const> const& ledger,
+    beast::Journal const& j);
 
 // Return a std::function<> that calls NetworkOPs::processTransaction.
 using ProcessTransactionFn =

@@ -59,6 +59,13 @@ enum LedgerEntryType
 
     ltACCOUNT_ROOT      = 'a',
 
+    /** Community Relay Node.
+
+        This is special Ledger entry storing CRN Round conclusion results.
+        Node list, eligibility, fee share.
+    */
+    ltCRN_ROUND         = 'R',
+
     /** Directory node.
 
         A directory is a vector 256-bit values. Usually they represent
@@ -105,6 +112,7 @@ enum LedgerEntryType
 enum LedgerNameSpace
 {
     spaceAccount        = 'a',
+    spaceCRN            = 'R',
     spaceDirNode        = 'd',
     spaceGenerator      = 'g',
     spaceCasinocoin     = 'c',
@@ -141,6 +149,10 @@ enum LedgerSpecificFlags
     lsfGlobalFreeze      = 0x00400000,   // True, all assets frozen
     lsfDefaultCasinocoin = 0x00800000,   // True, trust lines allow rippling by default
     lsfKYCValidated      = 0x01000000,   // True, if account has approved KYC validation
+
+    // ltCRN_ROUND
+    lsfEligible          = 0x00010000,   // True, if CRN is eligible for fee share
+
     // ltOFFER
     lsfPassive           = 0x00010000,
     lsfSell              = 0x00020000,   // True, offer was placed as a sell.

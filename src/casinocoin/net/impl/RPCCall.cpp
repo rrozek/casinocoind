@@ -968,6 +968,39 @@ private:
         return jvRequest;
     }
 
+    // crn_create <domain_name>
+    //
+    // NOTE: It is poor security to specify secret information on the command line.  This information might be saved in the command
+    // shell history file (e.g. .bash_history) and it may be leaked via the process status command (i.e. ps).
+    Json::Value parseCRNCreate (Json::Value const& jvParams)
+    {
+        Json::Value jvRequest;
+
+        if (1 == jvParams.size ())
+        {
+            jvRequest[jss::crn_domain_name] = jvParams[0u].asString ();
+            return jvRequest;
+        }
+
+        return rpcError (rpcINVALID_PARAMS);
+    }
+
+    // crn_verify <domain_name> <signature> <public_key>
+    Json::Value parseCRNVerify (Json::Value const& jvParams)
+    {
+        Json::Value jvRequest;
+
+        if (3 == jvParams.size ())
+        {
+            jvRequest[jss::crn_domain_name] = jvParams[0u].asString ();
+            jvRequest[jss::crn_domain_signature] = jvParams[1u].asString ();
+            jvRequest[jss::crn_public_key] = jvParams[2u].asString ();
+            return jvRequest;
+        }
+
+        return rpcError (rpcINVALID_PARAMS);
+    }
+
     // verify_msg <message> <signature> <public_key_hex>
     Json::Value parseVerifyMsg (Json::Value const& jvParams)
     {
@@ -1142,6 +1175,9 @@ public:
             {   "wallet_propose",       &RPCParser::parseWalletPropose,         0,  1   },
             {   "wallet_seed",          &RPCParser::parseWalletSeed,            0,  1   },
             {   "internal",             &RPCParser::parseInternal,              1,  -1  },
+            {   "crn_create",           &RPCParser::parseCRNCreate,             1,  1   },
+            {   "crn_verify",           &RPCParser::parseCRNVerify,             3,  3   },
+            {   "crn_info",             &RPCParser::parseAsIs,                  0,  0   },
 
             // Evented methods
             {   "path_find",            &RPCParser::parseEvented,               -1, -1  },

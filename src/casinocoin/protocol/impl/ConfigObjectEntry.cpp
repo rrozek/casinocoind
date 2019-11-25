@@ -24,6 +24,9 @@
 
 #include <casinocoin/protocol/ConfigObjectEntry.h>
 #include <casinocoin/protocol/Serializer.h>
+
+#include <casinocoin/ledger/ReadView.h>
+
 #include <casinocoin/json/json_reader.h>
 #include <casinocoin/json/json_writer.h>
 #include <stdexcept>
@@ -43,6 +46,7 @@ ConfigObjectEntry::bimap_string_type ConfigObjectEntry::initializeTypeMap()
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Message_PubKey", ConfigObjectEntry::Message_PubKey));
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Token", ConfigObjectEntry::Token));
     aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("Blacklist_Signer", ConfigObjectEntry::Blacklist_Signer));
+    aMap.insert(ConfigObjectEntry::bimap_string_type::value_type("CRN_Settings", ConfigObjectEntry::CRN_Settings));
     return aMap;
 }
 
@@ -132,6 +136,9 @@ bool ConfigObjectEntry::fromJson(Json::Value const& data)
             break;
         case Blacklist_Signer:
             pItem = new Blacklist_SignerDescriptor(mJournal);
+            break;
+        case CRN_Settings:
+            pItem = new CRN_SettingsDescriptor(mJournal);
             break;
         case Invalid:
             return false;
@@ -306,6 +313,7 @@ TokenDescriptor::TokenDescriptor(TokenDescriptor const& other)
     contactEmail = other.contactEmail;
     iconURL = other.iconURL;
     apiEndpoint = other.apiEndpoint;
+    extraFeeFactor = other.extraFeeFactor;
 
     Serializer s;
     other.totalSupply.add(s);
@@ -321,11 +329,13 @@ TokenDescriptor& TokenDescriptor::operator=(TokenDescriptor const& other)
     contactEmail = other.contactEmail;
     iconURL = other.iconURL;
     apiEndpoint = other.apiEndpoint;
+    extraFeeFactor = other.extraFeeFactor;
 
     Serializer s;
     other.totalSupply.add(s);
     SerialIter sit(s.slice());
     totalSupply = STAmount(sit, sfGeneric);
+
     return *this;
 }
 
@@ -345,6 +355,10 @@ bool TokenDescriptor::fromJson(Json::Value const& data)
     contactEmail = data[jss::contactEmail].asString();
     iconURL = data[jss::iconURL].asString();
     apiEndpoint = data[jss::apiEndpoint].asString();
+    if (data.isMember(jss::extraFeeFactor))
+        extraFeeFactor = data[jss::extraFeeFactor].asInt();
+    else
+        extraFeeFactor = 0u;
 
     Json::Value combinedAmountObj(Json::objectValue);
     combinedAmountObj[jss::value] = data[jss::totalSupply];
@@ -352,6 +366,7 @@ bool TokenDescriptor::fromJson(Json::Value const& data)
     combinedAmountObj[jss::issuer] = data[jss::issuer];
 
     JLOG(mJournal.debug()) << "TokenDescriptor::fromJson combinedAmountObj" << combinedAmountObj;
+
     return amountFromJsonNoThrow(totalSupply, combinedAmountObj);
 }
 
@@ -359,7 +374,7 @@ bool TokenDescriptor::toJson(Json::Value &result) const
 {
     if (totalSupply.isDefault())
     {
-        JLOG(mJournal.info()) << "TokenDescriptor::toJson STAmount is not defined";
+        JLOG(mJournal.info()) << "TokenDescriptor::toJson totalSupply is not defined";
         return false;
     }
     Json::Value combinedAmountObj(Json::objectValue);
@@ -367,6 +382,8 @@ bool TokenDescriptor::toJson(Json::Value &result) const
     result[jss::totalSupply] = combinedAmountObj[jss::value];
     result[jss::token] = combinedAmountObj[jss::currency];
     result[jss::issuer] = combinedAmountObj[jss::issuer];
+
+    result[jss::extraFeeFactor] = extraFeeFactor;
 
     result[jss::fullName] = fullName;
     result[jss::flags] = flags;
@@ -405,8 +422,183 @@ bool Blacklist_SignerDescriptor::toJson(Json::Value &result) const
     return true;
 }
 
+CRN_SettingsDescriptor::CRN_SettingsDescriptor(beast::Journal const& journal)
+    : DataDescriptorInterface(journal)
+{}
+
+CRN_SettingsDescriptor::CRN_SettingsDescriptor(CRN_SettingsDescriptor const& other)
+{
+    foundationFeesPublicKey = other.foundationFeesPublicKey;
+    foundationFeeFactor = other.foundationFeeFactor;
+    activated = other.activated;
+}
+
+CRN_SettingsDescriptor& CRN_SettingsDescriptor::operator=(CRN_SettingsDescriptor const& other)
+{
+    foundationFeesPublicKey = other.foundationFeesPublicKey;
+    foundationFeeFactor = other.foundationFeeFactor;
+    activated = other.activated;
+    return *this;
+}
+
+DataDescriptorInterface* CRN_SettingsDescriptor::clone() const
+{
+    return new CRN_SettingsDescriptor(*this);
+}
+
+bool CRN_SettingsDescriptor::fromJson(Json::Value const& data)
+{
+    if (!data.isObject())
+        return false;
+
+    if (!data.isMember(jss::foundationPublicKey))
+        return false;
+    
+    if (!data.isMember(jss::activated))
+        return false;
+
+    auto unHexedPubKey = strUnHex(data[jss::foundationPublicKey].asString());
+    if (!unHexedPubKey.second)
+        return false;
+    foundationFeesPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
+
+    if (data.isMember(jss::foundationFeeFactor))
+        foundationFeeFactor = data[jss::foundationFeeFactor].asInt();
+    else
+        foundationFeeFactor = 0u;
+    
+    if (data.isMember(jss::activated))
+        activated = data[jss::activated].asBool();
+    else
+        activated = false;
+    return true;
+}
+
+bool CRN_SettingsDescriptor::toJson(Json::Value &result) const
+{
+    result[jss::foundationPublicKey] = strHex(foundationFeesPublicKey.data(), foundationFeesPublicKey.size());
+    result[jss::foundationFeeFactor] = foundationFeeFactor;
+    result[jss::activated] = activated;
+    return true;
+}
+
 DataDescriptorInterface::DataDescriptorInterface(beast::Journal const& journal)
     : mJournal(journal)
 {}
+
+/////////////////////////////////////////////////////////////////
+//////////////////////////// Helpers ////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+std::pair<TER, boost::optional<TokenDescriptor>>
+isWLTCompliant(const STAmount &amount,
+               ConfigObjectEntry const& tokenConfig,
+               boost::optional<beast::Journal> j)
+{
+    boost::optional<TokenDescriptor> theToken;
+    if (isCSC(amount))
+    {
+        return {tesSUCCESS, theToken};
+    }
+    if (tokenConfig.getType() != ConfigObjectEntry::Token)
+    {
+        if (j) { JLOG((*j).warn()) << "isWLTCompliant() non-Token config object passed"; }
+        return {tefFAILURE, theToken};
+    }
+
+    theToken = getWLT(amount, tokenConfig, j);
+    if (theToken)
+        return {tesSUCCESS, theToken};
+
+    return {tefNOT_WLT, theToken};
+}
+
+boost::optional<TokenDescriptor>
+getWLT(const STAmount &amount,
+       ConfigObjectEntry const& tokenConfig,
+       boost::optional<beast::Journal> j)
+{
+    boost::optional<TokenDescriptor> theToken;
+
+    auto const& definedTokens = tokenConfig.getData();
+    for (auto const entry : definedTokens)
+    {
+        const TokenDescriptor* token = static_cast<const TokenDescriptor*>(entry);
+        try
+        {
+            if (token->totalSupply.issue() == amount.issue()
+                    && token->totalSupply >= amount)
+            {
+                if (j) { JLOG((*j).debug()) << "getWLT() found matching entry, return OK"; }
+                theToken = *token;
+                return theToken;
+            }
+        }
+        catch( std::runtime_error const& err)
+        {
+            if (j) { JLOG((*j).warn()) << "getWLT() caught exception. what: " << err.what(); }
+            return theToken;
+        }
+    }
+
+    if (j) { JLOG((*j).info()) << "getWLT() not compliant"
+                        << " token: " << to_string(amount.issue().currency)
+                        << " issuer: " << toBase58(amount.issue().account); }
+    return theToken;
+}
+
+bool isCRNRoundsActivated(std::shared_ptr<ReadView const> const& ledger,
+                          boost::optional<beast::Journal> j)
+{
+    LedgerConfig const& ledgerConfiguration = ledger->ledgerConfig();
+    auto crnSettingsConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                              ledgerConfiguration.entries.end(),
+                                              [](ConfigObjectEntry const& obj)
+    {
+            return obj.getType() == ConfigObjectEntry::CRN_Settings;
+    });
+    if (crnSettingsConfigIter == ledgerConfiguration.entries.end())
+    {
+        if (j) { JLOG(j->info()) << "No CRN Settings object defined in the Ledger Config."; };
+        return false;
+    }
+    else
+    {
+        if (j) { JLOG(j->info()) << "CRN Settings object exists"; }
+        auto const& definedSettings = crnSettingsConfigIter->getData();
+        const CRN_SettingsDescriptor* settings = static_cast<const CRN_SettingsDescriptor*>(definedSettings.front());
+        try
+        {
+            return settings->activated;
+        }
+        catch( std::runtime_error const& err)
+        {
+            if (j) { JLOG((*j).warn()) << "isCRNRoundsActivated() caught exception. 'activated' not defined, CRNRounds disabled by default"; }
+            return false;
+        }
+    }
+}
+
+boost::optional<CRN_SettingsDescriptor>
+getCRNSettings(std::shared_ptr<ReadView const> const& ledger,
+                     boost::optional<beast::Journal> j)
+{
+    boost::optional<CRN_SettingsDescriptor> settings;
+    LedgerConfig const& ledgerConfiguration = ledger->ledgerConfig();
+    auto crnSettingsConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                              ledgerConfiguration.entries.end(),
+                                              [](ConfigObjectEntry const& obj)
+    {
+            return obj.getType() == ConfigObjectEntry::CRN_Settings;
+    });
+    if (crnSettingsConfigIter != ledgerConfiguration.entries.end())
+    {
+        auto const& definedSettings = crnSettingsConfigIter->getData();
+        const CRN_SettingsDescriptor* settingsObject = static_cast<const CRN_SettingsDescriptor*>(definedSettings.front());
+        settings = *settingsObject;
+        // settings = static_cast<const CRN_SettingsDescriptor*>(definedSettings.front());
+    }
+    return settings;
+}
 
 } // casinocoin
