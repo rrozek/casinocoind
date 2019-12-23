@@ -116,35 +116,39 @@ CRNList::refreshNodeOnList (
     std::string const& domainName,
     bool const& enabled)
 {
-    auto const publicKey = parseBase58<PublicKey>(TokenType::TOKEN_NODE_PUBLIC, publicKeyString);
     JLOG (j_.debug()) << "refreshNodeOnList: " << publicKeyString;
+    auto const publicKey = parseBase58<PublicKey>(TokenType::TOKEN_NODE_PUBLIC, publicKeyString);
+    if (publicKey)
+    {
+        bool nodeListed = CRNList::listed(*publicKey);
+        JLOG (j_.debug()) << "Node: " << publicKeyString << " Listed: " << nodeListed;  
 
-    bool nodeListed = CRNList::listed(*publicKey);
-    JLOG (j_.debug()) << "Node: " << publicKeyString << " Listed: " << nodeListed;  
-
-    if(!nodeListed && enabled)
-    {
-        // add node to list
-        crnList_.push_back({publicKeyString, domainName});
-        JLOG (j_.debug()) << "Add Node: " << publicKeyString;
+        if(!nodeListed && enabled)
+        {
+            // add node to list
+            crnList_.push_back({publicKeyString, domainName});
+            JLOG (j_.debug()) << "Add Node: " << publicKeyString;
+        }
+        else if(nodeListed && !enabled)
+        {
+            // remove node from list
+            auto it = std::find_if(crnList_.begin(), crnList_.end(), boost::bind(&CRNListItem::publicKey, _1) == publicKeyString);
+            if (it != crnList_.end())
+                crnList_.erase(it);
+            JLOG (j_.debug()) << "Remove Node: " << publicKeyString;
+        }
+        else if(nodeListed && enabled)
+        {
+            // update listed node
+            auto it = std::find_if(crnList_.begin(), crnList_.end(), boost::bind(&CRNListItem::publicKey, _1) == publicKeyString);
+            if (it != crnList_.end())
+                *it = {publicKeyString, domainName};
+            JLOG (j_.debug()) << "Update Node: " << publicKeyString;
+        }
+        JLOG (j_.info()) << "CRN Public Keys List size: " << crnList_.size();
     }
-    else if(nodeListed && !enabled)
-    {
-        // remove node from list
-        auto it = std::find_if(crnList_.begin(), crnList_.end(), boost::bind(&CRNListItem::publicKey, _1) == publicKeyString);
-        if (it != crnList_.end())
-            crnList_.erase(it);
-        JLOG (j_.debug()) << "Remove Node: " << publicKeyString;
-    }
-    else if(nodeListed && enabled)
-    {
-        // update listed node
-        auto it = std::find_if(crnList_.begin(), crnList_.end(), boost::bind(&CRNListItem::publicKey, _1) == publicKeyString);
-        if (it != crnList_.end())
-            *it = {publicKeyString, domainName};
-        JLOG (j_.debug()) << "Update Node: " << publicKeyString;
-    }
-    JLOG (j_.info()) << "CRN Public Keys List size: " << crnList_.size();
+    else
+        JLOG (j_.warn()) << "Invalid CRN Public Key: " << publicKeyString;
 }
 
 Json::Value
