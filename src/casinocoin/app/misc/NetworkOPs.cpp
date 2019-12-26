@@ -2203,22 +2203,22 @@ Json::Value NetworkOPsImp::getServerInfo (bool human, bool admin)
         {
             info[jss::pubkey_validator] = "none";
         }
-
-        // CRN Public Key
-        if (app_.isCRN())
-        {
-            info[jss::crn_public_key] = toBase58 (
-                TokenType::TOKEN_NODE_PUBLIC,
-                app_.getCRN().id().publicKey());
-            info[jss::crn_domain_name] = app_.getCRN().id().domain();
-            info[jss::crn_activated] = app_.getCRN().id().activated();
-        }
-        else
-        {
-            info[jss::crn_public_key] = "none";
-        }
     }
 
+    // CRN Public Key
+    if (app_.isCRN())
+    {
+        info[jss::crn_public_key] = toBase58 (
+            TokenType::TOKEN_NODE_PUBLIC,
+            app_.getCRN().id().publicKey());
+        info[jss::crn_domain_name] = app_.getCRN().id().domain();
+        info[jss::crn_activated] = app_.getCRN().id().activated();
+    }
+    else
+    {
+        info[jss::crn_public_key] = "none";
+    }
+    
     info[jss::pubkey_node] = toBase58 (
         TokenType::TOKEN_NODE_PUBLIC,
         app_.nodeIdentity().first);
