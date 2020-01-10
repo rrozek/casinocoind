@@ -125,7 +125,7 @@ Handler handlerArray[] {
     {   "consensus_info",       byRef (&doConsensusInfo),       Role::ADMIN, NO_CONDITION               },
     {   "crn_create",           byRef (&doCRNCreate),           Role::ADMIN, NO_CONDITION               },
     {   "crn_verify",           byRef (&doCRNVerify),           Role::ADMIN, NO_CONDITION               },
-    {   "crn_info",             byRef (&doCRNInfo),             Role::ADMIN, NO_CONDITION               },
+    {   "crn_info",             byRef (&doCRNInfo),             Role::USER,  NO_CONDITION               },
     {   "decrypt_msg",          byRef (&doDecryptMsg),          Role::USER,  NO_CONDITION               },
     {   "encrypt_msg",          byRef (&doEncryptMsg),          Role::USER,  NO_CONDITION               },
     {   "gateway_balances",     byRef (&doGatewayBalances),     Role::USER,  NO_CONDITION               },

@@ -60,7 +60,7 @@ public:
      * ---------------
     */
     // voting period
-    static uint32_t getReportingPeriod() { return 100; }
+    static uint32_t getReportingPeriod() { return 1024; }
     // start reporting offset in ledgers before voting
     static uint32_t getReportingStartOffset() { return 10; }
 
