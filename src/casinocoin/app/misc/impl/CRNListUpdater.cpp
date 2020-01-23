@@ -247,6 +247,7 @@ CRNListUpdater::onSiteFetch(
             // set last refresh status
             sites_[siteIdx].lastRefreshStatus.emplace(Site::Status{clock_type::now(), false});
         }
+        JLOG (j_.info()) << "CRN Public Keys List size: " << crnlist_.size();
     }
 
     std::lock_guard <std::mutex> lock{state_mutex_};

@@ -157,9 +157,11 @@ JSS ( crn_first_ledger );           // out: CRNInfo
 JSS ( crn_last_ledger );            // out: CRNInfo
 JSS ( crn_update_sites );           // out: CRNInfo
 JSS ( crn_nodes );                  // out: CRNInfo
+JSS ( crn_reports );                // out: CRNReports
 JSS ( crn_rounds );                 // out: CRNInfo
 JSS ( crn_latency );                // out: CRNInfo
 JSS ( crn_ws_port );                // out: Peers/CRN
+JSS ( crn_reporting_time );         // out: CRNReports
 JSS ( currency );                   // in: paths/PathRequest, STAmount
                                     // out: paths/Node, STPathSet, STAmount
 JSS ( current );                    // out: OwnerInfo

@@ -145,10 +145,15 @@ CRNList::refreshNodeOnList (
                 *it = {publicKeyString, domainName};
             JLOG (j_.debug()) << "Update Node: " << publicKeyString;
         }
-        JLOG (j_.info()) << "CRN Public Keys List size: " << crnList_.size();
     }
     else
         JLOG (j_.warn()) << "Invalid CRN Public Key: " << publicKeyString;
+}
+
+size_t
+CRNList::size () const
+{
+    return crnList_.size();
 }
 
 Json::Value
