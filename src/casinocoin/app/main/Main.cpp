@@ -146,6 +146,7 @@ void printHelp (const po::options_description& desc)
            "     crn_create <domain_name>\n"
            "     crn_verify <domain_name> <signature> <public_key>\n"
            "     crn_info\n"
+           "     crn_reports\n"
            "     decrypt_msg <secret> <message>\n"
            "     encrypt_msg <dest_pub_key_hex> <message> [secret]\n"
            "     feature [<feature> [accept|reject]]\n"

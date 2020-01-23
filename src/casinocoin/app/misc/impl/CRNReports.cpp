@@ -76,7 +76,7 @@ private:
 
         if (!isListed)
         {
-            JLOG (j_.trace()) <<
+            JLOG (j_.debug()) <<
                 "Node " << toBase58 (TokenType::TOKEN_NODE_PUBLIC, crnPubKey) <<
                 " not in UNL st=" << report->getSignTime().time_since_epoch().count() <<
                 ", lastLedgerIndex=" << lastLedgerIndex <<

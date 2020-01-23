@@ -35,6 +35,7 @@
 #include <casinocoin/app/misc/CRN.h>
 #include <casinocoin/app/misc/CRNRound.h>
 #include <casinocoin/app/misc/CRNList.h>
+#include <casinocoin/app/misc/CRNReports.h>
 #include <casinocoin/app/misc/CRNListUpdater.h>
 #include <casinocoin/protocol/ConfigObjectEntry.h>
 
@@ -191,6 +192,38 @@ Json::Value doCRNInfo (RPC::Context& context)
     }
     else
         return RPC::make_error(casinocoin::error_code_i::rpcLGR_NOT_VALIDATED);
+}
+
+Json::Value doCRNReports (RPC::Context& context)
+{
+    // create json output
+    Json::Value jvReply = Json::objectValue;
+    // get the current reports list
+    std::list<STPerformanceReport::pointer> currentReports = context.app.getCRNReports().getCurrentReports();
+    auto&& array = Json::setArray (jvReply, jss::crn_reports);
+    for (auto const& report : currentReports)
+    {
+        JLOG(context.j.debug()) << "CRN Report: " << report;
+        auto&& obj = appendObject(array);
+        obj[jss::crn_public_key] = toBase58 (TokenType::TOKEN_NODE_PUBLIC, report->getSignerPublic());
+        obj[jss::crn_domain_name] = report->getDomainName();
+        obj[jss::crn_activated] = report->getActivated();
+        obj[jss::crn_domain_signature] = strHex (report->getSignature ());
+        obj[jss::crn_reporting_time] = to_string(report->getSignTime());
+        obj[jss::crn_latency] = report->getFieldU32(sfCRN_LatencyAvg);
+        obj[jss::crn_first_ledger] = report->getFieldU32(sfFirstLedgerSequence);
+        obj[jss::crn_last_ledger] = report->getFieldU32(sfLastLedgerSequence);
+        obj[jss::crn_ws_port] = report->getWSPort();
+        // check crn signature
+        obj[jss::crn_valid] = casinocoin::verify( 
+            report->getSignerPublic(), 
+            makeSlice(strHex(report->getDomainName())), 
+            makeSlice(report->getSignature())
+        );
+
+    }
+    // return result
+    return jvReply;
 }
 
 } // casinocoin

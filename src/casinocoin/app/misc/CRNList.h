@@ -114,6 +114,9 @@ public:
         std::string const& domainName,
         bool const& enabled);
 
+    size_t
+    size () const;
+    
     /** Return JSON representation of configured nodelist
      */
     Json::Value

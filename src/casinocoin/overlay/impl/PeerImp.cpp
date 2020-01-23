@@ -1690,9 +1690,8 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMPerformanceReport> const& m)
     }
     catch (std::exception const& e)
     {
-        JLOG(p_journal_.warn()) << "PerformanceReport invalid."
-                                << " what: " << e.what()
-                                << " report: " << strHex(m->report ());
+        JLOG(p_journal_.info()) << "PerformanceReport Invalid."
+                                << " Sending Peer Info: " << this->json();
     }
 }
 

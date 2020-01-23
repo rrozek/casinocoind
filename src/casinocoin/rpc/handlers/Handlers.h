@@ -101,6 +101,7 @@ Json::Value doCRNCreate             (RPC::Context&);
 Json::Value doCRNVerify             (RPC::Context&);
 Json::Value doCRNInfo               (RPC::Context&);
 Json::Value doCRNAccounTx           (RPC::Context&);
+Json::Value doCRNReports            (RPC::Context&);
 } // casinocoin
 
 #endif
