@@ -99,7 +99,7 @@ preflight2 (PreflightContext const& ctx)
     if(!( ctx.flags & tapNO_CHECK_SIGN))
     {
         auto const sigValid = checkValidity(ctx.app.getHashRouter(),
-            ctx.tx, ctx.rules, ctx.app.config());
+            ctx.tx, ctx.rules, ctx.app.config(), ctx.j);
         if (sigValid.first == Validity::SigBad)
         {
             JLOG(ctx.j.debug()) <<

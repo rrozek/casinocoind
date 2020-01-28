@@ -805,7 +805,7 @@ void NetworkOPsImp::submitTransaction (std::shared_ptr<STTx const> const& iTrans
         auto const validity = checkValidity(
             app_.getHashRouter(), *trans,
                 m_ledgerMaster.getValidatedRules(),
-                    app_.config());
+                    app_.config(), m_journal);
 
         if (validity.first != Validity::Valid)
         {
@@ -856,7 +856,7 @@ void NetworkOPsImp::processTransaction (std::shared_ptr<Transaction>& transactio
     auto const validity = checkValidity(
         app_.getHashRouter(),
             *transaction->getSTransaction(),
-                view->rules(), app_.config());
+                view->rules(), app_.config(), m_journal);
     assert(validity.first == Validity::Valid);
 
     // Not concerned with local checks at this point.
