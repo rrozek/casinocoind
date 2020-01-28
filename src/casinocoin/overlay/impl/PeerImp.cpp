@@ -1087,6 +1087,12 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
     {
         auto stx = std::make_shared<STTx const>(sit);
         uint256 txID = stx->getTransactionID ();
+        
+        std::string txTypeString = "Unknown";
+        auto item =TxFormats::getInstance().findByType ( static_cast <TxType> (stx->getTxnType ()));
+
+        if (item != nullptr)
+            txTypeString = item->getName ();
 
         int flags;
 
@@ -1104,7 +1110,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
                 return;
         }
 
-        JLOG(p_journal_.debug()) << "Got tx " << txID;
+        JLOG(p_journal_.info()) << "Got tx: " << txID << " Type: " << txTypeString;
 
         bool checkSignature = true;
         if (cluster())
@@ -1901,7 +1907,7 @@ PeerImp::checkTransaction (int flags,
             // Check the signature before handing off to the job queue.
             auto valid = checkValidity(app_.getHashRouter(), *stx,
                 app_.getLedgerMaster().getValidatedRules(),
-                    app_.config());
+                    app_.config(), p_journal_);
             if (valid.first != Validity::Valid)
             {
                 if (!valid.second.empty())

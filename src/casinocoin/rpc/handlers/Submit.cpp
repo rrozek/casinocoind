@@ -100,7 +100,7 @@ Json::Value doSubmit (RPC::Context& context)
                 stpTrans->getTransactionID(), Validity::SigGoodOnly);
         auto validity = checkValidity(context.app.getHashRouter(),
             *stpTrans, context.ledgerMaster.getCurrentLedger()->rules(),
-                context.app.config());
+                context.app.config(), context.j);
         if (validity.first != Validity::Valid)
         {
             jvResult[jss::error] = "invalidTransaction";

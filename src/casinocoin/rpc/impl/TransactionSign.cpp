@@ -574,7 +574,7 @@ transactionConstructImpl (std::shared_ptr<STTx const> const& stpTrans,
                 forceValidity(app.getHashRouter(),
                     sttxNew->getTransactionID(), Validity::SigGoodOnly);
             std::pair<Validity, std::string> result = checkValidity(app.getHashRouter(),
-                                                                    *sttxNew, rules, app.config());
+                                                                    *sttxNew, rules, app.config(), app.journal("RPCHandler"));
             if (result.first != Validity::Valid)
             {
                 ret.first = RPC::make_error (rpcINTERNAL,

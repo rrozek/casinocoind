@@ -62,10 +62,10 @@ invoke_preflight (PreflightContext const& ctx)
     case ttTICKET_CREATE:   return CreateTicket     ::preflight(ctx);
     case ttTRUST_SET:       return SetTrust         ::preflight(ctx);
     case ttKYC_SET:         return SetKYC           ::preflight(ctx);
-    case ttCRN_ROUND:
     case ttAMENDMENT:
-    case ttCONFIG:
     case ttFEE:             return Change           ::preflight(ctx);
+    case ttCONFIG:          return Change           ::preflight(ctx);
+    case ttCRN_ROUND:       return Change           ::preflight(ctx);
     case ttPAYCHAN_CREATE:  return PayChanCreate    ::preflight(ctx);
     case ttPAYCHAN_FUND:    return PayChanFund      ::preflight(ctx);
     case ttPAYCHAN_CLAIM:   return PayChanClaim     ::preflight(ctx);
@@ -155,10 +155,10 @@ invoke_preclaim (PreclaimContext const& ctx)
     case ttTICKET_CREATE:   return invoke_preclaim<CreateTicket>(ctx);
     case ttTRUST_SET:       return invoke_preclaim<SetTrust>(ctx);
     case ttKYC_SET:         return invoke_preclaim<SetKYC>(ctx);
-    case ttCRN_ROUND:
     case ttAMENDMENT:
-    case ttCONFIG:
     case ttFEE:             return invoke_preclaim<Change>(ctx);
+    case ttCONFIG:          return invoke_preclaim<Change>(ctx);
+    case ttCRN_ROUND:       return invoke_preclaim<Change>(ctx);
     case ttPAYCHAN_CREATE:  return invoke_preclaim<PayChanCreate>(ctx);
     case ttPAYCHAN_FUND:    return invoke_preclaim<PayChanFund>(ctx);
     case ttPAYCHAN_CLAIM:   return invoke_preclaim<PayChanClaim>(ctx);
@@ -187,10 +187,10 @@ invoke_calculateBaseFee(PreclaimContext const& ctx)
     case ttTICKET_CREATE:   return CreateTicket::calculateBaseFee(ctx);
     case ttTRUST_SET:       return SetTrust::calculateBaseFee(ctx);
     case ttKYC_SET:         return SetKYC::calculateBaseFee(ctx);
-    case ttCRN_ROUND:
     case ttAMENDMENT:
-    case ttCONFIG:
     case ttFEE:             return Change::calculateBaseFee(ctx);
+    case ttCONFIG:          return Change::calculateBaseFee(ctx);
+    case ttCRN_ROUND:       return Change::calculateBaseFee(ctx);
     case ttPAYCHAN_CREATE:  return PayChanCreate::calculateBaseFee(ctx);
     case ttPAYCHAN_FUND:    return PayChanFund::calculateBaseFee(ctx);
     case ttPAYCHAN_CLAIM:   return PayChanClaim::calculateBaseFee(ctx);
@@ -266,10 +266,10 @@ invoke_apply (ApplyContext& ctx)
     case ttTICKET_CREATE:   { CreateTicket  p(ctx); return p(); }
     case ttTRUST_SET:       { SetTrust      p(ctx); return p(); }
     case ttKYC_SET:         { SetKYC        p(ctx); return p(); }
-    case ttCRN_ROUND:
     case ttAMENDMENT:
-    case ttCONFIG:
     case ttFEE:             { Change        p(ctx); return p(); }
+    case ttCONFIG:          { Change        p(ctx); return p(); }
+    case ttCRN_ROUND:       { Change        p(ctx); return p(); }
     case ttPAYCHAN_CREATE:  { PayChanCreate p(ctx); return p(); }
     case ttPAYCHAN_FUND:    { PayChanFund   p(ctx); return p(); }
     case ttPAYCHAN_CLAIM:   { PayChanClaim  p(ctx); return p(); }

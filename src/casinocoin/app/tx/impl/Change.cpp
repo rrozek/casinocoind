@@ -49,28 +49,7 @@ Change::preflight (PreflightContext const& ctx)
         return temBAD_SRC_ACCOUNT;
     }
 
-    // No point in going any further if the transaction fee is malformed.
-    auto const fee = ctx.tx.getFieldAmount (sfFee);
-    if (!fee.native () || fee != beast::zero)
-    {
-        JLOG(ctx.j.warn()) << "Change: invalid fee";
-        return temBAD_FEE;
-    }
-
-    if (!ctx.tx.getSigningPubKey ().empty () ||
-        !ctx.tx.getSignature ().empty () ||
-        ctx.tx.isFieldPresent (sfSigners))
-    {
-        JLOG(ctx.j.warn()) << "Change: Bad signature";
-        return temBAD_SIGNATURE;
-    }
-
-    if (ctx.tx.getSequence () != 0 || ctx.tx.isFieldPresent (sfPreviousTxnID))
-    {
-        JLOG(ctx.j.warn()) << "Change: Bad sequence";
-        return temBAD_SEQUENCE;
-    }
-
+    // check for ttCONFIG and ttCRN_ROUND before 'Regular' transactions
     if (ctx.tx.getTxnType() == ttCONFIG)
     {
         return preflightConfiguration(ctx);
@@ -93,6 +72,29 @@ Change::preflight (PreflightContext const& ctx)
             }
         }
     }
+
+    // No point in going any further if the transaction fee is malformed.
+    auto const fee = ctx.tx.getFieldAmount (sfFee);
+    if (!fee.native () || fee != beast::zero)
+    {
+        JLOG(ctx.j.warn()) << "Change: invalid fee";
+        return temBAD_FEE;
+    }
+
+    if (!ctx.tx.getSigningPubKey ().empty () ||
+        !ctx.tx.getSignature ().empty () ||
+        ctx.tx.isFieldPresent (sfSigners))
+    {
+        JLOG(ctx.j.warn()) << "Change: Bad signature";
+        return temBAD_SIGNATURE;
+    }
+
+    if (ctx.tx.getSequence () != 0 || ctx.tx.isFieldPresent (sfPreviousTxnID))
+    {
+        JLOG(ctx.j.warn()) << "Change: Bad sequence";
+        return temBAD_SEQUENCE;
+    }
+
     return tesSUCCESS;
 }
 
@@ -103,8 +105,11 @@ Change::preclaim(PreclaimContext const &ctx)
     // this block can be moved to preflight.
     if (ctx.view.open())
     {
-        JLOG(ctx.j.warn()) << "Change transaction against open ledger";
-        return temINVALID;
+        if (ctx.tx.getTxnType() != ttCONFIG && ctx.tx.getTxnType() != ttCRN_ROUND)
+        {
+            JLOG(ctx.j.warn()) << "Change transaction against open ledger";
+            return temINVALID;
+        }
     }
 
     if (ctx.tx.getTxnType() != ttAMENDMENT
@@ -139,7 +144,8 @@ Change::doApply()
 
     if (ctx_.tx.getTxnType () == ttFEE)
         return applyFee();
-    assert(ctx_.tx.getTxnType() == ttCRN_ROUND);
+
+    assert(ctx_.tx.getTxnType () == ttCRN_ROUND);
     return applyCRN_Round ();
 }
 

@@ -69,7 +69,7 @@ enum class Validity
 std::pair<Validity, std::string>
 checkValidity(HashRouter& router,
     STTx const& tx, Rules const& rules,
-        Config const& config);
+        Config const& config, beast::Journal j);
 
 
 /** Sets the validity of a given transaction in the cache.

@@ -118,7 +118,7 @@ Transaction::pointer Transaction::transactionFromSQLValidated(
         checkValidity(app.getHashRouter(),
                      *ret->getSTransaction(), app.
                      getLedgerMaster().getValidatedRules(),
-                     app.config());
+                     app.config(), app.journal ("Ledger"));
     if (checkResult.first != Validity::Valid)
         return {};
     return ret;
