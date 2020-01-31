@@ -107,6 +107,12 @@ public:
         view_->rawDestroyCSC(fee);
     }
 
+    void
+    redistributeCSC (CSCAmount const& dropsRedistributed)
+    {
+        view_->rawRedistributeCSC(dropsRedistributed);
+    }
+
     TER
     checkInvariants(TER);
 

@@ -177,6 +177,11 @@ private:
 
 };
 
+std::vector<Port>
+parse_Ports (
+    Config const& config,
+    std::ostream& log);
+
 }
 
 #endif

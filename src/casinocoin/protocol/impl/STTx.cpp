@@ -534,7 +534,8 @@ isPseudoTx(STObject const& tx)
     if (!t)
         return false;
     auto tt = static_cast<TxType>(*t);
-    return tt == ttAMENDMENT || tt == ttFEE || tt == ttCONFIG;
+    return tt == ttAMENDMENT || tt == ttFEE ||
+           tt == ttCONFIG || tt == ttCRN_ROUND;
 }
 
 } // casinocoin

@@ -33,7 +33,9 @@
 #include <casinocoin/beast/asio/ssl_bundle.h>
 #include <beast/http/message.hpp>
 #include <casinocoin/core/Stoppable.h>
+#include <casinocoin/core/DeadlineTimer.h>
 #include <casinocoin/beast/utility/PropertyStream.h>
+#include <casinocoin/protocol/Protocol.h>
 #include <memory>
 #include <type_traits>
 #include <boost/asio/buffer.hpp>
@@ -127,6 +129,13 @@ public:
     PeerSequence
     getActivePeers () = 0;
 
+    /** Returns a sequence representing the current list of Sane peers.
+        The snapshot is made at the time of the call.
+    */
+    virtual
+    PeerSequence
+    getSanePeers () = 0;
+
     /** Calls the checkSanity function on each peer
         @param index the value to pass to the peer's checkSanity function
     */
@@ -155,6 +164,11 @@ public:
     void
     send (protocol::TMValidation& m) = 0;
 
+    /** Broadcast performance report. */
+    virtual
+    void
+    send (protocol::TMPerformanceReport& m) = 0;
+
     /** Relay a proposal. */
     virtual
     void
@@ -165,6 +179,12 @@ public:
     virtual
     void
     relay (protocol::TMValidation& m,
+        uint256 const& uid) = 0;
+
+    /** Relay performance report. */
+    virtual
+    void
+    relay (protocol::TMPerformanceReport& m,
         uint256 const& uid) = 0;
 
     /** Visit every active peer and return a value

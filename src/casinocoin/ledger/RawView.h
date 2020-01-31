@@ -92,6 +92,14 @@ public:
     virtual
     void
     rawDestroyCSC (CSCAmount const& fee) = 0;
+
+    /** Redistribute CSC.
+
+        This is used to indicate CSC redistribution to CRNs for their work.
+    */
+    virtual
+    void
+    rawRedistributeCSC (CSCAmount const& dropsRedistributed) = 0;
 };
 
 //------------------------------------------------------------------------------

@@ -137,6 +137,9 @@ public:
     rawDestroyCSC (
         CSCAmount const& feeDrops) override;
 
+    void
+    rawRedistributeCSC (CSCAmount const& dropsRedistributed) override;
+
     friend
     CashDiff cashFlowDiff (
         CashFilter lhsFilter, ApplyViewBase const& lhs,

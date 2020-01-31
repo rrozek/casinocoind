@@ -41,6 +41,11 @@
 #include <casinocoin/app/main/NodeIdentity.h>
 #include <casinocoin/app/main/NodeStoreScheduler.h>
 #include <casinocoin/app/misc/AmendmentTable.h>
+#include <casinocoin/app/misc/CRNList.h>
+#include <casinocoin/app/misc/CRN.h>
+#include <casinocoin/app/misc/CRNReports.h>
+#include <casinocoin/app/misc/CRNRound.h>
+#include <casinocoin/app/misc/CRNListUpdater.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
@@ -241,53 +246,23 @@ private:
             beast::insight::Event ev,
             beast::Journal journal,
             std::chrono::milliseconds interval,
-            boost::asio::io_service& ios)
-            : m_event (ev)
-            , m_journal (journal)
-            , m_probe (interval, ios)
-            , lastSample_ {}
-        {
-        }
+            boost::asio::io_service& ios);
+
+        ~io_latency_sampler ();
 
         void
-        start()
-        {
-            m_probe.sample (std::ref(*this));
-        }
+        start();
 
         template <class Duration>
-        void operator() (Duration const& elapsed)
-        {
-            using namespace std::chrono;
-            auto const ms (ceil <std::chrono::milliseconds> (elapsed));
-
-            lastSample_ = ms;
-
-            if (ms.count() >= 10)
-                m_event.notify (ms);
-            if (ms.count() >= 500)
-            {
-                JLOG(m_journal.warn()) <<
-                    "io_service latency = " << ms.count();
-            }
-        }
+        void operator() (Duration const& elapsed);
 
         std::chrono::milliseconds
-        get () const
-        {
-            return lastSample_.load();
-        }
+        get () const;
 
         void
-        cancel ()
-        {
-            m_probe.cancel ();
-        }
+        cancel ();
 
-        void cancel_async ()
-        {
-            m_probe.cancel_async ();
-        }
+        void cancel_async ();
     };
 
 public:
@@ -332,10 +307,15 @@ public:
     std::unique_ptr <ManifestCache> publisherManifests_;
     std::unique_ptr <ValidatorList> validators_;
     std::unique_ptr <ValidatorSite> validatorSites_;
+    std::unique_ptr <CRNList> relaynodes_;
+    std::unique_ptr <CRNListUpdater> crnListUpdater_;
     std::unique_ptr <Blacklist> blacklistedAccounts_;
     std::unique_ptr <BlacklistUpdater> blacklistUpdater_;
     std::unique_ptr <ServerHandler> serverHandler_;
     std::unique_ptr <AmendmentTable> m_amendmentTable;
+    std::unique_ptr <CRN> m_crn;
+    std::unique_ptr <CRNReports> m_crnReports;
+    std::unique_ptr <CRNRound> m_crnRound;
     std::unique_ptr <LoadFeeTrack> mFeeTrack;
     std::unique_ptr <HashRouter> mHashRouter;
     std::unique_ptr <Validations> mValidations;
@@ -361,176 +341,20 @@ public:
 
     io_latency_sampler m_io_latency_sampler;
 
+    std::atomic<bool> isValidator_;
+
     //--------------------------------------------------------------------------
 
     static
     std::size_t
-    numberOfThreads(Config const& config)
-    {
-    #if CASINOCOIN_SINGLE_IO_SERVICE_THREAD
-        return 1;
-    #else
-        return (config.NODE_SIZE >= 2) ? 2 : 1;
-    #endif
-    }
+    numberOfThreads(Config const& config);
 
     //--------------------------------------------------------------------------
 
     ApplicationImp (
             std::unique_ptr<Config> config,
             std::unique_ptr<Logs> logs,
-            std::unique_ptr<TimeKeeper> timeKeeper)
-        : RootStoppable ("Application")
-        , BasicApp (numberOfThreads(*config))
-        , config_ (std::move(config))
-        , logs_ (std::move(logs))
-        , timeKeeper_ (std::move(timeKeeper))
-
-        , m_journal (logs_->journal("Application"))
-
-        , m_txMaster (*this)
-
-        , m_nodeStoreScheduler (*this)
-
-        , m_shaMapStore (make_SHAMapStore (*this, setup_SHAMapStore (*config_),
-            *this, m_nodeStoreScheduler,
-            logs_->journal ("SHAMapStore"), logs_->journal ("NodeObject"),
-            m_txMaster, *config_))
-
-        , accountIDCache_(128000)
-
-        , m_tempNodeCache ("NodeCache", 16384, 90, stopwatch(),
-            logs_->journal("TaggedCache"))
-
-        , m_collectorManager (CollectorManager::New (
-            config_->section (SECTION_INSIGHT), logs_->journal("Collector")))
-
-        , cachedSLEs_ (std::chrono::minutes(1), stopwatch())
-
-        , m_resourceManager (Resource::make_Manager (
-            m_collectorManager->collector(), logs_->journal("Resource")))
-
-        // The JobQueue has to come pretty early since
-        // almost everything is a Stoppable child of the JobQueue.
-        //
-        , m_jobQueue (std::make_unique<JobQueue>(
-            m_collectorManager->group ("jobq"), m_nodeStoreScheduler,
-            logs_->journal("JobQueue"), *logs_))
-
-        //
-        // Anything which calls addJob must be a descendant of the JobQueue
-        //
-        , m_nodeStore (
-            m_shaMapStore->makeDatabase ("NodeStore.main", 4, *m_jobQueue))
-
-        , family_ (*this, *m_nodeStore, *m_collectorManager)
-
-        , m_orderBookDB (*this, *m_jobQueue)
-
-        , m_pathRequests (std::make_unique<PathRequests> (
-            *this, logs_->journal("PathRequest"), m_collectorManager->collector ()))
-
-        , m_ledgerMaster (std::make_unique<LedgerMaster> (*this, stopwatch (),
-            *m_jobQueue, m_collectorManager->collector (),
-            logs_->journal("LedgerMaster")))
-
-        // VFALCO NOTE must come before NetworkOPs to prevent a crash due
-        //             to dependencies in the destructor.
-        //
-        , m_inboundLedgers (make_InboundLedgers (*this, stopwatch(),
-            *m_jobQueue, m_collectorManager->collector ()))
-
-        , m_inboundTransactions (make_InboundTransactions
-            ( *this, stopwatch()
-            , *m_jobQueue
-            , m_collectorManager->collector ()
-            , [this](std::shared_ptr <SHAMap> const& set,
-                bool fromAcquire)
-            {
-                gotTXSet (set, fromAcquire);
-            }))
-
-        , m_acceptedLedgerCache ("AcceptedLedger", 4, 60, stopwatch(),
-            logs_->journal("TaggedCache"))
-
-        , m_networkOPs (make_NetworkOPs (*this, stopwatch(),
-            config_->standalone(), config_->NETWORK_QUORUM, config_->START_VALID,
-            *m_jobQueue, *m_ledgerMaster, *m_jobQueue,
-            logs_->journal("NetworkOPs")))
-
-        , cluster_ (std::make_unique<Cluster> (
-            logs_->journal("Overlay")))
-
-        , validatorManifests_ (std::make_unique<ManifestCache> (
-            logs_->journal("ManifestCache")))
-
-        , publisherManifests_ (std::make_unique<ManifestCache> (
-            logs_->journal("ManifestCache")))
-
-        , validators_ (std::make_unique<ValidatorList> (
-            *validatorManifests_, *publisherManifests_, *timeKeeper_,
-            logs_->journal("ValidatorList"), config_->VALIDATION_QUORUM))
-
-        , validatorSites_ (std::make_unique<ValidatorSite> (
-            get_io_service (), *validators_, logs_->journal("ValidatorSite")))
-        
-        , blacklistedAccounts_ (std::make_unique<Blacklist> (
-            *timeKeeper_, logs_->journal("Blacklist")))
-
-        , blacklistUpdater_ (std::make_unique<BlacklistUpdater> (
-            get_io_service (), *blacklistedAccounts_, logs_->journal("BlacklistUpdater")))
-
-        , serverHandler_ (make_ServerHandler (*this, *m_networkOPs, get_io_service (),
-            *m_jobQueue, *m_networkOPs, *m_resourceManager, *m_collectorManager))
-
-        , mFeeTrack (std::make_unique<LoadFeeTrack>(logs_->journal("LoadManager")))
-
-        , mHashRouter (std::make_unique<HashRouter>(
-            stopwatch(), HashRouter::getDefaultHoldTime ()))
-
-        , mValidations (make_Validations (*this))
-
-        , m_loadManager (make_LoadManager (*this, *this, logs_->journal("LoadManager")))
-
-        , txQ_(make_TxQ(setup_TxQ(*config_), logs_->journal("TxQ")))
-
-        , m_sweepTimer (this)
-
-        , m_entropyTimer (this)
-
-        , startTimers_ (false)
-
-        , m_signals (get_io_service())
-
-        , checkSigs_(true)
-
-        , m_resolver (ResolverAsio::New (get_io_service(), logs_->journal("Resolver")))
-
-        , m_io_latency_sampler (m_collectorManager->collector()->make_event ("ios_latency"),
-            logs_->journal("Application"), std::chrono::milliseconds (100), get_io_service())
-    {
-        add (m_resourceManager.get ());
-
-        //
-        // VFALCO - READ THIS!
-        //
-        //  Do not start threads, open sockets, or do any sort of "real work"
-        //  inside the constructor. Put it in onStart instead. Or if you must,
-        //  put it in setup (but everything in setup should be moved to onStart
-        //  anyway.
-        //
-        //  The reason is that the unit tests require an Application object to
-        //  be created. But we don't actually start all the threads, sockets,
-        //  and services when running the unit tests. Therefore anything which
-        //  needs to be stopped will not get stopped correctly if it is
-        //  started in this constructor.
-        //
-
-        // VFALCO HACK
-        m_nodeStoreScheduler.setJobQueue (*m_jobQueue);
-
-        add (m_ledgerMaster->getPropertySource ());
-    }
+            std::unique_ptr<TimeKeeper> timeKeeper);
 
     //--------------------------------------------------------------------------
 
@@ -545,237 +369,149 @@ public:
 
     //--------------------------------------------------------------------------
 
+    void gotTXSet (std::shared_ptr<SHAMap> const& set, bool fromAcquire);
+
     Logs&
-    logs() override
-    {
-        return *logs_;
-    }
+    logs() override { return *logs_; }
 
     Config&
-    config() override
-    {
-        return *config_;
-    }
+    config() override { return *config_; }
 
-    CollectorManager& getCollectorManager () override
-    {
-        return *m_collectorManager;
-    }
+    CollectorManager&
+    getCollectorManager () override { return *m_collectorManager; }
 
     Family&
-    family() override
-    {
-        return family_;
-    }
+    family() override { return family_; }
 
     TimeKeeper&
-    timeKeeper() override
-    {
-        return *timeKeeper_;
-    }
+    timeKeeper() override { return *timeKeeper_; }
 
-    JobQueue& getJobQueue () override
-    {
-        return *m_jobQueue;
-    }
+    JobQueue&
+    getJobQueue () override { return *m_jobQueue; }
 
     std::pair<PublicKey, SecretKey> const&
-    nodeIdentity () override
-    {
-        return nodeIdentity_;
-    }
+    nodeIdentity () override { return nodeIdentity_; }
 
-    NetworkOPs& getOPs () override
-    {
-        return *m_networkOPs;
-    }
+    NetworkOPs&
+    getOPs () override { return *m_networkOPs; }
 
-    boost::asio::io_service& getIOService () override
-    {
-        return get_io_service();
-    }
+    boost::asio::io_service&
+    getIOService () override { return get_io_service(); }
 
-    std::chrono::milliseconds getIOLatency () override
-    {
-        return m_io_latency_sampler.get ();
-    }
+    std::chrono::milliseconds
+    getIOLatency () override { return m_io_latency_sampler.get (); }
 
-    LedgerMaster& getLedgerMaster () override
-    {
-        return *m_ledgerMaster;
-    }
+    LedgerMaster&
+    getLedgerMaster () override { return *m_ledgerMaster; }
 
-    InboundLedgers& getInboundLedgers () override
-    {
-        return *m_inboundLedgers;
-    }
+    InboundLedgers&
+    getInboundLedgers () override { return *m_inboundLedgers; }
 
-    InboundTransactions& getInboundTransactions () override
-    {
-        return *m_inboundTransactions;
-    }
+    InboundTransactions&
+    getInboundTransactions () override { return *m_inboundTransactions; }
 
-    TaggedCache <uint256, AcceptedLedger>& getAcceptedLedgerCache () override
-    {
-        return m_acceptedLedgerCache;
-    }
+    TaggedCache <uint256, AcceptedLedger>&
+    getAcceptedLedgerCache () override { return m_acceptedLedgerCache; }
 
-    void gotTXSet (std::shared_ptr<SHAMap> const& set, bool fromAcquire)
-    {
-        if (set)
-            m_networkOPs->mapComplete (set, fromAcquire);
-    }
+    TransactionMaster&
+    getMasterTransaction () override { return m_txMaster; }
 
-    TransactionMaster& getMasterTransaction () override
-    {
-        return m_txMaster;
-    }
+    bool
+    isCRN() override { return m_crn != nullptr; }
 
-    NodeCache& getTempNodeCache () override
-    {
-        return m_tempNodeCache;
-    }
+    CRN&
+    getCRN() override { assert(m_crn);return *m_crn; }
 
-    NodeStore::Database& getNodeStore () override
-    {
-        return *m_nodeStore;
-    }
+    CRNReports&
+    getCRNReports () override { return *m_crnReports; }
 
-    Application::MutexType& getMasterMutex () override
-    {
-        return m_masterMutex;
-    }
+    CRNRound&
+    getCRNRound() override { return *m_crnRound; }
 
-    LoadManager& getLoadManager () override
-    {
-        return *m_loadManager;
-    }
+    bool
+    isValidator() override { return isValidator_; }
 
-    Resource::Manager& getResourceManager () override
-    {
-        return *m_resourceManager;
-    }
+    NodeCache&
+    getTempNodeCache () override { return m_tempNodeCache; }
 
-    OrderBookDB& getOrderBookDB () override
-    {
-        return m_orderBookDB;
-    }
+    NodeStore::Database&
+    getNodeStore () override { return *m_nodeStore; }
 
-    PathRequests& getPathRequests () override
-    {
-        return *m_pathRequests;
-    }
+    Application::MutexType&
+    getMasterMutex () override { return m_masterMutex; }
+
+    LoadManager&
+    getLoadManager () override { return *m_loadManager; }
+
+    Resource::Manager&
+    getResourceManager () override { return *m_resourceManager; }
+
+    OrderBookDB&
+    getOrderBookDB () override { return m_orderBookDB; }
+
+    PathRequests&
+    getPathRequests () override { return *m_pathRequests; }
 
     CachedSLEs&
-    cachedSLEs() override
-    {
-        return cachedSLEs_;
-    }
+    cachedSLEs() override { return cachedSLEs_; }
 
-    AmendmentTable& getAmendmentTable() override
-    {
-        return *m_amendmentTable;
-    }
+    AmendmentTable&
+    getAmendmentTable() override { return *m_amendmentTable; }
 
-    LoadFeeTrack& getFeeTrack () override
-    {
-        return *mFeeTrack;
-    }
+    LoadFeeTrack&
+    getFeeTrack () override { return *mFeeTrack; }
 
-    HashRouter& getHashRouter () override
-    {
-        return *mHashRouter;
-    }
+    HashRouter&
+    getHashRouter () override { return *mHashRouter; }
 
-    VotableConfiguration& getVotableConfig() override
-    {
-        return *m_votableConfig;
-    }
+    VotableConfiguration& getVotableConfig() override { return *m_votableConfig; }
+    Validations&
+    getValidations () override { return *mValidations; }
 
-    Validations& getValidations () override
-    {
-        return *mValidations;
-    }
+    ValidatorList&
+    validators () override { return *validators_; }
 
-    ValidatorList& validators () override
-    {
-        return *validators_;
-    }
+    ValidatorSite&
+    validatorSites () override { return *validatorSites_; }
 
-    ValidatorSite& validatorSites () override
-    {
-        return *validatorSites_;
-    }
+    ManifestCache&
+    validatorManifests() override { return *validatorManifests_; }
 
-    ManifestCache& validatorManifests() override
-    {
-        return *validatorManifests_;
-    }
+    ManifestCache&
+    publisherManifests() override { return *publisherManifests_; }
 
-    ManifestCache& publisherManifests() override
-    {
-        return *publisherManifests_;
-    }
+    CRNList&
+    relaynodes () override { return *relaynodes_; }
 
-    Cluster& cluster () override
-    {
-        return *cluster_;
-    }
+    CRNListUpdater&
+    crnListUpdater () override { return *crnListUpdater_; }
 
-    SHAMapStore& getSHAMapStore () override
-    {
-        return *m_shaMapStore;
-    }
+    Cluster&
+    cluster () override { return *cluster_; }
 
-    PendingSaves& pendingSaves() override
-    {
-        return pendingSaves_;
-    }
+    SHAMapStore&
+    getSHAMapStore () override { return *m_shaMapStore; }
+
+    PendingSaves&
+    pendingSaves() override { return pendingSaves_; }
 
     AccountIDCache const&
-    accountIDCache() const override
-    {
-        return accountIDCache_;
-    }
+    accountIDCache() const override { return accountIDCache_; }
 
     OpenLedger&
-    openLedger() override
-    {
-        return *openLedger_;
-    }
+    openLedger() override { return *openLedger_; }
 
     OpenLedger const&
-    openLedger() const override
-    {
-        return *openLedger_;
-    }
+    openLedger() const override { return *openLedger_; }
 
-    Overlay& overlay () override
-    {
-        return *m_overlay;
-    }
+    Overlay&
+    overlay () override { return *m_overlay; }
 
-    TxQ& getTxQ() override
-    {
-        assert(txQ_.get() != nullptr);
-        return *txQ_;
-    }
+    TxQ& getTxQ() override;
 
-    DatabaseCon& getTxnDB () override
-    {
-        assert (mTxnDB.get() != nullptr);
-        return *mTxnDB;
-    }
-    DatabaseCon& getLedgerDB () override
-    {
-        assert (mLedgerDB.get() != nullptr);
-        return *mLedgerDB;
-    }
-    DatabaseCon& getWalletDB () override
-    {
-        assert (mWalletDB.get() != nullptr);
-        return *mWalletDB;
-    }
+    DatabaseCon& getTxnDB () override;
+    DatabaseCon& getLedgerDB () override;
+    DatabaseCon& getWalletDB () override;
 
     Blacklist&
     blacklistedAccounts () override { return *blacklistedAccounts_; }
@@ -788,187 +524,30 @@ public:
     beast::Journal journal (std::string const& name) override;
 
     //--------------------------------------------------------------------------
-    bool initSqliteDbs ()
-    {
-        assert (mTxnDB.get () == nullptr);
-        assert (mLedgerDB.get () == nullptr);
-        assert (mWalletDB.get () == nullptr);
+    bool initSqliteDbs ();
 
-        DatabaseCon::Setup setup = setup_DatabaseCon (*config_);
-        mTxnDB = std::make_unique <DatabaseCon> (setup, "transaction.db",
-                TxnDBInit, TxnDBCount);
-        mLedgerDB = std::make_unique <DatabaseCon> (setup, "ledger.db",
-                LedgerDBInit, LedgerDBCount);
-        mWalletDB = std::make_unique <DatabaseCon> (setup, "wallet.db",
-                WalletDBInit, WalletDBCount);
-
-        return
-            mTxnDB.get () != nullptr &&
-            mLedgerDB.get () != nullptr &&
-            mWalletDB.get () != nullptr;
-    }
-
-    void signalled(const boost::system::error_code& ec, int signal_number)
-    {
-        if (ec == boost::asio::error::operation_aborted)
-        {
-            // Indicates the signal handler has been aborted
-            // do nothing
-        }
-        else if (ec)
-        {
-            JLOG(m_journal.error()) << "Received signal: " << signal_number
-                                  << " with error: " << ec.message();
-        }
-        else
-        {
-            JLOG(m_journal.debug()) << "Received signal: " << signal_number;
-            signalStop();
-        }
-    }
+    void signalled(const boost::system::error_code& ec, int signal_number);
 
     //--------------------------------------------------------------------------
     //
     // Stoppable
     //
-
-    void onPrepare() override
-    {
-    }
-
-    void onStart () override
-    {
-        JLOG(m_journal.info())
-            << "Application starting. Version is " << BuildInfo::getVersionString();
-
-        using namespace std::chrono_literals;
-        if(startTimers_)
-        {
-            m_sweepTimer.setExpiration (10s);
-            m_entropyTimer.setRecurringExpiration (5min);
-        }
-
-        m_io_latency_sampler.start();
-
-        m_resolver->start ();
-    }
+    void onPrepare() override;
+    void onStart () override;
 
     // Called to indicate shutdown.
-    void onStop () override
-    {
-        JLOG(m_journal.debug()) << "Application stopping";
-
-        m_io_latency_sampler.cancel_async ();
-
-        // VFALCO Enormous hack, we have to force the probe to cancel
-        //        before we stop the io_service queue or else it never
-        //        unblocks in its destructor. The fix is to make all
-        //        io_objects gracefully handle exit so that we can
-        //        naturally return from io_service::run() instead of
-        //        forcing a call to io_service::stop()
-        m_io_latency_sampler.cancel ();
-
-        m_resolver->stop_async ();
-
-        // NIKB This is a hack - we need to wait for the resolver to
-        //      stop. before we stop the io_server_queue or weird
-        //      things will happen.
-        m_resolver->stop ();
-
-        if(startTimers_)
-        {
-            m_sweepTimer.cancel ();
-            m_entropyTimer.cancel ();
-        }
-
-        mValidations->flush ();
-
-        // stop validator site refresh
-        validatorSites_->stop ();
-
-        // stop blacklist site refresh
-        blacklistUpdater_->stop ();
-
-        // TODO Store manifests in manifests.sqlite instead of wallet.db
-        validatorManifests_->save (getWalletDB (), "ValidatorManifests",
-            [this](PublicKey const& pubKey)
-            {
-                return validators().listed (pubKey);
-            });
-
-        publisherManifests_->save (getWalletDB (), "PublisherManifests",
-            [this](PublicKey const& pubKey)
-            {
-                return validators().trustedPublisher (pubKey);
-            });
-
-        stopped ();
-    }
+    void onStop () override;
 
     //------------------------------------------------------------------------------
     //
     // PropertyStream
     //
-
-    void onWrite (beast::PropertyStream::Map& stream) override
-    {
-    }
+    void onWrite (beast::PropertyStream::Map& stream) override;
 
     //------------------------------------------------------------------------------
 
-    void onDeadlineTimer (DeadlineTimer& timer) override
-    {
-        if (timer == m_entropyTimer)
-        {
-            crypto_prng().mix_entropy ();
-            return;
-        }
-
-        if (timer == m_sweepTimer)
-        {
-            // VFALCO TODO Move all this into doSweep
-
-            if (! config_->standalone())
-            {
-                boost::filesystem::space_info space =
-                        boost::filesystem::space (config_->legacy ("database_path"));
-
-                // VFALCO TODO Give this magic constant a name and move it into a well documented header
-                //
-                if (space.available < (512 * 1024 * 1024))
-                {
-                    JLOG(m_journal.fatal())
-                        << "Remaining free disk space is less than 512MB";
-                    signalStop ();
-                }
-            }
-
-            m_jobQueue->addJob(jtSWEEP, "sweep", [this] (Job&) { doSweep(); });
-        }
-    }
-
-    void doSweep ()
-    {
-        // VFALCO NOTE Does the order of calls matter?
-        // VFALCO TODO fix the dependency inversion using an observer,
-        //         have listeners register for "onSweep ()" notification.
-
-        family().fullbelow().sweep ();
-        getMasterTransaction().sweep();
-        getNodeStore().sweep();
-        getLedgerMaster().sweep();
-        getTempNodeCache().sweep();
-        getValidations().sweep();
-        getInboundLedgers().sweep();
-        m_acceptedLedgerCache.sweep();
-        family().treecache().sweep();
-        cachedSLEs_.expire();
-
-        // VFALCO NOTE does the call to sweep() happen on another thread?
-        m_sweepTimer.setExpiration (
-            std::chrono::seconds {config_->getSize (siSweepInterval)});
-    }
-
+    void onDeadlineTimer (DeadlineTimer& timer) override;
+    void doSweep ();
 
 private:
     void addTxnSeqField();
@@ -991,6 +570,177 @@ private:
 
 //------------------------------------------------------------------------------
 
+size_t ApplicationImp::numberOfThreads(const Config &config)
+{
+#if CASINOCOIN_SINGLE_IO_SERVICE_THREAD
+    return 1;
+#else
+    return (config.NODE_SIZE >= 2) ? 2 : 1;
+#endif
+}
+
+ApplicationImp::ApplicationImp(std::unique_ptr<Config> config, std::unique_ptr<Logs> logs, std::unique_ptr<TimeKeeper> timeKeeper)
+    : RootStoppable ("Application")
+    , BasicApp (numberOfThreads(*config))
+    , config_ (std::move(config))
+    , logs_ (std::move(logs))
+    , timeKeeper_ (std::move(timeKeeper))
+
+    , m_journal (logs_->journal("Application"))
+
+    , m_txMaster (*this)
+
+    , m_nodeStoreScheduler (*this)
+
+    , m_shaMapStore (make_SHAMapStore (*this, setup_SHAMapStore (*config_),
+        *this, m_nodeStoreScheduler,
+        logs_->journal ("SHAMapStore"), logs_->journal ("NodeObject"),
+        m_txMaster, *config_))
+
+    , accountIDCache_(128000)
+
+    , m_tempNodeCache ("NodeCache", 16384, 90, stopwatch(),
+        logs_->journal("TaggedCache"))
+
+    , m_collectorManager (CollectorManager::New (
+        config_->section (SECTION_INSIGHT), logs_->journal("Collector")))
+
+    , cachedSLEs_ (std::chrono::minutes(1), stopwatch())
+
+    , m_resourceManager (Resource::make_Manager (
+        m_collectorManager->collector(), logs_->journal("Resource")))
+
+    // The JobQueue has to come pretty early since
+    // almost everything is a Stoppable child of the JobQueue.
+    //
+    , m_jobQueue (std::make_unique<JobQueue>(
+        m_collectorManager->group ("jobq"), m_nodeStoreScheduler,
+        logs_->journal("JobQueue"), *logs_))
+
+    //
+    // Anything which calls addJob must be a descendant of the JobQueue
+    //
+    , m_nodeStore (
+        m_shaMapStore->makeDatabase ("NodeStore.main", 4, *m_jobQueue))
+
+    , family_ (*this, *m_nodeStore, *m_collectorManager)
+
+    , m_orderBookDB (*this, *m_jobQueue)
+
+    , m_pathRequests (std::make_unique<PathRequests> (
+        *this, logs_->journal("PathRequest"), m_collectorManager->collector ()))
+
+    , m_ledgerMaster (std::make_unique<LedgerMaster> (*this, stopwatch (),
+        *m_jobQueue, m_collectorManager->collector (),
+        logs_->journal("LedgerMaster")))
+
+    // VFALCO NOTE must come before NetworkOPs to prevent a crash due
+    //             to dependencies in the destructor.
+    //
+    , m_inboundLedgers (make_InboundLedgers (*this, stopwatch(),
+        *m_jobQueue, m_collectorManager->collector ()))
+
+    , m_inboundTransactions (make_InboundTransactions
+        ( *this, stopwatch()
+        , *m_jobQueue
+        , m_collectorManager->collector ()
+        , [this](std::shared_ptr <SHAMap> const& set,
+            bool fromAcquire)
+        {
+            gotTXSet (set, fromAcquire);
+        }))
+
+    , m_acceptedLedgerCache ("AcceptedLedger", 4, 60, stopwatch(),
+        logs_->journal("TaggedCache"))
+
+    , m_networkOPs (make_NetworkOPs (*this, stopwatch(),
+        config_->standalone(), config_->NETWORK_QUORUM, config_->START_VALID,
+        *m_jobQueue, *m_ledgerMaster, *m_jobQueue,
+        logs_->journal("NetworkOPs")))
+
+    , cluster_ (std::make_unique<Cluster> (
+        logs_->journal("Overlay")))
+
+    , validatorManifests_ (std::make_unique<ManifestCache> (
+        logs_->journal("ManifestCache")))
+
+    , publisherManifests_ (std::make_unique<ManifestCache> (
+        logs_->journal("ManifestCache")))
+
+    , validators_ (std::make_unique<ValidatorList> (
+        *validatorManifests_, *publisherManifests_, *timeKeeper_,
+        logs_->journal("ValidatorList"), config_->VALIDATION_QUORUM))
+
+    , validatorSites_ (std::make_unique<ValidatorSite> (
+        get_io_service (), *validators_, logs_->journal("ValidatorSite")))
+    
+    , relaynodes_ (std::make_unique<CRNList> (
+        *timeKeeper_, logs_->journal("CRNList")))
+
+    , crnListUpdater_ (std::make_unique<CRNListUpdater> (
+        get_io_service (), *relaynodes_, logs_->journal("CRNListUpdater")))
+
+    , blacklistedAccounts_ (std::make_unique<Blacklist> (
+        *timeKeeper_, logs_->journal("Blacklist")))
+
+    , blacklistUpdater_ (std::make_unique<BlacklistUpdater> (
+        get_io_service (), *blacklistedAccounts_, logs_->journal("BlacklistUpdater")))
+
+    , serverHandler_ (make_ServerHandler (*this, *m_networkOPs, get_io_service (),
+        *m_jobQueue, *m_networkOPs, *m_resourceManager, *m_collectorManager))
+
+    , m_crn (nullptr)
+    , m_crnReports (make_CRNReports (*this))
+    , m_crnRound(make_CRNRound(*this, MAJORITY_FRACTION, logs_->journal("CRNRound")))
+
+    , mFeeTrack (std::make_unique<LoadFeeTrack>(logs_->journal("LoadManager")))
+
+    , mHashRouter (std::make_unique<HashRouter>(
+        stopwatch(), HashRouter::getDefaultHoldTime ()))
+
+    , mValidations (make_Validations (*this))
+
+    , m_loadManager (make_LoadManager (*this, *this, logs_->journal("LoadManager")))
+
+    , txQ_(make_TxQ(setup_TxQ(*config_), logs_->journal("TxQ")))
+
+    , m_sweepTimer (this)
+
+    , m_entropyTimer (this)
+
+    , startTimers_ (false)
+
+    , m_signals (get_io_service())
+
+    , checkSigs_(true)
+
+    , m_resolver (ResolverAsio::New (get_io_service(), logs_->journal("Resolver")))
+
+    , m_io_latency_sampler (m_collectorManager->collector()->make_event ("ios_latency"),
+        logs_->journal("Application"), std::chrono::milliseconds (100), get_io_service())
+{
+    add (m_resourceManager.get ());
+
+    //
+    // VFALCO - READ THIS!
+    //
+    //  Do not start threads, open sockets, or do any sort of "real work"
+    //  inside the constructor. Put it in onStart instead. Or if you must,
+    //  put it in setup (but everything in setup should be moved to onStart
+    //  anyway.
+    //
+    //  The reason is that the unit tests require an Application object to
+    //  be created. But we don't actually start all the threads, sockets,
+    //  and services when running the unit tests. Therefore anything which
+    //  needs to be stopped will not get stopped correctly if it is
+    //  started in this constructor.
+    //
+
+    // VFALCO HACK
+    m_nodeStoreScheduler.setJobQueue (*m_jobQueue);
+
+    add (m_ledgerMaster->getPropertySource ());
+}
 // VFALCO TODO Break this function up into many small initialization segments.
 //             Or better yet refactor these initializations into RAII classes
 //             which are members of the Application object.
@@ -1006,7 +756,7 @@ bool ApplicationImp::setup()
     m_signals.add (SIGINT);
 
     m_signals.async_wait(std::bind(&ApplicationImp::signalled, this,
-        std::placeholders::_1, std::placeholders::_2));
+                                   std::placeholders::_1, std::placeholders::_2));
 
     assert (mTxnDB == nullptr);
 
@@ -1037,12 +787,12 @@ bool ApplicationImp::setup()
     }
 
     getLedgerDB ().getSession ()
-        << boost::str (boost::format ("PRAGMA cache_size=-%d;") %
-                        (config_->getSize (siLgrDBCache) * 1024));
+            << boost::str (boost::format ("PRAGMA cache_size=-%d;") %
+                           (config_->getSize (siLgrDBCache) * 1024));
 
     getTxnDB ().getSession ()
             << boost::str (boost::format ("PRAGMA cache_size=-%d;") %
-                            (config_->getSize (siTxnDBCache) * 1024));
+                           (config_->getSize (siTxnDBCache) * 1024));
 
     mTxnDB->setupCheckpointing (m_jobQueue.get(), logs());
     mLedgerDB->setupCheckpointing (m_jobQueue.get(), logs());
@@ -1087,18 +837,18 @@ bool ApplicationImp::setup()
         startGenesisLedger ();
     }
     else if (startUp == Config::LOAD ||
-                startUp == Config::LOAD_FILE ||
-                startUp == Config::REPLAY)
+             startUp == Config::LOAD_FILE ||
+             startUp == Config::REPLAY)
     {
         JLOG(m_journal.info()) <<
-            "Loading specified Ledger";
+                                  "Loading specified Ledger";
 
         if (!loadOldLedger (config_->START_LEDGER,
                             startUp == Config::REPLAY,
                             startUp == Config::LOAD_FILE))
         {
             JLOG(m_journal.error()) <<
-                "The specified ledger could not be loaded.";
+                                       "The specified ledger could not be loaded.";
             return false;
         }
     }
@@ -1129,43 +879,47 @@ bool ApplicationImp::setup()
         PublicKey valPublic;
         SecretKey valSecret;
         std::string manifest;
+        isValidator_ = false;
+        // load validator private key
         if (config().exists (SECTION_VALIDATOR_TOKEN))
         {
             if (auto const token = ValidatorToken::make_ValidatorToken (
-                config().section (SECTION_VALIDATOR_TOKEN).lines ()))
+                        config().section (SECTION_VALIDATOR_TOKEN).lines ()))
             {
                 valSecret = token->validationSecret;
                 valPublic = derivePublicKey (KeyType::secp256k1, valSecret);
                 manifest = std::move(token->manifest);
+                isValidator_ = true;
             }
             else
             {
                 JLOG(m_journal.fatal()) <<
-                    "Invalid entry in validator token configuration.";
+                                           "Invalid entry in validator token configuration.";
                 return false;
             }
         }
         else if (config().exists (SECTION_VALIDATION_SEED))
         {
             auto const seed = parseBase58<Seed>(
-                config().section (SECTION_VALIDATION_SEED).lines ().front());
+                        config().section (SECTION_VALIDATION_SEED).lines ().front());
             if (!seed)
                 Throw<std::runtime_error> (
-                    "Invalid seed specified in [" SECTION_VALIDATION_SEED "]");
+                            "Invalid seed specified in [" SECTION_VALIDATION_SEED "]");
             valSecret = generateSecretKey (KeyType::secp256k1, *seed);
             valPublic = derivePublicKey (KeyType::secp256k1, valSecret);
+            isValidator_ = true;
         }
 
         if (!validatorManifests_->load (
-            getWalletDB (), "ValidatorManifests", manifest,
-            config().section (SECTION_VALIDATOR_KEY_REVOCATION).values ()))
+                    getWalletDB (), "ValidatorManifests", manifest,
+                    config().section (SECTION_VALIDATOR_KEY_REVOCATION).values ()))
         {
             JLOG(m_journal.fatal()) << "Invalid configured validator manifest.";
             return false;
         }
 
         publisherManifests_->load (
-            getWalletDB (), "PublisherManifests");
+                    getWalletDB (), "PublisherManifests");
 
         m_networkOPs->setValidationKeys (valSecret, valPublic);
 
@@ -1181,11 +935,52 @@ bool ApplicationImp::setup()
         }
     }
 
+    {
+        // Check if we are a Relay Node
+        JLOG(m_journal.info()) << "LOAD relaynode_config";
+        if (config().exists (SECTION_CRN_CONFIG))
+        {
+            // check for 'domain' and 'publickey' values
+            if (config().section (SECTION_CRN_CONFIG).find("domain").second &&
+                config().section (SECTION_CRN_CONFIG).find("publickey").second &&
+                config().section (SECTION_CRN_CONFIG).find("signature").second)
+            {
+                m_crn = make_CRN(config(),
+                                 getOPs(),
+                                 m_ledgerMaster->getCurrentLedgerIndex(),
+                                 logs_->journal("App_CRN"),
+                                 *m_ledgerMaster);
+            }
+            else
+            {
+                JLOG (m_journal.fatal()) << "The [relaynode_config] section needs to be configured if its availalble";
+                return false;
+            }
+        }
+
+        // Setup trusted relay nodes
+       if (!relaynodes_->load (
+               config().section (SECTION_CRNS).values ()))
+       {
+           JLOG(m_journal.fatal()) <<
+               "Invalid entry in relaynode configuration.";
+           return false;
+       }
+    }
+
     if (!validatorSites_->load (
         config().section (SECTION_VALIDATOR_LIST_SITES).values ()))
     {
         JLOG(m_journal.fatal()) <<
             "Invalid entry in [" << SECTION_VALIDATOR_LIST_SITES << "]";
+        return false;
+    }
+    
+    if (!crnListUpdater_->load (        
+        config().section (SECTION_CRN_LIST_SITES).values ()))
+    {
+        JLOG(m_journal.fatal()) <<
+            "Invalid entry in [" << SECTION_CRN_LIST_SITES << "]";
         return false;
     }
 
@@ -1223,6 +1018,9 @@ bool ApplicationImp::setup()
 
     // start blacklist sites refresh
     blacklistUpdater_->start ();
+    
+    // start the relaynode refresh cycle
+    crnListUpdater_->start ();
 
     // start first consensus round
     JLOG(m_journal.info()) << "Start first Consensus round";
@@ -1375,6 +1173,36 @@ int ApplicationImp::fdlimit() const
 
     // The minimum number of file descriptors we need is 1024:
     return std::max(1024, needed);
+}
+
+void ApplicationImp::gotTXSet(const std::shared_ptr<SHAMap> &set, bool fromAcquire)
+{
+    if (set)
+        m_networkOPs->mapComplete (set, fromAcquire);
+}
+
+TxQ &ApplicationImp::getTxQ()
+{
+    assert(txQ_.get() != nullptr);
+    return *txQ_;
+}
+
+DatabaseCon &ApplicationImp::getTxnDB()
+{
+    assert (mTxnDB.get() != nullptr);
+    return *mTxnDB;
+}
+
+DatabaseCon &ApplicationImp::getLedgerDB()
+{
+    assert (mLedgerDB.get() != nullptr);
+    return *mLedgerDB;
+}
+
+DatabaseCon &ApplicationImp::getWalletDB()
+{
+    assert (mWalletDB.get() != nullptr);
+    return *mWalletDB;
 }
 
 //------------------------------------------------------------------------------
@@ -1810,6 +1638,174 @@ ApplicationImp::journal (std::string const& name)
     return logs_->journal (name);
 }
 
+bool ApplicationImp::initSqliteDbs()
+{
+    assert (mTxnDB.get () == nullptr);
+    assert (mLedgerDB.get () == nullptr);
+    assert (mWalletDB.get () == nullptr);
+
+    DatabaseCon::Setup setup = setup_DatabaseCon (*config_);
+    mTxnDB = std::make_unique <DatabaseCon> (setup, "transaction.db",
+                                             TxnDBInit, TxnDBCount);
+    mLedgerDB = std::make_unique <DatabaseCon> (setup, "ledger.db",
+                                                LedgerDBInit, LedgerDBCount);
+    mWalletDB = std::make_unique <DatabaseCon> (setup, "wallet.db",
+                                                WalletDBInit, WalletDBCount);
+
+    return
+            mTxnDB.get () != nullptr &&
+            mLedgerDB.get () != nullptr &&
+            mWalletDB.get () != nullptr;
+}
+
+void ApplicationImp::signalled(const boost::system::error_code &ec, int signal_number)
+{
+    if (ec == boost::asio::error::operation_aborted)
+    {
+        // Indicates the signal handler has been aborted
+        // do nothing
+    }
+    else if (ec)
+    {
+        JLOG(m_journal.error()) << "Received signal: " << signal_number
+                                << " with error: " << ec.message();
+    }
+    else
+    {
+        JLOG(m_journal.debug()) << "Received signal: " << signal_number;
+        signalStop();
+    }
+}
+
+void ApplicationImp::onPrepare()
+{
+}
+
+void ApplicationImp::onStart()
+{
+    JLOG(m_journal.info())
+            << "Application starting. Version is " << BuildInfo::getVersionString();
+
+    using namespace std::chrono_literals;
+    if(startTimers_)
+    {
+        m_sweepTimer.setExpiration (10s);
+        m_entropyTimer.setRecurringExpiration (5min);
+    }
+
+    m_io_latency_sampler.start();
+
+    m_resolver->start ();
+}
+
+void ApplicationImp::onStop()
+{
+    JLOG(m_journal.debug()) << "Application stopping";
+
+    m_io_latency_sampler.cancel_async ();
+
+    // VFALCO Enormous hack, we have to force the probe to cancel
+    //        before we stop the io_service queue or else it never
+    //        unblocks in its destructor. The fix is to make all
+    //        io_objects gracefully handle exit so that we can
+    //        naturally return from io_service::run() instead of
+    //        forcing a call to io_service::stop()
+    m_io_latency_sampler.cancel ();
+
+    m_resolver->stop_async ();
+
+    // NIKB This is a hack - we need to wait for the resolver to
+    //      stop. before we stop the io_server_queue or weird
+    //      things will happen.
+    m_resolver->stop ();
+
+    if(startTimers_)
+    {
+        m_sweepTimer.cancel ();
+        m_entropyTimer.cancel ();
+    }
+
+    mValidations->flush ();
+    m_crnReports->flush ();
+
+    // stop the relaynode refresh cycle
+    crnListUpdater_->stop ();
+    // stop the validator site refresh cycle
+    validatorSites_->stop ();
+
+    // TODO Store manifests in manifests.sqlite instead of wallet.db
+    validatorManifests_->save (getWalletDB (), "ValidatorManifests",
+                               [this](PublicKey const& pubKey)
+    {
+        return validators().listed (pubKey);
+    });
+
+    publisherManifests_->save (getWalletDB (), "PublisherManifests",
+                               [this](PublicKey const& pubKey)
+    {
+        return validators().trustedPublisher (pubKey);
+    });
+
+    stopped ();
+}
+
+void ApplicationImp::onWrite(beast::PropertyStream::Map &stream)
+{
+}
+
+void ApplicationImp::onDeadlineTimer(DeadlineTimer &timer)
+{
+    if (timer == m_entropyTimer)
+    {
+        crypto_prng().mix_entropy ();
+        return;
+    }
+
+    if (timer == m_sweepTimer)
+    {
+        // VFALCO TODO Move all this into doSweep
+
+        if (! config_->standalone())
+        {
+            boost::filesystem::space_info space =
+                    boost::filesystem::space (config_->legacy ("database_path"));
+
+            // VFALCO TODO Give this magic constant a name and move it into a well documented header
+            //
+            if (space.available < (512 * 1024 * 1024))
+            {
+                JLOG(m_journal.fatal())
+                        << "Remaining free disk space is less than 512MB";
+                signalStop ();
+            }
+        }
+
+        m_jobQueue->addJob(jtSWEEP, "sweep", [this] (Job&) { doSweep(); });
+    }
+}
+
+void ApplicationImp::doSweep()
+{
+    // VFALCO NOTE Does the order of calls matter?
+    // VFALCO TODO fix the dependency inversion using an observer,
+    //         have listeners register for "onSweep ()" notification.
+
+    family().fullbelow().sweep ();
+    getMasterTransaction().sweep();
+    getNodeStore().sweep();
+    getLedgerMaster().sweep();
+    getTempNodeCache().sweep();
+    getValidations().sweep();
+    getInboundLedgers().sweep();
+    m_acceptedLedgerCache.sweep();
+    family().treecache().sweep();
+    cachedSLEs_.expire();
+
+    // VFALCO NOTE does the call to sweep() happen on another thread?
+    m_sweepTimer.setExpiration (
+                std::chrono::seconds {config_->getSize (siSweepInterval)});
+}
+
 //VFALCO TODO clean this up since it is just a file holding a single member function definition
 
 static
@@ -1836,8 +1832,8 @@ getSchema (DatabaseCon& dbc, std::string const& dbName)
 }
 
 static bool schemaHas (
-    DatabaseCon& dbc, std::string const& dbName, int line,
-    std::string const& content, beast::Journal j)
+        DatabaseCon& dbc, std::string const& dbName, int line,
+        std::string const& content, beast::Journal j)
 {
     std::vector<std::string> schema = getSchema (dbc, dbName);
 
@@ -2004,6 +2000,56 @@ bool ApplicationImp::updateTables ()
     }
 
     return true;
+}
+
+//------------------------------------------------------------------------------
+
+ApplicationImp::io_latency_sampler::io_latency_sampler(beast::insight::Event ev, beast::Journal journal, std::chrono::milliseconds interval, boost::asio::io_service &ios)
+    : m_event (ev)
+    , m_journal (journal)
+    , m_probe (interval, ios)
+    , lastSample_ {}
+{
+}
+
+ApplicationImp::io_latency_sampler::~io_latency_sampler()
+{
+}
+
+void ApplicationImp::io_latency_sampler::start()
+{
+    m_probe.sample (std::ref(*this));
+}
+
+std::chrono::milliseconds ApplicationImp::io_latency_sampler::get() const
+{
+    return lastSample_.load();
+}
+
+void ApplicationImp::io_latency_sampler::cancel()
+{
+    m_probe.cancel ();
+}
+
+void ApplicationImp::io_latency_sampler::cancel_async()
+{
+    m_probe.cancel_async ();
+}
+
+template <class Duration>
+void ApplicationImp::io_latency_sampler::operator() (Duration const& elapsed)
+{
+    using namespace std::chrono;
+    auto const ms (ceil <std::chrono::milliseconds> (elapsed));
+
+    lastSample_ = ms;
+    if (ms.count() >= 10)
+        m_event.notify (ms);
+    if (ms.count() >= 500)
+    {
+        JLOG(m_journal.warn()) <<
+            "io_service latency = " << ms.count();
+    }
 }
 
 //------------------------------------------------------------------------------

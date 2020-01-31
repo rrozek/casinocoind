@@ -153,8 +153,10 @@ def parse_time(t):
         return time.strptime(t, '%a %b %d %H:%M:%S %Y')
     elif l==3:
         return time.strptime(t, '%d %b %Y')
-    else:
+    elif t.split()[l-1].isdigit():
         return time.strptime(t, '%a %b %d %H:%M:%S %Z %Y')
+    else:
+        return time.strptime(t, '%a %b %d %H:%M:%S %Y %Z')
 
 UNITY_BUILD_DIRECTORY = 'src/casinocoin/unity/'
 

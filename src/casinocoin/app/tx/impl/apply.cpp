@@ -43,8 +43,12 @@ namespace casinocoin {
 std::pair<Validity, std::string>
 checkValidity(HashRouter& router,
     STTx const& tx, Rules const& rules,
-        Config const& config)
+        Config const& config, beast::Journal j)
 {
+    // If its a CRN Round or Configuration transaction we return it is valid
+    if(tx.getTxnType() == ttCRN_ROUND || tx.getTxnType() == ttCONFIG)
+        return {Validity::Valid, ""};
+
     auto const allowMultiSign =
         rules.enabled(featureMultiSign);
 

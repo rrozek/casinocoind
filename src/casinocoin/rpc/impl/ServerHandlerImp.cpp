@@ -556,6 +556,7 @@ ServerHandlerImp::processRequest (Port const& port,
             ! jsonRPC ||
             ! jsonRPC.isObject ())
         {
+            JLOG(m_journal.warn()) << "Unable to parse request: " << request;
             HTTPReply (400, "Unable to parse request", output, rpcJ);
             return;
         }
@@ -856,7 +857,6 @@ to_Port(ParsedPort const& parsed, std::ostream& log)
     return p;
 }
 
-static
 std::vector<Port>
 parse_Ports (
     Config const& config,

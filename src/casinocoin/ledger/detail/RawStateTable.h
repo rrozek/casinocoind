@@ -76,6 +76,9 @@ public:
     void
     destroyCSC (CSCAmount const& fee);
 
+    void
+    redistributeCSC(CSCAmount const& dropsRedistributed);
+
     std::unique_ptr<ReadView::sles_type::iter_base>
     slesBegin (ReadView const& base) const;
 
@@ -102,6 +105,7 @@ private:
 
     items_t items_;
     CSCAmount dropsDestroyed_ = 0;
+    CSCAmount dropsRedistributed_ = 0;
 };
 
 } // detail

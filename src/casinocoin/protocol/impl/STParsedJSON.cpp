@@ -776,6 +776,7 @@ static boost::optional <STObject> parseObject (
         case STI_TRANSACTION:
         case STI_LEDGERENTRY:
         case STI_VALIDATION:
+        case STI_PERFORMANCE_REPORT:
             if (! value.isObject ())
             {
                 error = not_an_object (json_name, fieldName);

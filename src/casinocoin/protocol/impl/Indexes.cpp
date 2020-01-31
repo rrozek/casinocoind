@@ -68,6 +68,13 @@ getLedgerConfigurationIndex ()
     return sha512Half(std::uint16_t(spaceConfiguration));
 }
 
+// get the index of the node that holds CRN payout conclusion round schedule
+uint256
+getLedgerCRN_RoundIndex ()
+{
+    return sha512Half(std::uint16_t(spaceCRN));
+}
+
 uint256
 getAccountRootIndex (AccountID const& account)
 {
@@ -247,6 +254,12 @@ Keylet configuration_t::operator()() const
 {
     return { ltCONFIGURATION,
         getLedgerConfigurationIndex() };
+}
+
+Keylet crnRound_t::operator()() const
+{
+    return { ltCRN_ROUND,
+        getLedgerCRN_RoundIndex() };
 }
 
 Keylet book_t::operator()(Book const& b) const

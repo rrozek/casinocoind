@@ -52,6 +52,14 @@ LedgerFormats::LedgerFormats ()
             << SOElement (sfTransferRate,        SOE_OPTIONAL)
             << SOElement (sfDomain,              SOE_OPTIONAL)
             << SOElement (sfTickSize,            SOE_OPTIONAL)
+            << SOElement (sfCRN,                 SOE_OPTIONAL)
+            ;
+
+    add ("CRNRound", ltCRN_ROUND)
+            << SOElement (sfCRNs,                SOE_REQUIRED)
+            << SOElement (sfCRN_FeeDistributed,  SOE_REQUIRED)
+            << SOElement (sfLedgerSequence,      SOE_OPTIONAL)
+            << SOElement (sfCRNTxHistory,        SOE_OPTIONAL)
             ;
 
     add ("DirectoryNode", ltDIR_NODE)

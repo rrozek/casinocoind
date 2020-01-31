@@ -32,13 +32,15 @@
 #include <casinocoin/protocol/AccountID.h>
 #include <casinocoin/protocol/PublicKey.h>
 #include <casinocoin/protocol/STAmount.h>
-
-#include <casinocoin/json/json_value.h>
+#include <casinocoin/protocol/TER.h>
 #include <casinocoin/protocol/JsonFields.h>
+#include <casinocoin/ledger/ReadView.h>
+#include <casinocoin/json/json_value.h>
 #include <casinocoin/basics/Log.h>
 
 #include <boost/bimap.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/optional.hpp>
 
 namespace casinocoin
 {
@@ -47,6 +49,7 @@ struct TokenDescriptor;
 struct KYC_SignerDescriptor;
 struct Message_PubKeyDescriptor;
 struct Blacklist_SignerDescriptor;
+struct CRN_SettingsDescriptor;
 
 struct DataDescriptorInterface
 {
@@ -74,7 +77,8 @@ public:
         KYC_Signer          = 1,
         Message_PubKey      = 2,
         Token               = 3,
-        Blacklist_Signer    = 4
+        Blacklist_Signer    = 4,
+        CRN_Settings        = 5
     };
 
     using bimap_string_type = boost::bimap<std::string, Type>;
@@ -126,6 +130,7 @@ struct TokenDescriptor : public DataDescriptorInterface
 
     std::string fullName;
     STAmount totalSupply;
+    uint32_t extraFeeFactor = 0u; /*percent of network fee*/
     TokenFlags flags;
     std::string website;
     std::string contactEmail;
@@ -168,6 +173,50 @@ struct Blacklist_SignerDescriptor : public DataDescriptorInterface
 
     AccountID blacklistSigner;
 };
+
+struct CRN_SettingsDescriptor : public DataDescriptorInterface
+{
+    CRN_SettingsDescriptor(beast::Journal const& journal);
+    CRN_SettingsDescriptor(CRN_SettingsDescriptor const& other);
+    CRN_SettingsDescriptor& operator=(const CRN_SettingsDescriptor& other);
+
+    DataDescriptorInterface* clone() const override;
+
+    bool fromJson(Json::Value const& data) override;
+    bool toJson(Json::Value& result) const override;
+
+    uint32_t foundationFeeFactor = 0u; /* percentage of fees for the foundation */
+    PublicKey foundationFeesPublicKey;
+    bool activated;
+};
+
+//------------------------------------------------------------------------------
+//
+// WLT Helpers
+//
+//------------------------------------------------------------------------------
+std::pair<TER, boost::optional<TokenDescriptor>>
+isWLTCompliant(STAmount const& amount,
+               ConfigObjectEntry const& tokenConfig,
+               boost::optional<beast::Journal> j = boost::optional<beast::Journal>());
+
+boost::optional<TokenDescriptor>
+getWLT(STAmount const& amount,
+       ConfigObjectEntry const& tokenConfig,
+       boost::optional<beast::Journal> j = boost::optional<beast::Journal>());
+
+//------------------------------------------------------------------------------
+//
+// CRN Helpers
+//
+//------------------------------------------------------------------------------
+bool 
+isCRNRoundsActivated(std::shared_ptr<ReadView const> const& ledger,
+                     boost::optional<beast::Journal> j = boost::optional<beast::Journal>());
+
+boost::optional<CRN_SettingsDescriptor>
+getCRNSettings(std::shared_ptr<ReadView const> const& ledger,
+                     boost::optional<beast::Journal> j = boost::optional<beast::Journal>());
 
 } // casinocoin
 

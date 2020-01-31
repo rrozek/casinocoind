@@ -49,6 +49,30 @@ Change::preflight (PreflightContext const& ctx)
         return temBAD_SRC_ACCOUNT;
     }
 
+    // check for ttCONFIG and ttCRN_ROUND before 'Regular' transactions
+    if (ctx.tx.getTxnType() == ttCONFIG)
+    {
+        return preflightConfiguration(ctx);
+    }
+
+    if (ctx.tx.getTxnType() == ttCRN_ROUND)
+    {
+        if (!ctx.rules.enabled(featureCRN))
+        {
+            JLOG(ctx.j.warn()) << "Change: CRN feature disabled";
+            return temDISABLED;
+        }
+        STArray crnArray = ctx.tx.getFieldArray(sfCRNs);
+        for ( auto const& crnObject : crnArray)
+        {
+            if (!crnObject.isFieldPresent(sfCRN_PublicKey))
+            {
+                JLOG(ctx.j.warn()) << "CRNRound malformed transaction";
+                return temMALFORMED;
+            }
+        }
+    }
+
     // No point in going any further if the transaction fee is malformed.
     auto const fee = ctx.tx.getFieldAmount (sfFee);
     if (!fee.native () || fee != beast::zero)
@@ -71,10 +95,6 @@ Change::preflight (PreflightContext const& ctx)
         return temBAD_SEQUENCE;
     }
 
-    if (ctx.tx.getTxnType() == ttCONFIG)
-    {
-        return preflightConfiguration(ctx);
-    }
     return tesSUCCESS;
 }
 
@@ -85,13 +105,17 @@ Change::preclaim(PreclaimContext const &ctx)
     // this block can be moved to preflight.
     if (ctx.view.open())
     {
-        JLOG(ctx.j.warn()) << "Change transaction against open ledger";
-        return temINVALID;
+        if (ctx.tx.getTxnType() != ttCONFIG && ctx.tx.getTxnType() != ttCRN_ROUND)
+        {
+            JLOG(ctx.j.warn()) << "Change transaction against open ledger";
+            return temINVALID;
+        }
     }
 
     if (ctx.tx.getTxnType() != ttAMENDMENT
         && ctx.tx.getTxnType() != ttFEE
-        && ctx.tx.getTxnType() != ttCONFIG)
+        && ctx.tx.getTxnType() != ttCONFIG
+        && ctx.tx.getTxnType() != ttCRN_ROUND)
         return temUNKNOWN;
 
     return tesSUCCESS;
@@ -118,8 +142,11 @@ Change::doApply()
     if (ctx_.tx.getTxnType () == ttCONFIG)
         return applyConfiguration ();
 
-    assert(ctx_.tx.getTxnType() == ttFEE);
-    return applyFee ();
+    if (ctx_.tx.getTxnType () == ttFEE)
+        return applyFee();
+
+    assert(ctx_.tx.getTxnType () == ttCRN_ROUND);
+    return applyCRN_Round ();
 }
 
 void
@@ -316,4 +343,99 @@ Change::applyConfiguration()
     return tesSUCCESS;
 }
 
+TER Change::applyCRN_Round()
+{
+    JLOG(j_.info()) << "applyCRN_Round";
+    auto const keyletCrnRound = keylet::crnRound();
+
+    SLE::pointer ledgerCrnRoundObject = view().peek(keyletCrnRound);
+
+    if (!ledgerCrnRoundObject)
+    {
+        ledgerCrnRoundObject = std::make_shared<SLE>(keyletCrnRound);
+        view().insert(ledgerCrnRoundObject);
+    }
+
+    STArray ledgerCrnArray(sfCRNs);
+    if (ledgerCrnRoundObject->isFieldPresent(sfCRNs))
+        ledgerCrnArray = ledgerCrnRoundObject->getFieldArray(sfCRNs);
+
+    STArray txCrnArray = ctx_.tx.getFieldArray(sfCRNs);
+    for ( STObject const& txCrnObject : txCrnArray)
+    {
+        if (!txCrnObject.isFieldPresent(sfCRN_PublicKey))
+        {
+            JLOG(j_.error()) << "CRNRound malformed transaction. Should be caught in preflight";
+            return temMALFORMED;
+        }
+        Blob pkBlob = txCrnObject.getFieldVL(sfCRN_PublicKey);
+        PublicKey crnPubKey(Slice(pkBlob.data(), pkBlob.size()));
+        AccountID dstAccountID = calcAccountID(crnPubKey);
+
+        auto ledgerCrnArrayIter = std::find_if(ledgerCrnArray.begin(), ledgerCrnArray.end(), [&pkBlob](STObject const& ledgerCRNObject)
+        {
+            return ledgerCRNObject.getFieldVL(sfCRN_PublicKey) == pkBlob;
+        });
+        if (ledgerCrnArrayIter != ledgerCrnArray.end())
+        {
+            (*ledgerCrnArrayIter).setFieldAmount(sfCRN_FeeDistributed,
+                                                 (*ledgerCrnArrayIter).getFieldAmount(sfCRN_FeeDistributed) +
+                                                 txCrnObject.getFieldAmount(sfCRN_FeeDistributed));
+        }
+        else
+        {
+            ledgerCrnArray.push_back (STObject (sfCRN));
+            auto& entry = ledgerCrnArray.back ();
+            entry.emplace_back (STBlob (sfCRN_PublicKey, pkBlob.data(), pkBlob.size()));
+            entry.emplace_back (txCrnObject.getFieldAmount(sfCRN_FeeDistributed));
+        }
+
+        auto const keyletDstAccount = keylet::account(dstAccountID);
+        SLE::pointer sleDst = view().peek (keyletDstAccount);
+        if (!sleDst)
+        {
+            JLOG(j_.error()) << "CRNRound malformed transaction. Fee receiver account: " <<toBase58(dstAccountID)
+                             << "does not exist.";
+            return temMALFORMED;
+        }
+        view().update (sleDst);
+
+        sleDst->setFieldAmount(sfBalance,
+                               sleDst->getFieldAmount(sfBalance) +
+                               txCrnObject.getFieldAmount(sfCRN_FeeDistributed));
+
+        // Re-arm the password change fee if we can and need to.
+        if ((sleDst->getFlags () & lsfPasswordSpent))
+            sleDst->clearFlag (lsfPasswordSpent);
+    }
+
+    // add new tx id to tx array
+    STVector256 crnTxHistory;
+    if (ledgerCrnRoundObject->isFieldPresent(sfCRNTxHistory))
+    {
+        crnTxHistory = ledgerCrnRoundObject->getFieldV256(sfCRNTxHistory);
+    }
+    crnTxHistory.push_back (ctx_.tx.getTransactionID());
+
+    // update the ledger with the new values
+    view().update (ledgerCrnRoundObject);
+    ledgerCrnRoundObject->setFieldArray(sfCRNs, ledgerCrnArray);
+    ledgerCrnRoundObject->setFieldAmount(sfCRN_FeeDistributed,
+                                         (ledgerCrnRoundObject->getFieldAmount(sfCRN_FeeDistributed) +
+                                         ctx_.tx.getFieldAmount(sfCRN_FeeDistributed)));
+    if (ctx_.tx.isFieldPresent(sfLedgerSequence))
+    {
+        ledgerCrnRoundObject->setFieldU32(sfLedgerSequence, ctx_.tx.getFieldU32(sfLedgerSequence));
+    }
+    ledgerCrnRoundObject->setFieldV256(sfCRNTxHistory, crnTxHistory);
+
+    // here, drops are added back to the pool
+    ctx_.redistributeCSC(ctx_.tx.getFieldAmount(sfCRN_FeeDistributed).csc());
+
+    JLOG(j_.info()) << "CRN_Round: " << ctx_.tx.getFieldAmount(sfCRN_FeeDistributed).getFullText() << " Fees have been re-distributed";
+    return tesSUCCESS;
 }
+
+
+}
+

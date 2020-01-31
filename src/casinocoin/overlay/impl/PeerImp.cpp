@@ -24,35 +24,41 @@
 //==============================================================================
 
 #include <BeastConfig.h>
-#include <casinocoin/overlay/impl/TMHello.h>
-#include <casinocoin/overlay/impl/PeerImp.h>
-#include <casinocoin/overlay/impl/Tuning.h>
+
 #include <casinocoin/app/ledger/InboundLedgers.h>
 #include <casinocoin/app/ledger/LedgerMaster.h>
-#include <casinocoin/consensus/LedgerTiming.h>
 #include <casinocoin/app/ledger/InboundTransactions.h>
+#include <casinocoin/app/misc/CRN.h>
 #include <casinocoin/app/misc/HashRouter.h>
 #include <casinocoin/app/misc/LoadFeeTrack.h>
 #include <casinocoin/app/misc/NetworkOPs.h>
 #include <casinocoin/app/misc/Transaction.h>
 #include <casinocoin/app/misc/Validations.h>
 #include <casinocoin/app/misc/ValidatorList.h>
+#include <casinocoin/app/misc/CRNReports.h>
 #include <casinocoin/app/tx/apply.h>
-#include <casinocoin/protocol/digest.h>
 #include <casinocoin/basics/random.h>
 #include <casinocoin/basics/StringUtilities.h>
 #include <casinocoin/basics/UptimeTimer.h>
+#include <casinocoin/beast/core/SemanticVersion.h>
+#include <casinocoin/beast/utility/weak_fn.h>
+#include <casinocoin/consensus/LedgerTiming.h>
 #include <casinocoin/core/JobQueue.h>
 #include <casinocoin/core/TimeKeeper.h>
 #include <casinocoin/json/json_reader.h>
-#include <casinocoin/resource/Fees.h>
-#include <casinocoin/rpc/ServerHandler.h>
 #include <casinocoin/overlay/Cluster.h>
 #include <casinocoin/overlay/ClusterNode.h>
+#include <casinocoin/overlay/impl/TMHello.h>
+#include <casinocoin/overlay/impl/PeerImp.h>
+#include <casinocoin/overlay/impl/Tuning.h>
 #include <casinocoin/protocol/BuildInfo.h>
 #include <casinocoin/protocol/JsonFields.h>
-#include <casinocoin/beast/core/SemanticVersion.h>
-#include <casinocoin/beast/utility/weak_fn.h>
+#include <casinocoin/protocol/tokens.h>
+#include <casinocoin/protocol/digest.h>
+#include <casinocoin/protocol/PublicKey.h>
+#include <casinocoin/resource/Fees.h>
+#include <casinocoin/rpc/ServerHandler.h>
+
 #include <beast/http/write.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/asio/io_service.hpp>
@@ -338,34 +344,44 @@ PeerImp::json()
             break;
     }
 
+    std::list<STPerformanceReport::pointer> currentReports = app_.getCRNReports().getCurrentReports();
+
+    auto myReportIter = find_if(currentReports.begin(), currentReports.end(),
+        [&](STPerformanceReport::ref report)
+        {
+            return report->getNodePublic() == publicKey_;
+        });
+    if (myReportIter != currentReports.end())
+    {
+        STPerformanceReport::ref myReport = *myReportIter;
+        JLOG(journal_.debug()) <<
+            "Peer is CRN, reporting more detailed data (PK:" << toBase58(TOKEN_NODE_PUBLIC, myReport->getSignerPublic()) << ")";
+        CRNId crnId(myReport->getSignerPublic(),
+                    myReport->getDomainName(),
+                    strHex(myReport->getSignature()),
+                    myReport->getWSPort(),
+                    journal_,
+                    app_.config(),
+                    app_.getLedgerMaster()
+                    );
+        ret[jss::crn] = crnId.json();
+    }
+
     if (last_status_.has_newstatus ())
     {
-        switch (last_status_.newstatus ())
+        if (last_status_.newstatus() > CRNPerformance::StatusAccounting::statuses_.size() ||
+            last_status_.newstatus() < 1)
         {
-        case protocol::nsCONNECTING:
-            ret[jss::status] = "connecting";
-            break;
-
-        case protocol::nsCONNECTED:
-            ret[jss::status] = "connected";
-            break;
-
-        case protocol::nsMONITORING:
-            ret[jss::status] = "monitoring";
-            break;
-
-        case protocol::nsVALIDATING:
-            ret[jss::status] = "validating";
-            break;
-
-        case protocol::nsSHUTTING:
-            ret[jss::status] = "shutting";
-            break;
-
-        default:
-            // FIXME: do we really want this?
-            JLOG(p_journal_.warn()) <<
+            JLOG(journal_.warn()) <<
                 "Unknown status: " << last_status_.newstatus ();
+        }
+        else
+        {
+            if (sanity_.load () == Sanity::sane)
+            {
+                ret[jss::status] =
+                        CRNPerformance::StatusAccounting::statuses_[last_status_.newstatus () - 1];
+            }
         }
     }
 
@@ -829,7 +845,7 @@ PeerImp::error_code
 PeerImp::onMessageUnknown (std::uint16_t type)
 {
     error_code ec;
-    // TODO
+    JLOG(p_journal_.warn()) << "Unknown message received: " <<type;
     return ec;
 }
 
@@ -1071,6 +1087,12 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
     {
         auto stx = std::make_shared<STTx const>(sit);
         uint256 txID = stx->getTransactionID ();
+        
+        std::string txTypeString = "Unknown";
+        auto item =TxFormats::getInstance().findByType ( static_cast <TxType> (stx->getTxnType ()));
+
+        if (item != nullptr)
+            txTypeString = item->getName ();
 
         int flags;
 
@@ -1088,7 +1110,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMTransaction> const& m)
                 return;
         }
 
-        JLOG(p_journal_.debug()) << "Got tx " << txID;
+        JLOG(p_journal_.info()) << "Got tx: " << txID << " Type: " << txTypeString;
 
         bool checkSignature = true;
         if (cluster())
@@ -1312,7 +1334,9 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMStatusChange> const& m)
         m->set_networktime (app_.timeKeeper().now().time_since_epoch().count());
 
     if (!last_status_.has_newstatus () || m->has_newstatus ())
+    {
         last_status_ = *m;
+    }
     else
     {
         // preserve old status
@@ -1321,7 +1345,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMStatusChange> const& m)
         m->set_newstatus (status);
     }
 
-    if (m->newevent () == protocol::neLOST_SYNC)
+    if (m->has_newevent() && m->newevent () == protocol::neLOST_SYNC)
     {
         if (!closedLedgerHash_.isZero ())
         {
@@ -1369,7 +1393,7 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMStatusChange> const& m)
     }
 
     if (m->has_ledgerseq() &&
-        app_.getLedgerMaster().getValidatedLedgerAge() < 10min)
+        app_.getLedgerMaster().getValidatedLedgerAge() < 15min)
     {
         checkSanity (m->ledgerseq(), app_.getLedgerMaster().getValidLedgerIndex());
     }
@@ -1417,6 +1441,8 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMStatusChange> const& m)
                     case protocol::neLOST_SYNC:
                         j[jss::action] = "LOST_SYNC";
                         break;
+                    case protocol::neCHANGED_STATUS:
+                        j[jss::action] = "CHANGED_STATUS";
                 }
             }
 
@@ -1634,6 +1660,48 @@ PeerImp::onMessage (std::shared_ptr <protocol::TMValidation> const& m)
 }
 
 void
+PeerImp::onMessage (std::shared_ptr <protocol::TMPerformanceReport> const& m)
+{
+    if (sanity_.load() == Sanity::insane)
+    {
+        JLOG(p_journal_.info()) << "PerformanceReport: received from insane peer. dropping";
+        return;
+    }
+    JLOG(p_journal_.debug()) << "PerformanceReport: received";
+
+    JLOG(p_journal_.trace()) << "PerformanceReport: serialize report";
+    SerialIter sit (makeSlice(m->report()));
+
+    try
+    {
+        JLOG(p_journal_.trace()) << "PerformanceReport: create STPerformanceReport";
+        auto sreport = std::make_shared<STPerformanceReport>(sit);
+
+        if (! app_.getHashRouter ().addSuppressionPeer (
+            sha512Half(makeSlice(m->report())), id_))
+        {
+            JLOG(p_journal_.trace()) << "PerformanceReport: duplicate";
+            return;
+        }
+        JLOG(p_journal_.trace()) << "PerformanceReport: add  checkReport job";
+        std::weak_ptr<PeerImp> weak = shared_from_this();
+        app_.getJobQueue ().addJob (
+            jtPERFORMANCE_REPORT,
+            "recvPerformanceReport->checkReport",
+            [weak, sreport, m] (Job&)
+            {
+                if (auto peer = weak.lock())
+                    peer->checkReport(sreport, m);
+            });
+    }
+    catch (std::exception const& e)
+    {
+        JLOG(p_journal_.info()) << "PerformanceReport Invalid."
+                                << " Sending Peer Info: " << this->json();
+    }
+}
+
+void
 PeerImp::onMessage (std::shared_ptr <protocol::TMGetObjectByHash> const& m)
 {
     protocol::TMGetObjectByHash& packet = *m;
@@ -1839,7 +1907,7 @@ PeerImp::checkTransaction (int flags,
             // Check the signature before handing off to the job queue.
             auto valid = checkValidity(app_.getHashRouter(), *stx,
                 app_.getLedgerMaster().getValidatedRules(),
-                    app_.config());
+                    app_.config(), p_journal_);
             if (valid.first != Validity::Valid)
             {
                 if (!valid.second.empty())
@@ -1956,6 +2024,32 @@ PeerImp::checkValidation (STValidation::pointer val,
     {
         JLOG(p_journal_.trace()) <<
             "Exception processing validation";
+        charge (Resource::feeInvalidRequest);
+    }
+}
+
+void
+PeerImp::checkReport (STPerformanceReport::pointer report,
+                      std::shared_ptr<protocol::TMPerformanceReport> const& packet)
+{
+    try
+    {
+        if (! cluster() && !report->isValid ())
+        {
+            JLOG(p_journal_.warn()) <<
+                "received PerformanceReport is invalid";
+            charge (Resource::feeInvalidRequest);
+            return;
+        }
+
+        if (app_.getOPs ().recvPerformanceReport(
+                report, std::to_string(id())))
+            overlay_.relay(*packet, report->getSigningHash());
+    }
+    catch (std::exception const&)
+    {
+        JLOG(p_journal_.info()) <<
+            "Exception processing received performance report";
         charge (Resource::feeInvalidRequest);
     }
 }
@@ -2398,6 +2492,18 @@ PeerImp::isHighLatency() const
 {
     std::lock_guard<std::mutex> sl (recentLock_);
     return latency_.count() >= Tuning::peerHighLatency;
+}
+
+uint32_t PeerImp::latency() const
+{
+    std::lock_guard<std::mutex> sl (recentLock_);
+    return  latency_.count();
+}
+
+Peer::Sanity PeerImp::sanity() const
+{
+    std::lock_guard<std::mutex> sl (recentLock_);
+    return sanity_;
 }
 
 } // casinocoin

@@ -108,6 +108,9 @@ public:
 
     /** Payment Channel Claim */
     static HashPrefix const paymentChannelClaim;
+
+    /** node performance report */
+    static HashPrefix const performanceReport;
 };
 
 template <class Hasher>

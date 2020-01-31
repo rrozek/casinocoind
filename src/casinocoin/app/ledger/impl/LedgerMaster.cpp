@@ -536,7 +536,7 @@ LedgerMaster::getFetchPack (LedgerHash missingHash, LedgerIndex missingIndex)
     std::shared_ptr<Peer> target;
     {
         int maxScore = 0;
-        auto peerList = app_.overlay ().getActivePeers();
+        auto peerList = app_.overlay ().getSanePeers();
         for (auto const& peer : peerList)
         {
             if (peer->hasRange (missingIndex, missingIndex + 1))
