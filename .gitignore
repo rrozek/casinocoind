@@ -48,7 +48,7 @@ db/*.db-*
 debug_log.txt
 
 # Ignore customized configs
-rippled.cfg
+casinocoind.cfg
 validators.txt
 test/config.js
 
@@ -94,3 +94,12 @@ Builds/VisualStudio2015/*.sdf
 # MSVC
 *.pdb
 .vs/
+
+#QtCreator
+*.pro.user
+*.pro.user.*
+*.autosave
+*.creator*
+*.config
+*.includes
+*.files
