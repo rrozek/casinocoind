@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/casinocoin/casinocoind
     Copyright (c) 2018 CasinoCoin Foundation
@@ -60,7 +60,7 @@ public:
      * ---------------
     */
     // voting period
-    static uint32_t getReportingPeriod() { return 1024; }
+    static uint32_t getReportingPeriod() { return 64; }
     // start reporting offset in ledgers before voting
     static uint32_t getReportingStartOffset() { return 10; }
 
