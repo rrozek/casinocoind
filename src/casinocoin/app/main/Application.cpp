@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012, 2013 Ripple Labs Inc.
@@ -809,7 +809,7 @@ bool ApplicationImp::setup()
         enabledAmendments.append (detail::preEnabledAmendments ());
 
         m_amendmentTable = make_AmendmentTable (
-            std::chrono::hours(2),
+            std::chrono::minutes(20),
             MAJORITY_FRACTION,
             supportedAmendments,
             enabledAmendments,
