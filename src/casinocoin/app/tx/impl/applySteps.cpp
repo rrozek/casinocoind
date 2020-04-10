@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012, 2013 Ripple Labs Inc.
@@ -131,6 +131,9 @@ invoke_preclaim(PreclaimContext const& ctx)
         if (result != tesSUCCESS)
             return { result, baseFee };
 
+        result = T::checkBurning(ctx);
+        if (result != tesSUCCESS)
+            return { result, baseFee };
     }
 
     return{ T::preclaim(ctx), baseFee };

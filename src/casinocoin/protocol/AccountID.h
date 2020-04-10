@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2014 Ripple Labs Inc.
@@ -108,6 +108,23 @@ cscAccount();
 /** A placeholder for empty accounts. */
 AccountID const&
 noAccount();
+
+/** A special accounts that are used for burning csc */
+AccountID const&
+burnOneAccount();
+
+AccountID const&
+burnTwoAccount();
+
+AccountID const&
+burnThreeAccount();
+
+inline
+bool
+isBurningAccount(AccountID const& acc)
+{
+    return acc == burnOneAccount() || acc == burnTwoAccount() || acc == burnThreeAccount();
+}
 
 /** Convert hex or base58 string to AccountID.
 
