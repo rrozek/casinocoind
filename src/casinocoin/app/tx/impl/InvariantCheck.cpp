@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
   This file is part of rippled: https://github.com/ripple/rippled
   Copyright (c) 2012-2016 Ripple Labs Inc.
@@ -86,6 +86,13 @@ bool
 CSCNotCreated::finalize(STTx const& tx, TER /*tec*/, beast::Journal const& j)
 {
     auto fee = tx.getFieldAmount(sfFee).csc().drops();
+    if (tx.getAccountID(sfDestination) == burnThreeAccount())
+    {
+        auto burnedAmount = tx.getFieldAmount(sfAmount).csc().drops();
+        JLOG(j.warn()) << "Invariant CSCNotCreated allowing burning CSC on burn account " << toBase58(burnThreeAccount())
+                       << " amount of CSC burned: " << burnedAmount;
+        drops_ += burnedAmount;
+    }
     if(-1*fee <= drops_ && drops_ <= 0)
         return true;
 
