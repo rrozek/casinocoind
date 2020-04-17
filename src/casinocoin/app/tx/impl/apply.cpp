@@ -45,9 +45,10 @@ checkValidity(HashRouter& router,
     STTx const& tx, Rules const& rules,
         Config const& config, beast::Journal j)
 {
-    // If its a CRN Round or Configuration transaction we return it is valid
-    if(tx.getTxnType() == ttCRN_ROUND || tx.getTxnType() == ttCONFIG)
-        return {Validity::Valid, ""};
+    // If its a pseudo-transaction - bail out and indicate 'invalid'
+    // pseudo-transactions shouldn't fly around the net
+    if(isPseudoTx(tx))
+        return {Validity::SigBad, "Pseudo tx"};
 
     auto const allowMultiSign =
         rules.enabled(featureMultiSign);
