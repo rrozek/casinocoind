@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012, 2013 Ripple Labs Inc.
@@ -169,6 +169,27 @@ AccountID const&
 noAccount()
 {
     static AccountID const account(1);
+    return account;
+}
+
+AccountID const&
+burnOneAccount()
+{
+    static AccountID const account(-1);
+    return account;
+}
+
+AccountID const&
+burnTwoAccount()
+{
+    static AccountID const account(-2);
+    return account;
+}
+
+AccountID const&
+burnThreeAccount()
+{
+    static AccountID const account(-3);
     return account;
 }
 

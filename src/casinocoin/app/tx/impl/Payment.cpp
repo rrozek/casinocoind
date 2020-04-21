@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012, 2013 Ripple Labs Inc.
@@ -31,6 +31,7 @@
 #include <casinocoin/protocol/st.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/JsonFields.h>
+#include <casinocoin/app/misc/Blacklist.h>
 
 namespace casinocoin {
 
@@ -449,8 +450,39 @@ Payment::doApply ()
             // arithmetic for the transfer and make the ledger change.
             view().peek(keylet::account(account_))->setFieldAmount (sfBalance,
                 mSourceBalance - saDstAmount);
-            sleDst->setFieldAmount (sfBalance,
-                sleDst->getFieldAmount (sfBalance) + saDstAmount);
+
+            // there are three defined burning accounts.
+            // #1 regular account with unknown secret
+            // #2 reducing total csc in circulation
+            // #3 vanishing csc from the surface
+            if (uDstAccountID == burnTwoAccount())
+            {
+                JLOG(j_.warn()) << "Payment tx of " << saDstAmount.csc().drops()
+                                << " from " << toBase58(account_)
+                                << " to burning account reducing CSC in circulation "
+                                << toBase58(uDstAccountID);
+                ctx_.destroyCSC(saDstAmount.csc());
+                // TODO: need ctx_.destroyCSCForever(saDstAmount);
+                // but for that, we need to start tracing actual
+                // 'totalCoins' on ledger-to-ledger basis
+                // by current implementation they will be redistributed among CRNs
+            }
+            // only allow csc viping from blacklisted accounts for security
+            else if (uDstAccountID == burnThreeAccount() && ctx_.app.blacklistedAccounts().listed(toBase58(account_)))
+            {
+                JLOG(j_.warn()) << "Payment tx of " << saDstAmount.csc().drops()
+                                << " from " << toBase58(account_)
+                                << " to burning account viping CSC out of scope "
+                                << toBase58(uDstAccountID);
+                // do nothing (coins are deduced from src but not added to dst
+            }
+            else
+            {
+                // for burningOne account, act just like a reagular Payment
+                sleDst->setFieldAmount (sfBalance,
+                    sleDst->getFieldAmount (sfBalance) + saDstAmount);
+
+            }
 
             // Re-arm the password change fee if we can and need to.
             if ((sleDst->getFlags () & lsfPasswordSpent))

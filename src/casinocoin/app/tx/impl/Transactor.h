@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012, 2013 Ripple Labs Inc.
@@ -150,6 +150,10 @@ public:
     static
     TER 
     checkMemoSize (PreclaimContext const& ctx);
+
+    static
+    TER
+    checkBurning (PreclaimContext const& ctx);
 
     // Returns the fee in fee units, not scaled for load.
     static
