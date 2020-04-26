@@ -41,9 +41,6 @@ namespace casinocoin {
 Json::Value doSignMsg (RPC::Context& context)
 {
     auto j = context.app.journal("RPCHandler");
-    JLOG(j.warn()) << "burn #1: " << toBase58(burnOneAccount());
-    JLOG(j.warn()) << "burn #2: " << toBase58(burnTwoAccount());
-    JLOG(j.warn()) << "burn #3: " << toBase58(burnThreeAccount());
     Json::Value jvResult;
     auto keypair = RPC::keypairForSignature(context.params, jvResult);
     if (RPC::contains_error (jvResult))

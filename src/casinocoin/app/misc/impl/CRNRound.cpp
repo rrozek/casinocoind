@@ -207,10 +207,32 @@ void CRNRoundImpl::doValidation(std::shared_ptr<const ReadView> const& lastClose
         JLOG(j_.info()) << "CRNRoundImpl::doValidation CRN Rounds are de-activated. aborting";
         return;
     }
+    if (static_cast<uint64_t>(lastClosedLedger->info().drops.drops()) >= SYSTEM_CURRENCY_START)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then SYSTEM_CURRENCY_START.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: " << static_cast<uint64_t>(lastClosedLedger->info().drops.drops());
+        return;
+    }
+    std::lock_guard <std::mutex> sl (mutex_);
+
+    CSCAmount totalCoinsInCirculation(SYSTEM_CURRENCY_START);
+    auto const sleBurnAccount = lastClosedLedger->read(keylet::account(burnTwoAccount()));
+    if (sleBurnAccount)
+    {
+        totalCoinsInCirculation -= (*sleBurnAccount)[sfBalance].csc();
+    }
+    if (totalCoinsInCirculation < lastClosedLedger->info().drops)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then overall.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: "
+                        << lastClosedLedger->info().drops.drops()
+                        << " overall: "
+                        << totalCoinsInCirculation.drops();
+        return;
+    }
+    lastFeeDistributionPosition_ = CSCAmount(totalCoinsInCirculation - lastClosedLedger->info().drops.drops()).drops();
     JLOG (j_.info()) <<
         "CRNRoundImpl::doValidation with " << eligibilityMap_.size() << " candidates";
-
-    std::lock_guard <std::mutex> sl (mutex_);
 
     STArray crnArray(sfCRNs);
     for ( auto iter = eligibilityMap_.begin(); iter != eligibilityMap_.end(); ++iter)
@@ -223,7 +245,6 @@ void CRNRoundImpl::doValidation(std::shared_ptr<const ReadView> const& lastClose
 
     JLOG(j_.info()) << "CRNRoundImpl::doValidation we propose lastLedger: "
                     << lastClosedLedger->info().seq << " drops: " << lastClosedLedger->info().drops.drops();
-    lastFeeDistributionPosition_ = CSCAmount(SYSTEM_CURRENCY_START - static_cast<uint64_t>(lastClosedLedger->info().drops.drops()));
 
     baseValidation.setFieldArray(sfCRNs, crnArray);
     baseValidation.setFieldAmount(sfCRN_FeeDistributed, STAmount(lastFeeDistributionPosition_));
@@ -243,6 +264,27 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
         JLOG(j_.info()) << "CRNRoundImpl::doVoting CRN Rounds are de-activated. aborting";
         return;
     }
+    if (static_cast<uint64_t>(lastClosedLedger->info().drops.drops()) >= SYSTEM_CURRENCY_START)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::doVoting. more drops in LCL then overall.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doVoting. drops in LCL: " << static_cast<uint64_t>(lastClosedLedger->info().drops.drops());
+        return;
+    }
+    CSCAmount totalCoinsInCirculation(SYSTEM_CURRENCY_START);
+    auto const sleBurnAccount = lastClosedLedger->read(keylet::account(burnTwoAccount()));
+    if (sleBurnAccount)
+    {
+        totalCoinsInCirculation -= (*sleBurnAccount)[sfBalance].csc();
+    }
+    if (totalCoinsInCirculation < lastClosedLedger->info().drops)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::doVoting. more drops in LCL then overall.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doVoting. drops in LCL: "
+                        << lastClosedLedger->info().drops.drops()
+                        << " overall: "
+                        << totalCoinsInCirculation.drops();
+        return;
+    }
     // get the CRN Settings
     boost::optional<CRN_SettingsDescriptor> crnSettings = getCRNSettings(lastClosedLedger, j_);
     if(crnSettings)
@@ -250,11 +292,11 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
      JLOG(j_.info()) << "CRNRoundImpl::doVoting. CRNSettings Foundation Account: " << toBase58(calcAccountID(crnSettings->foundationFeesPublicKey))
                      << " - Foundation Percentage: " << crnSettings->foundationFeeFactor;
     }
-
+    uint64_t maxDistribution = CSCAmount(totalCoinsInCirculation - lastClosedLedger->info().drops).drops();
     JLOG(j_.info()) << "CRNRoundImpl::doVoting. validations: " << parentValidations.size()
-                    << " voting range: 0 - " << CSCAmount(SYSTEM_CURRENCY_START - static_cast<uint64_t>(lastClosedLedger->info().drops.drops())).drops();
+                    << " voting range: 0 - " << maxDistribution;
 
-    detail::VotableInteger<std::int64_t> feeToDistribute (0, CSCAmount(SYSTEM_CURRENCY_START - static_cast<uint64_t>(lastClosedLedger->info().drops.drops())).drops());
+    detail::VotableInteger<std::int64_t> feeToDistribute (0, maxDistribution);
     auto crnVote = std::make_unique<NodesEligibilitySet>();
 
     // based on other votes, conclude what in our POV elibigible nodes should look like
@@ -367,9 +409,31 @@ void CRNRoundImpl::updatePosition(std::list<STPerformanceReport::pointer> const&
         JLOG(j_.info()) << "CRNRoundImpl::updatePosition CRN feature is not enabled. aborting";
         return;
     }
-    if (!isCRNRoundsActivated( app_.getLedgerMaster().getClosedLedger(), j_ ))
+    std::shared_ptr<const Ledger> closedLedger = app_.getLedgerMaster().getClosedLedger();
+    if (!isCRNRoundsActivated( closedLedger, j_ ))
     {
         JLOG(j_.info()) << "CRNRoundImpl::updatePosition CRN Rounds are de-activated. aborting";
+        return;
+    }
+    if (static_cast<uint64_t>(closedLedger->info().drops.drops()) >= SYSTEM_CURRENCY_START)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::updatePosition. more drops in LCL then overall.";
+        JLOG(j_.warn()) << "CRNRoundImpl::updatePosition. drops in LCL: " << static_cast<uint64_t>(app_.getLedgerMaster().getClosedLedger()->info().drops.drops());
+        return;
+    }
+    CSCAmount totalCoinsInCirculation(SYSTEM_CURRENCY_START);
+    auto const sleBurnAccount = closedLedger->read(keylet::account(burnTwoAccount()));
+    if (sleBurnAccount)
+    {
+        totalCoinsInCirculation -= (*sleBurnAccount)[sfBalance].csc();
+    }
+    if (totalCoinsInCirculation < closedLedger->info().drops)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then overall.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: "
+                        << closedLedger->info().drops.drops()
+                        << " overall: "
+                        << totalCoinsInCirculation.drops();
         return;
     }
     eligibilityMap_.clear();

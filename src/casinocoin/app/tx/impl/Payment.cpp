@@ -462,10 +462,7 @@ Payment::doApply ()
                                 << " to burning account reducing CSC in circulation "
                                 << toBase58(uDstAccountID);
                 ctx_.destroyCSC(saDstAmount.csc());
-                // TODO: need ctx_.destroyCSCForever(saDstAmount);
-                // but for that, we need to start tracing actual
-                // 'totalCoins' on ledger-to-ledger basis
-                // by current implementation they will be redistributed among CRNs
+                // TODO: consider destroyCSCForever.
             }
             // only allow csc viping from blacklisted accounts for security
             else if (uDstAccountID == burnThreeAccount() && ctx_.app.blacklistedAccounts().listed(toBase58(account_)))

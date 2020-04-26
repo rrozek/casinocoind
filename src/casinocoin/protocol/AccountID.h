@@ -110,12 +110,17 @@ AccountID const&
 noAccount();
 
 /** A special accounts that are used for burning csc */
+/** there are three defined burning accounts. */
+
+/** #1 regular account with unknown secret */
 AccountID const&
 burnOneAccount();
 
+/** #2 reducing total csc in circulation */
 AccountID const&
 burnTwoAccount();
 
+/** #3 vanishing csc from the surface */
 AccountID const&
 burnThreeAccount();
 
