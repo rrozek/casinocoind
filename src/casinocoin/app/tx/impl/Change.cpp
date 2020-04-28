@@ -368,6 +368,31 @@ TER Change::applyCRN_Round()
         ledgerCrnArray = ledgerCrnRoundObject->getFieldArray(sfCRNs);
 
     STArray txCrnArray = ctx_.tx.getFieldArray(sfCRNs);
+    // extra sanity check. verify that math won't overflow
+    {
+        STAmount const& feeToDistributeST = ctx_.tx.getFieldAmount(sfCRN_FeeDistributed);
+        CSCAmount sumOfDistribution(beast::zero);
+        for ( STObject const& txCrnObject : txCrnArray)
+        {
+            CSCAmount before = sumOfDistribution;
+            sumOfDistribution += txCrnObject.getFieldAmount(sfCRN_FeeDistributed).csc();
+            if (before > sumOfDistribution)
+            {
+                JLOG(j_.error()) << "Math overflow. sumBefore: " << before.drops()
+                                << " after adding: " << txCrnObject.getFieldAmount(sfCRN_FeeDistributed).csc().drops()
+                                << " sum: " << sumOfDistribution.drops()
+                                << " quit!";
+                return tefEXCEPTION;
+            }
+        }
+        if (sumOfDistribution != feeToDistributeST.csc())
+        {
+            JLOG(j_.error()) << "Math error. sumOfDistribution: " << sumOfDistribution.drops()
+                            << " feeToDistributeST: " << feeToDistributeST.csc().drops()
+                            << " quit!";
+            return tefEXCEPTION;
+        }
+    }
     for ( STObject const& txCrnObject : txCrnArray)
     {
         if (!txCrnObject.isFieldPresent(sfCRN_PublicKey))

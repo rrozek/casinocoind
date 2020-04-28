@@ -455,17 +455,8 @@ Payment::doApply ()
             // #1 regular account with unknown secret
             // #2 reducing total csc in circulation
             // #3 vanishing csc from the surface
-            if (uDstAccountID == burnTwoAccount())
-            {
-                JLOG(j_.warn()) << "Payment tx of " << saDstAmount.csc().drops()
-                                << " from " << toBase58(account_)
-                                << " to burning account reducing CSC in circulation "
-                                << toBase58(uDstAccountID);
-                ctx_.destroyCSC(saDstAmount.csc());
-                // TODO: consider destroyCSCForever.
-            }
             // only allow csc viping from blacklisted accounts for security
-            else if (uDstAccountID == burnThreeAccount() && ctx_.app.blacklistedAccounts().listed(toBase58(account_)))
+            if (uDstAccountID == burnThreeAccount() && ctx_.app.blacklistedAccounts().listed(toBase58(account_)))
             {
                 JLOG(j_.warn()) << "Payment tx of " << saDstAmount.csc().drops()
                                 << " from " << toBase58(account_)
@@ -475,7 +466,7 @@ Payment::doApply ()
             }
             else
             {
-                // for burningOne account, act just like a reagular Payment
+                // for burningOne burningTwo accounts, act just like a reagular Payment
                 sleDst->setFieldAmount (sfBalance,
                     sleDst->getFieldAmount (sfBalance) + saDstAmount);
 

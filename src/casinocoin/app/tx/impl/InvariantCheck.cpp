@@ -89,7 +89,7 @@ CSCNotCreated::finalize(STTx const& tx, TER /*tec*/, beast::Journal const& j)
     if (tx.getAccountID(sfDestination) == burnThreeAccount())
     {
         auto burnedAmount = tx.getFieldAmount(sfAmount).csc().drops();
-        JLOG(j.warn()) << "Invariant CSCNotCreated allowing burning CSC on burn account " << toBase58(burnThreeAccount())
+        JLOG(j.warn()) << "Invariant CSCNotCreated allowing burning CSC on burn#3 account " << toBase58(burnThreeAccount())
                        << " amount of CSC burned: " << burnedAmount;
         drops_ += burnedAmount;
     }

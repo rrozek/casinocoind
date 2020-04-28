@@ -207,7 +207,9 @@ void CRNRoundImpl::doValidation(std::shared_ptr<const ReadView> const& lastClose
         JLOG(j_.info()) << "CRNRoundImpl::doValidation CRN Rounds are de-activated. aborting";
         return;
     }
-    if (static_cast<uint64_t>(lastClosedLedger->info().drops.drops()) >= SYSTEM_CURRENCY_START)
+    CSCAmount totalCoinsSupply(SYSTEM_CURRENCY_START);
+
+    if (lastClosedLedger->info().drops > totalCoinsSupply)
     {
         JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then SYSTEM_CURRENCY_START.";
         JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: " << static_cast<uint64_t>(lastClosedLedger->info().drops.drops());
@@ -215,24 +217,10 @@ void CRNRoundImpl::doValidation(std::shared_ptr<const ReadView> const& lastClose
     }
     std::lock_guard <std::mutex> sl (mutex_);
 
-    CSCAmount totalCoinsInCirculation(SYSTEM_CURRENCY_START);
-    auto const sleBurnAccount = lastClosedLedger->read(keylet::account(burnTwoAccount()));
-    if (sleBurnAccount)
-    {
-        totalCoinsInCirculation -= (*sleBurnAccount)[sfBalance].csc();
-    }
-    if (totalCoinsInCirculation < lastClosedLedger->info().drops)
-    {
-        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then overall.";
-        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: "
-                        << lastClosedLedger->info().drops.drops()
-                        << " overall: "
-                        << totalCoinsInCirculation.drops();
-        return;
-    }
-    lastFeeDistributionPosition_ = CSCAmount(totalCoinsInCirculation - lastClosedLedger->info().drops.drops()).drops();
+    lastFeeDistributionPosition_ = CSCAmount(totalCoinsSupply - lastClosedLedger->info().drops);
     JLOG (j_.info()) <<
         "CRNRoundImpl::doValidation with " << eligibilityMap_.size() << " candidates";
+    JLOG(j_.info()) << "CRNRoundImpl::doValidation. Total coins in circulation: " << totalCoinsSupply.drops();
 
     STArray crnArray(sfCRNs);
     for ( auto iter = eligibilityMap_.begin(); iter != eligibilityMap_.end(); ++iter)
@@ -264,25 +252,22 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
         JLOG(j_.info()) << "CRNRoundImpl::doVoting CRN Rounds are de-activated. aborting";
         return;
     }
-    if (static_cast<uint64_t>(lastClosedLedger->info().drops.drops()) >= SYSTEM_CURRENCY_START)
+    CSCAmount totalCoinsSupply(SYSTEM_CURRENCY_START);
+    // jrojek: once we figure out the way to trace burn account two tx on ledger, we should substract it here
+    CSCAmount totalCoinsInCirculation(totalCoinsSupply);
+    if (lastClosedLedger->info().drops > totalCoinsSupply)
     {
-        JLOG(j_.warn()) << "CRNRoundImpl::doVoting. more drops in LCL then overall.";
-        JLOG(j_.warn()) << "CRNRoundImpl::doVoting. drops in LCL: " << static_cast<uint64_t>(lastClosedLedger->info().drops.drops());
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then SYSTEM_CURRENCY_START.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: " << static_cast<uint64_t>(lastClosedLedger->info().drops.drops());
         return;
     }
-    CSCAmount totalCoinsInCirculation(SYSTEM_CURRENCY_START);
-    auto const sleBurnAccount = lastClosedLedger->read(keylet::account(burnTwoAccount()));
-    if (sleBurnAccount)
+    if (lastClosedLedger->info().drops > totalCoinsInCirculation)
     {
-        totalCoinsInCirculation -= (*sleBurnAccount)[sfBalance].csc();
-    }
-    if (totalCoinsInCirculation < lastClosedLedger->info().drops)
-    {
-        JLOG(j_.warn()) << "CRNRoundImpl::doVoting. more drops in LCL then overall.";
-        JLOG(j_.warn()) << "CRNRoundImpl::doVoting. drops in LCL: "
-                        << lastClosedLedger->info().drops.drops()
-                        << " overall: "
-                        << totalCoinsInCirculation.drops();
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then in circulation.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: "
+                        << static_cast<uint64_t>(lastClosedLedger->info().drops.drops())
+                        << " in circulation: " <<
+                           static_cast<uint64_t>(totalCoinsInCirculation.drops());
         return;
     }
     // get the CRN Settings
@@ -292,9 +277,11 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
      JLOG(j_.info()) << "CRNRoundImpl::doVoting. CRNSettings Foundation Account: " << toBase58(calcAccountID(crnSettings->foundationFeesPublicKey))
                      << " - Foundation Percentage: " << crnSettings->foundationFeeFactor;
     }
+
     uint64_t maxDistribution = CSCAmount(totalCoinsInCirculation - lastClosedLedger->info().drops).drops();
     JLOG(j_.info()) << "CRNRoundImpl::doVoting. validations: " << parentValidations.size()
                     << " voting range: 0 - " << maxDistribution;
+    JLOG(j_.info()) << "CRNRoundImpl::doVoting. Total coins in circulation: " << totalCoinsInCirculation.drops();
 
     detail::VotableInteger<std::int64_t> feeToDistribute (0, maxDistribution);
     auto crnVote = std::make_unique<NodesEligibilitySet>();
@@ -307,7 +294,6 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
         CRN::EligibilityMap singleNodePosition;
         if (singleValidation.second->isFieldPresent(sfCRNs))
         {
-
             // get all votes for CRNs of given validator
             STArray const& crnVotesOfNode =
                     singleValidation.second->getFieldArray(sfCRNs);
@@ -364,6 +350,30 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
             return;
         }
 
+        // extra sanity check. verify that math won't overflow
+        {
+            CSCAmount sumOfDistribution(beast::zero);
+            for ( auto iter = txVoteMap.begin(); iter != txVoteMap.end(); ++iter)
+            {
+                CSCAmount before = sumOfDistribution;
+                sumOfDistribution += iter->second;
+                if (before > sumOfDistribution)
+                {
+                    JLOG(j_.error()) << "Math overflow. sumBefore: " << before.drops()
+                                    << " after adding: " << iter->second.drops()
+                                    << " sum: " << sumOfDistribution.drops()
+                                    << " quit!";
+                    return;
+                }
+            }
+            if (sumOfDistribution != feeToDistributeST.csc())
+            {
+                JLOG(j_.error()) << "Math error. sumOfDistribution: " << sumOfDistribution.drops()
+                                << " feeToDistributeST: " << feeToDistributeST.csc().drops()
+                                << " quit!";
+                return;
+            }
+        }
         for ( auto iter = txVoteMap.begin(); iter != txVoteMap.end(); ++iter)
         {
             crnArray.push_back (STObject (sfCRN));

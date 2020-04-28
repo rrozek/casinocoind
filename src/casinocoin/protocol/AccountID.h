@@ -113,14 +113,17 @@ noAccount();
 /** there are three defined burning accounts. */
 
 /** #1 regular account with unknown secret */
+/** cccccccccccccnqUHTrgbQAFuTX3rw */
 AccountID const&
 burnOneAccount();
 
 /** #2 reducing total csc in circulation */
+/** cccccccccccccnqUHTrgbQAFjgZHb4 */
 AccountID const&
 burnTwoAccount();
 
 /** #3 vanishing csc from the surface */
+/** cccccccccccccnqUHTrgbQAFboFNAw */
 AccountID const&
 burnThreeAccount();
 
