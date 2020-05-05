@@ -52,25 +52,16 @@ Change::preflight (PreflightContext const& ctx)
     // check for ttCONFIG and ttCRN_ROUND before 'Regular' transactions
     if (ctx.tx.getTxnType() == ttCONFIG)
     {
-        return preflightConfiguration(ctx);
+        TER status = preflightConfiguration(ctx);
+        if (status != tesSUCCESS)
+            return status;
     }
 
     if (ctx.tx.getTxnType() == ttCRN_ROUND)
     {
-        if (!ctx.rules.enabled(featureCRN))
-        {
-            JLOG(ctx.j.warn()) << "Change: CRN feature disabled";
-            return temDISABLED;
-        }
-        STArray crnArray = ctx.tx.getFieldArray(sfCRNs);
-        for ( auto const& crnObject : crnArray)
-        {
-            if (!crnObject.isFieldPresent(sfCRN_PublicKey))
-            {
-                JLOG(ctx.j.warn()) << "CRNRound malformed transaction";
-                return temMALFORMED;
-            }
-        }
+        TER status = preflightCRNRound(ctx);
+        if (status != tesSUCCESS)
+            return status;
     }
 
     // No point in going any further if the transaction fee is malformed.
@@ -105,11 +96,8 @@ Change::preclaim(PreclaimContext const &ctx)
     // this block can be moved to preflight.
     if (ctx.view.open())
     {
-        if (ctx.tx.getTxnType() != ttCONFIG && ctx.tx.getTxnType() != ttCRN_ROUND)
-        {
-            JLOG(ctx.j.warn()) << "Change transaction against open ledger";
-            return temINVALID;
-        }
+        JLOG(ctx.j.warn()) << "Change transaction against open ledger";
+        return temINVALID;
     }
 
     if (ctx.tx.getTxnType() != ttAMENDMENT
@@ -128,6 +116,25 @@ Change::preflightConfiguration(PreflightContext const& ctx)
     {
         JLOG(ctx.j.warn()) << "Change: ConfigObject feature disabled";
         return temDISABLED;
+    }
+    return tesSUCCESS;
+}
+
+TER Change::preflightCRNRound(const PreflightContext &ctx)
+{
+    if (!ctx.rules.enabled(featureCRN))
+    {
+        JLOG(ctx.j.warn()) << "Change: CRN feature disabled";
+        return temDISABLED;
+    }
+    STArray crnArray = ctx.tx.getFieldArray(sfCRNs);
+    for ( auto const& crnObject : crnArray)
+    {
+        if (!crnObject.isFieldPresent(sfCRN_PublicKey))
+        {
+            JLOG(ctx.j.warn()) << "CRNRound malformed transaction";
+            return temMALFORMED;
+        }
     }
     return tesSUCCESS;
 }
@@ -361,6 +368,31 @@ TER Change::applyCRN_Round()
         ledgerCrnArray = ledgerCrnRoundObject->getFieldArray(sfCRNs);
 
     STArray txCrnArray = ctx_.tx.getFieldArray(sfCRNs);
+    // extra sanity check. verify that math won't overflow
+    {
+        STAmount const& feeToDistributeST = ctx_.tx.getFieldAmount(sfCRN_FeeDistributed);
+        CSCAmount sumOfDistribution(beast::zero);
+        for ( STObject const& txCrnObject : txCrnArray)
+        {
+            CSCAmount before = sumOfDistribution;
+            sumOfDistribution += txCrnObject.getFieldAmount(sfCRN_FeeDistributed).csc();
+            if (before > sumOfDistribution)
+            {
+                JLOG(j_.error()) << "Math overflow. sumBefore: " << before.drops()
+                                << " after adding: " << txCrnObject.getFieldAmount(sfCRN_FeeDistributed).csc().drops()
+                                << " sum: " << sumOfDistribution.drops()
+                                << " quit!";
+                return tefEXCEPTION;
+            }
+        }
+        if (sumOfDistribution != feeToDistributeST.csc())
+        {
+            JLOG(j_.error()) << "Math error. sumOfDistribution: " << sumOfDistribution.drops()
+                            << " feeToDistributeST: " << feeToDistributeST.csc().drops()
+                            << " quit!";
+            return tefEXCEPTION;
+        }
+    }
     for ( STObject const& txCrnObject : txCrnArray)
     {
         if (!txCrnObject.isFieldPresent(sfCRN_PublicKey))

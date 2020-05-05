@@ -66,6 +66,7 @@ public:
 private:
 
     static TER preflightConfiguration(PreflightContext const& ctx);
+    static TER preflightCRNRound(PreflightContext const& ctx);
 
     TER applyAmendment ();
     TER applyFee ();

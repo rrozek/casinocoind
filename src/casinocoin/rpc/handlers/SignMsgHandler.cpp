@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012-2014 Ripple Labs Inc.
@@ -41,7 +41,6 @@ namespace casinocoin {
 Json::Value doSignMsg (RPC::Context& context)
 {
     auto j = context.app.journal("RPCHandler");
-
     Json::Value jvResult;
     auto keypair = RPC::keypairForSignature(context.params, jvResult);
     if (RPC::contains_error (jvResult))

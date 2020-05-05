@@ -207,10 +207,20 @@ void CRNRoundImpl::doValidation(std::shared_ptr<const ReadView> const& lastClose
         JLOG(j_.info()) << "CRNRoundImpl::doValidation CRN Rounds are de-activated. aborting";
         return;
     }
+    CSCAmount totalCoinsSupply(SYSTEM_CURRENCY_START);
+
+    if (lastClosedLedger->info().drops > totalCoinsSupply)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then SYSTEM_CURRENCY_START.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: " << static_cast<uint64_t>(lastClosedLedger->info().drops.drops());
+        return;
+    }
+    std::lock_guard <std::mutex> sl (mutex_);
+
+    lastFeeDistributionPosition_ = CSCAmount(totalCoinsSupply - lastClosedLedger->info().drops);
     JLOG (j_.info()) <<
         "CRNRoundImpl::doValidation with " << eligibilityMap_.size() << " candidates";
-
-    std::lock_guard <std::mutex> sl (mutex_);
+    JLOG(j_.info()) << "CRNRoundImpl::doValidation. Total coins in circulation: " << totalCoinsSupply.drops();
 
     STArray crnArray(sfCRNs);
     for ( auto iter = eligibilityMap_.begin(); iter != eligibilityMap_.end(); ++iter)
@@ -223,7 +233,6 @@ void CRNRoundImpl::doValidation(std::shared_ptr<const ReadView> const& lastClose
 
     JLOG(j_.info()) << "CRNRoundImpl::doValidation we propose lastLedger: "
                     << lastClosedLedger->info().seq << " drops: " << lastClosedLedger->info().drops.drops();
-    lastFeeDistributionPosition_ = CSCAmount(SYSTEM_CURRENCY_START - static_cast<uint64_t>(lastClosedLedger->info().drops.drops()));
 
     baseValidation.setFieldArray(sfCRNs, crnArray);
     baseValidation.setFieldAmount(sfCRN_FeeDistributed, STAmount(lastFeeDistributionPosition_));
@@ -243,6 +252,24 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
         JLOG(j_.info()) << "CRNRoundImpl::doVoting CRN Rounds are de-activated. aborting";
         return;
     }
+    CSCAmount totalCoinsSupply(SYSTEM_CURRENCY_START);
+    // jrojek: once we figure out the way to trace burn account two tx on ledger, we should substract it here
+    CSCAmount totalCoinsInCirculation(totalCoinsSupply);
+    if (lastClosedLedger->info().drops > totalCoinsSupply)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then SYSTEM_CURRENCY_START.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: " << static_cast<uint64_t>(lastClosedLedger->info().drops.drops());
+        return;
+    }
+    if (lastClosedLedger->info().drops > totalCoinsInCirculation)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. more drops in LCL then in circulation.";
+        JLOG(j_.warn()) << "CRNRoundImpl::doValidation. drops in LCL: "
+                        << static_cast<uint64_t>(lastClosedLedger->info().drops.drops())
+                        << " in circulation: " <<
+                           static_cast<uint64_t>(totalCoinsInCirculation.drops());
+        return;
+    }
     // get the CRN Settings
     boost::optional<CRN_SettingsDescriptor> crnSettings = getCRNSettings(lastClosedLedger, j_);
     if(crnSettings)
@@ -251,10 +278,12 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
                      << " - Foundation Percentage: " << crnSettings->foundationFeeFactor;
     }
 
+    uint64_t maxDistribution = CSCAmount(totalCoinsInCirculation - lastClosedLedger->info().drops).drops();
     JLOG(j_.info()) << "CRNRoundImpl::doVoting. validations: " << parentValidations.size()
-                    << " voting range: 0 - " << CSCAmount(SYSTEM_CURRENCY_START - static_cast<uint64_t>(lastClosedLedger->info().drops.drops())).drops();
+                    << " voting range: 0 - " << maxDistribution;
+    JLOG(j_.info()) << "CRNRoundImpl::doVoting. Total coins in circulation: " << totalCoinsInCirculation.drops();
 
-    detail::VotableInteger<std::int64_t> feeToDistribute (0, CSCAmount(SYSTEM_CURRENCY_START - static_cast<uint64_t>(lastClosedLedger->info().drops.drops())).drops());
+    detail::VotableInteger<std::int64_t> feeToDistribute (0, maxDistribution);
     auto crnVote = std::make_unique<NodesEligibilitySet>();
 
     // based on other votes, conclude what in our POV elibigible nodes should look like
@@ -265,7 +294,6 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
         CRN::EligibilityMap singleNodePosition;
         if (singleValidation.second->isFieldPresent(sfCRNs))
         {
-
             // get all votes for CRNs of given validator
             STArray const& crnVotesOfNode =
                     singleValidation.second->getFieldArray(sfCRNs);
@@ -322,6 +350,30 @@ void CRNRoundImpl::doVoting(std::shared_ptr<const ReadView> const& lastClosedLed
             return;
         }
 
+        // extra sanity check. verify that math won't overflow
+        {
+            CSCAmount sumOfDistribution(beast::zero);
+            for ( auto iter = txVoteMap.begin(); iter != txVoteMap.end(); ++iter)
+            {
+                CSCAmount before = sumOfDistribution;
+                sumOfDistribution += iter->second;
+                if (before > sumOfDistribution)
+                {
+                    JLOG(j_.error()) << "Math overflow. sumBefore: " << before.drops()
+                                    << " after adding: " << iter->second.drops()
+                                    << " sum: " << sumOfDistribution.drops()
+                                    << " quit!";
+                    return;
+                }
+            }
+            if (sumOfDistribution != feeToDistributeST.csc())
+            {
+                JLOG(j_.error()) << "Math error. sumOfDistribution: " << sumOfDistribution.drops()
+                                << " feeToDistributeST: " << feeToDistributeST.csc().drops()
+                                << " quit!";
+                return;
+            }
+        }
         for ( auto iter = txVoteMap.begin(); iter != txVoteMap.end(); ++iter)
         {
             crnArray.push_back (STObject (sfCRN));
@@ -367,14 +419,35 @@ void CRNRoundImpl::updatePosition(std::list<STPerformanceReport::pointer> const&
         JLOG(j_.info()) << "CRNRoundImpl::updatePosition CRN feature is not enabled. aborting";
         return;
     }
-    if (!isCRNRoundsActivated( app_.getLedgerMaster().getClosedLedger(), j_ ))
+    std::shared_ptr<const Ledger> closedLedger = app_.getLedgerMaster().getClosedLedger();
+    if (!isCRNRoundsActivated( closedLedger, j_ ))
     {
         JLOG(j_.info()) << "CRNRoundImpl::updatePosition CRN Rounds are de-activated. aborting";
+        return;
+    }
+
+    CSCAmount totalCoinsSupply(SYSTEM_CURRENCY_START);
+    // jrojek: once we figure out the way to trace burn account two tx on ledger, we should substract it here
+    CSCAmount totalCoinsInCirculation(totalCoinsSupply);
+    if (closedLedger->info().drops > totalCoinsSupply)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::updatePosition. more drops in LCL then SYSTEM_CURRENCY_START.";
+        JLOG(j_.warn()) << "CRNRoundImpl::updatePosition. drops in LCL: " << static_cast<uint64_t>(closedLedger->info().drops.drops());
+        return;
+    }
+    if (closedLedger->info().drops > totalCoinsInCirculation)
+    {
+        JLOG(j_.warn()) << "CRNRoundImpl::updatePosition. more drops in LCL then in circulation.";
+        JLOG(j_.warn()) << "CRNRoundImpl::updatePosition. drops in LCL: "
+                        << static_cast<uint64_t>(closedLedger->info().drops.drops())
+                        << " in circulation: " <<
+                           static_cast<uint64_t>(totalCoinsInCirculation.drops());
         return;
     }
     eligibilityMap_.clear();
     for (STPerformanceReport::ref report : reports)
     {
+       // jrojek TODO: Unindent it!
        boost::optional<PublicKey> pk = report->getSignerPublic();
        bool eligible = true;
 

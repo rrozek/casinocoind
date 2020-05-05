@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012, 2013 Ripple Labs Inc.
@@ -31,6 +31,7 @@
 #include <casinocoin/protocol/st.h>
 #include <casinocoin/protocol/TxFlags.h>
 #include <casinocoin/protocol/JsonFields.h>
+#include <casinocoin/app/misc/Blacklist.h>
 
 namespace casinocoin {
 
@@ -449,8 +450,59 @@ Payment::doApply ()
             // arithmetic for the transfer and make the ledger change.
             view().peek(keylet::account(account_))->setFieldAmount (sfBalance,
                 mSourceBalance - saDstAmount);
-            sleDst->setFieldAmount (sfBalance,
-                sleDst->getFieldAmount (sfBalance) + saDstAmount);
+
+            // there are three defined burning accounts.
+            // #1 regular account with unknown secret
+            // #2 reducing total csc in circulation
+            // #3 vanishing csc from the surface
+            // only allow csc viping from blacklisted accounts for security
+            if (uDstAccountID == burnThreeAccount())
+            {
+                if (ctx_.app.blacklistedAccounts().listed(toBase58(account_)))
+                {
+                    JLOG(j_.warn()) << "Payment tx of " << saDstAmount.csc().drops()
+                                    << " from " << toBase58(account_)
+                                    << " to burning account viping CSC out of scope "
+                                    << toBase58(uDstAccountID);
+                    // do nothing (coins are deduced from src but not added to dst
+                }
+                else
+                {
+                    terResult = temMALFORMED;
+                    JLOG(j_.warn()) << "Payment tx to burning account "
+                                    << toBase58(uDstAccountID)
+                                    << " viping CSC out of scope is only allowed from "
+                                    << "blacklisted accounts";
+                }
+            }
+            else if (uDstAccountID == burnTwoAccount())
+            {
+                if (ctx_.app.blacklistedAccounts().listed(toBase58(account_)))
+                {
+                    // for burningTwo account, act just like a reagular Payment
+                    JLOG(j_.warn()) << "Payment tx of " << saDstAmount.csc().drops()
+                                    << " from " << toBase58(account_)
+                                    << " to burning account reducing total coin supply "
+                                    << toBase58(uDstAccountID);
+                    sleDst->setFieldAmount (sfBalance,
+                        sleDst->getFieldAmount (sfBalance) + saDstAmount);
+                }
+                else
+                {
+                    terResult = temMALFORMED;
+                    JLOG(j_.warn()) << "Payment tx to burning account "
+                                    << toBase58(uDstAccountID)
+                                    << " reducing total coin supply is only allowed from "
+                                    << "blacklisted accounts";
+                }
+            }
+            else
+            {
+                // for burningOne baccount, act just like a reagular Payment
+                sleDst->setFieldAmount (sfBalance,
+                    sleDst->getFieldAmount (sfBalance) + saDstAmount);
+
+            }
 
             // Re-arm the password change fee if we can and need to.
             if ((sleDst->getFlags () & lsfPasswordSpent))

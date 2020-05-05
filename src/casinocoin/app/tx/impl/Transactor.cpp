@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 /*
     This file is part of rippled: https://github.com/ripple/rippled
     Copyright (c) 2012, 2013 Ripple Labs Inc.
@@ -687,68 +687,66 @@ TER Transactor::checkBlacklist (PreclaimContext const& ctx)
     if (accountid == zero)
         return temBAD_SRC_ACCOUNT;
 
-    if (ctx.app.blacklistedAccounts().listed(toBase58(accountid)))
-    {
-        // account is blacklisted, get full blacklisted account info
-        JLOG(ctx.j.debug()) <<  "Account " << toBase58(accountid) << " is blacklisted!";
-        BlacklistItem listedAccount = ctx.app.blacklistedAccounts().getAccount(toBase58(accountid));
-        auto unHexedPubKey = strUnHex(listedAccount.publicKeySigner);
-        if (!unHexedPubKey.second)
-            return temMALFORMED;
-        PublicKey signerPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
-
-        std::string accountIDSigner = toBase58(calcAccountID(signerPublicKey));
-        JLOG(ctx.j.debug()) <<  "Account Blacklist Signer: " << accountIDSigner;
-
-        // get allowed signers from Config
-        LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
-        auto blacklistConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
-                                                ledgerConfiguration.entries.end(),
-                                                [](ConfigObjectEntry const& obj)
-            {
-                return obj.getType() == ConfigObjectEntry::Blacklist_Signer;
-            });
-        if (blacklistConfigIter == ledgerConfiguration.entries.end())
-        {
-            JLOG(ctx.j.info()) << "Account " << toBase58(accountid) << " is blacklisted but no autorised blacklist signer entries found in ConfigObject." << 
-                                  "TX is forbidden to prevent miss configuration.";
-            return tefBLACKLISTED;
-        }
-
-        // loop over defined allowed signers and check if blacklisted account is signed by an allowed signer
-        auto const& definedBlacklistSigners = (*blacklistConfigIter).getData();
-        bool signerValid = false;
-        for (auto signer : definedBlacklistSigners)
-        {
-            const Blacklist_SignerDescriptor* blacklistEntry = static_cast<const Blacklist_SignerDescriptor*>(signer);
-            JLOG(ctx.j.debug()) <<  "Defined Blacklist Signer: " << toBase58(blacklistEntry->blacklistSigner);
-            // check if allowed signer is the same as blacklisted signer account
-            if(toBase58(blacklistEntry->blacklistSigner).compare(accountIDSigner) == 0)
-            {
-                signerValid = true;
-                break;
-            }
-
-        }
-
-        if(signerValid)
-        {
-            JLOG(ctx.j.info()) <<  "!!! Transaction not allowed !!! Account " << toBase58(accountid) << " is blacklisted!";
-            return tefBLACKLISTED;
-        }
-        else
-        {
-            JLOG(ctx.j.info()) <<  "Account " << toBase58(accountid) << " is blacklisted but Signer is not on the defined signers list!";
-            return tesSUCCESS;
-        }
-        
-    }
-    else
+    if (false == ctx.app.blacklistedAccounts().listed(toBase58(accountid)))
     {
         // account is not blacklisted
         return tesSUCCESS;
     }
+
+    // account is blacklisted, get full blacklisted account info
+    JLOG(ctx.j.debug()) <<  "Account " << toBase58(accountid) << " is blacklisted!";
+    BlacklistItem listedAccount = ctx.app.blacklistedAccounts().getAccount(toBase58(accountid));
+    auto unHexedPubKey = strUnHex(listedAccount.publicKeySigner);
+    if (!unHexedPubKey.second)
+        return temMALFORMED;
+    PublicKey signerPublicKey = PublicKey(Slice(unHexedPubKey.first.data(), unHexedPubKey.first.size()));
+
+    std::string accountIDSigner = toBase58(calcAccountID(signerPublicKey));
+    JLOG(ctx.j.debug()) <<  "Account Blacklist Signer: " << accountIDSigner;
+
+    // get allowed signers from Config
+    LedgerConfig const& ledgerConfiguration = ctx.view.ledgerConfig();
+    auto blacklistConfigIter = std::find_if(ledgerConfiguration.entries.begin(),
+                                            ledgerConfiguration.entries.end(),
+                                            [](ConfigObjectEntry const& obj)
+    {
+        return obj.getType() == ConfigObjectEntry::Blacklist_Signer;
+    });
+    if (blacklistConfigIter == ledgerConfiguration.entries.end())
+    {
+        JLOG(ctx.j.info()) << "Account " << toBase58(accountid) << " is blacklisted but no autorised blacklist signer entries found in ConfigObject." <<
+                              "TX is forbidden to prevent miss configuration.";
+        return tefBLACKLISTED;
+    }
+
+    // loop over defined allowed signers and check if blacklisted account is signed by an allowed signer
+    auto const& definedBlacklistSigners = (*blacklistConfigIter).getData();
+    bool signerValid = false;
+    for (auto signer : definedBlacklistSigners)
+    {
+        const Blacklist_SignerDescriptor* blacklistEntry = static_cast<const Blacklist_SignerDescriptor*>(signer);
+        JLOG(ctx.j.debug()) <<  "Defined Blacklist Signer: " << toBase58(blacklistEntry->blacklistSigner);
+        // check if allowed signer is the same as blacklisted signer account
+        if(toBase58(blacklistEntry->blacklistSigner).compare(accountIDSigner) == 0)
+        {
+            signerValid = true;
+            break;
+        }
+
+    }
+
+    if(signerValid)
+    {
+        JLOG(ctx.j.info()) <<  "!!! Transaction not allowed !!! Account " << toBase58(accountid) << " is blacklisted!";
+        return tefBLACKLISTED;
+    }
+    else
+    {
+        JLOG(ctx.j.info()) <<  "Account " << toBase58(accountid) << " is blacklisted but Signer is not on the defined signers list!";
+        return tesSUCCESS;
+    }
 }
+
 
 TER Transactor::checkWhitelist (PreclaimContext const& ctx)
 {
@@ -800,6 +798,23 @@ TER Transactor::checkMemoSize (PreclaimContext const& ctx)
     } else {
         return tesSUCCESS;
     }
+}
+
+TER Transactor::checkBurning(const PreclaimContext &ctx)
+{
+    if (!ctx.tx.isFieldPresent(sfDestination))
+        return tesSUCCESS;
+    AccountID const uSrcAccountID (ctx.tx.getAccountID (sfAccount));
+    AccountID const uDstAccountID (ctx.tx.getAccountID (sfDestination));
+    if (uDstAccountID == burnThreeAccount()
+            || uDstAccountID == burnTwoAccount()) /* for now also disable burnTwo account as it is incomplete!!*/
+    {
+        if (ctx.app.blacklistedAccounts().listed(toBase58(uSrcAccountID)))
+            return tesSUCCESS;
+        JLOG(ctx.j.warn()) << "Tried to submit tx to burn CSC from non-blacklisted account";
+        return tefFAILURE;
+    }
+    return tesSUCCESS;
 }
 
 //------------------------------------------------------------------------------

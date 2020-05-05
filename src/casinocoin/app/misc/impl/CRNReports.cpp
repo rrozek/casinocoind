@@ -150,7 +150,10 @@ private:
 
         LedgerIndex const validatedLedgerIndex = app_.getLedgerMaster().getValidLedgerIndex();
         LedgerIndex const reportFinalLedgerIndex = static_cast<LedgerIndex>(report->getLastLedgerIndex());
-        bool retVal = (validatedLedgerIndex - reportFinalLedgerIndex) < CRNPerformance::getReportingPeriod();
+        LedgerIndex const bigger = std::max(validatedLedgerIndex, reportFinalLedgerIndex);
+        LedgerIndex const smaller = std::min(validatedLedgerIndex, reportFinalLedgerIndex);
+
+        bool retVal = (bigger - smaller) < CRNPerformance::getReportingPeriod();
         JLOG (j_.debug()) << "CRNReportsImp::current() validated ledger: "
                           << validatedLedgerIndex
                           << " finalLedgerInReport: "
